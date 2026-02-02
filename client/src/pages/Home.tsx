@@ -59,10 +59,28 @@ export default function Home() {
     },
   ];
 
+  const serviceNames: { [key: string]: string } = {
+    fridge: "صيانة الثلاجات",
+    washer: "صيانة الغسالات",
+    ac: "صيانة المكيفات",
+    oven: "صيانة الأفران",
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, this would send data to a backend
-    alert("شكراً لك! سيتم التواصل معك قريباً");
+    
+    // إنشاء رسالة WhatsApp
+    const serviceName = serviceNames[formData.service] || formData.service;
+    const message = `مرحباً، أنا ${formData.name}\nرقم الهاتف: ${formData.phone}\nالخدمة المطلوبة: ${serviceName}\nالتاريخ المفضل: ${formData.date}\n\nأرجو تأكيد الحجز في أقرب وقت.`;
+    const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(message)}`;
+    
+    // فتح WhatsApp
+    window.open(whatsappUrl, "_blank");
+    
+    // إظهار رسالة تأكيد
+    alert("تم إرسال طلب الحجز عبر WhatsApp! سيتم التواصل معك قريباً.");
+    
+    // إعادة تعيين النموذج
     setFormData({ name: "", phone: "", service: "", date: "" });
   };
 
@@ -231,9 +249,9 @@ export default function Home() {
               <Button
                 type="submit"
                 size="lg"
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                className="w-full bg-green-500 hover:bg-green-600 text-white font-bold text-lg"
               >
-                احجز الآن
+                إرسال عبر WhatsApp
               </Button>
             </form>
           </Card>
