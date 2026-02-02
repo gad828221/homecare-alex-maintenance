@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { Zap, Droplet, Wind, Flame, Star, Clock, Shield, Users } from "lucide-react";
+import { Zap, Droplet, Wind, Flame, Star, Clock, Shield, Users, Phone, MessageCircle } from "lucide-react";
 import { useState } from "react";
 
 export default function Home() {

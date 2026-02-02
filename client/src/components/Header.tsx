@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Phone, MapPin } from "lucide-react";
+import { Phone, MapPin, MessageCircle } from "lucide-react";
 
 export default function Header() {
   return (
@@ -15,13 +15,24 @@ export default function Header() {
           </Link>
 
           {/* Contact Info */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <a
-              href="tel:+201234567890"
+              href="tel:+201278885772"
               className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
+              title="اتصل بنا"
             >
               <Phone className="w-4 h-4" />
-              <span className="hidden sm:inline">01234567890</span>
+              <span className="hidden sm:inline">01278885772</span>
+            </a>
+            <a
+              href="https://wa.me/201558625259"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-sm text-green-600 hover:text-green-700 transition-colors"
+              title="تواصل عبر WhatsApp"
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span className="hidden sm:inline">WhatsApp</span>
             </a>
             <a
               href="#contact"

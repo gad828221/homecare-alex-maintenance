@@ -1,4 +1,4 @@
-import { Phone, MapPin, Clock, Mail } from "lucide-react";
+import { Phone, MapPin, Clock, Mail, MessageCircle } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -17,13 +17,17 @@ export default function Footer() {
           <div>
             <h4 className="font-bold mb-4">تواصل معنا</h4>
             <div className="space-y-3">
-              <a href="tel:+201234567890" className="flex items-center gap-2 hover:text-orange-400 transition-colors">
+              <a href="tel:+201278885772" className="flex items-center gap-2 hover:text-orange-400 transition-colors">
                 <Phone className="w-4 h-4" />
-                <span>01234567890</span>
+                <span>01278885772</span>
               </a>
-              <a href="mailto:info@maintenance.com" className="flex items-center gap-2 hover:text-orange-400 transition-colors">
-                <Mail className="w-4 h-4" />
-                <span>info@maintenance.com</span>
+              <a href="https://wa.me/201558625259" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-green-400 transition-colors">
+                <MessageCircle className="w-4 h-4" />
+                <span>WhatsApp: 01558625259</span>
+              </a>
+              <a href="tel:+201558625259" className="flex items-center gap-2 hover:text-orange-400 transition-colors">
+                <Phone className="w-4 h-4" />
+                <span>01558625259</span>
               </a>
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
