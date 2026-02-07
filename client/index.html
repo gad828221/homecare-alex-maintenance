@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <title>مركز صيانة الإسكندرية المعتمد | جميع الماركات</title>
+    <title>مركز صيانة الإسكندرية المعتمد | خدمة فورية لجميع الأجهزة</title>
     
     <script async src="https://www.googletagmanager.com/gtag/js?id=AW-16866300615"></script>
     <script>
@@ -20,128 +20,163 @@
     }
     </script>
 
-    <script type="module" crossorigin src="/assets/index-ywqyiroj.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-dav6ea88.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
       :root {
         --main-blue: #034ea2;
         --success-green: #28a745;
+        --fb-blue: #1877f2;
+        --map-red: #ea4335;
       }
-      body { background-color: #f1f5f9; font-family: sans-serif; }
+      body { background-color: #f1f5f9; font-family: sans-serif; margin:0; padding-bottom: 20px; text-align: right; }
       
-      /* شريط الماركات السريع */
+      /* شريط التنقل العلوي */
       .quick-nav { 
-        background: white; 
-        padding: 10px; 
-        position: sticky; 
-        top: 0; 
-        z-index: 100; 
-        display: flex; 
-        overflow-x: auto; 
-        white-space: nowrap; 
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        gap: 10px;
+        background: white; padding: 10px; position: sticky; top: 0; z-index: 1000; 
+        display: flex; overflow-x: auto; gap: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
       }
       .quick-nav a { 
-        background: #eee; 
-        padding: 8px 15px; 
-        border-radius: 20px; 
-        text-decoration: none; 
-        color: #333; 
-        font-size: 14px; 
-        font-weight: bold;
+        background: #f1f5f9; padding: 8px 15px; border-radius: 20px; 
+        text-decoration: none; color: #333; font-weight: bold; font-size: 13px; white-space: nowrap;
       }
 
-      .brand-container { padding: 15px; max-width: 1100px; margin: auto; display: grid; grid-template-columns: 1fr; gap: 15px; }
+      .header-banner { background: var(--main-blue); color: white; padding: 20px; text-align: center; }
+      .header-banner h1 { margin: 0; font-size: 1.6rem; }
+
+      .brand-container { padding: 15px; max-width: 1100px; margin: auto; display: grid; grid-template-columns: 1fr; gap: 20px; }
       @media (min-width: 768px) { .brand-container { grid-template-columns: 1fr 1fr; } }
       
       .card { 
-        background: white; border-radius: 12px; padding: 20px; 
+        background: white; border-radius: 15px; padding: 20px; 
         box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
-        border-right: 6px solid var(--main-blue);
-        scroll-margin-top: 70px; /* لضمان عدم اختفاء العنوان تحت شريط التنقل */
+        border-right: 8px solid var(--main-blue);
+        scroll-margin-top: 80px;
       }
-      .card h2 { color: var(--main-blue); font-size: 1.4rem; margin-bottom: 8px; }
+      .card h2 { color: var(--main-blue); font-size: 1.5rem; margin-bottom: 10px; }
+      .card p { color: #475569; line-height: 1.6; margin-bottom: 15px; font-size: 0.95rem; }
       
       .call-button {
-        display: block; background-color: var(--success-green); color: white; 
-        padding: 12px; border-radius: 8px; text-decoration: none; 
-        font-weight: bold; font-size: 1.2rem; text-align: center; margin-top: 10px;
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        background-color: var(--success-green); color: white; 
+        padding: 14px; border-radius: 10px; text-decoration: none; 
+        font-weight: bold; font-size: 1.3rem; text-align: center;
       }
+
+      .footer-links { 
+        display: flex; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ddd;
+      }
+      .footer-btn { 
+        flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
+        padding: 10px; border-radius: 8px; text-decoration: none; color: white; font-size: 0.9rem;
+      }
+      .fb-btn { background-color: var(--fb-blue); }
+      .map-btn { background-color: var(--map-red); }
+
+      footer { background: #1e293b; color: #cbd5e1; padding: 30px 15px; margin-top: 50px; text-align: center; font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
-    <div class="quick-nav">
-        <a href="#samsung">سامسونج</a>
-        <a href="#toshiba">توشيبا</a>
-        <a href="#lg">LG</a>
-        <a href="#zanussi">زانوسي</a>
-        <a href="#kiriazi">كريازي</a>
-        <a href="#sharp">شارب</a>
-        <a href="#fresh">فريش</a>
-        <a href="#universal">يونيفرسال</a>
-        <a href="#beko">بيكو</a>
+    <div class="header-banner">
+        <h1>مركز صيانة الإسكندرية المعتمد</h1>
+        <p>قطع غيار أصلية - ضمان معتمد - صيانة منزلية فورية</p>
     </div>
 
-    <div id="root"></div>
+    <div class="quick-nav">
+        <a href="#samsung">سامسونج</a> <a href="#toshiba">توشيبا</a> <a href="#lg">LG</a> 
+        <a href="#zanussi">زانوسي</a> <a href="#sharp">شارب</a> <a href="#fresh">فريش</a> 
+        <a href="#kiriazi">كريازي</a> <a href="#beko">بيكو</a> <a href="#ideal">إيديال</a>
+    </div>
 
     <div class="brand-container">
+        
         <div class="card" id="samsung">
             <h2>صيانة سامسونج</h2>
-            <p>صيانة غسالات وثلاجات سامسونج بالإسكندرية بقطع غيار أصلية.</p>
-            <a href="tel:01278885772" onclick="return gtag_report_conversion('tel:01278885772');" class="call-button">اتصل الآن</a>
+            <p>خدمة صيانة سامسونج المعتمدة بالإسكندرية (ثلاجات - غسالات). قطع غيار أصلية وضمان شامل على الإصلاح.</p>
+            <a href="tel:01278885772" onclick="return gtag_report_conversion('tel:01278885772');" class="call-button">
+                <i class="fas fa-phone-alt"></i> اتصل الآن
+            </a>
+            <div class="footer-links">
+                <a href="https://www.facebook.com/HomeCare.Alex2" target="_blank" class="footer-btn fb-btn">
+                    <i class="fab fa-facebook"></i> فيسبوك
+                </a>
+                <a href="https://maps.google.com/?q=الإسكندرية" target="_blank" class="footer-btn map-btn">
+                    <i class="fas fa-map-marker-alt"></i> الموقع
+                </a>
+            </div>
         </div>
 
         <div class="card" id="toshiba" style="border-right-color: #e31e24;">
-            <h2 style="color: #e31e24;">صيانة توشيبا</h2>
-            <p>مركز صيانة توشيبا العربي المعتمد بالإسكندرية - خدمة منزلية فورية.</p>
-            <a href="tel:01278885772" onclick="return gtag_report_conversion('tel:01278885772');" class="call-button">اتصل الآن</a>
+            <h2 style="color: #e31e24;">صيانة توشيبا العربي</h2>
+            <p>صيانة توشيبا المتميزة بالمنزل. نصلك في أسرع وقت بجميع أحياء الإسكندرية مع ضمان معتمد.</p>
+            <a href="tel:01278885772" onclick="return gtag_report_conversion('tel:01278885772');" class="call-button">
+                <i class="fas fa-phone-alt"></i> اتصل الآن
+            </a>
+            <div class="footer-links">
+                <a href="https://www.facebook.com/HomeCare.Alex2" target="_blank" class="footer-btn fb-btn">
+                    <i class="fab fa-facebook"></i> فيسبوك
+                </a>
+                <a href="https://maps.google.com/?q=الإسكندرية" target="_blank" class="footer-btn map-btn">
+                    <i class="fas fa-map-marker-alt"></i> الموقع
+                </a>
+            </div>
         </div>
 
         <div class="card" id="lg" style="border-right-color: #a50034;">
             <h2 style="color: #a50034;">صيانة LG</h2>
-            <p>صيانة LG الاحترافية لجميع الأعطال المعقدة بأحدث الأجهزة.</p>
-            <a href="tel:01278885772" onclick="return gtag_report_conversion('tel:01278885772');" class="call-button">اتصل الآن</a>
+            <p>خبراء صيانة أجهزة LG. تشخيص الأعطال بالكمبيوتر واستخدام قطع غيار أصلية لضمان كفاءة الجهاز.</p>
+            <a href="tel:01278885772" onclick="return gtag_report_conversion('tel:01278885772');" class="call-button">
+                <i class="fas fa-phone-alt"></i> اتصل الآن
+            </a>
+            <div class="footer-links">
+                <a href="https://www.facebook.com/HomeCare.Alex2" target="_blank" class="footer-btn fb-btn">
+                    <i class="fab fa-facebook"></i> فيسبوك
+                </a>
+                <a href="https://maps.google.com/?q=الإسكندرية" target="_blank" class="footer-btn map-btn">
+                    <i class="fas fa-map-marker-alt"></i> الموقع
+                </a>
+            </div>
         </div>
 
         <div class="card" id="zanussi">
             <h2>صيانة زانوسي</h2>
-            <p>صيانة غسالات زانوسي المعتمدة بالإسكندرية - ضمان حقيقي.</p>
-            <a href="tel:01278885772" onclick="return gtag_report_conversion('tel:01278885772');" class="call-button">اتصل الآن</a>
+            <p>صيانة غسالات زانوسي الفورية. طاقم عمل متخصص ومدرب على أعلى مستوى لإصلاح الأعطال المعقدة.</p>
+            <a href="tel:01278885772" onclick="return gtag_report_conversion('tel:01278885772');" class="call-button">
+                <i class="fas fa-phone-alt"></i> اتصل الآن
+            </a>
+            <div class="footer-links">
+                <a href="https://www.facebook.com/HomeCare.Alex2" target="_blank" class="footer-btn fb-btn">
+                    <i class="fab fa-facebook"></i> فيسبوك
+                </a>
+                <a href="https://maps.google.com/?q=الإسكندرية" target="_blank" class="footer-btn map-btn">
+                    <i class="fas fa-map-marker-alt"></i> الموقع
+                </a>
+            </div>
         </div>
 
-        <div class="card" id="kiriazi" style="border-right-color: #f58220;">
-            <h2 style="color: #f58220;">صيانة كريازي</h2>
-            <p>صيانة ثلاجات وديب فريزر كريازي - نصلك أينما كنت.</p>
-            <a href="tel:01278885772" onclick="return gtag_report_conversion('tel:01278885772');" class="call-button">اتصل الآن</a>
+        <div class="card" id="sharp" style="border-right-color: #000;">
+            <h2>صيانة شارب</h2>
+            <p>أفضل خدمة صيانة لأجهزة شارب بالإسكندرية. نضمن لك عودة جهازك لحالته الأصلية في نفس اليوم.</p>
+            <a href="tel:01278885772" onclick="return gtag_report_conversion('tel:01278885772');" class="call-button">
+                <i class="fas fa-phone-alt"></i> اتصل الآن
+            </a>
+            <div class="footer-links">
+                <a href="https://www.facebook.com/HomeCare.Alex2" target="_blank" class="footer-btn fb-btn">
+                    <i class="fab fa-facebook"></i> فيسبوك
+                </a>
+                <a href="https://maps.google.com/?q=الإسكندرية" target="_blank" class="footer-btn map-btn">
+                    <i class="fas fa-map-marker-alt"></i> الموقع
+                </a>
+            </div>
         </div>
 
-        <div class="card" id="fresh" style="border-right-color: #009640;">
-            <h2 style="color: #009640;">صيانة فريش</h2>
-            <p>صيانة أجهزة فريش (غسالات، ثلاجات، بوتجازات) بقطع غيار أصلية.</p>
-            <a href="tel:01278885772" onclick="return gtag_report_conversion('tel:01278885772');" class="call-button">اتصل الآن</a>
         </div>
 
-        <div class="card" id="sharp" style="border-right-color: #ff0000;">
-            <h2 style="color: #ff0000;">صيانة شارب</h2>
-            <p>خدمة صيانة شارب المتميزة للتكييفات والثلاجات بالإسكندرية.</p>
-            <a href="tel:01278885772" onclick="return gtag_report_conversion('tel:01278885772');" class="call-button">اتصل الآن</a>
-        </div>
+    <footer>
+        <p><strong>إخلاء مسؤولية:</strong> نحن مركز صيانة حر ومستقل بالإسكندرية. العلامات التجارية المذكورة ملك لأصحابها ولا ندعي الوكالة الحصرية لهم، نحن نقدم خدمة صيانة احترافية بضماننا الخاص.</p>
+        <p>© جميع الحقوق محفوظة لهوم كير الإسكندرية 2026</p>
+    </footer>
 
-        <div class="card" id="universal">
-            <h2>صيانة يونيفرسال</h2>
-            <p>صيانة متخصصة لجميع أجهزة يونيفرسال بضمان معتمد.</p>
-            <a href="tel:01278885772" onclick="return gtag_report_conversion('tel:01278885772');" class="call-button">اتصل الآن</a>
-        </div>
-
-        <div class="card" id="beko">
-            <h2>صيانة بيكو</h2>
-            <p>مركز صيانة بيكو بالإسكندرية - قطع غيار تركية أصلية.</p>
-            <a href="tel:01278885772" onclick="return gtag_report_conversion('tel:01278885772');" class="call-button">اتصل الآن</a>
-        </div>
-        
-        </div>
 </body>
 </html>
