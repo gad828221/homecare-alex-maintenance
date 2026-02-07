@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>هوم كير للإصلاح المنزلي | صيانة الإسكندرية المعتمدة</title>
+    <title>هوم كير للإصلاح المنزلي | مركز صيانة الإسكندرية المعتمد</title>
     
     <script async src="https://www.googletagmanager.com/gtag/js?id=AW-16866300615"></script>
     <script>
@@ -20,88 +20,86 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --primary: #003366; --accent: #ffcc00; --green: #2ecc71; --fb: #1877f2; --map: #ea4335; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; color: #333; direction: rtl; text-align: right; }
+        :root { --primary: #003366; --accent: #ffcc00; --green: #2ecc71; --fb: #1877f2; --map: #ea4335; --text: #333; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #f0f2f5; color: var(--text); direction: rtl; }
         
-        /* هيدر جذاب */
-        header { background: linear-gradient(rgba(0,51,102,0.8), rgba(0,51,102,0.8)), url('https://images.unsplash.com/photo-1626806819282-2c1dc01a5e0c?auto=format&fit=crop&w=1200'); background-size: cover; color: white; padding: 50px 20px; text-align: center; }
-        header h1 { font-size: 2.2rem; margin: 0; }
+        /* الهيدر العصري */
+        header { background: linear-gradient(rgba(0,51,102,0.9), rgba(0,51,102,0.9)), url('https://images.unsplash.com/photo-1581092921461-7d15ce8905fe?auto=format&fit=crop&w=1200') no-repeat center/cover; color: white; padding: 60px 20px; text-align: center; }
+        header h1 { font-size: 2.5rem; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        header p { font-size: 1.2rem; opacity: 0.9; margin-top: 10px; }
 
-        .container { max-width: 900px; margin: -30px auto 30px; padding: 0 15px; }
+        .container { max-width: 1000px; margin: -40px auto 40px; padding: 0 15px; }
         
-        .card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.1); margin-bottom: 30px; border-bottom: 5px solid var(--primary); }
-        .card-img { width: 100%; height: 200px; object-fit: cover; }
-        .card-body { padding: 25px; }
+        .card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-bottom: 40px; }
+        .card-image { width: 100%; height: 250px; object-fit: cover; }
         
-        .brand-name { color: var(--primary); font-size: 1.8rem; font-weight: bold; margin-bottom: 15px; display: block; }
+        .card-content { padding: 30px; }
+        .brand-badge { background: var(--primary); color: white; padding: 5px 15px; border-radius: 50px; font-size: 0.9rem; display: inline-block; margin-bottom: 15px; }
+        .card h2 { font-size: 1.8rem; color: var(--primary); margin: 0 0 15px; }
         
-        /* زر الاتصال الكبير */
-        .call-btn { display: flex; align-items: center; justify-content: center; gap: 10px; background: var(--green); color: white; text-decoration: none; padding: 18px; border-radius: 12px; font-size: 1.6rem; font-weight: bold; margin: 20px 0; box-shadow: 0 4px 10px rgba(46,204,113,0.4); }
+        /* نموذج طلب الخدمة الاحترافي */
+        .order-box { background: #f8f9fa; padding: 20px; border-radius: 15px; border: 1px solid #e1e4e8; margin: 25px 0; }
+        .order-box h3 { margin-top: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
+        .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
+        .btn-order { background: var(--primary); color: white; border: none; width: 100%; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-order:hover { background: #002244; }
 
-        /* نموذج طلب الخدمة */
-        .order-form { background: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #eee; margin-bottom: 20px; }
-        .order-form h3 { margin-top: 0; font-size: 1.2rem; color: #444; margin-bottom: 15px; }
-        .input-group { margin-bottom: 10px; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; }
-        .submit-btn { background: var(--primary); color: white; border: none; width: 100%; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
-
-        /* أزرار السوشيال والماب */
-        .social-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .s-btn { padding: 12px; border-radius: 8px; color: white; text-decoration: none; text-align: center; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px; }
-
-        footer { background: #1a202c; color: #a0aec0; padding: 30px 20px; text-align: center; font-size: 0.85rem; }
+        /* أزرار الاتصال والتواصل */
+        .call-btn { display: flex; align-items: center; justify-content: center; gap: 10px; background: var(--green); color: white; text-decoration: none; padding: 18px; border-radius: 12px; font-size: 1.5rem; font-weight: bold; box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3); }
+        
+        .social-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .social-link { padding: 12px; text-align: center; border-radius: 10px; color: white; text-decoration: none; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>هوم كير للإصلاح المنزلي</h1>
-        <p>مركز الصيانة الأول المعتمد في الإسكندرية</p>
+        <h1>مركز صيانة هوم كير المعتمد</h1>
+        <p>خبراء الصيانة المنزلية في الإسكندرية لجميع الماركات العالمية</p>
     </header>
 
     <div class="container">
-        
         <div class="card" id="samsung">
-            <img src="https://images.unsplash.com/photo-1550645612-83f5d594b671?auto=format&fit=crop&w=800" class="card-img" alt="صيانة أجهزة">
-            <div class="card-body">
-                <span class="brand-name">صيانة سامسونج الإسكندرية</span>
-                <p>صيانة فورية بالمنزل لغسالات وثلاجات سامسونج بأحدث المعدات وقطع غيار أصلية.</p>
+            <img src="https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=800" class="card-image" alt="Samsung Maintenance">
+            <div class="card-content">
+                <span class="brand-badge">SAMSUNG</span>
+                <h2>صيانة سامسونج - خدمة 24 ساعة</h2>
+                <p>نقدم خدمة احترافية لصيانة غسالات وثلاجات سامسونج بقطع غيار أصلية 100% وفريق عمل متخصص يصلك لباب البيت.</p>
 
                 <a href="tel:01278885772" onclick="return gtag_report_conversion('tel:01278885772');" class="call-btn">
-                    <i class="fas fa-phone-alt"></i> اتصل اطلب الخدمة
+                    <i class="fas fa-phone-alt"></i> اتصل اطلب الخدمة الآن
                 </a>
 
-                <div class="order-form">
-                    <h3><i class="fas fa-pen-alt"></i> طلب خدمة سريع</h3>
-                    <div class="input-group"><input type="text" placeholder="اسم العميل"></div>
-                    <div class="input-group"><input type="tel" placeholder="رقم الموبايل"></div>
-                    <div class="input-group">
-                        <select>
-                            <option>نوع الجهاز</option>
-                            <option>غسالة</option>
-                            <option>ثلاجة</option>
-                            <option>ديب فريزر</option>
-                        </select>
+                <div class="order-box">
+                    <h3><i class="fas fa-tools"></i> سجل طلب صيانة سريع</h3>
+                    <div class="input-row">
+                        <input type="text" placeholder="الاسم الكريم">
+                        <input type="tel" placeholder="رقم الهاتف">
                     </div>
-                    <button class="submit-btn" onclick="alert('تم استلام طلبك، سنتصل بك خلال دقائق')">إرسال الطلب</button>
+                    <select style="margin-bottom: 10px;">
+                        <option>اختر الجهاز (غسالة - ثلاجة - تكييف)</option>
+                        <option>غسالة سامسونج</option>
+                        <option>ثلاجة سامسونج</option>
+                    </select>
+                    <button class="btn-order">إرسال طلب الصيانة</button>
                 </div>
 
-                <div class="social-row">
-                    <a href="https://www.facebook.com/share/1GEfEefjHg/" target="_blank" class="s-btn" style="background: var(--fb);">
-                        <i class="fab fa-facebook"></i> فيسبوك
+                <div class="social-grid">
+                    <a href="https://www.facebook.com/share/1GEfEefjHg/" target="_blank" class="social-link" style="background: var(--fb);">
+                        <i class="fab fa-facebook"></i> الفيسبوك
                     </a>
-                    <a href="https://share.google/NokLoNeTme9jwIOoZ" target="_blank" class="s-btn" style="background: var(--map);">
+                    <a href="https://share.google/NokLoNeTme9jwIOoZ" target="_blank" class="social-link" style="background: var(--map);">
                         <i class="fas fa-map-marker-alt"></i> الموقع
                     </a>
                 </div>
             </div>
         </div>
+    </div>
 
-        </div>
-
-    <footer>
-        <p><strong>تنبيه قانوني:</strong> نحن مركز صيانة حر ومستقل. الأسماء التجارية تخص أصحابها ونحن نقدم خدمة الإصلاح بضماننا الخاص.</p>
-        <p>جميع الحقوق محفوظة © هوم كير الإسكندرية 2026</p>
+    <footer style="background: #1e293b; color: white; padding: 40px 20px; text-align: center;">
+        <p>جميع الحقوق محفوظة هوم كير الإسكندرية © 2026</p>
+        <p style="font-size: 0.8rem; opacity: 0.7;">إخلاء مسؤولية: نحن مركز خدمة مستقل ونوفر قطع غيار أصلية بضماننا الخاص.</p>
     </footer>
 
 </body>
