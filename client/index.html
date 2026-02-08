@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>هوم كير للإصلاح المنزلي | مركز صيانة الإسكندرية المعتمد</title>
+    <title>صيانة الأجهزة المنزلية بالإسكندرية | ثلاجات غسالات مكيفات سخانات</title>
+    <meta name="description" content="خدمات صيانة احترافية بالإسكندرية لجميع الأجهزة المنزلية. صيانة ثلاجات، غسالات، مكيفات، سخانات، بوتاجاز. استجابة سريعة 24/7" />
+    <meta name="keywords" content="صيانة الثلاجات، صيانة الغسالات، صيانة المكيفات، صيانة السخانات، الإسكندرية، مصر" />
+    <meta name="author" content="شركة متخصصة للصيانة" />
     
     <script async src="https://www.googletagmanager.com/gtag/js?id=AW-16866300615"></script>
     <script>
@@ -50,22 +53,25 @@
         
         .social-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
         .social-link { padding: 12px; text-align: center; border-radius: 10px; color: white; text-decoration: none; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        
+        /* Disclaimer */
+        .disclaimer { background: #f0f4f8; border-right: 4px solid var(--primary); padding: 15px; border-radius: 8px; margin-top: 20px; font-size: 0.85rem; line-height: 1.6; color: #555; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>مركز صيانة هوم كير المعتمد</h1>
-        <p>خبراء الصيانة المنزلية في الإسكندرية لجميع الماركات العالمية</p>
+        <h1>مركز صيانة متخصص بالإسكندرية</h1>
+        <p>خدمات صيانة احترافية لجميع الأجهزة المنزلية - ثلاجات، غسالات، مكيفات، سخانات، بوتاجاز</p>
     </header>
 
     <div class="container">
-        <div class="card" id="samsung">
-            <img src="https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=800" class="card-image" alt="Samsung Maintenance">
+        <div class="card" id="services">
+            <img src="https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=800" class="card-image" alt="صيانة الأجهزة المنزلية">
             <div class="card-content">
-                <span class="brand-badge">SAMSUNG</span>
-                <h2>صيانة سامسونج - خدمة 24 ساعة</h2>
-                <p>نقدم خدمة احترافية لصيانة غسالات وثلاجات سامسونج بقطع غيار أصلية 100% وفريق عمل متخصص يصلك لباب البيت.</p>
+                <span class="brand-badge">خدمات متخصصة</span>
+                <h2>صيانة احترافية لجميع الأجهزة - خدمة 24 ساعة</h2>
+                <p>نقدم خدمة احترافية لصيانة جميع أنواع الأجهزة المنزلية بما فيها الثلاجات والغسالات والمكيفات والسخانات والبوتاجاز. فريق عمل متخصص يصل إلى باب البيت مع قطع غيار موثوقة وضمان الجودة.</p>
 
                 <a href="tel:01278885772" onclick="return gtag_report_conversion('tel:01278885772');" class="call-btn">
                     <i class="fas fa-phone-alt"></i> اتصل اطلب الخدمة الآن
@@ -78,11 +84,18 @@
                         <input type="tel" placeholder="رقم الهاتف">
                     </div>
                     <select style="margin-bottom: 10px;">
-                        <option>اختر الجهاز (غسالة - ثلاجة - تكييف)</option>
-                        <option>غسالة سامسونج</option>
-                        <option>ثلاجة سامسونج</option>
+                        <option>اختر الجهاز</option>
+                        <option>صيانة ثلاجة</option>
+                        <option>صيانة غسالة</option>
+                        <option>صيانة مكيف</option>
+                        <option>صيانة سخان</option>
+                        <option>صيانة بوتاجاز</option>
                     </select>
                     <button class="btn-order">إرسال طلب الصيانة</button>
+                </div>
+
+                <div class="disclaimer">
+                    <strong>تنويه هام:</strong> نحن شركة متخصصة مستقلة في صيانة الأجهزة المنزلية. لسنا تابعين أو ممثلين رسميين لأي ماركات. نقدم خدمات صيانة احترافية لجميع الماركات والموديلات بقطع غيار موثوقة وفريق فني مدرب.
                 </div>
 
                 <div class="social-grid">
@@ -98,8 +111,10 @@
     </div>
 
     <footer style="background: #1e293b; color: white; padding: 40px 20px; text-align: center;">
-        <p>جميع الحقوق محفوظة هوم كير الإسكندرية © 2026</p>
-        <p style="font-size: 0.8rem; opacity: 0.7;">إخلاء مسؤولية: نحن مركز خدمة مستقل ونوفر قطع غيار أصلية بضماننا الخاص.</p>
+        <p>جميع الحقوق محفوظة شركة الصيانة المتخصصة © 2026</p>
+        <p style="font-size: 0.8rem; opacity: 0.9; margin-top: 15px; line-height: 1.6;">
+            <strong>إخلاء مسؤولية:</strong> نحن شركة متخصصة مستقلة لا نمثل أي ماركة رسمية. نقدم خدمات صيانة احترافية لجميع الماركات والموديلات بقطع غيار موثوقة وضمان الجودة.
+        </p>
     </footer>
 
 </body>

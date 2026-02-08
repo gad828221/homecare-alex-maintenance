@@ -49,8 +49,22 @@ export default function Footer() {
 
         {/* Divider */}
         <div className="border-t border-gray-700 pt-8">
-          <div className="text-center text-gray-400 text-sm">
+          <div className="text-center text-gray-400 text-sm mb-6">
             <p>&copy; 2026 أسرع صيانة بالإسكندرية. جميع الحقوق محفوظة.</p>
+          </div>
+
+          {/* Professional Disclaimer */}
+          <div className="bg-slate-800 rounded-lg p-4 text-xs text-gray-300 leading-relaxed">
+            <p className="font-semibold text-white mb-2">تنويه هام:</p>
+            <p className="mb-2">
+              نحن شركة متخصصة مستقلة في صيانة الأجهزة المنزلية. نقدم خدمات صيانة احترافية وإصلاح لجميع أنواع الأجهزة المنزلية بما في ذلك الثلاجات والغسالات والمكيفات والسخانات والبوتاجاز وغسالات الأطباق. 
+            </p>
+            <p className="mb-2">
+              نحن لسنا تابعين أو ممثلين رسميين لأي ماركات أو شركات مصنعة. خدماتنا متاحة لجميع الماركات والموديلات المختلفة. جميع الخدمات المقدمة من قبل فنيين مدربين وذوي خبرة في مجال الصيانة والإصلاح.
+            </p>
+            <p>
+              نلتزم بأعلى معايير الجودة والاحترافية في كل خدمة نقدمها. يتم استخدام قطع غيار أصلية وموثوقة في جميع عمليات الإصلاح والاستبدال.
+            </p>
           </div>
         </div>
       </div>
