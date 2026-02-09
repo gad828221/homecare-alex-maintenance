@@ -83,6 +83,30 @@
 <a href="https://wa.me/201558625259" target="_blank" rel="noopener noreferrer" class="nav-item"><i class="fa-brands fa-whatsapp"></i> واتساب</a>
 </div>
 
-<script>function sendOrder(){const n=document.getElementById("name").value.trim(),t=document.getElementById("type").value,b=document.getElementById("brand").value,p=document.getElementById("problem").value.trim(),a=document.getElementById("address").value.trim(),tel=document.getElementById("tel").value.trim();if(!n||!tel){alert("يرجى إدخال الاسم ورقم الموبايل على الأقل");return}let m=`مرحبا MaintenanceGuide 👋%0A%0Aاسمي: ${encodeURIComponent(n)}%0Aالجهاز: ${encodeURIComponent(t)}`;if(b)m+=`%0Aالماركة: ${encodeURIComponent(b)}`;if(p)m+=`%0Aوصف العطل: ${encodeURIComponent(p)}`;if(a)m+=`%0Aالعنوان: ${encodeURIComponent(a)}`;m+=`%0Aرقمي: \( {encodeURIComponent(tel)}%0A%0Aأرجو الرد بأسرع وقت. شكراً!`;window.open(`https://wa.me/201558625259?text= \){m}`,"_blank")}</script>
+<script>
+function sendOrder(){
+  const n = document.getElementById("name").value.trim(),
+        t = document.getElementById("type").value,
+        b = document.getElementById("brand").value,
+        p = document.getElementById("problem").value.trim(),
+        a = document.getElementById("address").value.trim(),
+        tel = document.getElementById("tel").value.trim();
+
+  if(!n || !tel){
+    alert("يرجى إدخال الاسم ورقم الموبايل على الأقل");
+    return;
+  }
+
+  let m = `مرحبا MaintenanceGuide 👋%0A%0Aاسمي: ${encodeURIComponent(n)}%0Aالجهاز: ${encodeURIComponent(t)}`;
+
+  if(b) m += `%0Aالماركة: ${encodeURIComponent(b)}`;
+  if(p) m += `%0Aوصف العطل: ${encodeURIComponent(p)}`;
+  if(a) m += `%0Aالعنوان: ${encodeURIComponent(a)}`;
+
+  m += `%0Aرقمي: ${encodeURIComponent(tel)}%0A%0Aأرجو الرد بأسرع وقت. شكراً!`;
+
+  window.open(`https://wa.me/201558625259?text=${m}`,"_blank");
+}
+</script>
 </body>
 </html>
