@@ -675,2189 +675,6 @@
         }
         
         @keyframes pulse {
-            0%, 100        
-        header::after {
-            content: "⚙️";
-            position: absolute;
-            right: -20px;
-            bottom: -30px;
-            font-size: 150px;
-            opacity: 0.1;
-            transform: rotate(15deg);
-        }
-        
-        .logo {
-            font-size: 3rem;
-            font-weight: 900;
-            letter-spacing: -1px;
-            margin-bottom: 10px;
-            position: relative;
-            display: inline-block;
-        }
-        
-        .logo span {
-            color: var(--accent);
-            position: relative;
-        }
-        
-        .logo span::after {
-            content: '';
-            position: absolute;
-            bottom: 5px;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: var(--accent);
-            border-radius: 2px;
-        }
-        
-        header p {
-            font-size: 1.25rem;
-            font-weight: 700;
-            opacity: 0.95;
-            max-width: 800px;
-            margin: 0 auto;
-            line-height: 1.6;
-        }
-        
-        /* ========== CTA الرئيسي - قوي ومضبوط ========== */
-        .cta-main {
-            background: linear-gradient(145deg, var(--accent), var(--accent-light));
-            color: white;
-            padding: 20px 30px;
-            border-radius: 60px;
-            text-align: center;
-            font-size: 1.5rem;
-            font-weight: 900;
-            margin: 25px 0 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            box-shadow: 0 15px 30px rgba(255, 95, 31, 0.35);
-            cursor: pointer;
-            border: none;
-            width: 100%;
-            transition: 0.3s;
-            border: 1px solid rgba(255,255,255,0.2);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .cta-main::before {
-            content: "🎯";
-            position: absolute;
-            right: -10px;
-            top: -10px;
-            font-size: 60px;
-            opacity: 0.2;
-            transform: rotate(15deg);
-        }
-        
-        .cta-main i {
-            font-size: 1.8rem;
-        }
-        
-        .cta-main:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 25px 45px rgba(255, 95, 31, 0.45);
-        }
-        
-        /* ========== كروت الخدمات - 4 كروت زى الصورة ========== */
-        .section-title {
-            color: var(--primary);
-            font-size: 2rem;
-            font-weight: 900;
-            text-align: center;
-            margin-bottom: 30px;
-            position: relative;
-            padding-bottom: 15px;
-        }
-        
-        .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            height: 5px;
-            background: var(--accent);
-            border-radius: 3px;
-        }
-        
-        .services-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 25px;
-            margin: 30px 0 50px;
-        }
-        
-        .service-card {
-            background: white;
-            border-radius: var(--border-radius);
-            overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            transition: 0.4s;
-            border: 1px solid rgba(0,0,0,0.02);
-            position: relative;
-        }
-        
-        .service-card:hover {
-            transform: translateY(-12px);
-            box-shadow: 0 25px 45px rgba(0,0,0,0.12);
-        }
-        
-        .card-icon {
-            background: linear-gradient(145deg, #F1F5F9, #FFFFFF);
-            height: 160px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 4.2rem;
-            color: var(--primary);
-            border-bottom: 5px solid var(--accent);
-            position: relative;
-        }
-        
-        .card-icon i {
-            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1));
-        }
-        
-        .card-content {
-            padding: 25px 20px;
-        }
-        
-        .card-content h3 {
-            color: var(--primary);
-            font-size: 1.4rem;
-            font-weight: 800;
-            margin-bottom: 12px;
-            border-right: 5px solid var(--accent);
-            padding-right: 15px;
-        }
-        
-        .card-content p {
-            color: var(--gray);
-            font-size: 1rem;
-            line-height: 1.7;
-        }
-        
-        .card-content ul {
-            list-style: none;
-            margin-top: 10px;
-        }
-        
-        .card-content li {
-            color: var(--gray);
-            font-size: 0.95rem;
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .card-content li i {
-            color: var(--accent);
-            font-size: 0.8rem;
-        }
-        
-        /* ========== قسم الماركات - شامل جداً ========== */
-        .brands-section {
-            background: white;
-            border-radius: 35px;
-            padding: 45px 40px;
-            margin: 50px 0;
-            box-shadow: var(--shadow);
-            border: 1px solid rgba(0,0,0,0.03);
-        }
-        
-        .brands-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-        
-        .brands-header h2 {
-            color: var(--primary);
-            font-size: 2rem;
-            font-weight: 900;
-            margin-bottom: 15px;
-        }
-        
-        .brands-header p {
-            color: var(--gray);
-            font-size: 1.2rem;
-            font-weight: 600;
-        }
-        
-        .brands-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 25px;
-        }
-        
-        .brand-item {
-            background: #F8FAFC;
-            padding: 25px;
-            border-radius: 20px;
-            border-right: 6px solid var(--accent);
-            transition: 0.3s;
-        }
-        
-        .brand-item:hover {
-            background: white;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-            transform: translateX(-5px);
-        }
-        
-        .brand-item strong {
-            color: var(--primary);
-            font-size: 1.25rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .brand-item strong i {
-            color: var(--accent);
-            font-size: 1.3rem;
-        }
-        
-        .brand-item p {
-            color: var(--gray);
-            line-height: 1.7;
-            margin-bottom: 10px;
-        }
-        
-        .brand-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 12px;
-        }
-        
-        .brand-tag {
-            background: rgba(255, 95, 31, 0.1);
-            color: var(--accent);
-            padding: 5px 12px;
-            border-radius: 30px;
-            font-size: 0.8rem;
-            font-weight: 700;
-        }
-        
-        /* ========== التنويه القانوني ========== */
-        .legal-notice {
-            background: linear-gradient(145deg, #FFF8E7, #FFF3E0);
-            padding: 30px;
-            border-radius: 25px;
-            margin: 40px 0;
-            border-right: 8px solid var(--accent);
-            box-shadow: 0 10px 25px rgba(255,95,31,0.08);
-        }
-        
-        .legal-notice strong {
-            color: var(--primary);
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 15px;
-        }
-        
-        .legal-notice strong i {
-            color: var(--accent);
-            font-size: 1.5rem;
-        }
-        
-        .legal-notice p {
-            color: #5D4037;
-            line-height: 1.8;
-            font-size: 1rem;
-        }
-        
-        /* ========== قسم الخريطة ========== */
-        .map-section {
-            background: white;
-            border-radius: 30px;
-            padding: 40px;
-            text-align: center;
-            margin: 40px 0;
-            box-shadow: var(--shadow);
-        }
-        
-        .map-section h3 {
-            color: var(--primary);
-            font-size: 1.8rem;
-            font-weight: 900;
-            margin-bottom: 15px;
-        }
-        
-        .map-section p {
-            color: var(--gray);
-            font-size: 1.1rem;
-            margin-bottom: 25px;
-        }
-        
-        .map-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            background: linear-gradient(145deg, var(--call), #4D94FF);
-            color: white;
-            padding: 18px 40px;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 800;
-            font-size: 1.2rem;
-            transition: 0.3s;
-            box-shadow: 0 15px 30px rgba(0,102,255,0.25);
-        }
-        
-        .map-btn:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0,102,255,0.35);
-        }
-        
-        .map-btn i {
-            font-size: 1.3rem;
-        }
-        
-        /* ========== نموذج الحجز - كامل جداً ========== */
-        .booking-section {
-            background: linear-gradient(145deg, var(--primary), #0E2E4A);
-            border-radius: 45px;
-            padding: 50px 45px;
-            color: white;
-            margin: 60px 0 150px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .booking-section::before {
-            content: "🛠️";
-            position: absolute;
-            bottom: -20px;
-            left: -20px;
-            font-size: 200px;
-            opacity: 0.08;
-            transform: rotate(-10deg);
-        }
-        
-        .booking-section::after {
-            content: "🔧";
-            position: absolute;
-            top: -30px;
-            right: -30px;
-            font-size: 200px;
-            opacity: 0.08;
-            transform: rotate(15deg);
-        }
-        
-        .booking-section h2 {
-            text-align: center;
-            font-size: 2.2rem;
-            font-weight: 900;
-            margin-bottom: 35px;
-            position: relative;
-        }
-        
-        .booking-section h2 i {
-            color: var(--accent);
-            margin-left: 10px;
-        }
-        
-        .form-row {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-        }
-        
-        .form-group {
-            margin-bottom: 18px;
-        }
-        
-        .form-control {
-            width: 100%;
-            padding: 18px 22px;
-            border-radius: 18px;
-            border: 2px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.08);
-            color: white;
-            font-size: 1rem;
-            font-family: 'Cairo', sans-serif;
-            transition: 0.3s;
-            backdrop-filter: blur(8px);
-        }
-        
-        .form-control:focus {
-            outline: none;
-            border-color: var(--accent);
-            background: rgba(255,255,255,0.15);
-            box-shadow: 0 0 0 5px rgba(255,95,31,0.15);
-        }
-        
-        .form-control::placeholder {
-            color: rgba(255,255,255,0.7);
-        }
-        
-        .form-control option {
-            background: var(--primary);
-            color: white;
-            padding: 15px;
-        }
-        
-        select.form-control {
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23ffffff' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: left 20px center;
-            background-size: 16px;
-        }
-        
-        textarea.form-control {
-            min-height: 120px;
-            resize: vertical;
-        }
-        
-        .submit-btn {
-            background: linear-gradient(145deg, var(--success), #20BA5F);
-            color: white;
-            padding: 20px 30px;
-            border-radius: 60px;
-            font-size: 1.3rem;
-            font-weight: 900;
-            width: 100%;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
-            transition: 0.3s;
-            box-shadow: 0 15px 30px rgba(37,211,102,0.3);
-            border: 1px solid rgba(255,255,255,0.2);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .submit-btn::before {
-            content: "⚡";
-            position: absolute;
-            right: -10px;
-            top: -15px;
-            font-size: 50px;
-            opacity: 0.2;
-        }
-        
-        .submit-btn:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 25px 45px rgba(37,211,102,0.4);
-        }
-        
-        .booking-footer {
-            text-align: center;
-            margin-top: 25px;
-            opacity: 0.9;
-            font-size: 0.95rem;
-        }
-        
-        .booking-footer i {
-            color: var(--accent);
-            margin-left: 5px;
-        }
-        
-        /* ========== الإحصائيات ========== */
-        .stats-section {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin: 40px 0;
-        }
-        
-        .stat-item {
-            background: white;
-            padding: 25px;
-            border-radius: 25px;
-            text-align: center;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.04);
-            border: 1px solid rgba(0,0,0,0.02);
-        }
-        
-        .stat-item i {
-            font-size: 2.5rem;
-            color: var(--accent);
-            margin-bottom: 10px;
-        }
-        
-        .stat-number {
-            font-size: 1.8rem;
-            font-weight: 900;
-            color: var(--primary);
-            line-height: 1.2;
-        }
-        
-        .stat-label {
-            color: var(--gray);
-            font-size: 1rem;
-            font-weight: 600;
-        }
-        
-        /* ========== أزرار الفلوتنج - ثنائية ========== */
-        .floating-buttons {
-            position: fixed;
-            bottom: 110px;
-            left: 25px;
-            right: 25px;
-            display: flex;
-            justify-content: space-between;
-            z-index: 9999;
-            pointer-events: none;
-        }
-        
-        .float-btn {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.2rem;
-            color: white;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
-            pointer-events: auto;
-            transition: 0.3s;
-            position: relative;
-            animation: pulse 2.5s infinite;
-        }
-        
-        .float-btn:hover {
-            transform: scale(1.15);
-        }
-        
-        .btn-wa {
-            background: linear-gradient(145deg, var(--success), #128C7E);
-        }
-        
-        .btn-call {
-            background: linear-gradient(145deg, var(--call), #0047B3);
-        }
-        
-        @keyframes pulse {
-            0%, 100            overflow: hidden;
-        }
-        
-        .cta-main::before {
-            content: "🎯";
-            position: absolute;
-            right: -10px;
-            top: -10px;
-            font-size: 60px;
-            opacity: 0.2;
-            transform: rotate(15deg);
-        }
-        
-        .cta-main i {
-            font-size: 1.8rem;
-        }
-        
-        .cta-main:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 25px 45px rgba(255, 95, 31, 0.45);
-        }
-        
-        /* ========== كروت الخدمات - 4 كروت زى الصورة ========== */
-        .section-title {
-            color: var(--primary);
-            font-size: 2rem;
-            font-weight: 900;
-            text-align: center;
-            margin-bottom: 30px;
-            position: relative;
-            padding-bottom: 15px;
-        }
-        
-        .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            height: 5px;
-            background: var(--accent);
-            border-radius: 3px;
-        }
-        
-        .services-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 25px;
-            margin: 30px 0 50px;
-        }
-        
-        .service-card {
-            background: white;
-            border-radius: var(--border-radius);
-            overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            transition: 0.4s;
-            border: 1px solid rgba(0,0,0,0.02);
-            position: relative;
-        }
-        
-        .service-card:hover {
-            transform: translateY(-12px);
-            box-shadow: 0 25px 45px rgba(0,0,0,0.12);
-        }
-        
-        .card-icon {
-            background: linear-gradient(145deg, #F1F5F9, #FFFFFF);
-            height: 160px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 4.2rem;
-            color: var(--primary);
-            border-bottom: 5px solid var(--accent);
-            position: relative;
-        }
-        
-        .card-icon i {
-            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1));
-        }
-        
-        .card-content {
-            padding: 25px 20px;
-        }
-        
-        .card-content h3 {
-            color: var(--primary);
-            font-size: 1.4rem;
-            font-weight: 800;
-            margin-bottom: 12px;
-            border-right: 5px solid var(--accent);
-            padding-right: 15px;
-        }
-        
-        .card-content p {
-            color: var(--gray);
-            font-size: 1rem;
-            line-height: 1.7;
-        }
-        
-        .card-content ul {
-            list-style: none;
-            margin-top: 10px;
-        }
-        
-        .card-content li {
-            color: var(--gray);
-            font-size: 0.95rem;
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .card-content li i {
-            color: var(--accent);
-            font-size: 0.8rem;
-        }
-        
-        /* ========== قسم الماركات - شامل جداً ========== */
-        .brands-section {
-            background: white;
-            border-radius: 35px;
-            padding: 45px 40px;
-            margin: 50px 0;
-            box-shadow: var(--shadow);
-            border: 1px solid rgba(0,0,0,0.03);
-        }
-        
-        .brands-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-        
-        .brands-header h2 {
-            color: var(--primary);
-            font-size: 2rem;
-            font-weight: 900;
-            margin-bottom: 15px;
-        }
-        
-        .brands-header p {
-            color: var(--gray);
-            font-size: 1.2rem;
-            font-weight: 600;
-        }
-        
-        .brands-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 25px;
-        }
-        
-        .brand-item {
-            background: #F8FAFC;
-            padding: 25px;
-            border-radius: 20px;
-            border-right: 6px solid var(--accent);
-            transition: 0.3s;
-        }
-        
-        .brand-item:hover {
-            background: white;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-            transform: translateX(-5px);
-        }
-        
-        .brand-item strong {
-            color: var(--primary);
-            font-size: 1.25rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .brand-item strong i {
-            color: var(--accent);
-            font-size: 1.3rem;
-        }
-        
-        .brand-item p {
-            color: var(--gray);
-            line-height: 1.7;
-            margin-bottom: 10px;
-        }
-        
-        .brand-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 12px;
-        }
-        
-        .brand-tag {
-            background: rgba(255, 95, 31, 0.1);
-            color: var(--accent);
-            padding: 5px 12px;
-            border-radius: 30px;
-            font-size: 0.8rem;
-            font-weight: 700;
-        }
-        
-        /* ========== التنويه القانوني ========== */
-        .legal-notice {
-            background: linear-gradient(145deg, #FFF8E7, #FFF3E0);
-            padding: 30px;
-            border-radius: 25px;
-            margin: 40px 0;
-            border-right: 8px solid var(--accent);
-            box-shadow: 0 10px 25px rgba(255,95,31,0.08);
-        }
-        
-        .legal-notice strong {
-            color: var(--primary);
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 15px;
-        }
-        
-        .legal-notice strong i {
-            color: var(--accent);
-            font-size: 1.5rem;
-        }
-        
-        .legal-notice p {
-            color: #5D4037;
-            line-height: 1.8;
-            font-size: 1rem;
-        }
-        
-        /* ========== قسم الخريطة ========== */
-        .map-section {
-            background: white;
-            border-radius: 30px;
-            padding: 40px;
-            text-align: center;
-            margin: 40px 0;
-            box-shadow: var(--shadow);
-        }
-        
-        .map-section h3 {
-            color: var(--primary);
-            font-size: 1.8rem;
-            font-weight: 900;
-            margin-bottom: 15px;
-        }
-        
-        .map-section p {
-            color: var(--gray);
-            font-size: 1.1rem;
-            margin-bottom: 25px;
-        }
-        
-        .map-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            background: linear-gradient(145deg, var(--call), #4D94FF);
-            color: white;
-            padding: 18px 40px;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 800;
-            font-size: 1.2rem;
-            transition: 0.3s;
-            box-shadow: 0 15px 30px rgba(0,102,255,0.25);
-        }
-        
-        .map-btn:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0,102,255,0.35);
-        }
-        
-        .map-btn i {
-            font-size: 1.3rem;
-        }
-        
-        /* ========== نموذج الحجز - كامل جداً ========== */
-        .booking-section {
-            background: linear-gradient(145deg, var(--primary), #0E2E4A);
-            border-radius: 45px;
-            padding: 50px 45px;
-            color: white;
-            margin: 60px 0 150px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .booking-section::before {
-            content: "🛠️";
-            position: absolute;
-            bottom: -20px;
-            left: -20px;
-            font-size: 200px;
-            opacity: 0.08;
-            transform: rotate(-10deg);
-        }
-        
-        .booking-section::after {
-            content: "🔧";
-            position: absolute;
-            top: -30px;
-            right: -30px;
-            font-size: 200px;
-            opacity: 0.08;
-            transform: rotate(15deg);
-        }
-        
-        .booking-section h2 {
-            text-align: center;
-            font-size: 2.2rem;
-            font-weight: 900;
-            margin-bottom: 35px;
-            position: relative;
-        }
-        
-        .booking-section h2 i {
-            color: var(--accent);
-            margin-left: 10px;
-        }
-        
-        .form-row {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-        }
-        
-        .form-group {
-            margin-bottom: 18px;
-        }
-        
-        .form-control {
-            width: 100%;
-            padding: 18px 22px;
-            border-radius: 18px;
-            border: 2px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.08);
-            color: white;
-            font-size: 1rem;
-            font-family: 'Cairo', sans-serif;
-            transition: 0.3s;
-            backdrop-filter: blur(8px);
-        }
-        
-        .form-control:focus {
-            outline: none;
-            border-color: var(--accent);
-            background: rgba(255,255,255,0.15);
-            box-shadow: 0 0 0 5px rgba(255,95,31,0.15);
-        }
-        
-        .form-control::placeholder {
-            color: rgba(255,255,255,0.7);
-        }
-        
-        .form-control option {
-            background: var(--primary);
-            color: white;
-            padding: 15px;
-        }
-        
-        select.form-control {
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23ffffff' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: left 20px center;
-            background-size: 16px;
-        }
-        
-        textarea.form-control {
-            min-height: 120px;
-            resize: vertical;
-        }
-        
-        .submit-btn {
-            background: linear-gradient(145deg, var(--success), #20BA5F);
-            color: white;
-            padding: 20px 30px;
-            border-radius: 60px;
-            font-size: 1.3rem;
-            font-weight: 900;
-            width: 100%;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
-            transition: 0.3s;
-            box-shadow: 0 15px 30px rgba(37,211,102,0.3);
-            border: 1px solid rgba(255,255,255,0.2);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .submit-btn::before {
-            content: "⚡";
-            position: absolute;
-            right: -10px;
-            top: -15px;
-            font-size: 50px;
-            opacity: 0.2;
-        }
-        
-        .submit-btn:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 25px 45px rgba(37,211,102,0.4);
-        }
-        
-        .booking-footer {
-            text-align: center;
-            margin-top: 25px;
-            opacity: 0.9;
-            font-size: 0.95rem;
-        }
-        
-        .booking-footer i {
-            color: var(--accent);
-            margin-left: 5px;
-        }
-        
-        /* ========== الإحصائيات ========== */
-        .stats-section {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin: 40px 0;
-        }
-        
-        .stat-item {
-            background: white;
-            padding: 25px;
-            border-radius: 25px;
-            text-align: center;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.04);
-            border: 1px solid rgba(0,0,0,0.02);
-        }
-        
-        .stat-item i {
-            font-size: 2.5rem;
-            color: var(--accent);
-            margin-bottom: 10px;
-        }
-        
-        .stat-number {
-            font-size: 1.8rem;
-            font-weight: 900;
-            color: var(--primary);
-            line-height: 1.2;
-        }
-        
-        .stat-label {
-            color: var(--gray);
-            font-size: 1rem;
-            font-weight: 600;
-        }
-        
-        /* ========== أزرار الفلوتنج - ثنائية ========== */
-        .floating-buttons {
-            position: fixed;
-            bottom: 110px;
-            left: 25px;
-            right: 25px;
-            display: flex;
-            justify-content: space-between;
-            z-index: 9999;
-            pointer-events: none;
-        }
-        
-        .float-btn {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.2rem;
-            color: white;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
-            pointer-events: auto;
-            transition: 0.3s;
-            position: relative;
-            animation: pulse 2.5s infinite;
-        }
-        
-        .float-btn:hover {
-            transform: scale(1.15);
-        }
-        
-        .btn-wa {
-            background: linear-gradient(145deg, var(--success), #128C7E);
-        }
-        
-        .btn-call {
-            background: linear-gradient(145deg, var(--call), #0047B3);
-        }
-        
-        @keyframes pulse {
-            0%, 100        
-        header::after {
-            content: "⚙️";
-            position: absolute;
-            right: -20px;
-            bottom: -30px;
-            font-size: 150px;
-            opacity: 0.1;
-            transform: rotate(15deg);
-        }
-        
-        .logo {
-            font-size: 3rem;
-            font-weight: 900;
-            letter-spacing: -1px;
-            margin-bottom: 10px;
-            position: relative;
-            display: inline-block;
-        }
-        
-        .logo span {
-            color: var(--accent);
-            position: relative;
-        }
-        
-        .logo span::after {
-            content: '';
-            position: absolute;
-            bottom: 5px;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: var(--accent);
-            border-radius: 2px;
-        }
-        
-        header p {
-            font-size: 1.25rem;
-            font-weight: 700;
-            opacity: 0.95;
-            max-width: 800px;
-            margin: 0 auto;
-            line-height: 1.6;
-        }
-        
-        /* ========== CTA الرئيسي - قوي ومضبوط ========== */
-        .cta-main {
-            background: linear-gradient(145deg, var(--accent), var(--accent-light));
-            color: white;
-            padding: 20px 30px;
-            border-radius: 60px;
-            text-align: center;
-            font-size: 1.5rem;
-            font-weight: 900;
-            margin: 25px 0 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            box-shadow: 0 15px 30px rgba(255, 95, 31, 0.35);
-            cursor: pointer;
-            border: none;
-            width: 100%;
-            transition: 0.3s;
-            border: 1px solid rgba(255,255,255,0.2);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .cta-main::before {
-            content: "🎯";
-            position: absolute;
-            right: -10px;
-            top: -10px;
-            font-size: 60px;
-            opacity: 0.2;
-            transform: rotate(15deg);
-        }
-        
-        .cta-main i {
-            font-size: 1.8rem;
-        }
-        
-        .cta-main:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 25px 45px rgba(255, 95, 31, 0.45);
-        }
-        
-        /* ========== كروت الخدمات - 4 كروت زى الصورة ========== */
-        .section-title {
-            color: var(--primary);
-            font-size: 2rem;
-            font-weight: 900;
-            text-align: center;
-            margin-bottom: 30px;
-            position: relative;
-            padding-bottom: 15px;
-        }
-        
-        .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            height: 5px;
-            background: var(--accent);
-            border-radius: 3px;
-        }
-        
-        .services-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 25px;
-            margin: 30px 0 50px;
-        }
-        
-        .service-card {
-            background: white;
-            border-radius: var(--border-radius);
-            overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            transition: 0.4s;
-            border: 1px solid rgba(0,0,0,0.02);
-            position: relative;
-        }
-        
-        .service-card:hover {
-            transform: translateY(-12px);
-            box-shadow: 0 25px 45px rgba(0,0,0,0.12);
-        }
-        
-        .card-icon {
-            background: linear-gradient(145deg, #F1F5F9, #FFFFFF);
-            height: 160px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 4.2rem;
-            color: var(--primary);
-            border-bottom: 5px solid var(--accent);
-            position: relative;
-        }
-        
-        .card-icon i {
-            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1));
-        }
-        
-        .card-content {
-            padding: 25px 20px;
-        }
-        
-        .card-content h3 {
-            color: var(--primary);
-            font-size: 1.4rem;
-            font-weight: 800;
-            margin-bottom: 12px;
-            border-right: 5px solid var(--accent);
-            padding-right: 15px;
-        }
-        
-        .card-content p {
-            color: var(--gray);
-            font-size: 1rem;
-            line-height: 1.7;
-        }
-        
-        .card-content ul {
-            list-style: none;
-            margin-top: 10px;
-        }
-        
-        .card-content li {
-            color: var(--gray);
-            font-size: 0.95rem;
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .card-content li i {
-            color: var(--accent);
-            font-size: 0.8rem;
-        }
-        
-        /* ========== قسم الماركات - شامل جداً ========== */
-        .brands-section {
-            background: white;
-            border-radius: 35px;
-            padding: 45px 40px;
-            margin: 50px 0;
-            box-shadow: var(--shadow);
-            border: 1px solid rgba(0,0,0,0.03);
-        }
-        
-        .brands-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-        
-        .brands-header h2 {
-            color: var(--primary);
-            font-size: 2rem;
-            font-weight: 900;
-            margin-bottom: 15px;
-        }
-        
-        .brands-header p {
-            color: var(--gray);
-            font-size: 1.2rem;
-            font-weight: 600;
-        }
-        
-        .brands-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 25px;
-        }
-        
-        .brand-item {
-            background: #F8FAFC;
-            padding: 25px;
-            border-radius: 20px;
-            border-right: 6px solid var(--accent);
-            transition: 0.3s;
-        }
-        
-        .brand-item:hover {
-            background: white;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-            transform: translateX(-5px);
-        }
-        
-        .brand-item strong {
-            color: var(--primary);
-            font-size: 1.25rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .brand-item strong i {
-            color: var(--accent);
-            font-size: 1.3rem;
-        }
-        
-        .brand-item p {
-            color: var(--gray);
-            line-height: 1.7;
-            margin-bottom: 10px;
-        }
-        
-        .brand-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 12px;
-        }
-        
-        .brand-tag {
-            background: rgba(255, 95, 31, 0.1);
-            color: var(--accent);
-            padding: 5px 12px;
-            border-radius: 30px;
-            font-size: 0.8rem;
-            font-weight: 700;
-        }
-        
-        /* ========== التنويه القانوني ========== */
-        .legal-notice {
-            background: linear-gradient(145deg, #FFF8E7, #FFF3E0);
-            padding: 30px;
-            border-radius: 25px;
-            margin: 40px 0;
-            border-right: 8px solid var(--accent);
-            box-shadow: 0 10px 25px rgba(255,95,31,0.08);
-        }
-        
-        .legal-notice strong {
-            color: var(--primary);
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 15px;
-        }
-        
-        .legal-notice strong i {
-            color: var(--accent);
-            font-size: 1.5rem;
-        }
-        
-        .legal-notice p {
-            color: #5D4037;
-            line-height: 1.8;
-            font-size: 1rem;
-        }
-        
-        /* ========== قسم الخريطة ========== */
-        .map-section {
-            background: white;
-            border-radius: 30px;
-            padding: 40px;
-            text-align: center;
-            margin: 40px 0;
-            box-shadow: var(--shadow);
-        }
-        
-        .map-section h3 {
-            color: var(--primary);
-            font-size: 1.8rem;
-            font-weight: 900;
-            margin-bottom: 15px;
-        }
-        
-        .map-section p {
-            color: var(--gray);
-            font-size: 1.1rem;
-            margin-bottom: 25px;
-        }
-        
-        .map-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            background: linear-gradient(145deg, var(--call), #4D94FF);
-            color: white;
-            padding: 18px 40px;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 800;
-            font-size: 1.2rem;
-            transition: 0.3s;
-            box-shadow: 0 15px 30px rgba(0,102,255,0.25);
-        }
-        
-        .map-btn:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0,102,255,0.35);
-        }
-        
-        .map-btn i {
-            font-size: 1.3rem;
-        }
-        
-        /* ========== نموذج الحجز - كامل جداً ========== */
-        .booking-section {
-            background: linear-gradient(145deg, var(--primary), #0E2E4A);
-            border-radius: 45px;
-            padding: 50px 45px;
-            color: white;
-            margin: 60px 0 150px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .booking-section::before {
-            content: "🛠️";
-            position: absolute;
-            bottom: -20px;
-            left: -20px;
-            font-size: 200px;
-            opacity: 0.08;
-            transform: rotate(-10deg);
-        }
-        
-        .booking-section::after {
-            content: "🔧";
-            position: absolute;
-            top: -30px;
-            right: -30px;
-            font-size: 200px;
-            opacity: 0.08;
-            transform: rotate(15deg);
-        }
-        
-        .booking-section h2 {
-            text-align: center;
-            font-size: 2.2rem;
-            font-weight: 900;
-            margin-bottom: 35px;
-            position: relative;
-        }
-        
-        .booking-section h2 i {
-            color: var(--accent);
-            margin-left: 10px;
-        }
-        
-        .form-row {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-        }
-        
-        .form-group {
-            margin-bottom: 18px;
-        }
-        
-        .form-control {
-            width: 100%;
-            padding: 18px 22px;
-            border-radius: 18px;
-            border: 2px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.08);
-            color: white;
-            font-size: 1rem;
-            font-family: 'Cairo', sans-serif;
-            transition: 0.3s;
-            backdrop-filter: blur(8px);
-        }
-        
-        .form-control:focus {
-            outline: none;
-            border-color: var(--accent);
-            background: rgba(255,255,255,0.15);
-            box-shadow: 0 0 0 5px rgba(255,95,31,0.15);
-        }
-        
-        .form-control::placeholder {
-            color: rgba(255,255,255,0.7);
-        }
-        
-        .form-control option {
-            background: var(--primary);
-            color: white;
-            padding: 15px;
-        }
-        
-        select.form-control {
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23ffffff' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: left 20px center;
-            background-size: 16px;
-        }
-        
-        textarea.form-control {
-            min-height: 120px;
-            resize: vertical;
-        }
-        
-        .submit-btn {
-            background: linear-gradient(145deg, var(--success), #20BA5F);
-            color: white;
-            padding: 20px 30px;
-            border-radius: 60px;
-            font-size: 1.3rem;
-            font-weight: 900;
-            width: 100%;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
-            transition: 0.3s;
-            box-shadow: 0 15px 30px rgba(37,211,102,0.3);
-            border: 1px solid rgba(255,255,255,0.2);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .submit-btn::before {
-            content: "⚡";
-            position: absolute;
-            right: -10px;
-            top: -15px;
-            font-size: 50px;
-            opacity: 0.2;
-        }
-        
-        .submit-btn:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 25px 45px rgba(37,211,102,0.4);
-        }
-        
-        .booking-footer {
-            text-align: center;
-            margin-top: 25px;
-            opacity: 0.9;
-            font-size: 0.95rem;
-        }
-        
-        .booking-footer i {
-            color: var(--accent);
-            margin-left: 5px;
-        }
-        
-        /* ========== الإحصائيات ========== */
-        .stats-section {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin: 40px 0;
-        }
-        
-        .stat-item {
-            background: white;
-            padding: 25px;
-            border-radius: 25px;
-            text-align: center;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.04);
-            border: 1px solid rgba(0,0,0,0.02);
-        }
-        
-        .stat-item i {
-            font-size: 2.5rem;
-            color: var(--accent);
-            margin-bottom: 10px;
-        }
-        
-        .stat-number {
-            font-size: 1.8rem;
-            font-weight: 900;
-            color: var(--primary);
-            line-height: 1.2;
-        }
-        
-        .stat-label {
-            color: var(--gray);
-            font-size: 1rem;
-            font-weight: 600;
-        }
-        
-        /* ========== أزرار الفلوتنج - ثنائية ========== */
-        .floating-buttons {
-            position: fixed;
-            bottom: 110px;
-            left: 25px;
-            right: 25px;
-            display: flex;
-            justify-content: space-between;
-            z-index: 9999;
-            pointer-events: none;
-        }
-        
-        .float-btn {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.2rem;
-            color: white;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
-            pointer-events: auto;
-            transition: 0.3s;
-            position: relative;
-            animation: pulse 2.5s infinite;
-        }
-        
-        .float-btn:hover {
-            transform: scale(1.15);
-        }
-        
-        .btn-wa {
-            background: linear-gradient(145deg, var(--success), #128C7E);
-        }
-        
-        .btn-call {
-            background: linear-gradient(145deg, var(--call), #0047B3);
-        }
-        
-        @keyframes pulse {
-            0%, 100            position: absolute;
-            right: -20px;
-            bottom: -30px;
-            font-size: 150px;
-            opacity: 0.1;
-            transform: rotate(15deg);
-        }
-        
-        .logo {
-            font-size: 3rem;
-            font-weight: 900;
-            letter-spacing: -1px;
-            margin-bottom: 10px;
-            position: relative;
-            display: inline-block;
-        }
-        
-        .logo span {
-            color: var(--accent);
-            position: relative;
-        }
-        
-        .logo span::after {
-            content: '';
-            position: absolute;
-            bottom: 5px;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: var(--accent);
-            border-radius: 2px;
-        }
-        
-        header p {
-            font-size: 1.25rem;
-            font-weight: 700;
-            opacity: 0.95;
-            max-width: 800px;
-            margin: 0 auto;
-            line-height: 1.6;
-        }
-        
-        /* ========== CTA الرئيسي - قوي ومضبوط ========== */
-        .cta-main {
-            background: linear-gradient(145deg, var(--accent), var(--accent-light));
-            color: white;
-            padding: 20px 30px;
-            border-radius: 60px;
-            text-align: center;
-            font-size: 1.5rem;
-            font-weight: 900;
-            margin: 25px 0 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            box-shadow: 0 15px 30px rgba(255, 95, 31, 0.35);
-            cursor: pointer;
-            border: none;
-            width: 100%;
-            transition: 0.3s;
-            border: 1px solid rgba(255,255,255,0.2);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .cta-main::before {
-            content: "🎯";
-            position: absolute;
-            right: -10px;
-            top: -10px;
-            font-size: 60px;
-            opacity: 0.2;
-            transform: rotate(15deg);
-        }
-        
-        .cta-main i {
-            font-size: 1.8rem;
-        }
-        
-        .cta-main:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 25px 45px rgba(255, 95, 31, 0.45);
-        }
-        
-        /* ========== كروت الخدمات - 4 كروت زى الصورة ========== */
-        .section-title {
-            color: var(--primary);
-            font-size: 2rem;
-            font-weight: 900;
-            text-align: center;
-            margin-bottom: 30px;
-            position: relative;
-            padding-bottom: 15px;
-        }
-        
-        .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            height: 5px;
-            background: var(--accent);
-            border-radius: 3px;
-        }
-        
-        .services-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 25px;
-            margin: 30px 0 50px;
-        }
-        
-        .service-card {
-            background: white;
-            border-radius: var(--border-radius);
-            overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            transition: 0.4s;
-            border: 1px solid rgba(0,0,0,0.02);
-            position: relative;
-        }
-        
-        .service-card:hover {
-            transform: translateY(-12px);
-            box-shadow: 0 25px 45px rgba(0,0,0,0.12);
-        }
-        
-        .card-icon {
-            background: linear-gradient(145deg, #F1F5F9, #FFFFFF);
-            height: 160px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 4.2rem;
-            color: var(--primary);
-            border-bottom: 5px solid var(--accent);
-            position: relative;
-        }
-        
-        .card-icon i {
-            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1));
-        }
-        
-        .card-content {
-            padding: 25px 20px;
-        }
-        
-        .card-content h3 {
-            color: var(--primary);
-            font-size: 1.4rem;
-            font-weight: 800;
-            margin-bottom: 12px;
-            border-right: 5px solid var(--accent);
-            padding-right: 15px;
-        }
-        
-        .card-content p {
-            color: var(--gray);
-            font-size: 1rem;
-            line-height: 1.7;
-        }
-        
-        .card-content ul {
-            list-style: none;
-            margin-top: 10px;
-        }
-        
-        .card-content li {
-            color: var(--gray);
-            font-size: 0.95rem;
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .card-content li i {
-            color: var(--accent);
-            font-size: 0.8rem;
-        }
-        
-        /* ========== قسم الماركات - شامل جداً ========== */
-        .brands-section {
-            background: white;
-            border-radius: 35px;
-            padding: 45px 40px;
-            margin: 50px 0;
-            box-shadow: var(--shadow);
-            border: 1px solid rgba(0,0,0,0.03);
-        }
-        
-        .brands-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-        
-        .brands-header h2 {
-            color: var(--primary);
-            font-size: 2rem;
-            font-weight: 900;
-            margin-bottom: 15px;
-        }
-        
-        .brands-header p {
-            color: var(--gray);
-            font-size: 1.2rem;
-            font-weight: 600;
-        }
-        
-        .brands-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 25px;
-        }
-        
-        .brand-item {
-            background: #F8FAFC;
-            padding: 25px;
-            border-radius: 20px;
-            border-right: 6px solid var(--accent);
-            transition: 0.3s;
-        }
-        
-        .brand-item:hover {
-            background: white;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-            transform: translateX(-5px);
-        }
-        
-        .brand-item strong {
-            color: var(--primary);
-            font-size: 1.25rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .brand-item strong i {
-            color: var(--accent);
-            font-size: 1.3rem;
-        }
-        
-        .brand-item p {
-            color: var(--gray);
-            line-height: 1.7;
-            margin-bottom: 10px;
-        }
-        
-        .brand-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 12px;
-        }
-        
-        .brand-tag {
-            background: rgba(255, 95, 31, 0.1);
-            color: var(--accent);
-            padding: 5px 12px;
-            border-radius: 30px;
-            font-size: 0.8rem;
-            font-weight: 700;
-        }
-        
-        /* ========== التنويه القانوني ========== */
-        .legal-notice {
-            background: linear-gradient(145deg, #FFF8E7, #FFF3E0);
-            padding: 30px;
-            border-radius: 25px;
-            margin: 40px 0;
-            border-right: 8px solid var(--accent);
-            box-shadow: 0 10px 25px rgba(255,95,31,0.08);
-        }
-        
-        .legal-notice strong {
-            color: var(--primary);
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 15px;
-        }
-        
-        .legal-notice strong i {
-            color: var(--accent);
-            font-size: 1.5rem;
-        }
-        
-        .legal-notice p {
-            color: #5D4037;
-            line-height: 1.8;
-            font-size: 1rem;
-        }
-        
-        /* ========== قسم الخريطة ========== */
-        .map-section {
-            background: white;
-            border-radius: 30px;
-            padding: 40px;
-            text-align: center;
-            margin: 40px 0;
-            box-shadow: var(--shadow);
-        }
-        
-        .map-section h3 {
-            color: var(--primary);
-            font-size: 1.8rem;
-            font-weight: 900;
-            margin-bottom: 15px;
-        }
-        
-        .map-section p {
-            color: var(--gray);
-            font-size: 1.1rem;
-            margin-bottom: 25px;
-        }
-        
-        .map-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            background: linear-gradient(145deg, var(--call), #4D94FF);
-            color: white;
-            padding: 18px 40px;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 800;
-            font-size: 1.2rem;
-            transition: 0.3s;
-            box-shadow: 0 15px 30px rgba(0,102,255,0.25);
-        }
-        
-        .map-btn:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0,102,255,0.35);
-        }
-        
-        .map-btn i {
-            font-size: 1.3rem;
-        }
-        
-        /* ========== نموذج الحجز - كامل جداً ========== */
-        .booking-section {
-            background: linear-gradient(145deg, var(--primary), #0E2E4A);
-            border-radius: 45px;
-            padding: 50px 45px;
-            color: white;
-            margin: 60px 0 150px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .booking-section::before {
-            content: "🛠️";
-            position: absolute;
-            bottom: -20px;
-            left: -20px;
-            font-size: 200px;
-            opacity: 0.08;
-            transform: rotate(-10deg);
-        }
-        
-        .booking-section::after {
-            content: "🔧";
-            position: absolute;
-            top: -30px;
-            right: -30px;
-            font-size: 200px;
-            opacity: 0.08;
-            transform: rotate(15deg);
-        }
-        
-        .booking-section h2 {
-            text-align: center;
-            font-size: 2.2rem;
-            font-weight: 900;
-            margin-bottom: 35px;
-            position: relative;
-        }
-        
-        .booking-section h2 i {
-            color: var(--accent);
-            margin-left: 10px;
-        }
-        
-        .form-row {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-        }
-        
-        .form-group {
-            margin-bottom: 18px;
-        }
-        
-        .form-control {
-            width: 100%;
-            padding: 18px 22px;
-            border-radius: 18px;
-            border: 2px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.08);
-            color: white;
-            font-size: 1rem;
-            font-family: 'Cairo', sans-serif;
-            transition: 0.3s;
-            backdrop-filter: blur(8px);
-        }
-        
-        .form-control:focus {
-            outline: none;
-            border-color: var(--accent);
-            background: rgba(255,255,255,0.15);
-            box-shadow: 0 0 0 5px rgba(255,95,31,0.15);
-        }
-        
-        .form-control::placeholder {
-            color: rgba(255,255,255,0.7);
-        }
-        
-        .form-control option {
-            background: var(--primary);
-            color: white;
-            padding: 15px;
-        }
-        
-        select.form-control {
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23ffffff' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: left 20px center;
-            background-size: 16px;
-        }
-        
-        textarea.form-control {
-            min-height: 120px;
-            resize: vertical;
-        }
-        
-        .submit-btn {
-            background: linear-gradient(145deg, var(--success), #20BA5F);
-            color: white;
-            padding: 20px 30px;
-            border-radius: 60px;
-            font-size: 1.3rem;
-            font-weight: 900;
-            width: 100%;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
-            transition: 0.3s;
-            box-shadow: 0 15px 30px rgba(37,211,102,0.3);
-            border: 1px solid rgba(255,255,255,0.2);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .submit-btn::before {
-            content: "⚡";
-            position: absolute;
-            right: -10px;
-            top: -15px;
-            font-size: 50px;
-            opacity: 0.2;
-        }
-        
-        .submit-btn:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 25px 45px rgba(37,211,102,0.4);
-        }
-        
-        .booking-footer {
-            text-align: center;
-            margin-top: 25px;
-            opacity: 0.9;
-            font-size: 0.95rem;
-        }
-        
-        .booking-footer i {
-            color: var(--accent);
-            margin-left: 5px;
-        }
-        
-        /* ========== أزرار الفلوتنج - ثنائية ========== */
-        .floating-buttons {
-            position: fixed;
-            bottom: 110px;
-            left: 25px;
-            right: 25px;
-            display: flex;
-            justify-content: space-between;
-            z-index: 9999;
-            pointer-events: none;
-        }
-        
-        .float-btn {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.2rem;
-            color: white;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
-            pointer-events: auto;
-            transition: 0.3s;
-            position: relative;
-            animation: pulse 2.5s infinite;
-        }
-        
-        .float-btn:hover {
-            transform: scale(1.15);
-        }
-        
-        .btn-wa {
-            background: linear-gradient(145deg, var(--success), #128C7E);
-        }
-        
-        .btn-call {
-            background: linear-gradient(145deg, var(--call), #0047B3);
-        }
-        
-        @keyframes pulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.08); }
         }
@@ -2897,4 +714,477 @@
         }
         
         .nav-link i {
-          
+            font-size: 1.6rem;
+            margin-bottom: 3px;
+        }
+        
+        .nav-link:hover {
+            background: rgba(255,95,31,0.9);
+            transform: translateY(-3px);
+        }
+        
+        .nav-link.active {
+            background: var(--accent);
+        }
+        
+        /* ========== زر العودة للأعلى ========== */
+        .back-to-top {
+            position: fixed;
+            bottom: 200px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(255,95,31,0.3);
+            transition: 0.3s;
+            z-index: 9998;
+            opacity: 0.9;
+        }
+        
+        .back-to-top:hover {
+            transform: translateY(-5px);
+            opacity: 1;
+        }
+        
+        /* ========== التجاوب التام مع كل الشاشات ========== */
+        @media (max-width: 1100px) {
+            .services-grid { grid-template-columns: repeat(2, 1fr); }
+            .brands-grid { grid-template-columns: repeat(2, 1fr); }
+            .stats-section { grid-template-columns: repeat(2, 1fr); }
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 15px; }
+            .logo { font-size: 2.5rem; }
+            header p { font-size: 1.1rem; }
+            .cta-main { font-size: 1.2rem; padding: 18px 25px; }
+            .cta-main i { font-size: 1.4rem; }
+            .section-title { font-size: 1.8rem; }
+            .services-grid { grid-template-columns: 1fr; }
+            .brands-section { padding: 30px 25px; }
+            .brands-grid { grid-template-columns: 1fr; }
+            .brands-header h2 { font-size: 1.8rem; }
+            .form-row { grid-template-columns: 1fr; }
+            .booking-section { padding: 35px 25px; }
+            .booking-section h2 { font-size: 1.8rem; }
+            .stats-section { grid-template-columns: repeat(2, 1fr); }
+            .float-btn { width: 60px; height: 60px; font-size: 1.8rem; }
+            .nav-link span { display: none; }
+            .nav-link i { font-size: 1.8rem; margin-bottom: 0; }
+        }
+        
+        @media (max-width: 480px) {
+            .logo { font-size: 2rem; }
+            .cta-main { font-size: 1rem; }
+            .stats-section { grid-template-columns: 1fr; }
+            .floating-buttons { bottom: 90px; }
+            .back-to-top { bottom: 170px; width: 45px; height: 45px; font-size: 1.1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ========== HEADER ========== -->
+<header>
+    <div class="container">
+        <div class="logo">Maintenance<span>Guide</span></div>
+        <p>🔧 صيانة فورية بالمنزل • 24 ساعة • جميع الماركات • الإسكندرية</p>
+    </div>
+</header>
+
+<!-- ========== MAIN CONTAINER ========== -->
+<main class="container">
+
+    <!-- ========== CTA الرئيسي ========== -->
+    <button class="cta-main" onclick="document.getElementById('booking').scrollIntoView({behavior:'smooth'})">
+        <i class="fas fa-calendar-check"></i>
+        احجز موعد صيانة الآن - خصم 15% على أول زيارة
+    </button>
+
+    <!-- ========== خدماتنا - 4 كروت ========== -->
+    <h2 class="section-title">🔨 خدمات الصيانة المتخصصة</h2>
+    
+    <div class="services-grid">
+        <!-- كارت 1: غسالات -->
+        <div class="service-card">
+            <div class="card-icon"><i class="fas fa-soap"></i></div>
+            <div class="card-content">
+                <h3>صيانة الغسالات</h3>
+                <p>سامسونج • LG • توشيبا • زانوسي • شارب</p>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> إصلاح فوري بالمنزل</li>
+                    <li><i class="fas fa-check-circle"></i> قطع غيار أصلية</li>
+                    <li><i class="fas fa-check-circle"></i> ضمان 6 شهور</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- كارت 2: ثلاجات -->
+        <div class="service-card">
+            <div class="card-icon"><i class="fas fa-snowflake"></i></div>
+            <div class="card-content">
+                <h3>صيانة الثلاجات</h3>
+                <p>توشيبا • شارب • زانوسي • كريازي • وايت ويل</p>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> شحن فريون</li>
+                    <li><i class="fas fa-check-circle"></i> إصلاح الضاغط</li>
+                    <li><i class="fas fa-check-circle"></i> تنظيف المكثف</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- كارت 3: تكييفات -->
+        <div class="service-card">
+            <div class="card-icon"><i class="fas fa-wind"></i></div>
+            <div class="card-content">
+                <h3>صيانة التكييفات</h3>
+                <p>يونيون إير • فريش • شارب • LG • سامسونج</p>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> تنظيف شامل</li>
+                    <li><i class="fas fa-check-circle"></i> شحن فريون</li>
+                    <li><i class="fas fa-check-circle"></i> فحص كمبريسور</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- كارت 4: بوتاجاز -->
+        <div class="service-card">
+            <div class="card-icon"><i class="fas fa-fire"></i></div>
+            <div class="card-content">
+                <h3>صيانة البوتاجاز</h3>
+                <p>زانوسي • وايت ويل • فريش • إيديال • أوليمبيك</p>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> إصلاح الشعلات</li>
+                    <li><i class="fas fa-check-circle"></i> صيانة الفرن</li>
+                    <li><i class="fas fa-check-circle"></i> تغيير لمبات</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== قسم الماركات (شامل كل الماركات) ========== -->
+    <div class="brands-section">
+        <div class="brands-header">
+            <h2>✨ الماركات اللي بنصيانها في الإسكندرية</h2>
+            <p>فنيين متخصصين لكل ماركة - خبرة 15+ سنة</p>
+        </div>
+        
+        <div class="brands-grid">
+            <div class="brand-item">
+                <strong><i class="fas fa-check-circle"></i> سامسونج - Samsung</strong>
+                <p>غسالات أوتوماتيك، ثلاجات، تكييفات، مجففات. تشخيص إلكتروني متقدم، قطع غيار أصلية، ضمان على الإصلاح.</p>
+                <div class="brand-tags">
+                    <span class="brand-tag">غسالات</span>
+                    <span class="brand-tag">ثلاجات</span>
+                    <span class="brand-tag">تكييفات</span>
+                </div>
+            </div>
+            
+            <div class="brand-item">
+                <strong><i class="fas fa-check-circle"></i> LG - إل جي</strong>
+                <p>غسالات، ثلاجات، تكييفات. حل مشاكل الرموز (OE, IE, UE)، فحص الحساسات، إصلاح لوحات التحكم.</p>
+                <div class="brand-tags">
+                    <span class="brand-tag">غسالات</span>
+                    <span class="brand-tag">ثلاجات</span>
+                    <span class="brand-tag">تكييفات</span>
+                </div>
+            </div>
+            
+            <div class="brand-item">
+                <strong><i class="fas fa-check-circle"></i> توشيبا - Toshiba</strong>
+                <p>ثلاجات، غسالات، تكييفات. شحن فريون، إصلاح الثرموستات، تنظيف المكثف، صيانة شاملة.</p>
+                <div class="brand-tags">
+                    <span class="brand-tag">ثلاجات</span>
+                    <span class="brand-tag">غسالات</span>
+                    <span class="brand-tag">تكييفات</span>
+                </div>
+            </div>
+            
+            <div class="brand-item">
+                <strong><i class="fas fa-check-circle"></i> شارب - Sharp</strong>
+                <p>ثلاجات، غسالات، تكييفات. إصلاح الضاغط، شحن فريون، صيانة دوائر التبريد.</p>
+                <div class="brand-tags">
+                    <span class="brand-tag">ثلاجات</span>
+                    <span class="brand-tag">غسالات</span>
+                    <span class="brand-tag">تكييفات</span>
+                </div>
+            </div>
+            
+            <div class="brand-item">
+                <strong><i class="fas fa-check-circle"></i> زانوسي - Zanussi</strong>
+                <p>غسالات، ثلاجات، بوتاجاز. صيانة متخصصة، قطع غيار متوافقة، خدمة منزلية سريعة.</p>
+                <div class="brand-tags">
+                    <span class="brand-tag">غسالات</span>
+                    <span class="brand-tag">ثلاجات</span>
+                    <span class="brand-tag">بوتاجاز</span>
+                </div>
+            </div>
+            
+            <div class="brand-item">
+                <strong><i class="fas fa-check-circle"></i> يونيون إير - Unionaire</strong>
+                <p>تكييفات، غسالات، ثلاجات. تنظيف الفلاتر، شحن فريون، فحص الكباسيتور.</p>
+                <div class="brand-tags">
+                    <span class="brand-tag">تكييفات</span>
+                    <span class="brand-tag">غسالات</span>
+                    <span class="brand-tag">ثلاجات</span>
+                </div>
+            </div>
+            
+            <div class="brand-item">
+                <strong><i class="fas fa-check-circle"></i> فريش - Fresh</strong>
+                <p>بوتاجاز، غسالات، ثلاجات، تكييفات. إصلاح الشعلات، صيانة الفرن، قطع غيار أصلية.</p>
+                <div class="brand-tags">
+                    <span class="brand-tag">بوتاجاز</span>
+                    <span class="brand-tag">غسالات</span>
+                    <span class="brand-tag">تكييفات</span>
+                </div>
+            </div>
+            
+            <div class="brand-item">
+                <strong><i class="fas fa-check-circle"></i> وايت ويل - White Whale</strong>
+                <p>غسالات، ثلاجات، بوتاجاز. خدمة شاملة، إصلاح فوري، ضمان الجودة.</p>
+                <div class="brand-tags">
+                    <span class="brand-tag">غسالات</span>
+                    <span class="brand-tag">ثلاجات</span>
+                    <span class="brand-tag">بوتاجاز</span>
+                </div>
+            </div>
+            
+            <div class="brand-item">
+                <strong><i class="fas fa-check-circle"></i> ماركات أخرى</strong>
+                <p>هيتاشي، باناسونيك، بكو، كريازي، إيديال، أوليمبيك، كلفينيتور، وماركات كثيرة غيرها.</p>
+                <div class="brand-tags">
+                    <span class="brand-tag">جميع الماركات</span>
+                    <span class="brand-tag">خدمة 24 ساعة</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== الإحصائيات ========== -->
+    <div class="stats-section">
+        <div class="stat-item">
+            <i class="fas fa-users"></i>
+            <div class="stat-number">15+</div>
+            <div class="stat-label">سنة خبرة</div>
+        </div>
+        <div class="stat-item">
+            <i class="fas fa-tools"></i>
+            <div class="stat-number">12</div>
+            <div class="stat-label">فني متخصص</div>
+        </div>
+        <div class="stat-item">
+            <i class="fas fa-check-circle"></i>
+            <div class="stat-number">5000+</div>
+            <div class="stat-label">جهاز تم إصلاحه</div>
+        </div>
+        <div class="stat-item">
+            <i class="fas fa-star"></i>
+            <div class="stat-number">4.9</div>
+            <div class="stat-label">تقييم العملاء</div>
+        </div>
+    </div>
+
+    <!-- ========== التنويه القانوني ========== -->
+    <div class="legal-notice">
+        <strong><i class="fas fa-balance-scale"></i> تنويه قانوني مهم:</strong>
+        <p>مركز MaintenanceGuide هو مركز صيانة مستقل وغير تابع رسمياً لأي شركة مصنعة. جميع العلامات التجارية (سامسونج، LG، توشيبا، شارب، زانوسي، يونيون إير، فريش، وايت ويل وغيرها) هي ملك لأصحابها الأصليين وتُستخدم هنا فقط للدلالة على الأجهزة التي نقوم بصيانتها. نستخدم قطع غيار متوافقة عالية الجودة أو أصلية عند الطلب، ونقدم ضماناً على أعمال الإصلاح فقط. للصيانة الرسمية المعتمدة من الشركة المصنعة، يُفضل التواصل مع مراكز الخدمة المعتمدة لديهم.</p>
+    </div>
+
+    <!-- ========== موقعنا على الخريطة ========== -->
+    <div class="map-section">
+        <h3><i class="fas fa-map-marker-alt" style="color: var(--accent);"></i> نخدم كل مناطق الإسكندرية</h3>
+        <p>من المنتزة والعجمي وحتى برج العرب والعامرية - فني يصل خلال 60 دقيقة</p>
+        <a href="https://share.google/NokLoNeTme9jwIOoZ" target="_blank" rel="noopener noreferrer" class="map-btn">
+            <i class="fas fa-location-dot"></i> افتح موقعنا على الخريطة
+        </a>
+    </div>
+
+    <!-- ========== نموذج الحجز (كامل جداً) ========== -->
+    <div class="booking-section" id="booking">
+        <h2><i class="fas fa-headset"></i> احجز موعد صيانة فورية</h2>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <input type="text" id="name" class="form-control" placeholder="الاسم الكريم *">
+            </div>
+            <div class="form-group">
+                <input type="tel" id="tel" class="form-control" placeholder="رقم الموبايل *">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <select id="type" class="form-control">
+                    <option value="">اختر نوع الجهاز *</option>
+                    <option value="غسالة أوتوماتيك">غسالة أوتوماتيك</option>
+                    <option value="غسالة نصف أوتوماتيك">غسالة نصف أوتوماتيك</option>
+                    <option value="غسالة صحون">غسالة صحون</option>
+                    <option value="ثلاجة">ثلاجة / فريزر</option>
+                    <option value="تكييف">تكييف هواء</option>
+                    <option value="بوتاجاز">بوتاجاز / فرن</option>
+                    <option value="ميكروويف">ميكروويف</option>
+                    <option value="مجفف ملابس">مجفف ملابس</option>
+                    <option value="أخرى">جهاز آخر</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <select id="brand" class="form-control">
+                    <option value="">اختر الماركة *</option>
+                    <option value="Samsung">Samsung - سامسونج</option>
+                    <option value="LG">LG - إل جي</option>
+                    <option value="Toshiba">Toshiba - توشيبا</option>
+                    <option value="Sharp">Sharp - شارب</option>
+                    <option value="Zanussi">Zanussi - زانوسي</option>
+                    <option value="Unionaire">Unionaire - يونيون إير</option>
+                    <option value="Fresh">Fresh - فريش</option>
+                    <option value="White Whale">White Whale - وايت ويل</option>
+                    <option value="Panasonic">Panasonic - باناسونيك</option>
+                    <option value="Hitachi">Hitachi - هيتاشي</option>
+                    <option value="Beko">Beko - بكو</option>
+                    <option value="Creaz">Creaz - كريازي</option>
+                    <option value="Ideal">Ideal - إيديال</option>
+                    <option value="Olympic">Olympic - أوليمبيك</option>
+                    <option value="Kelvinator">Kelvinator - كلفينيتور</option>
+                    <option value="أخرى">ماركة أخرى</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <textarea id="problem" class="form-control" placeholder="شرح العطل بالتفصيل (مثال: الغسالة بتسرب مياه من تحت - التكييف مش بيبرد)"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <input type="text" id="address" class="form-control" placeholder="العنوان بالتفصيل (الحي + الشارع + رقم العقار)">
+        </div>
+        
+        <button class="submit-btn" onclick="sendOrder()">
+            <i class="fa-brands fa-whatsapp"></i> إرسال الطلب عبر واتساب - رد فوري
+        </button>
+        
+        <div class="booking-footer">
+            <i class="fas fa-shield-alt"></i> فني متخصص يصل خلال 60 دقيقة • ضمان على الإصلاح • قطع غيار أصلية
+        </div>
+    </div>
+
+</main>
+
+<!-- ========== أزرار الفلوتنج ========== -->
+<div class="floating-buttons">
+    <a href="https://wa.me/201558625259?text=مرحباً%20MaintenanceGuide%20👋،%20أحتاج%20خدمة%20صيانة%20فورية" target="_blank" rel="noopener noreferrer" class="float-btn btn-wa">
+        <i class="fa-brands fa-whatsapp"></i>
+    </a>
+    <a href="tel:01278885772" onclick="gtag_report_conversion('tel:01278885772');" class="float-btn btn-call">
+        <i class="fa-solid fa-phone"></i>
+    </a>
+</div>
+
+<!-- ========== الناف بار السفلي - زى الصورة بالظبط ========== -->
+<div class="bottom-nav">
+    <a href="#" class="nav-link">
+        <i class="fas fa-home"></i>
+        <span>الرئيسية</span>
+    </a>
+    <a href="#booking" class="nav-link" onclick="document.getElementById('booking').scrollIntoView({behavior:'smooth'});return false;">
+        <i class="fas fa-calendar-alt"></i>
+        <span>حجز</span>
+    </a>
+    <a href="https://www.facebook.com/share/1DLvCJLHwa/" target="_blank" rel="noopener noreferrer" class="nav-link">
+        <i class="fab fa-facebook"></i>
+        <span>فيسبوك</span>
+    </a>
+    <a href="https://wa.me/201558625259" target="_blank" rel="noopener noreferrer" class="nav-link">
+        <i class="fa-brands fa-whatsapp"></i>
+        <span>واتساب</span>
+    </a>
+</div>
+
+<!-- ========== زر العودة للأعلى ========== -->
+<div class="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+    <i class="fas fa-arrow-up"></i>
+</div>
+
+<!-- ========== جافاسكريبت كامل ========== -->
+<script>
+    // دالة إرسال الطلب عبر واتساب
+    function sendOrder() {
+        const name = document.getElementById("name").value.trim();
+        const tel = document.getElementById("tel").value.trim();
+        const type = document.getElementById("type").value;
+        const brand = document.getElementById("brand").value;
+        const problem = document.getElementById("problem").value.trim();
+        const address = document.getElementById("address").value.trim();
+        
+        // التحقق من الحقول الإجبارية
+        if (!name || !tel) {
+            alert("❌ يرجى إدخال الاسم ورقم الموبايل");
+            return;
+        }
+        
+        if (!type) {
+            alert("❌ يرجى اختيار نوع الجهاز");
+            return;
+        }
+        
+        if (!brand) {
+            alert("❌ يرجى اختيار الماركة");
+            return;
+        }
+        
+        // بناء الرسالة
+        let message = `مرحباً MaintenanceGuide 👋\n\n`;
+        message += `*اسمي:* ${name}\n`;
+        message += `*نوع الجهاز:* ${type}\n`;
+        message += `*الماركة:* ${brand}\n`;
+        
+        if (problem) message += `*وصف العطل:* ${problem}\n`;
+        if (address) message += `*العنوان:* ${address}\n`;
+        
+        message += `*رقمي:* ${tel}\n\n`;
+        message += `أرجو الرد بأسرع وقت. شكراً جزيلاً! 🙏`;
+        
+        // الترميز والفتح
+        const encodedMessage = encodeURIComponent(message);
+        window.open(`https://wa.me/201558625259?text=${encodedMessage}`, "_blank");
+        
+        // تتبع الحدث في جوجل أدز
+        gtag('event', 'whatsapp_booking', {
+            'event_category': 'conversion',
+            'event_label': 'booking_form'
+        });
+    }
+    
+    // دالة تتبع التحويل للمكالمات
+    function gtag_report_conversion(url) {
+        gtag('event', 'conversion', {
+            'send_to': 'AW-16866300615/GZm_CLvUq_QbEMelveo-',
+        });
+        return true;
+    }
+    
+    // تفعيل الرابط النشط في الناف بار
+    document.addEventListener('DOMContentLoaded', function() {
+        const navLinks = document.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                navLinks.forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        // جعل الصفحة الرئيسية active افتراضياً
+        const homeLink = document.querySelector('a[href="#"]');
+        if (homeLink) homeLink.classList.add('active');
+    });
+</script>
+
+</body>
+</html>
