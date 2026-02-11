@@ -675,516 +675,4 @@
         }
         
         @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.08); }
-        }
-        
-        /* ========== الناف بار السفلي - زى الصورة بالظبط ========== */
-        .bottom-nav {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 92%;
-            max-width: 500px;
-            background: rgba(10, 38, 71, 0.95);
-            backdrop-filter: blur(15px);
-            padding: 15px 10px;
-            border-radius: 50px;
-            display: flex;
-            justify-content: space-around;
-            z-index: 10000;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.15);
-        }
-        
-        .nav-link {
-            color: white;
-            text-decoration: none;
-            font-size: 0.95rem;
-            text-align: center;
-            padding: 10px 18px;
-            border-radius: 40px;
-            transition: 0.3s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-            font-weight: 600;
-        }
-        
-        .nav-link i {
-            font-size: 1.6rem;
-            margin-bottom: 3px;
-        }
-        
-        .nav-link:hover {
-            background: rgba(255,95,31,0.9);
-            transform: translateY(-3px);
-        }
-        
-        .nav-link.active {
-            background: var(--accent);
-        }
-        
-        /* ========== زر العودة للأعلى ========== */
-        .back-to-top {
-            position: fixed;
-            bottom: 200px;
-            right: 20px;
-            width: 50px;
-            height: 50px;
-            background: var(--accent);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3rem;
-            cursor: pointer;
-            box-shadow: 0 10px 25px rgba(255,95,31,0.3);
-            transition: 0.3s;
-            z-index: 9998;
-            opacity: 0.9;
-        }
-        
-        .back-to-top:hover {
-            transform: translateY(-5px);
-            opacity: 1;
-        }
-        
-        /* ========== التجاوب التام مع كل الشاشات ========== */
-        @media (max-width: 1100px) {
-            .services-grid { grid-template-columns: repeat(2, 1fr); }
-            .brands-grid { grid-template-columns: repeat(2, 1fr); }
-            .stats-section { grid-template-columns: repeat(2, 1fr); }
-        }
-        
-        @media (max-width: 768px) {
-            .container { padding: 15px; }
-            .logo { font-size: 2.5rem; }
-            header p { font-size: 1.1rem; }
-            .cta-main { font-size: 1.2rem; padding: 18px 25px; }
-            .cta-main i { font-size: 1.4rem; }
-            .section-title { font-size: 1.8rem; }
-            .services-grid { grid-template-columns: 1fr; }
-            .brands-section { padding: 30px 25px; }
-            .brands-grid { grid-template-columns: 1fr; }
-            .brands-header h2 { font-size: 1.8rem; }
-            .form-row { grid-template-columns: 1fr; }
-            .booking-section { padding: 35px 25px; }
-            .booking-section h2 { font-size: 1.8rem; }
-            .stats-section { grid-template-columns: repeat(2, 1fr); }
-            .float-btn { width: 60px; height: 60px; font-size: 1.8rem; }
-            .nav-link span { display: none; }
-            .nav-link i { font-size: 1.8rem; margin-bottom: 0; }
-        }
-        
-        @media (max-width: 480px) {
-            .logo { font-size: 2rem; }
-            .cta-main { font-size: 1rem; }
-            .stats-section { grid-template-columns: 1fr; }
-            .floating-buttons { bottom: 90px; }
-            .back-to-top { bottom: 170px; width: 45px; height: 45px; font-size: 1.1rem; }
-        }
-    </style>
-</head>
-<body>
-
-<!-- ========== HEADER ========== -->
-<header>
-    <div class="container">
-        <div class="logo">Maintenance<span>Guide</span></div>
-        <p>🔧 صيانة فورية بالمنزل • 24 ساعة • جميع الماركات • الإسكندرية</p>
-    </div>
-</header>
-
-<!-- ========== MAIN CONTAINER ========== -->
-<main class="container">
-
-    <!-- ========== CTA الرئيسي ========== -->
-    <button class="cta-main" onclick="document.getElementById('booking').scrollIntoView({behavior:'smooth'})">
-        <i class="fas fa-calendar-check"></i>
-        احجز موعد صيانة الآن - خصم 15% على أول زيارة
-    </button>
-
-    <!-- ========== خدماتنا - 4 كروت ========== -->
-    <h2 class="section-title">🔨 خدمات الصيانة المتخصصة</h2>
-    
-    <div class="services-grid">
-        <!-- كارت 1: غسالات -->
-        <div class="service-card">
-            <div class="card-icon"><i class="fas fa-soap"></i></div>
-            <div class="card-content">
-                <h3>صيانة الغسالات</h3>
-                <p>سامسونج • LG • توشيبا • زانوسي • شارب</p>
-                <ul>
-                    <li><i class="fas fa-check-circle"></i> إصلاح فوري بالمنزل</li>
-                    <li><i class="fas fa-check-circle"></i> قطع غيار أصلية</li>
-                    <li><i class="fas fa-check-circle"></i> ضمان 6 شهور</li>
-                </ul>
-            </div>
-        </div>
-        
-        <!-- كارت 2: ثلاجات -->
-        <div class="service-card">
-            <div class="card-icon"><i class="fas fa-snowflake"></i></div>
-            <div class="card-content">
-                <h3>صيانة الثلاجات</h3>
-                <p>توشيبا • شارب • زانوسي • كريازي • وايت ويل</p>
-                <ul>
-                    <li><i class="fas fa-check-circle"></i> شحن فريون</li>
-                    <li><i class="fas fa-check-circle"></i> إصلاح الضاغط</li>
-                    <li><i class="fas fa-check-circle"></i> تنظيف المكثف</li>
-                </ul>
-            </div>
-        </div>
-        
-        <!-- كارت 3: تكييفات -->
-        <div class="service-card">
-            <div class="card-icon"><i class="fas fa-wind"></i></div>
-            <div class="card-content">
-                <h3>صيانة التكييفات</h3>
-                <p>يونيون إير • فريش • شارب • LG • سامسونج</p>
-                <ul>
-                    <li><i class="fas fa-check-circle"></i> تنظيف شامل</li>
-                    <li><i class="fas fa-check-circle"></i> شحن فريون</li>
-                    <li><i class="fas fa-check-circle"></i> فحص كمبريسور</li>
-                </ul>
-            </div>
-        </div>
-        
-        <!-- كارت 4: بوتاجاز -->
-        <div class="service-card">
-            <div class="card-icon"><i class="fas fa-fire"></i></div>
-            <div class="card-content">
-                <h3>صيانة البوتاجاز</h3>
-                <p>زانوسي • وايت ويل • فريش • إيديال • أوليمبيك</p>
-                <ul>
-                    <li><i class="fas fa-check-circle"></i> إصلاح الشعلات</li>
-                    <li><i class="fas fa-check-circle"></i> صيانة الفرن</li>
-                    <li><i class="fas fa-check-circle"></i> تغيير لمبات</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========== قسم الماركات (شامل كل الماركات) ========== -->
-    <div class="brands-section">
-        <div class="brands-header">
-            <h2>✨ الماركات اللي بنصيانها في الإسكندرية</h2>
-            <p>فنيين متخصصين لكل ماركة - خبرة 15+ سنة</p>
-        </div>
-        
-        <div class="brands-grid">
-            <div class="brand-item">
-                <strong><i class="fas fa-check-circle"></i> سامسونج - Samsung</strong>
-                <p>غسالات أوتوماتيك، ثلاجات، تكييفات، مجففات. تشخيص إلكتروني متقدم، قطع غيار أصلية، ضمان على الإصلاح.</p>
-                <div class="brand-tags">
-                    <span class="brand-tag">غسالات</span>
-                    <span class="brand-tag">ثلاجات</span>
-                    <span class="brand-tag">تكييفات</span>
-                </div>
-            </div>
-            
-            <div class="brand-item">
-                <strong><i class="fas fa-check-circle"></i> LG - إل جي</strong>
-                <p>غسالات، ثلاجات، تكييفات. حل مشاكل الرموز (OE, IE, UE)، فحص الحساسات، إصلاح لوحات التحكم.</p>
-                <div class="brand-tags">
-                    <span class="brand-tag">غسالات</span>
-                    <span class="brand-tag">ثلاجات</span>
-                    <span class="brand-tag">تكييفات</span>
-                </div>
-            </div>
-            
-            <div class="brand-item">
-                <strong><i class="fas fa-check-circle"></i> توشيبا - Toshiba</strong>
-                <p>ثلاجات، غسالات، تكييفات. شحن فريون، إصلاح الثرموستات، تنظيف المكثف، صيانة شاملة.</p>
-                <div class="brand-tags">
-                    <span class="brand-tag">ثلاجات</span>
-                    <span class="brand-tag">غسالات</span>
-                    <span class="brand-tag">تكييفات</span>
-                </div>
-            </div>
-            
-            <div class="brand-item">
-                <strong><i class="fas fa-check-circle"></i> شارب - Sharp</strong>
-                <p>ثلاجات، غسالات، تكييفات. إصلاح الضاغط، شحن فريون، صيانة دوائر التبريد.</p>
-                <div class="brand-tags">
-                    <span class="brand-tag">ثلاجات</span>
-                    <span class="brand-tag">غسالات</span>
-                    <span class="brand-tag">تكييفات</span>
-                </div>
-            </div>
-            
-            <div class="brand-item">
-                <strong><i class="fas fa-check-circle"></i> زانوسي - Zanussi</strong>
-                <p>غسالات، ثلاجات، بوتاجاز. صيانة متخصصة، قطع غيار متوافقة، خدمة منزلية سريعة.</p>
-                <div class="brand-tags">
-                    <span class="brand-tag">غسالات</span>
-                    <span class="brand-tag">ثلاجات</span>
-                    <span class="brand-tag">بوتاجاز</span>
-                </div>
-            </div>
-            
-            <div class="brand-item">
-                <strong><i class="fas fa-check-circle"></i> يونيون إير - Unionaire</strong>
-                <p>تكييفات، غسالات، ثلاجات. تنظيف الفلاتر، شحن فريون، فحص الكباسيتور.</p>
-                <div class="brand-tags">
-                    <span class="brand-tag">تكييفات</span>
-                    <span class="brand-tag">غسالات</span>
-                    <span class="brand-tag">ثلاجات</span>
-                </div>
-            </div>
-            
-            <div class="brand-item">
-                <strong><i class="fas fa-check-circle"></i> فريش - Fresh</strong>
-                <p>بوتاجاز، غسالات، ثلاجات، تكييفات. إصلاح الشعلات، صيانة الفرن، قطع غيار أصلية.</p>
-                <div class="brand-tags">
-                    <span class="brand-tag">بوتاجاز</span>
-                    <span class="brand-tag">غسالات</span>
-                    <span class="brand-tag">تكييفات</span>
-                </div>
-            </div>
-            
-            <div class="brand-item">
-                <strong><i class="fas fa-check-circle"></i> وايت ويل - White Whale</strong>
-                <p>غسالات، ثلاجات، بوتاجاز. خدمة شاملة، إصلاح فوري، ضمان الجودة.</p>
-                <div class="brand-tags">
-                    <span class="brand-tag">غسالات</span>
-                    <span class="brand-tag">ثلاجات</span>
-                    <span class="brand-tag">بوتاجاز</span>
-                </div>
-            </div>
-            
-            <div class="brand-item">
-                <strong><i class="fas fa-check-circle"></i> ماركات أخرى</strong>
-                <p>هيتاشي، باناسونيك، بكو، كريازي، إيديال، أوليمبيك، كلفينيتور، وماركات كثيرة غيرها.</p>
-                <div class="brand-tags">
-                    <span class="brand-tag">جميع الماركات</span>
-                    <span class="brand-tag">خدمة 24 ساعة</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========== الإحصائيات ========== -->
-    <div class="stats-section">
-        <div class="stat-item">
-            <i class="fas fa-users"></i>
-            <div class="stat-number">15+</div>
-            <div class="stat-label">سنة خبرة</div>
-        </div>
-        <div class="stat-item">
-            <i class="fas fa-tools"></i>
-            <div class="stat-number">12</div>
-            <div class="stat-label">فني متخصص</div>
-        </div>
-        <div class="stat-item">
-            <i class="fas fa-check-circle"></i>
-            <div class="stat-number">5000+</div>
-            <div class="stat-label">جهاز تم إصلاحه</div>
-        </div>
-        <div class="stat-item">
-            <i class="fas fa-star"></i>
-            <div class="stat-number">4.9</div>
-            <div class="stat-label">تقييم العملاء</div>
-        </div>
-    </div>
-
-    <!-- ========== التنويه القانوني ========== -->
-    <div class="legal-notice">
-        <strong><i class="fas fa-balance-scale"></i> تنويه قانوني مهم:</strong>
-        <p>مركز MaintenanceGuide هو مركز صيانة مستقل وغير تابع رسمياً لأي شركة مصنعة. جميع العلامات التجارية (سامسونج، LG، توشيبا، شارب، زانوسي، يونيون إير، فريش، وايت ويل وغيرها) هي ملك لأصحابها الأصليين وتُستخدم هنا فقط للدلالة على الأجهزة التي نقوم بصيانتها. نستخدم قطع غيار متوافقة عالية الجودة أو أصلية عند الطلب، ونقدم ضماناً على أعمال الإصلاح فقط. للصيانة الرسمية المعتمدة من الشركة المصنعة، يُفضل التواصل مع مراكز الخدمة المعتمدة لديهم.</p>
-    </div>
-
-    <!-- ========== موقعنا على الخريطة ========== -->
-    <div class="map-section">
-        <h3><i class="fas fa-map-marker-alt" style="color: var(--accent);"></i> نخدم كل مناطق الإسكندرية</h3>
-        <p>من المنتزة والعجمي وحتى برج العرب والعامرية - فني يصل خلال 60 دقيقة</p>
-        <a href="https://share.google/NokLoNeTme9jwIOoZ" target="_blank" rel="noopener noreferrer" class="map-btn">
-            <i class="fas fa-location-dot"></i> افتح موقعنا على الخريطة
-        </a>
-    </div>
-
-    <!-- ========== نموذج الحجز (كامل جداً) ========== -->
-    <div class="booking-section" id="booking">
-        <h2><i class="fas fa-headset"></i> احجز موعد صيانة فورية</h2>
-        
-        <div class="form-row">
-            <div class="form-group">
-                <input type="text" id="name" class="form-control" placeholder="الاسم الكريم *">
-            </div>
-            <div class="form-group">
-                <input type="tel" id="tel" class="form-control" placeholder="رقم الموبايل *">
-            </div>
-        </div>
-        
-        <div class="form-row">
-            <div class="form-group">
-                <select id="type" class="form-control">
-                    <option value="">اختر نوع الجهاز *</option>
-                    <option value="غسالة أوتوماتيك">غسالة أوتوماتيك</option>
-                    <option value="غسالة نصف أوتوماتيك">غسالة نصف أوتوماتيك</option>
-                    <option value="غسالة صحون">غسالة صحون</option>
-                    <option value="ثلاجة">ثلاجة / فريزر</option>
-                    <option value="تكييف">تكييف هواء</option>
-                    <option value="بوتاجاز">بوتاجاز / فرن</option>
-                    <option value="ميكروويف">ميكروويف</option>
-                    <option value="مجفف ملابس">مجفف ملابس</option>
-                    <option value="أخرى">جهاز آخر</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <select id="brand" class="form-control">
-                    <option value="">اختر الماركة *</option>
-                    <option value="Samsung">Samsung - سامسونج</option>
-                    <option value="LG">LG - إل جي</option>
-                    <option value="Toshiba">Toshiba - توشيبا</option>
-                    <option value="Sharp">Sharp - شارب</option>
-                    <option value="Zanussi">Zanussi - زانوسي</option>
-                    <option value="Unionaire">Unionaire - يونيون إير</option>
-                    <option value="Fresh">Fresh - فريش</option>
-                    <option value="White Whale">White Whale - وايت ويل</option>
-                    <option value="Panasonic">Panasonic - باناسونيك</option>
-                    <option value="Hitachi">Hitachi - هيتاشي</option>
-                    <option value="Beko">Beko - بكو</option>
-                    <option value="Creaz">Creaz - كريازي</option>
-                    <option value="Ideal">Ideal - إيديال</option>
-                    <option value="Olympic">Olympic - أوليمبيك</option>
-                    <option value="Kelvinator">Kelvinator - كلفينيتور</option>
-                    <option value="أخرى">ماركة أخرى</option>
-                </select>
-            </div>
-        </div>
-        
-        <div class="form-group">
-            <textarea id="problem" class="form-control" placeholder="شرح العطل بالتفصيل (مثال: الغسالة بتسرب مياه من تحت - التكييف مش بيبرد)"></textarea>
-        </div>
-        
-        <div class="form-group">
-            <input type="text" id="address" class="form-control" placeholder="العنوان بالتفصيل (الحي + الشارع + رقم العقار)">
-        </div>
-        
-        <button class="submit-btn" onclick="sendOrder()">
-            <i class="fa-brands fa-whatsapp"></i> إرسال الطلب عبر واتساب - رد فوري
-        </button>
-        
-        <div class="booking-footer">
-            <i class="fas fa-shield-alt"></i> فني متخصص يصل خلال 60 دقيقة • ضمان على الإصلاح • قطع غيار أصلية
-        </div>
-    </div>
-
-</main>
-
-<!-- ========== أزرار الفلوتنج ========== -->
-<div class="floating-buttons">
-    <a href="https://wa.me/201558625259?text=مرحباً%20MaintenanceGuide%20👋،%20أحتاج%20خدمة%20صيانة%20فورية" target="_blank" rel="noopener noreferrer" class="float-btn btn-wa">
-        <i class="fa-brands fa-whatsapp"></i>
-    </a>
-    <a href="tel:01278885772" onclick="gtag_report_conversion('tel:01278885772');" class="float-btn btn-call">
-        <i class="fa-solid fa-phone"></i>
-    </a>
-</div>
-
-<!-- ========== الناف بار السفلي - زى الصورة بالظبط ========== -->
-<div class="bottom-nav">
-    <a href="#" class="nav-link">
-        <i class="fas fa-home"></i>
-        <span>الرئيسية</span>
-    </a>
-    <a href="#booking" class="nav-link" onclick="document.getElementById('booking').scrollIntoView({behavior:'smooth'});return false;">
-        <i class="fas fa-calendar-alt"></i>
-        <span>حجز</span>
-    </a>
-    <a href="https://www.facebook.com/share/1DLvCJLHwa/" target="_blank" rel="noopener noreferrer" class="nav-link">
-        <i class="fab fa-facebook"></i>
-        <span>فيسبوك</span>
-    </a>
-    <a href="https://wa.me/201558625259" target="_blank" rel="noopener noreferrer" class="nav-link">
-        <i class="fa-brands fa-whatsapp"></i>
-        <span>واتساب</span>
-    </a>
-</div>
-
-<!-- ========== زر العودة للأعلى ========== -->
-<div class="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">
-    <i class="fas fa-arrow-up"></i>
-</div>
-
-<!-- ========== جافاسكريبت كامل ========== -->
-<script>
-    // دالة إرسال الطلب عبر واتساب
-    function sendOrder() {
-        const name = document.getElementById("name").value.trim();
-        const tel = document.getElementById("tel").value.trim();
-        const type = document.getElementById("type").value;
-        const brand = document.getElementById("brand").value;
-        const problem = document.getElementById("problem").value.trim();
-        const address = document.getElementById("address").value.trim();
-        
-        // التحقق من الحقول الإجبارية
-        if (!name || !tel) {
-            alert("❌ يرجى إدخال الاسم ورقم الموبايل");
-            return;
-        }
-        
-        if (!type) {
-            alert("❌ يرجى اختيار نوع الجهاز");
-            return;
-        }
-        
-        if (!brand) {
-            alert("❌ يرجى اختيار الماركة");
-            return;
-        }
-        
-        // بناء الرسالة
-        let message = `مرحباً MaintenanceGuide 👋\n\n`;
-        message += `*اسمي:* ${name}\n`;
-        message += `*نوع الجهاز:* ${type}\n`;
-        message += `*الماركة:* ${brand}\n`;
-        
-        if (problem) message += `*وصف العطل:* ${problem}\n`;
-        if (address) message += `*العنوان:* ${address}\n`;
-        
-        message += `*رقمي:* ${tel}\n\n`;
-        message += `أرجو الرد بأسرع وقت. شكراً جزيلاً! 🙏`;
-        
-        // الترميز والفتح
-        const encodedMessage = encodeURIComponent(message);
-        window.open(`https://wa.me/201558625259?text=${encodedMessage}`, "_blank");
-        
-        // تتبع الحدث في جوجل أدز
-        gtag('event', 'whatsapp_booking', {
-            'event_category': 'conversion',
-            'event_label': 'booking_form'
-        });
-    }
-    
-    // دالة تتبع التحويل للمكالمات
-    function gtag_report_conversion(url) {
-        gtag('event', 'conversion', {
-            'send_to': 'AW-16866300615/GZm_CLvUq_QbEMelveo-',
-        });
-        return true;
-    }
-    
-    // تفعيل الرابط النشط في الناف بار
-    document.addEventListener('DOMContentLoaded', function() {
-        const navLinks = document.querySelectorAll('.nav-link');
-        navLinks.forEach(link => {
-            link.addEventListener('click', function() {
-                navLinks.forEach(l => l.classList.remove('active'));
-                this.classList.add('active');
-            });
-        });
-        
-        // جعل الصفحة الرئيسية active افتراضياً
-        const homeLink = document.querySelector('a[href="#"]');
-        if (homeLink) homeLink.classList.add('active');
-    });
-</script>
-
-</body>
-</html>
+            0%, 100
