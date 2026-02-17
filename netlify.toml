@@ -6,3 +6,11 @@
   from = "/*"
   to = "/index.html"
   status = 200
+[build.processing.css]
+  minify = true
+
+[build.processing.js]
+  minify = true
+
+[build.processing.images]
+  compress = true
