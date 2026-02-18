@@ -1,2 +1,3 @@
 /thalajat.html  /thalajat.html  200
 /ghassalat.html /ghassalat.html 200
+http://maintenanceguide.life/*  https://maintenanceguide.life/:splat  301!
