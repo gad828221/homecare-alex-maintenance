@@ -6,7 +6,7 @@
     <title>مركز صيانة زانوسي المعتمد - MaintenanceGuide</title>
     <meta name="description" content="مركز صيانة زانوسي المعتمد في الإسكندرية. تصليح غسالات، ثلاجات، بوتاجازات زانوسي بمنزلك. قطع غيار أصلية، ضمان على الإصلاح، فنيين خبراء. اتصل الآن.">
     
-    <!-- كود التتبع الموحد (GTAG) -->
+    <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=AW-16866300615"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
@@ -103,41 +103,6 @@
             font-weight: 900;
             margin: 20px 0;
             direction: ltr;
-        }
-        
-        /* ===== أيقونة الحجز السريعة ===== */
-        .quick-booking {
-            display: flex;
-            justify-content: center;
-            margin: 20px 0 30px;
-        }
-        .booking-icon {
-            background: linear-gradient(145deg, var(--accent), #FF8A4F);
-            color: white;
-            padding: 15px 35px;
-            border-radius: 60px;
-            text-decoration: none;
-            font-weight: 900;
-            font-size: 1.4rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
-            box-shadow: 0 10px 25px rgba(255,95,31,0.4);
-            transition: 0.3s;
-            border: 2px solid rgba(255,255,255,0.3);
-            animation: gentle-pulse 2s ease-in-out infinite;
-        }
-        .booking-icon:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 35px rgba(255,95,31,0.6);
-        }
-        .booking-icon i {
-            font-size: 1.8rem;
-        }
-        
-        @keyframes gentle-pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.03); }
         }
         
         .service-grid {
@@ -335,17 +300,17 @@
             color: var(--accent);
         }
         
-        /* ===== القائمة السفلية ===== */
+        /* ===== القائمة السفلية (مختصرة) ===== */
         .bottom-nav {
             position: fixed;
             bottom: 15px;
             left: 50%;
             transform: translateX(-50%);
             width: 95%;
-            max-width: 400px;
+            max-width: 350px;
             background: rgba(10,38,71,0.98);
             backdrop-filter: blur(15px);
-            padding: 14px 12px;
+            padding: 12px 10px;
             border-radius: 45px;
             display: flex;
             justify-content: space-around;
@@ -355,15 +320,15 @@
             color: white;
             text-decoration: none;
             text-align: center;
-            padding: 8px 15px;
+            padding: 6px 12px;
             border-radius: 35px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
-            font-size: 0.9rem;
+            gap: 2px;
+            font-size: 0.8rem;
         }
-        .nav-link i { font-size: 1.5rem; }
+        .nav-link i { font-size: 1.3rem; }
         .nav-link.active { background: var(--accent); }
         .nav-link.call-link { background: var(--accent); }
         
@@ -372,7 +337,6 @@
             .hotline { font-size: 1.4rem; }
             .brand-name { font-size: 2rem; }
             .float-btn { width: 65px; height: 65px; font-size: 2.2rem; }
-            .booking-icon { font-size: 1.2rem; padding: 12px 25px; }
             .form-row { grid-template-columns: 1fr; }
             .booking-section { padding: 30px 22px; }
         }
@@ -401,12 +365,11 @@
     <div class="hotline">
         📞 01278885772
     </div>
-    
-    <!-- أيقونة الحجز السريعة -->
-    <div class="quick-booking">
-        <a href="#booking" class="booking-icon">
-            <i class="fas fa-calendar-check"></i> احجز موعد صيانة الآن
-            <i class="fas fa-arrow-down"></i>
+
+    <!-- زر الحجز الجديد -->
+    <div style="display: flex; justify-content: center; margin: 20px 0 30px;">
+        <a href="#booking" style="background: #FF5F1F; color: white; padding: 10px 20px; border-radius: 50px; text-decoration: none; font-weight: 900; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); border: 2px solid white;">
+            <i class="fas fa-calendar-check"></i> احجز موعد
         </a>
     </div>
     
@@ -482,7 +445,7 @@
         <strong>إخلاء مسؤولية:</strong> "مركز MaintenanceGuide هو مركز صيانة مستقل وغير تابع رسمياً لشركة زانوسي. جميع العلامات التجارية هي ملك لأصحابها وتُستخدم هنا لغرض الدلالة على الأجهزة التي نقوم بصيانتها. نستخدم قطع غيار متوافقة عالية الجودة أو أصلية عند الطلب، ونقدم ضماناً على أعمال الإصلاح فقط."
     </div>
     
-    <!-- نموذج الحجز -->
+    <!-- ===== نموذج الحجز ===== -->
     <div id="booking" class="booking-section">
         <h2><i class="fas fa-calendar-check"></i> احجز موعد صيانة</h2>
         <form action="#" method="post">
@@ -494,9 +457,11 @@
                     <input type="tel" class="form-control" placeholder="رقم الهاتف" required>
                 </div>
             </div>
+            
             <div class="form-group">
-                <input type="text" class="form-control" placeholder="العنوان بالتفصيل" required>
+                <input type="text" class="form-control" placeholder="العنوان بالتفصيل (مثال: سان ستيفانو، شارع عزيز كحيل)" required>
             </div>
+            
             <div class="form-row">
                 <div class="form-group">
                     <select class="form-control" id="deviceType" required>
@@ -545,11 +510,12 @@
         </form>
     </div>
     
+    <!-- المساحة في الأسفل عشان الأزرار العائمة ما تغطيش حاجة -->
     <div style="height: 80px;"></div>
     
 </main>
 
-<!-- أزرار الفلوتنج -->
+<!-- ===== أزرار الفلوتنج (واتساب واتصال) ===== -->
 <div class="floating-buttons">
     <a href="https://wa.me/201558625259" class="float-btn btn-wa" target="_blank" rel="noopener">
         <i class="fab fa-whatsapp"></i>
@@ -559,7 +525,7 @@
     </a>
 </div>
 
-<!-- القائمة السفلية -->
+<!-- ===== القائمة السفلية (مختصرة) ===== -->
 <div class="bottom-nav">
     <a href="/" class="nav-link">
         <i class="fas fa-home"></i>
@@ -575,7 +541,7 @@
     </a>
 </div>
 
-<!-- سكريبت حقل "أخرى" -->
+<!-- ===== سكريبت حقل "أخرى" ===== -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         var deviceSelect = document.getElementById('deviceType');
