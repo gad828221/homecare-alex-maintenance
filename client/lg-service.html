@@ -336,20 +336,11 @@
         }
         
         /* ===== القائمة السفلية ===== */
-        .bottom-nav {
-            position: fixed;
-            bottom: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 95%;
-            max-width: 400px;
-            background: rgba(10,38,71,0.98);
-            backdrop-filter: blur(15px);
-            padding: 14px 12px;
-            border-radius: 45px;
-            display: flex;
-            justify-content: space-around;
-            z-index: 10000;
+        .<div style="display: flex; justify-content: center; margin: 20px 0 30px;">
+    <a href="#booking" style="background: #FF5F1F; color: white; padding: 10px 20px; border-radius: 50px; text-decoration: none; font-weight: 900; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); border: 2px solid white;">
+        <i class="fas fa-calendar-check"></i> احجز موعد
+    </a>
+</div>
         }
         .nav-link {
             color: white;
