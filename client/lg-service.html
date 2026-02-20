@@ -104,6 +104,42 @@
             margin: 20px 0;
             direction: ltr;
         }
+        
+        /* ===== أيقونة الحجز السريعة (تحت الهاتف) ===== */
+        .quick-booking {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0 30px;
+        }
+        .booking-icon {
+            background: linear-gradient(145deg, var(--accent), #FF8A4F);
+            color: white;
+            padding: 15px 35px;
+            border-radius: 60px;
+            text-decoration: none;
+            font-weight: 900;
+            font-size: 1.4rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 25px rgba(255,95,31,0.4);
+            transition: 0.3s;
+            border: 2px solid rgba(255,255,255,0.3);
+            animation: gentle-pulse 2s ease-in-out infinite;
+        }
+        .booking-icon:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(255,95,31,0.6);
+        }
+        .booking-icon i {
+            font-size: 1.8rem;
+        }
+        
+        @keyframes gentle-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+        
         .service-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -145,7 +181,7 @@
             margin: 30px 0;
         }
         
-        /* ===== أزرار الفلوتنج (واضحة جداً) ===== */
+        /* ===== أزرار الفلوتنج ===== */
         .floating-buttons {
             position: fixed;
             bottom: 100px;
@@ -184,7 +220,7 @@
             50% { transform: scale(1.05); }
         }
         
-        /* ===== نموذج الحجز (مع إضافة حقل العنوان) ===== */
+        /* ===== نموذج الحجز ===== */
         .booking-section {
             background: linear-gradient(145deg, var(--primary), #0E2E4A);
             border-radius: 35px;
@@ -299,7 +335,7 @@
             color: var(--accent);
         }
         
-        /* ===== القائمة السفلية (3 أزرار فقط) ===== */
+        /* ===== القائمة السفلية ===== */
         .bottom-nav {
             position: fixed;
             bottom: 15px;
@@ -336,6 +372,7 @@
             .hotline { font-size: 1.4rem; }
             .brand-name { font-size: 2rem; }
             .float-btn { width: 65px; height: 65px; font-size: 2.2rem; }
+            .booking-icon { font-size: 1.2rem; padding: 12px 25px; }
             .form-row { grid-template-columns: 1fr; }
             .booking-section { padding: 30px 22px; }
         }
@@ -363,6 +400,14 @@
     
     <div class="hotline">
         📞 01278885772
+    </div>
+    
+    <!-- ===== أيقونة الحجز السريعة (بتوصل لنموذج الحجز تحت) ===== -->
+    <div class="quick-booking">
+        <a href="#booking" class="booking-icon">
+            <i class="fas fa-calendar-check"></i> احجز موعد صيانة الآن
+            <i class="fas fa-arrow-down"></i>
+        </a>
     </div>
     
     <h1 class="page-title">🛠️ مركز صيانة LG المتخصص في الإسكندرية</h1>
@@ -437,7 +482,7 @@
         <strong>إخلاء مسؤولية:</strong> "مركز MaintenanceGuide هو مركز صيانة مستقل وغير تابع رسمياً لشركة LG للإلكترونيات. جميع العلامات التجارية هي ملك لأصحابها وتُستخدم هنا لغرض الدلالة على الأجهزة التي نقوم بصيانتها. نستخدم قطع غيار متوافقة عالية الجودة أو أصلية عند الطلب، ونقدم ضماناً على أعمال الإصلاح فقط."
     </div>
     
-    <!-- ===== نموذج الحجز مع إضافة حقل العنوان ===== -->
+    <!-- ===== نموذج الحجز (مستهدف بواسطة الأيقونة السريعة) ===== -->
     <div id="booking" class="booking-section">
         <h2><i class="fas fa-calendar-check"></i> احجز موعد صيانة</h2>
         <form action="#" method="post">
@@ -450,7 +495,6 @@
                 </div>
             </div>
             
-            <!-- ✅ حقل العنوان الجديد (تحت رقم الهاتف) -->
             <div class="form-group">
                 <input type="text" class="form-control" placeholder="العنوان بالتفصيل (مثال: سان ستيفانو، شارع عزيز كحيل)" required>
             </div>
@@ -518,7 +562,7 @@
     </a>
 </div>
 
-<!-- ===== القائمة السفلية (الرئيسية - LG - اتصل) ===== -->
+<!-- ===== القائمة السفلية ===== -->
 <div class="bottom-nav">
     <a href="/" class="nav-link">
         <i class="fas fa-home"></i>
