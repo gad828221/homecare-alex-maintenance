@@ -145,10 +145,10 @@
             margin: 30px 0;
         }
         
-        /* ===== أزرار الفلوتنج ===== */
+        /* ===== أزرار الفلوتنج (واضحة جداً) ===== */
         .floating-buttons {
             position: fixed;
-            bottom: 95px;
+            bottom: 100px;
             left: 15px;
             right: 15px;
             display: flex;
@@ -157,40 +157,157 @@
             pointer-events: none;
         }
         .float-btn {
-            width: 62px;
-            height: 62px;
+            width: 75px;
+            height: 75px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.9rem;
+            font-size: 2.5rem;
             color: white;
-            box-shadow: 0 12px 25px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
             pointer-events: auto;
             text-decoration: none;
             transition: 0.3s;
             animation: pulse 2s infinite;
+            border: 3px solid white;
         }
         .float-btn:hover {
-            transform: scale(1.1);
+            transform: scale(1.15);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
         }
-        .btn-wa { background: linear-gradient(145deg, var(--success), #128C7E); }
-        .btn-call { background: linear-gradient(145deg, var(--call), #0047B3); }
+        .btn-wa { background: linear-gradient(145deg, #1da05c, #0b6e4f); }
+        .btn-call { background: linear-gradient(145deg, #0055cc, #003a8c); }
         
         @keyframes pulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.05); }
         }
         
-        /* ===== الناف بار السفلي ===== */
+        /* ===== نموذج الحجز (مع إضافة حقل العنوان) ===== */
+        .booking-section {
+            background: linear-gradient(145deg, var(--primary), #0E2E4A);
+            border-radius: 35px;
+            padding: 40px 30px;
+            color: white;
+            margin: 45px 0 140px;
+            width: 100%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .booking-section h2 {
+            text-align: center;
+            font-size: clamp(1.6rem, 6vw, 2rem);
+            font-weight: 900;
+            margin-bottom: 30px;
+        }
+        
+        .booking-section h2 i {
+            color: var(--accent);
+            margin-left: 10px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+        }
+        
+        .form-group {
+            margin-bottom: 18px;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 16px 20px;
+            border-radius: 18px;
+            border: 2px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.08);
+            color: white;
+            font-size: 1rem;
+            font-family: 'Cairo', sans-serif;
+            transition: 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(255,255,255,0.15);
+        }
+        
+        .form-control::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+        
+        .form-control option {
+            background: var(--primary);
+            color: white;
+        }
+        
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23ffffff' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: left 20px center;
+            background-size: 16px;
+        }
+        
+        textarea.form-control {
+            min-height: 110px;
+            resize: vertical;
+        }
+        
+        .other-input {
+            display: none;
+            margin-top: 15px;
+        }
+        
+        .submit-btn {
+            background: linear-gradient(145deg, var(--success), #20BA5F);
+            color: white;
+            padding: 18px 28px;
+            border-radius: 60px;
+            font-size: 1.25rem;
+            font-weight: 900;
+            width: 100%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            transition: 0.3s;
+            box-shadow: 0 12px 25px rgba(37,211,102,0.25);
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 18px 35px rgba(37,211,102,0.35);
+        }
+        
+        .booking-footer {
+            text-align: center;
+            margin-top: 22px;
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+        
+        .booking-footer i {
+            color: var(--accent);
+        }
+        
+        /* ===== القائمة السفلية (3 أزرار فقط) ===== */
         .bottom-nav {
             position: fixed;
             bottom: 15px;
             left: 50%;
             transform: translateX(-50%);
             width: 95%;
-            max-width: 480px;
-            background: rgba(10,38,71,0.95);
+            max-width: 400px;
+            background: rgba(10,38,71,0.98);
             backdrop-filter: blur(15px);
             padding: 14px 12px;
             border-radius: 45px;
@@ -208,6 +325,7 @@
             flex-direction: column;
             align-items: center;
             gap: 4px;
+            font-size: 0.9rem;
         }
         .nav-link i { font-size: 1.5rem; }
         .nav-link.active { background: var(--accent); }
@@ -217,7 +335,9 @@
             .page-title { font-size: 1.6rem; }
             .hotline { font-size: 1.4rem; }
             .brand-name { font-size: 2rem; }
-            .float-btn { width: 55px; height: 55px; font-size: 1.7rem; }
+            .float-btn { width: 65px; height: 65px; font-size: 2.2rem; }
+            .form-row { grid-template-columns: 1fr; }
+            .booking-section { padding: 30px 22px; }
         }
     </style>
 </head>
@@ -314,7 +434,73 @@
     </div>
     
     <div class="disclaimer">
-        <strong>إخلاء مسؤولية:</strong> "مركز MaintenanceGuide هو مركز صيانة مستقل وغير تابع رسمياً لشركة LG للإلكترونيات. جميع العلامات التجارية هي ملك لأصحابها وتُستخدم هنا لغرض الدلالة على الأجهزة التي نقوم بصيانتها. نستخدم قطع غيار متوافقة عالية الجودة أو أصلية عند الطلب، ونقدم ضماناً على أعمال الإصلاح فقط." [مقتبس من تنويه موقعك]
+        <strong>إخلاء مسؤولية:</strong> "مركز MaintenanceGuide هو مركز صيانة مستقل وغير تابع رسمياً لشركة LG للإلكترونيات. جميع العلامات التجارية هي ملك لأصحابها وتُستخدم هنا لغرض الدلالة على الأجهزة التي نقوم بصيانتها. نستخدم قطع غيار متوافقة عالية الجودة أو أصلية عند الطلب، ونقدم ضماناً على أعمال الإصلاح فقط."
+    </div>
+    
+    <!-- ===== نموذج الحجز مع إضافة حقل العنوان ===== -->
+    <div id="booking" class="booking-section">
+        <h2><i class="fas fa-calendar-check"></i> احجز موعد صيانة</h2>
+        <form action="#" method="post">
+            <div class="form-row">
+                <div class="form-group">
+                    <input type="text" class="form-control" placeholder="الاسم الثلاثي" required>
+                </div>
+                <div class="form-group">
+                    <input type="tel" class="form-control" placeholder="رقم الهاتف" required>
+                </div>
+            </div>
+            
+            <!-- ✅ حقل العنوان الجديد (تحت رقم الهاتف) -->
+            <div class="form-group">
+                <input type="text" class="form-control" placeholder="العنوان بالتفصيل (مثال: سان ستيفانو، شارع عزيز كحيل)" required>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <select class="form-control" id="deviceType" required>
+                        <option value="">اختر نوع الجهاز</option>
+                        <option value="غسالة">غسالة</option>
+                        <option value="ثلاجة">ثلاجة</option>
+                        <option value="تكييف">تكييف</option>
+                        <option value="بوتاجاز">بوتاجاز</option>
+                        <option value="ديب فريزر">ديب فريزر</option>
+                        <option value="ميكروويف">ميكروويف</option>
+                        <option value="غسالة أطباق">غسالة أطباق</option>
+                        <option value="سخان">سخان</option>
+                        <option value="other">أخرى</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input type="text" class="form-control" id="otherDevice" placeholder="اكتب نوع الجهاز" style="display:none;">
+                </div>
+            </div>
+            <div class="form-group">
+                <textarea class="form-control" placeholder="تفاصيل المشكلة (اختياري)"></textarea>
+            </div>
+            <div class="form-group">
+                <select class="form-control" required>
+                    <option value="">اختر المنطقة</option>
+                    <option value="المنتزه">المنتزه</option>
+                    <option value="شرق">شرق</option>
+                    <option value="وسط">وسط</option>
+                    <option value="غرب">غرب</option>
+                    <option value="العجمي">العجمي</option>
+                    <option value="برج العرب">برج العرب</option>
+                    <option value="سموحة">سموحة</option>
+                    <option value="محطة الرمل">محطة الرمل</option>
+                    <option value="سان ستيفانو">سان ستيفانو</option>
+                    <option value="فيصل">فيصل</option>
+                    <option value="الابراهيمية">الابراهيمية</option>
+                    <option value="سبورتنج">سبورتنج</option>
+                </select>
+            </div>
+            <button type="submit" class="submit-btn">
+                <i class="fab fa-whatsapp"></i> إرسال الحجز عبر واتساب
+            </button>
+            <div class="booking-footer">
+                <i class="fas fa-shield-alt"></i> فني متخصص يصل خلال 60 دقيقة • ضمان على الإصلاح • قطع غيار أصلية
+            </div>
+        </form>
     </div>
     
     <!-- المساحة في الأسفل عشان الأزرار العائمة ما تغطيش حاجة -->
@@ -324,7 +510,7 @@
 
 <!-- ===== أزرار الفلوتنج (واتساب واتصال) ===== -->
 <div class="floating-buttons">
-    <a href="https://wa.me/201278885772" class="float-btn btn-wa" target="_blank" rel="noopener">
+    <a href="https://wa.me/201558625259" class="float-btn btn-wa" target="_blank" rel="noopener">
         <i class="fab fa-whatsapp"></i>
     </a>
     <a href="tel:01278885772" class="float-btn btn-call" onclick="gtag('event', 'conversion', {'send_to': 'AW-16866300615/Hg5gCNz5nvkbEMelveo-'});">
@@ -332,7 +518,7 @@
     </a>
 </div>
 
-<!-- ===== القائمة السفلية (من غير روابط الثلاجات والغسالات) ===== -->
+<!-- ===== القائمة السفلية (الرئيسية - LG - اتصل) ===== -->
 <div class="bottom-nav">
     <a href="/" class="nav-link">
         <i class="fas fa-home"></i>
@@ -347,6 +533,26 @@
         <span>اتصل</span>
     </a>
 </div>
+
+<!-- ===== سكريبت حقل "أخرى" ===== -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var deviceSelect = document.getElementById('deviceType');
+        var otherInput = document.getElementById('otherDevice');
+        
+        if (deviceSelect && otherInput) {
+            deviceSelect.addEventListener('change', function() {
+                if (this.value === 'other') {
+                    otherInput.style.display = 'block';
+                    otherInput.setAttribute('required', 'required');
+                } else {
+                    otherInput.style.display = 'none';
+                    otherInput.removeAttribute('required');
+                }
+            });
+        }
+    });
+</script>
 
 </body>
 </html>
