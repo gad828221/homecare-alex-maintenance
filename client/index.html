@@ -16,6 +16,15 @@
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-16803756129"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'AW-16803756129');
+    </script>
+    
     <style>
         * {
             margin: 0;
@@ -51,7 +60,6 @@
             padding: 15px;
         }
         
-        /* ===== HEADER احترافي ===== */
         header {
             background: var(--primary);
             color: var(--white);
@@ -89,7 +97,6 @@
             opacity: 0.9;
         }
         
-        /* القائمة المنسدلة للماركات في الهيدر */
         .brands-dropdown {
             position: relative;
             direction: rtl;
@@ -154,7 +161,6 @@
             display: block;
         }
         
-        /* ===== شريط الثقة ===== */
         .trust-bar {
             display: flex;
             flex-wrap: wrap;
@@ -179,7 +185,6 @@
             font-size: 1.4rem;
         }
         
-        /* ===== CTA الرئيسي ===== */
         .cta-main {
             background: linear-gradient(145deg, var(--accent), #FF8A4F);
             color: white;
@@ -236,7 +241,6 @@
             border-radius: 2px;
         }
         
-        /* ===== كروت الخدمات المحسنة ===== */
         .services-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -286,7 +290,6 @@
             line-height: 1.6;
         }
         
-        /* ===== شريط الماركات (بأيقونات) ===== */
         .brands-strip {
             background: white;
             border-radius: 60px;
@@ -312,7 +315,6 @@
             font-size: 1.5rem;
         }
         
-        /* ===== قسم "لماذا نحن؟" ===== */
         .why-us-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -347,7 +349,6 @@
             font-size: 0.95rem;
         }
         
-        /* ===== قسم الماركات المفصل (محسّن) ===== */
         .brands-section {
             background: white;
             border-radius: 40px;
@@ -414,7 +415,6 @@
             font-weight: 700;
         }
         
-        /* ===== الإحصائيات (محسّنة) ===== */
         .stats-section {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -450,7 +450,6 @@
             font-weight: 600;
         }
         
-        /* ===== نموذج الحجز المبسط (محسّن) ===== */
         .booking-section {
             background: linear-gradient(145deg, var(--primary), #0E2E4A);
             border-radius: 40px;
@@ -549,49 +548,50 @@
             color: var(--accent);
         }
         
-        /* ===== أزرار الفلوتنج ===== */
         .floating-buttons {
             position: fixed;
             bottom: 100px;
             left: 15px;
             right: 15px;
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
+            gap: 25px;
             z-index: 9999;
             pointer-events: none;
         }
         
         .float-btn {
-            width: 65px;
-            height: 65px;
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
+            font-size: 2.2rem;
             color: white;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.4);
             pointer-events: auto;
             text-decoration: none;
             transition: 0.3s;
-            animation: gentle-pulse 2s infinite;
+            animation: gentle-pulse 1.8s ease-in-out infinite;
+            border: 3px solid rgba(255,255,255,0.8);
         }
         
         .float-btn:hover {
             transform: scale(1.15);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
         }
-        
-        .btn-wa { background: linear-gradient(145deg, #1da05c, #0b6e4f); }
-        .btn-call { background: linear-gradient(145deg, #0055cc, #003a8c); }
-        .btn-booking { background: linear-gradient(145deg, var(--accent), #FF8A4F); }
         
         @keyframes gentle-pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+            0% { transform: scale(1); box-shadow: 0 12px 28px rgba(0,0,0,0.4); }
+            50% { transform: scale(1.1); box-shadow: 0 20px 35px rgba(0,0,0,0.6); }
+            100% { transform: scale(1); box-shadow: 0 12px 28px rgba(0,0,0,0.4); }
         }
         
-        /* ===== الناف بار السفلي ===== */
+        .btn-wa { background: linear-gradient(145deg, #25D366, #128C7E); }
+        .btn-call { background: linear-gradient(145deg, #0066FF, #0047B3); }
+        .btn-booking { background: linear-gradient(145deg, #FF5F1F, #FF8A4F); }
+        
         .bottom-nav {
             position: fixed;
             bottom: 15px;
@@ -663,6 +663,16 @@
             box-shadow: 0 12px 25px rgba(255,95,31,0.4);
         }
         
+        .legal-notice {
+            background: #fff3e0;
+            padding: 20px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #5d4037;
+            margin: 30px 0;
+            border-right: 6px solid var(--accent);
+        }
+        
         @media (max-width: 992px) {
             .services-grid, .why-us-grid, .stats-section, .brands-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -679,7 +689,7 @@
             }
             .brands-section { padding: 25px 20px; }
             .card-icon { height: 140px; font-size: 4rem; }
-            .float-btn { width: 55px; height: 55px; font-size: 1.7rem; }
+            .float-btn { width: 60px; height: 60px; font-size: 2rem; }
             .nav-link { font-size: 0.7rem; padding: 4px 6px; }
             .nav-link i { font-size: 1.2rem; }
             .trust-bar { gap: 15px; }
@@ -693,7 +703,6 @@
         @media (max-width: 480px) {
             .logo { font-size: 1.8rem; }
             .stats-section { grid-template-columns: 1fr; }
-            .map-section h3 { font-size: 1.3rem; }
         }
     </style>
 </head>
@@ -703,12 +712,13 @@
     <div class="container header-container">
         <div class="logo">Maintenance<span>Guide</span></div>
         
-        <!-- قائمة الماركات المنسدلة -->
         <div class="brands-dropdown">
             <div class="dropbtn">
                 <i class="fas fa-certificate"></i> الماركات <i class="fas fa-chevron-down"></i>
             </div>
             <div class="dropdown-content">
+                <a href="/thalajat.html"><i class="fas fa-snowflake"></i> ثلاجات</a>
+                <a href="/ghassalat.html"><i class="fas fa-tshirt"></i> غسالات</a>
                 <a href="/lg-service.html"><i class="fas fa-certificate"></i> LG</a>
                 <a href="/sharp-service.html"><i class="fas fa-certificate"></i> شارب</a>
                 <a href="/ariston-service.html"><i class="fas fa-certificate"></i> أريستون</a>
@@ -721,7 +731,6 @@
     </div>
 </header>
 
-<!-- ===== شريط الثقة ===== -->
 <div class="container">
     <div class="trust-bar">
         <div class="trust-item"><i class="fas fa-clock"></i> 60 دقيقة</div>
@@ -733,13 +742,11 @@
 
 <main class="container">
     
-    <!-- ===== CTA الرئيسي ===== -->
     <button class="cta-main" onclick="document.getElementById('booking').scrollIntoView({behavior:'smooth'})">
         <i class="fas fa-calendar-check"></i>
         احجز موعد صيانة الآن - خصم 15% على أول زيارة
     </button>
     
-    <!-- ===== شريط الماركات (اختياري) ===== -->
     <div class="brands-strip">
         <span><i class="fas fa-check-circle"></i> سامسونج</span>
         <span><i class="fas fa-check-circle"></i> LG</span>
@@ -749,7 +756,6 @@
         <span><i class="fas fa-check-circle"></i> وايت ويل</span>
     </div>
     
-    <!-- ===== كروت الخدمات ===== -->
     <h2 class="section-title">خدمات الصيانة المتخصصة</h2>
     
     <div class="services-grid">
@@ -783,7 +789,6 @@
         </div>
     </div>
     
-    <!-- ===== لماذا نحن؟ ===== -->
     <h2 class="section-title">لماذا تختار MaintenanceGuide؟</h2>
     <div class="why-us-grid">
         <div class="why-item">
@@ -808,7 +813,6 @@
         </div>
     </div>
     
-    <!-- ===== قسم الماركات المفصل ===== -->
     <div class="brands-section">
         <h2 class="section-title">الماركات التي نخدمها</h2>
         <div class="brands-grid">
@@ -887,7 +891,6 @@
         </div>
     </div>
     
-    <!-- ===== الإحصائيات ===== -->
     <div class="stats-section">
         <div class="stat-item">
             <i class="fas fa-users"></i>
@@ -911,18 +914,6 @@
         </div>
     </div>
     
-    <!-- ===== قسم الخريطة ===== -->
-    <div class="map-section">
-        <h3><i class="fas fa-map-marker-alt" style="color: var(--accent);"></i> نخدم كل مناطق الإسكندرية</h3>
-        <p>📍 سان ستيفانو، ٦ ش عزيز كحيل، متفرع من محمد باشا سعيد</p>
-        <p>📞 01278885772 | 01558625259</p>
-        <p>⏰ نعمل 24 ساعة طوال أيام الأسبوع</p>
-        <a href="https://maps.app.goo.gl/ABC123" target="_blank" rel="noopener noreferrer" class="map-btn">
-            <i class="fas fa-location-dot"></i> افتح موقعنا على الخريطة
-        </a>
-    </div>
-    
-    <!-- ===== نموذج الحجز المبسط ===== -->
     <div id="booking" class="booking-section">
         <h2><i class="fas fa-calendar-check"></i> احجز موعد صيانة</h2>
         <form action="#" method="post">
@@ -931,6 +922,9 @@
             </div>
             <div class="form-group">
                 <input type="tel" class="form-control" placeholder="رقم الهاتف" required>
+            </div>
+            <div class="form-group">
+                <input type="text" class="form-control" id="address" placeholder="العنوان بالتفصيل (مثال: سان ستيفانو، شارع عزيز كحيل)" required>
             </div>
             <div class="form-group">
                 <select class="form-control" id="deviceType" required>
@@ -946,6 +940,9 @@
             <div class="form-group">
                 <input type="text" class="form-control" id="otherDevice" placeholder="اكتب نوع الجهاز" style="display:none;">
             </div>
+            <div class="form-group">
+                <textarea class="form-control" id="problemDesc" placeholder="وصف العطل (اختياري - مثال: الغسالة بتسرب مياه، التكييف مش بيبرد)" rows="3"></textarea>
+            </div>
             <button type="submit" class="submit-btn">
                 <i class="fab fa-whatsapp"></i> إرسال الحجز
             </button>
@@ -955,40 +952,20 @@
         </form>
     </div>
     
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var deviceSelect = document.getElementById('deviceType');
-            var otherInput = document.getElementById('otherDevice');
-            if (deviceSelect && otherInput) {
-                deviceSelect.addEventListener('change', function() {
-                    if (this.value === 'other') {
-                        otherInput.style.display = 'block';
-                        otherInput.setAttribute('required', 'required');
-                    } else {
-                        otherInput.style.display = 'none';
-                        otherInput.removeAttribute('required');
-                    }
-                });
-            }
-        });
-    </script>
-    
 </main>
 
-<!-- ===== أزرار الفلوتنج (واتساب + حجز + اتصال) ===== -->
 <div class="floating-buttons">
-    <a href="https://wa.me/201558625259" class="float-btn btn-wa" target="_blank" rel="noopener">
-        <i class="fab fa-whatsapp"></i>
-    </a>
     <a href="#booking" class="float-btn btn-booking" onclick="document.getElementById('booking').scrollIntoView({behavior:'smooth'});return false;">
         <i class="fas fa-calendar-check"></i>
     </a>
-    <a href="tel:01278885772" class="float-btn btn-call">
+    <a href="https://wa.me/201558625259" class="float-btn btn-wa" target="_blank" rel="noopener">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+    <a href="tel:01278885772" class="float-btn btn-call" onclick="gtag('event', 'conversion', {'send_to': 'AW-16803756129/TCBOCICTwoP8bEOHw0bw-'}); return true;">
         <i class="fas fa-phone-alt"></i>
     </a>
 </div>
 
-<!-- ===== الناف بار السفلي ===== -->
 <div class="bottom-nav">
     <a href="#" class="nav-link active">
         <i class="fas fa-home"></i>
@@ -1008,14 +985,20 @@
     </a>
 </div>
 
-<!-- ===== زر العودة للأعلى ===== -->
 <div class="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'});">
     <i class="fas fa-arrow-up"></i>
 </div>
 
-<!-- ===== سكريبت القائمة المنسدلة ===== -->
+<div class="container">
+    <div class="legal-notice">
+        <strong><i class="fas fa-balance-scale"></i> تنويه قانوني مهم:</strong>
+        <p>مركز MaintenanceGuide هو مركز صيانة مستقل وغير تابع رسمياً لأي شركة مصنعة. جميع العلامات التجارية هي ملك لأصحابها الأصليين وتُستخدم هنا فقط للدلالة على الأجهزة التي نقوم بصيانتها. نستخدم قطع غيار متوافقة عالية الجودة أو أصلية عند الطلب، ونقدم ضماناً على أعمال الإصلاح فقط.</p>
+    </div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // تفعيل القائمة المنسدلة
         var dropdown = document.querySelector('.brands-dropdown');
         if (dropdown) {
             var dropbtn = dropdown.querySelector('.dropbtn');
@@ -1029,12 +1012,8 @@
                 }
             });
         }
-    });
-</script>
-
-<!-- ===== سكريبت الرابط النشط ===== -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
+        
+        // تفعيل الرابط النشط
         const navLinks = document.querySelectorAll('.nav-link');
         navLinks.forEach(link => {
             link.addEventListener('click', function() {
@@ -1042,16 +1021,66 @@
                 this.classList.add('active');
             });
         });
+        
+        // حقل "أخرى"
+        var deviceSelect = document.getElementById('deviceType');
+        var otherInput = document.getElementById('otherDevice');
+        if (deviceSelect && otherInput) {
+            deviceSelect.addEventListener('change', function() {
+                if (this.value === 'other') {
+                    otherInput.style.display = 'block';
+                    otherInput.setAttribute('required', 'required');
+                } else {
+                    otherInput.style.display = 'none';
+                    otherInput.removeAttribute('required');
+                }
+            });
+        }
+        
+        // إرسال نموذج الحجز عبر واتساب
+        const bookingForm = document.querySelector('#booking form');
+        if (bookingForm) {
+            bookingForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const name = this.querySelector('input[placeholder*="الاسم"]')?.value.trim() || '';
+                const phone = this.querySelector('input[placeholder*="رقم"]')?.value.trim() || '';
+                const address = document.getElementById('address')?.value.trim() || '';
+                const deviceSelect = this.querySelector('#deviceType');
+                const device = deviceSelect ? deviceSelect.options[deviceSelect.selectedIndex]?.text : '';
+                const otherDevice = document.getElementById('otherDevice')?.value.trim() || '';
+                const problem = document.getElementById('problemDesc')?.value.trim() || '';
+                
+                if (!name || !phone) {
+                    alert('❌ يرجى إدخال الاسم ورقم الهاتف');
+                    return;
+                }
+                if (!device || device === 'اختر نوع الجهاز') {
+                    alert('❌ يرجى اختيار نوع الجهاز');
+                    return;
+                }
+                if (!address) {
+                    alert('❌ يرجى إدخال العنوان');
+                    return;
+                }
+                
+                let message = `*طلب صيانة جديد*\n\n`;
+                message += `*الاسم:* ${name}\n`;
+                message += `*رقم الهاتف:* ${phone}\n`;
+                message += `*العنوان:* ${address}\n`;
+                if (device === 'أخرى') {
+                    message += `*نوع الجهاز:* ${otherDevice || 'غير محدد'}\n`;
+                } else {
+                    message += `*نوع الجهاز:* ${device}\n`;
+                }
+                if (problem) {
+                    message += `*وصف العطل:* ${problem}\n`;
+                }
+                
+                window.open(`https://wa.me/201558625259?text=${encodeURIComponent(message)}`, '_blank');
+            });
+        }
     });
 </script>
-
-<!-- ===== التنويه القانوني (نقله هنا بدل ما كان في نص الصفحة) ===== -->
-<div class="container">
-    <div class="legal-notice">
-        <strong><i class="fas fa-balance-scale"></i> تنويه قانوني مهم:</strong>
-        <p>مركز MaintenanceGuide هو مركز صيانة مستقل وغير تابع رسمياً لأي شركة مصنعة. جميع العلامات التجارية هي ملك لأصحابها الأصليين وتُستخدم هنا فقط للدلالة على الأجهزة التي نقوم بصيانتها. نستخدم قطع غيار متوافقة عالية الجودة أو أصلية عند الطلب، ونقدم ضماناً على أعمال الإصلاح فقط.</p>
-    </div>
-</div>
 
 </body>
 </html>
