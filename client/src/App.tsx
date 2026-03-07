@@ -7,6 +7,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import FloatingWhatsAppButton from "./components/FloatingWhatsAppButton";
 
 
 function Router() {
@@ -17,6 +18,16 @@ function Router() {
       {/* Final fallback route */}
       <Route component={NotFound} />
     </Switch>
+  );
+}
+
+// Wrapper component to include FloatingWhatsAppButton
+function AppContent() {
+  return (
+    <>
+      <Router />
+      <FloatingWhatsAppButton />
+    </>
   );
 }
 
@@ -34,7 +45,7 @@ function App() {
       >
         <TooltipProvider>
           <Toaster />
-          <Router />
+          <AppContent />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

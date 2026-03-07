@@ -2,16 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import BookingForm from "@/components/BookingForm";
 import { Zap, Droplet, Wind, Flame, Star, Clock, Shield, Users, Phone, MessageCircle } from "lucide-react";
 import { useState } from "react";
 
 export default function Home() {
-  const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    service: "",
-    date: "",
-  });
+  // Booking form is now in a separate component
 
   const services = [
     {
@@ -59,31 +55,7 @@ export default function Home() {
     },
   ];
 
-  const serviceNames: { [key: string]: string } = {
-    fridge: "صيانة الثلاجات",
-    washer: "صيانة الغسالات",
-    ac: "صيانة المكيفات",
-    oven: "صيانة الأفران",
-    heater: "صيانة السخانات",
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // إنشاء رسالة WhatsApp
-    const serviceName = serviceNames[formData.service] || formData.service;
-    const message = `مرحباً، أنا ${formData.name}\nرقم الهاتف: ${formData.phone}\nالخدمة المطلوبة: ${serviceName}\nالتاريخ المفضل: ${formData.date}\n\nأرجو تأكيد الحجز في أقرب وقت.`;
-    const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(message)}`;
-    
-    // فتح WhatsApp
-    window.open(whatsappUrl, "_blank");
-    
-    // إظهار رسالة تأكيد
-    alert("تم إرسال طلب الحجز عبر WhatsApp! سيتم التواصل معك قريباً.");
-    
-    // إعادة تعيين النموذج
-    setFormData({ name: "", phone: "", service: "", date: "" });
-  };
+  // Booking form logic moved to BookingForm component
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -111,77 +83,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Contact Section - Moved to Top */}
-      <section id="contact" className="py-12 bg-orange-50">
-        <div className="container max-w-2xl">
-          <h2 className="text-3xl font-bold text-center mb-2">احجز خدمتك الآن</h2>
-          <p className="text-center text-gray-600 mb-8">استجابة سريعة وخدمة احترافية</p>
-          <Card className="p-8 shadow-lg">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium mb-2">الاسم</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="أدخل اسمك"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">رقم الهاتف</label>
-                <input
-                  type="tel"
-                  required
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="01234567890"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">نوع الخدمة</label>
-                <select
-                  required
-                  value={formData.service}
-                  onChange={(e) => setFormData({ ...formData, service: e.target.value })}
-                  className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="">اختر الخدمة</option>
-                  <option value="fridge">صيانة الثلاجات</option>
-                  <option value="washer">صيانة الغسالات</option>
-                  <option value="ac">صيانة المكيفات</option>
-                  <option value="oven">صيانة الأفران</option>
-                  <option value="heater">صيانة السخانات</option>
-                  <option value="heater">صيانة السخانات</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">التاريخ المفضل</label>
-                <input
-                  type="date"
-                  required
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-
-              <Button
-                type="submit"
-                size="lg"
-                className="w-full bg-green-500 hover:bg-green-600 text-white font-bold text-lg"
-              >
-                <MessageCircle className="w-5 h-5 ml-2" />
-                إرسال عبر WhatsApp
-              </Button>
-            </form>
-          </Card>
-        </div>
+      {/* Contact Section - Using BookingForm Component */}
+      <section id="contact">
+        <BookingForm />
       </section>
 
       {/* Features Section */}
