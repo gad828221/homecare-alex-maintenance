@@ -1,7 +1,9 @@
 import { Link } from "wouter";
-import { Phone, MessageCircle, Clock } from "lucide-react";
+import { Phone, MessageCircle, Clock, Menu, X } from "lucide-react";
+import { useState } from "react";
 
 export default function Header() {
+  const [isOpen, setIsOpen] = useState(false);
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-border shadow-md">
       <div className="container">
@@ -11,11 +13,18 @@ export default function Header() {
             <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-lg">
               ⚙️
             </div>
-            <span className="font-bold text-xl text-foreground hidden sm:inline">أسرع صيانة</span>
+            <span className="font-bold text-xl text-foreground hidden sm:inline">Maintenance Guide</span>
           </Link>
 
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-6">
+            <Link href="/" className="text-gray-700 hover:text-blue-600 font-medium">الرئيسية</Link>
+            <Link href="/samsung-service" className="text-gray-700 hover:text-blue-600 font-medium">Samsung</Link>
+            <Link href="/lg-service" className="text-gray-700 hover:text-blue-600 font-medium">LG</Link>
+          </nav>
+
           {/* Contact Info - Professional Icons */}
-          <div className="flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-4">
             {/* WhatsApp */}
             <a
               href="https://wa.me/201558625259"
@@ -52,7 +61,21 @@ export default function Header() {
               احجز الآن
             </a>
           </div>
+
+          {/* Mobile Menu Button */}
+          <button className="md:hidden p-2" onClick={() => setIsOpen(!isOpen)}>
+            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
+
+        {/* Mobile Navigation */}
+        {isOpen && (
+          <nav className="md:hidden bg-gray-50 border-t py-4 space-y-3">
+            <Link href="/" className="block text-gray-700 hover:text-blue-600 font-medium py-2">الرئيسية</Link>
+            <Link href="/samsung-service" className="block text-gray-700 hover:text-blue-600 font-medium py-2">Samsung</Link>
+            <Link href="/lg-service" className="block text-gray-700 hover:text-blue-600 font-medium py-2">LG</Link>
+          </nav>
+        )}
       </div>
     </header>
   );
