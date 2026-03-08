@@ -14,3 +14,14 @@
 
 [build.processing.images]
   compress = true
+
+# Netlify Forms Configuration
+[[forms]]
+  name = "booking"
+  method = "POST"
+  
+# Email notifications for form submissions
+[[redirects]]
+  from = "/form-success"
+  to = "/"
+  status = 200
