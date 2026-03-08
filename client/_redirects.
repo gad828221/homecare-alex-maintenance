@@ -1,3 +1,16 @@
-/thalajat.html  /thalajat.html  200
-/ghassalat.html /ghassalat.html 200
-http://maintenanceguide.life/*  https://maintenanceguide.life/:splat  301!
+# إجبار HTTPS لكل الموقع (مهم جدًا للأمان والـ SEO)
+http://maintenanceguide.life/*    https://maintenanceguide.life/:splat   301!
+http://*.maintenanceguide.life/*  https://maintenanceguide.life/:splat   301!
+
+# Redirect أي محاولة قديمة لسامسونج للصفحة الجديدة
+/samsung                  /samsung-service        301
+/samsung.html             /samsung-service        301
+/samsung-service.html     /samsung-service        301
+
+# نفس الشيء لـ LG (لو فيه روابط قديمة)
+/lg                       /lg-service             301
+/lg.html                  /lg-service             301
+/lg-service.html          /lg-service             301
+
+# قاعدة عامة مهمة جدًا لـ SPA (تخلي أي رابط غير موجود يحمل index.html عشان الـ router يشتغل)
+/*                        /index.html             200!
