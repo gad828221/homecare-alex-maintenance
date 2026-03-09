@@ -3,13 +3,13 @@
 # ──────────────────────────────────────────────────────────────
 
 [build]
-  # المجلد الرئيسي هو الجذر
-  base    = "."
+  # المجلد الرئيسي الذي يحتوي على الكود
+  base = "client"
 
-  # الأمر اللي بيبني المشروع (استخدام pnpm بدل npm)
+  # الأمر الذي يبني المشروع (باستخدام pnpm)
   command = "pnpm install && pnpm build"
 
-  # المجلد اللي Vite بيطلع فيه (dist)
+  # المجلد الذي سيتم نشره (الذي ينشئه أمر البناء)
   publish = "dist"
 
 # Redirects لـ Single Page App
@@ -17,24 +17,3 @@
   from = "/*"
   to = "/index.html"
   status = 200
-
-# ──────────────────────────────────────────────────────────────
-# Optional: Minify & compress
-# ──────────────────────────────────────────────────────────────
-
-[build.processing]
-  skip_processing = false
-
-[build.processing.css]
-  bundle = true
-  minify = true
-
-[build.processing.js]
-  bundle = true
-  minify = true
-
-[build.processing.html]
-  pretty_urls = true
-
-[build.processing.images]
-  compress = true
