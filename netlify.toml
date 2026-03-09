@@ -3,13 +3,13 @@
 # ──────────────────────────────────────────────────────────────
 
 [build]
-  # خليها فارغة (أو نقطة) عشان تقول إن المجلد الرئيسي هو الجذر
+  # المجلد الرئيسي هو الجذر
   base    = "."
 
-  # الأمر اللي بيبني المشروع
-  command = "npm install && npm run build"
+  # الأمر اللي بيبني المشروع (استخدام pnpm بدل npm)
+  command = "pnpm install && pnpm build"
 
-  # المجلد اللي Vite بيطلع فيه (غالباً dist أو public)
+  # المجلد اللي Vite بيطلع فيه (dist)
   publish = "dist"
 
 # Redirects لـ Single Page App
