@@ -1,4 +1,4 @@
 [build]
-base = "."
-command = "cd client && pnpm install && pnpm build"
-publish = "dist"
+  base = "client"
+  command = "pnpm install && pnpm build"
+  publish = "."
