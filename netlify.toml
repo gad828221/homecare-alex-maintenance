@@ -3,3 +3,4 @@
   base = "."
   command = "cd client && pnpm install && pnpm build"
   publish = "dist"
+.
