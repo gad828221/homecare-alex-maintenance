@@ -1,19 +1,5 @@
-# ──────────────────────────────────────────────────────────────
-# Build settings
-# ──────────────────────────────────────────────────────────────
-
 [build]
-  # المجلد الرئيسي الذي يحتوي على الكود
-  base = "client"
-
-  # الأمر الذي يبني المشروع (باستخدام pnpm)
-  command = "pnpm install && pnpm build"
-
-  # المجلد الذي سيتم نشره (الذي ينشئه أمر البناء)
+  # خليها نقطة (الجذر)
+  base = "."
+  command = "cd client && pnpm install && pnpm build"
   publish = "dist"
-
-# Redirects لـ Single Page App
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
