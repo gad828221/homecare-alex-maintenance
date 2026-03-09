@@ -1,4 +1,10 @@
 [build]
-  base = "client"
+  # إما تحذف سطر base أو تتركه فارغاً
+  base = ""
   command = "pnpm install && pnpm build"
   publish = "dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
