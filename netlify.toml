@@ -1,25 +1,25 @@
 # ──────────────────────────────────────────────────────────────
-# Build settings – مهم جدًا
+# Build settings
 # ──────────────────────────────────────────────────────────────
 
 [build]
-  # المجلد اللي فيه الكود الرئيسي (Vite project)
-  base    = "client"
+  # خليها فارغة (أو نقطة) عشان تقول إن المجلد الرئيسي هو الجذر
+  base    = "."
 
   # الأمر اللي بيبني المشروع
-  command = "pnpm install && pnpm build"
+  command = "npm install && npm run build"
 
-  # المجلد اللي هينشر منه Netlify (اللي Vite بيخرج فيه)
-  publish = "client/dist"
+  # المجلد اللي Vite بيطلع فيه (غالباً dist أو public)
+  publish = "dist"
 
-# Redirects لـ Single Page App (React/Vite/Wouter)
+# Redirects لـ Single Page App
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
 # ──────────────────────────────────────────────────────────────
-# Optional: Minify & compress (لو عايز تفعّلها)
+# Optional: Minify & compress
 # ──────────────────────────────────────────────────────────────
 
 [build.processing]
@@ -38,19 +38,3 @@
 
 [build.processing.images]
   compress = true
-
-# ──────────────────────────────────────────────────────────────
-# Netlify Forms (لو عندك نموذج حقيقي بيرسل إيميل أو webhook)
-# ──────────────────────────────────────────────────────────────
-
-[[forms]]
-  name = "booking"
-  method = "POST"
-  html_enabled = false
-  captcha = false
-
-# Redirect بعد الإرسال (اختياري)
-[[redirects]]
-  from = "/form-success"
-  to = "/"
-  status = 200
