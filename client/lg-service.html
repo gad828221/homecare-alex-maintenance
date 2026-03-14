@@ -6,7 +6,7 @@
     <title>مركز صيانة LG المعتمد - الإسكندرية | MaintenanceGuide</title>
     <meta name="description" content="مركز صيانة LG المعتمد في الإسكندرية. تصليح غسالات، ثلاجات، تكييفات LG بمنزلك. قطع غيار أصلية، ضمان على الإصلاح، فنيين خبراء. اتصل الآن.">
     
-    <!-- أكواد التتبع (GTAG) - كما هي بدون تغيير -->
+    <!-- أكواد التتبع (GTAG) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=AW-16866300615"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
@@ -146,6 +146,40 @@
             margin: 30px 0;
         }
         
+        /* ===== محتوى LG التسويقي ===== */
+        .lg-content-section {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 30px;
+            margin: 30px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-top: 6px solid var(--accent);
+        }
+        .lg-content-title {
+            color: var(--primary);
+            font-size: 2rem;
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .lg-content-item {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--light);
+            border-radius: 20px;
+            border-right: 4px solid var(--accent);
+        }
+        .lg-content-item h3 {
+            color: var(--primary);
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+        .lg-content-item p {
+            color: var(--gray);
+            line-height: 1.8;
+        }
+        
         /* ===== أزرار الفلوتنج ===== */
         .floating-buttons {
             position: fixed;
@@ -179,7 +213,6 @@
         }
         .btn-wa { background: linear-gradient(145deg, #1da05c, #0b6e4f); }
         .btn-call { background: linear-gradient(145deg, #0055cc, #003a8c); }
-        
         @keyframes pulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.05); }
@@ -197,29 +230,19 @@
             position: relative;
             overflow: hidden;
         }
-        
         .booking-section h2 {
             text-align: center;
             font-size: clamp(1.6rem, 6vw, 2rem);
             font-weight: 900;
             margin-bottom: 30px;
         }
-        
-        .booking-section h2 i {
-            color: var(--accent);
-            margin-left: 10px;
-        }
-        
+        .booking-section h2 i { color: var(--accent); margin-left: 10px; }
         .form-row {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 18px;
         }
-        
-        .form-group {
-            margin-bottom: 18px;
-        }
-        
+        .form-group { margin-bottom: 18px; }
         .form-control {
             width: 100%;
             padding: 16px 20px;
@@ -231,22 +254,13 @@
             font-family: 'Cairo', sans-serif;
             transition: 0.3s;
         }
-        
         .form-control:focus {
             outline: none;
             border-color: var(--accent);
             background: rgba(255,255,255,0.15);
         }
-        
-        .form-control::placeholder {
-            color: rgba(255,255,255,0.7);
-        }
-        
-        .form-control option {
-            background: var(--primary);
-            color: white;
-        }
-        
+        .form-control::placeholder { color: rgba(255,255,255,0.7); }
+        .form-control option { background: var(--primary); color: white; }
         select.form-control {
             appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23ffffff' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
@@ -254,17 +268,8 @@
             background-position: left 20px center;
             background-size: 16px;
         }
-        
-        textarea.form-control {
-            min-height: 110px;
-            resize: vertical;
-        }
-        
-        .other-input {
-            display: none;
-            margin-top: 15px;
-        }
-        
+        textarea.form-control { min-height: 110px; resize: vertical; }
+        .other-input { display: none; margin-top: 15px; }
         .submit-btn {
             background: linear-gradient(145deg, var(--success), #20BA5F);
             color: white;
@@ -283,22 +288,17 @@
             transition: 0.3s;
             box-shadow: 0 12px 25px rgba(37,211,102,0.25);
         }
-        
         .submit-btn:hover {
             transform: translateY(-3px);
             box-shadow: 0 18px 35px rgba(37,211,102,0.35);
         }
-        
         .booking-footer {
             text-align: center;
             margin-top: 22px;
             opacity: 0.9;
             font-size: 0.9rem;
         }
-        
-        .booking-footer i {
-            color: var(--accent);
-        }
+        .booking-footer i { color: var(--accent); }
         
         /* ===== القائمة السفلية ===== */
         .bottom-nav {
@@ -339,6 +339,7 @@
             .float-btn { width: 65px; height: 65px; font-size: 2.2rem; }
             .form-row { grid-template-columns: 1fr; }
             .booking-section { padding: 30px 22px; }
+            .lg-content-title { font-size: 1.6rem; }
         }
     </style>
 </head>
@@ -415,6 +416,46 @@
         </div>
     </div>
     
+    <!-- ===== محتوى تسويقي خاص بـ LG ===== -->
+    <div class="lg-content-section">
+        <h2 class="lg-content-title">
+            <i class="fas fa-certificate" style="color: #FF5F1F; margin-left: 10px;"></i> 
+            دليل صيانة أجهزة LG
+        </h2>
+        
+        <div class="lg-content-item">
+            <h3><i class="fas fa-tshirt" style="color: #FF5F1F; margin-left: 10px;"></i> غسالات LG</h3>
+            <p>
+                <strong>أعطال شائعة:</strong> رمز OE (مشكلة تصريف)، رمز IE (لا ماء)، رمز UE (عدم اتزان). 
+                <strong>نصائح:</strong> نظف الفلتر شهرياً، لا تفرط في تحميل الغسالة، استخدم مسحوق مناسب، واترك الباب مفتوحاً بعد كل غسلة لتجنب الروائح.
+            </p>
+        </div>
+        
+        <div class="lg-content-item">
+            <h3><i class="fas fa-snowflake" style="color: #FF5F1F; margin-left: 10px;"></i> ثلاجات LG</h3>
+            <p>
+                <strong>أعطال شائعة:</strong> تسريب ماء (انسداد خرطوم الصرف)، ضعف تبريد (نقص فريون أو وسخ مكثف)، صوت عالي (مشكلة في الضاغط).
+                <strong>نصائح:</strong> نظف الملفات الخلفية سنوياً، تأكد من سلامة كاوتش الباب، لا تضع أطعمة ساخنة داخل الثلاجة.
+            </p>
+        </div>
+        
+        <div class="lg-content-item">
+            <h3><i class="fas fa-wind" style="color: #FF5F1F; margin-left: 10px;"></i> تكييفات LG</h3>
+            <p>
+                <strong>أعطال شائعة:</strong> ضعف تبريد (وسخ فلاتر أو نقص فريون)، تسريب ماء (انسداد خرطوم الصرف)، رمز CH 05 (مشكلة في حساس درجة الحرارة).
+                <strong>نصائح:</strong> نظف الفلاتر شهرياً، أجرِ صيانة دورية قبل الصيف، تأكد من عزل الوحدة الخارجية جيداً.
+            </p>
+        </div>
+        
+        <div class="lg-content-item">
+            <h3><i class="fas fa-tv" style="color: #FF5F1F; margin-left: 10px;"></i> شاشات LG</h3>
+            <p>
+                <strong>أعطال شائعة:</strong> الشاشة لا تعمل (مشكلة في الباور سبلاي)، خطوط في الشاشة (تلف في البانل)، ألوان غير طبيعية (مشكلة في الـ T-Con).
+                <strong>نصائح:</strong> استخدم مثبت جهد (Stabilizer) لحماية الشاشة من ارتفاع وانخفاض التيار.
+            </p>
+        </div>
+    </div>
+    
     <div class="warranty-box">
         <i class="fas fa-shield-alt" style="color: #2e7d32; font-size: 2rem; margin-left: 10px;"></i>
         <strong style="font-size: 1.3rem;">ضمان على الإصلاحات وقطع الغيار</strong>
@@ -472,11 +513,9 @@
                         <option value="غسالة">غسالة</option>
                         <option value="ثلاجة">ثلاجة</option>
                         <option value="تكييف">تكييف</option>
-                        <option value="بوتاجاز">بوتاجاز</option>
                         <option value="ديب فريزر">ديب فريزر</option>
                         <option value="ميكروويف">ميكروويف</option>
                         <option value="غسالة أطباق">غسالة أطباق</option>
-                        <option value="سخان">سخان</option>
                         <option value="other">أخرى (حدد)</option>
                     </select>
                 </div>
@@ -502,8 +541,6 @@
                     <option value="محطة الرمل">محطة الرمل</option>
                     <option value="سان ستيفانو">سان ستيفانو</option>
                     <option value="فيصل">فيصل</option>
-                    <option value="الابراهيمية">الابراهيمية</option>
-                    <option value="سبورتنج">سبورتنج</option>
                 </select>
             </div>
             
@@ -574,8 +611,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const name = document.getElementById('fullName')?.value.trim() || '';
             const phone = document.getElementById('phone')?.value.trim() || '';
             const address = document.getElementById('address')?.value.trim() || '';
+            const deviceSelect = document.getElementById('deviceType');
             const device = deviceSelect?.options[deviceSelect.selectedIndex]?.text || '';
-            const otherDevice = otherInput?.value.trim() || '';
+            const otherDevice = document.getElementById('otherDevice')?.value.trim() || '';
             const district = document.getElementById('district')?.value || '';
             const problem = document.getElementById('problemDesc')?.value.trim() || '(بدون وصف)';
             
@@ -595,7 +633,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 deviceText = otherDevice || 'غير محدد';
             }
             
-            // تكوين رسالة واتساب (مع إيموجي)
+            // تكوين رسالة واتساب
             const message = 
                 `🆔 *طلب صيانة LG جديد*\n\n` +
                 `👤 *الاسم:* ${name}\n` +
