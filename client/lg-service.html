@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مركز صيانة LG المعتمد - MaintenanceGuide</title>
+    <title>مركز صيانة LG المعتمد - الإسكندرية | MaintenanceGuide</title>
     <meta name="description" content="مركز صيانة LG المعتمد في الإسكندرية. تصليح غسالات، ثلاجات، تكييفات LG بمنزلك. قطع غيار أصلية، ضمان على الإصلاح، فنيين خبراء. اتصل الآن.">
     
-    <!-- كود التتبع الموحد (GTAG) -->
+    <!-- أكواد التتبع (GTAG) - كما هي بدون تغيير -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=AW-16866300615"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
@@ -366,10 +366,10 @@
         📞 01278885772
     </div>
 
-    <!-- زر الحجز الجديد (قصير وواضح) -->
+    <!-- زر سريع للحجز -->
     <div style="display: flex; justify-content: center; margin: 20px 0 30px;">
         <a href="#booking" style="background: #FF5F1F; color: white; padding: 10px 20px; border-radius: 50px; text-decoration: none; font-weight: 900; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); border: 2px solid white;">
-            <i class="fas fa-calendar-check"></i> احجز موعد
+            <i class="fas fa-calendar-check"></i> احجز موعد صيانة LG الآن
         </a>
     </div>
     
@@ -406,7 +406,7 @@
         <div class="service-card">
             <i class="fas fa-oven"></i>
             <h3>صيانة ميكروويف LG</h3>
-            <p>أعطال المagnetron، لوحة التحكم، عدم التسخين، أعطال الباب.</p>
+            <p>أعطال الماجنترون (Magnetron)، لوحة التحكم، عدم التسخين، أعطال الباب.</p>
         </div>
         <div class="service-card">
             <i class="fas fa-broom"></i>
@@ -425,11 +425,11 @@
         <h2 style="color: var(--primary); margin-bottom: 30px;">❓ أسئلة شائعة عن صيانة LG</h2>
         <div class="faq-item">
             <div class="faq-question">س: هل تقومون بصيانة أجهزة LG الإنفرتر؟</div>
-            <div class="faq-answer">ج: نعم، فنيونا مدربون على تشخيص وإصلاح الأعطال في تقنية العاكس (Inverter) المستخدمة في غسالات وثلاجات وتكييفات LG الحديثة .</div>
+            <div class="faq-answer">ج: نعم، فنيونا مدربون على تشخيص وإصلاح الأعطال في تقنية العاكس (Inverter) المستخدمة في غسالات وثلاجات وتكييفات LG الحديثة.</div>
         </div>
         <div class="faq-item">
             <div class="faq-question">س: هل قطع الغيار المستخدمة أصلية؟</div>
-            <div class="faq-answer">ج: نوفر قطع غيار متوافقة وعالية الجودة تضمن أداء مماثلاً للأصلي. يمكنك طلب قطع أصلية وسنوفرها لك مع ضمانها .</div>
+            <div class="faq-answer">ج: نوفر قطع غيار متوافقة وعالية الجودة تضمن أداء مماثلاً للأصلي. يمكنك طلب قطع أصلية وسنوفرها لك مع ضمانها.</div>
         </div>
         <div class="faq-item">
             <div class="faq-question">س: ما هي المناطق التي تغطونها في الإسكندرية؟</div>
@@ -447,25 +447,28 @@
     
     <!-- ===== نموذج الحجز ===== -->
     <div id="booking" class="booking-section">
-        <h2><i class="fas fa-calendar-check"></i> احجز موعد صيانة</h2>
-        <form action="#" method="post">
+        <h2><i class="fas fa-calendar-check"></i> احجز موعد صيانة LG</h2>
+        <form id="bookingForm" action="#" method="post">
+            <!-- حقل مخفي لتحديد الماركة تلقائياً (LG) -->
+            <input type="hidden" id="brand" name="brand" value="LG">
+            
             <div class="form-row">
                 <div class="form-group">
-                    <input type="text" class="form-control" placeholder="الاسم الثلاثي" required>
+                    <input type="text" class="form-control" id="fullName" placeholder="الاسم الثلاثي *" required>
                 </div>
                 <div class="form-group">
-                    <input type="tel" class="form-control" placeholder="رقم الهاتف" required>
+                    <input type="tel" class="form-control" id="phone" placeholder="رقم الهاتف * (11 رقم)" pattern="01[0-9]{9}" title="أدخل رقم مصري صحيح (11 رقم)" required>
                 </div>
             </div>
             
             <div class="form-group">
-                <input type="text" class="form-control" placeholder="العنوان بالتفصيل (مثال: سان ستيفانو، شارع عزيز كحيل)" required>
+                <input type="text" class="form-control" id="address" placeholder="العنوان بالتفصيل (شارع، مبنى، شقة) *" required>
             </div>
             
             <div class="form-row">
                 <div class="form-group">
                     <select class="form-control" id="deviceType" required>
-                        <option value="">اختر نوع الجهاز</option>
+                        <option value="">اختر نوع جهاز LG</option>
                         <option value="غسالة">غسالة</option>
                         <option value="ثلاجة">ثلاجة</option>
                         <option value="تكييف">تكييف</option>
@@ -474,19 +477,21 @@
                         <option value="ميكروويف">ميكروويف</option>
                         <option value="غسالة أطباق">غسالة أطباق</option>
                         <option value="سخان">سخان</option>
-                        <option value="other">أخرى</option>
+                        <option value="other">أخرى (حدد)</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <input type="text" class="form-control" id="otherDevice" placeholder="اكتب نوع الجهاز" style="display:none;">
                 </div>
             </div>
+            
             <div class="form-group">
-                <textarea class="form-control" placeholder="تفاصيل المشكلة (اختياري)"></textarea>
+                <textarea class="form-control" id="problemDesc" placeholder="وصف المشكلة (اختياري) - مثال: الغسالة بتسرب مياه"></textarea>
             </div>
+            
             <div class="form-group">
-                <select class="form-control" required>
-                    <option value="">اختر المنطقة</option>
+                <select class="form-control" id="district" required>
+                    <option value="">اختر المنطقة *</option>
                     <option value="المنتزه">المنتزه</option>
                     <option value="شرق">شرق</option>
                     <option value="وسط">وسط</option>
@@ -501,16 +506,17 @@
                     <option value="سبورتنج">سبورتنج</option>
                 </select>
             </div>
-            <button type="submit" class="submit-btn">
+            
+            <button type="submit" class="submit-btn" id="submitBtn">
                 <i class="fab fa-whatsapp"></i> إرسال الحجز عبر واتساب
             </button>
             <div class="booking-footer">
-                <i class="fas fa-shield-alt"></i> فني متخصص يصل خلال 60 دقيقة • ضمان على الإصلاح • قطع غيار أصلية
+                <i class="fas fa-shield-alt"></i> فني متخصص في LG يصل خلال 60 دقيقة • ضمان على الإصلاح • قطع غيار أصلية
             </div>
         </form>
     </div>
     
-    <!-- المساحة في الأسفل عشان الأزرار العائمة ما تغطيش حاجة -->
+    <!-- مساحة سفلية للأزرار العائمة -->
     <div style="height: 80px;"></div>
     
 </main>
@@ -541,24 +547,69 @@
     </a>
 </div>
 
-<!-- ===== سكريبت حقل "أخرى" ===== -->
+<!-- ===== سكريبت النموذج وإرسال واتساب ===== -->
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var deviceSelect = document.getElementById('deviceType');
-        var otherInput = document.getElementById('otherDevice');
-        
-        if (deviceSelect && otherInput) {
-            deviceSelect.addEventListener('change', function() {
-                if (this.value === 'other') {
-                    otherInput.style.display = 'block';
-                    otherInput.setAttribute('required', 'required');
-                } else {
-                    otherInput.style.display = 'none';
-                    otherInput.removeAttribute('required');
-                }
-            });
-        }
-    });
+document.addEventListener('DOMContentLoaded', function() {
+    // إظهار/إخفاء حقل "أخرى" لنوع الجهاز
+    const deviceSelect = document.getElementById('deviceType');
+    const otherInput = document.getElementById('otherDevice');
+    if (deviceSelect && otherInput) {
+        deviceSelect.addEventListener('change', function() {
+            if (this.value === 'other') {
+                otherInput.style.display = 'block';
+                otherInput.setAttribute('required', 'required');
+            } else {
+                otherInput.style.display = 'none';
+                otherInput.removeAttribute('required');
+            }
+        });
+    }
+    
+    // إرسال النموذج عبر واتساب
+    const bookingForm = document.getElementById('bookingForm');
+    if (bookingForm) {
+        bookingForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('fullName')?.value.trim() || '';
+            const phone = document.getElementById('phone')?.value.trim() || '';
+            const address = document.getElementById('address')?.value.trim() || '';
+            const device = deviceSelect?.options[deviceSelect.selectedIndex]?.text || '';
+            const otherDevice = otherInput?.value.trim() || '';
+            const district = document.getElementById('district')?.value || '';
+            const problem = document.getElementById('problemDesc')?.value.trim() || '(بدون وصف)';
+            
+            // التحقق من الحقول المطلوبة
+            if (!name || !phone || !address || !device || !district) {
+                alert('❌ يرجى ملء جميع الحقول المطلوبة (*)');
+                return;
+            }
+            if (!/^01[0-9]{9}$/.test(phone)) {
+                alert('❌ رقم الهاتف غير صحيح. يجب أن يتكون من 11 رقم ويبدأ بـ 01');
+                return;
+            }
+            
+            // معالجة نوع الجهاز
+            let deviceText = device;
+            if (device === 'أخرى (حدد)') {
+                deviceText = otherDevice || 'غير محدد';
+            }
+            
+            // تكوين رسالة واتساب (مع إيموجي)
+            const message = 
+                `🆔 *طلب صيانة LG جديد*\n\n` +
+                `👤 *الاسم:* ${name}\n` +
+                `📞 *الهاتف:* ${phone}\n` +
+                `🏠 *العنوان:* ${address}\n` +
+                `📍 *المنطقة:* ${district}\n` +
+                `📱 *الجهاز:* ${deviceText}\n` +
+                `📝 *الوصف:* ${problem}`;
+            
+            // فتح واتساب
+            window.open(`https://wa.me/201558625259?text=${encodeURIComponent(message)}`, '_blank');
+        });
+    }
+});
 </script>
 
 </body>
