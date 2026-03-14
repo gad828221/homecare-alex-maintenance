@@ -1,27 +1,26 @@
-# إجبار HTTPS لكل الموقع (مهم جدًا للأمان والـ SEO)
+# إجبار HTTPS
 http://maintenanceguide.life/*    https://maintenanceguide.life/:splat   301!
 http://*.maintenanceguide.life/*  https://maintenanceguide.life/:splat   301!
 
-# صفحات الماركات (تأكد أنها تعمل أولاً)
-/lg-service.html          /lg-service.html         200
-/samsung-service.html     /samsung-service.html    200
-/toshiba-service.html     /toshiba-service.html    200
-/sharp-service.html       /sharp-service.html      200
-/zanussi-service.html     /zanussi-service.html    200
-/whitewhale-service.html  /whitewhale-service.html 200
-/ariston-service.html     /ariston-service.html    200
-/thalajat.html            /thalajat.html           200
-/ghassalat.html           /ghassalat.html          200
+# توجيه جميع طلبات صفحات الماركات إلى مجلد client/
+/lg-service            /client/lg-service.html     200
+/lg-service.html       /client/lg-service.html     200
+/lg                    /client/lg-service.html     301
 
-# Redirect أي محاولة قديمة لسامسونج للصفحة الجديدة
-/samsung                  /samsung-service        301
-/samsung.html             /samsung-service        301
-/samsung-service.html     /samsung-service        301
+/samsung-service       /client/samsung-service.html     200
+/samsung-service.html  /client/samsung-service.html     200
+/samsung               /client/samsung-service.html     301
 
-# نفس الشيء لـ LG (لو فيه روابط قديمة)
-/lg                       /lg-service             301
-/lg.html                  /lg-service             301
-/lg-service.html          /lg-service             301
+/thalajat              /client/thalajat.html     200
+/thalajat.html         /client/thalajat.html     200
 
-# قاعدة SPA - تطبق فقط على الروابط غير الموجودة وغير المذكورة أعلاه
-/*                        /index.html             200!
+/ghassalat             /client/ghassalat.html     200
+/ghassalat.html        /client/ghassalat.html     200
+
+# قاعدة عامة للروابط غير المعروفة (تحاول client/ أولاً)
+/*                     /client/:splat             200
+/*.html                /client/:splat.html        200
+/*/                    /client/:splat/index.html  200
+
+# إذا لم ينجح أي شيء، ارجع للصفحة الرئيسية
+/*                     /client/index.html         200
