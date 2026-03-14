@@ -1,1 +1,37 @@
+# تحسين الصور عبر Netlify CDN
 /assets/* /.netlify/images?url=/assets/:splat&fm=webp&w=800 200
+/images/* /.netlify/images?url=/images/:splat&fm=webp&w=800 200
+
+# إجبار HTTPS لكل الموقع
+http://maintenanceguide.life/*    https://maintenanceguide.life/:splat   301!
+http://*.maintenanceguide.life/*  https://maintenanceguide.life/:splat   301!
+
+# توجيه صفحات الماركات إلى المجلد الصحيح
+/lg-service.html          /client/lg-service.html         200
+/samsung-service.html     /client/samsung-service.html    200
+/toshiba-service.html     /client/toshiba-service.html    200
+/sharp-service.html       /client/sharp-service.html      200
+/zanussi-service.html     /client/zanussi-service.html    200
+/whitewhale-service.html  /client/whitewhale-service.html 200
+/ariston-service.html     /client/ariston-service.html    200
+/thalajat.html            /client/thalajat.html           200
+/ghassalat.html           /client/ghassalat.html          200
+
+# إعادة توجيه الروابط القديمة (بدون html)
+/lg                       /client/lg-service.html         301
+/samsung                  /client/samsung-service.html    301
+/toshiba                  /client/toshiba-service.html    301
+/sharp                    /client/sharp-service.html      301
+/zanussi                  /client/zanussi-service.html    301
+/whitewhale               /client/whitewhale-service.html 301
+/ariston                  /client/ariston-service.html    301
+/thalajat                 /client/thalajat.html           301
+/ghassalat                /client/ghassalat.html          301
+
+# الصفحة الرئيسية
+/                         /client/index.html               200
+
+# أي رابط غير معروف
+/*                        /client/:splat                   200
+/*.html                   /client/:splat.html              200
+/*                        /client/index.html               200
