@@ -652,3 +652,78 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </body>
 </html>
+<!-- ===== تحسينات LG الرسمية (باستخدام بياناتك) ===== -->
+<script>
+(function() {
+    'use strict';
+
+    // بياناتك
+    const MY_PHONE = '01278885772';
+    const MY_WHATSAPP = '01558625259';
+    const MY_FACEBOOK = 'https://www.facebook.com/maintenanceguide'; // غير الرابط
+
+    // 1. إضافة شعار الوكيل المعتمد
+    function addBadge() {
+        const brandHeader = document.querySelector('.brand-header');
+        if (!brandHeader || document.querySelector('.lg-official-badge')) return;
+        
+        const badge = document.createElement('div');
+        badge.className = 'lg-official-badge';
+        badge.style.cssText = 'text-align:center; margin:10px 0;';
+        badge.innerHTML = '<span style="display:inline-block; padding:5px 15px; background:linear-gradient(145deg,#A50034,#6B0023); color:white; border-radius:50px; font-size:0.9rem; font-weight:600; box-shadow:0 2px 10px rgba(165,0,52,0.3);">🏆 Life\'s Good - الوكيل المعتمد</span>';
+        brandHeader.parentNode.insertBefore(badge, brandHeader.nextSibling);
+    }
+
+    // 2. إضافة صندوق الدعم
+    function addSupport() {
+        const booking = document.querySelector('.booking-section');
+        if (!booking || document.querySelector('.support-box')) return;
+        
+        const support = document.createElement('div');
+        support.className = 'support-box';
+        support.style.cssText = 'background:#e8f5e8; padding:30px; border-radius:30px; margin:30px 0; border-right:6px solid #2e7d32; text-align:center;';
+        support.innerHTML = `
+            <h3 style="color:#0A2647; font-size:1.8rem; font-weight:900; margin-bottom:20px;">
+                <i class="fas fa-headset" style="color:#2e7d32;"></i> خدمة العملاء
+            </h3>
+            <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:30px;">
+                <div style="background:white; padding:20px; border-radius:20px; min-width:200px;">
+                    <i class="fab fa-whatsapp" style="color:#25D366; font-size:2rem; margin-bottom:10px;"></i>
+                    <p style="font-weight:700;">واتساب</p>
+                    <a href="https://wa.me/${MY_WHATSAPP}" style="color:#25D366; font-weight:600; text-decoration:none;">${MY_WHATSAPP}</a>
+                </div>
+                <div style="background:white; padding:20px; border-radius:20px; min-width:200px;">
+                    <i class="fas fa-phone-alt" style="color:#0066FF; font-size:2rem; margin-bottom:10px;"></i>
+                    <p style="font-weight:700;">اتصل</p>
+                    <a href="tel:${MY_PHONE}" style="color:#0066FF; font-weight:600; text-decoration:none;">${MY_PHONE}</a>
+                </div>
+                <div style="background:white; padding:20px; border-radius:20px; min-width:200px;">
+                    <i class="fas fa-clock" style="color:#FF5F1F; font-size:2rem; margin-bottom:10px;"></i>
+                    <p style="font-weight:700;">مواعيد العمل</p>
+                    <p style="color:#64748B;">24 ساعة طوال الأسبوع</p>
+                </div>
+            </div>
+        `;
+        booking.parentNode.insertBefore(support, booking);
+    }
+
+    // 3. تغيير الألوان إلى أحمر LG
+    function changeColors() {
+        const style = document.createElement('style');
+        style.textContent = `
+            :root { --accent: #A50034 !important; }
+            .brand-header { border-bottom: 6px solid #A50034 !important; }
+            .service-card { border-top: 6px solid #A50034 !important; }
+            .hotline { background: linear-gradient(145deg, #A50034, #6B0023) !important; }
+            .cta-main { background: linear-gradient(145deg, #A50034, #6B0023) !important; }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // تنفيذ
+    addBadge();
+    addSupport();
+    changeColors();
+    console.log('✅ تحسينات LG الرسمية تم تطبيقها');
+})();
+</script>
