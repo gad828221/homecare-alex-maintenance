@@ -64,7 +64,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative h-96 overflow-hidden">
         <img
-          src="/images/hero-bg.jpg"
+          src="/images/hero-bg-new.jpg"
           alt="صيانة احترافية"
           className="w-full h-full object-cover"
         />
@@ -184,12 +184,12 @@ export default function Home() {
                 <li>✓ استبدال قطع الغيار الأصلية</li>
               </ul>
             </div>
-            <img src="/images/hero-bg.jpg" alt="صيانة الثلاجات" className="rounded-lg shadow-lg" />
+            <img src="/images/services/refrigerator-repair-pro.jpg" alt="صيانة الثلاجات" className="rounded-lg shadow-lg" />
           </div>
 
           {/* Washing Machines */}
           <div className="mb-16 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            <img src="/images/hero-bg.jpg" alt="صيانة الغسالات" className="rounded-lg shadow-lg order-2 md:order-1" />
+            <img src="/images/services/washing-machine-repair-pro.jpg" alt="صيانة الغسالات" className="rounded-lg shadow-lg order-2 md:order-1" />
             <div className="order-1 md:order-2">
               <h3 className="text-2xl font-bold text-orange-600 mb-4">صيانة الغسالات (ملابس وأطباق)</h3>
               <p className="text-gray-700 mb-4">متخصصون في صيانة غسالات الملابس الأوتوماتيكية والعادية وغسالات الأطباق. نقدم حلول سريعة وفعالة لجميع الأعطال.</p>
@@ -214,12 +214,12 @@ export default function Home() {
                 <li>✓ صيانة الوحدات الداخلية والخارجية</li>
               </ul>
             </div>
-            <img src="/images/hero-bg.jpg" alt="صيانة المكيفات" className="rounded-lg shadow-lg" />
+            <img src="/images/services/ac-repair-pro.jpg" alt="صيانة المكيفات" className="rounded-lg shadow-lg" />
           </div>
 
           {/* Stoves and Ovens */}
           <div className="mb-16 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            <img src="/images/hero-bg.jpg" alt="صيانة البوتاجاز" className="rounded-lg shadow-lg order-2 md:order-1" />
+            <img src="/images/services/stove-repair-pro.jpg" alt="صيانة البوتاجاز" className="rounded-lg shadow-lg order-2 md:order-1" />
             <div className="order-1 md:order-2">
               <h3 className="text-2xl font-bold text-orange-600 mb-4">صيانة البوتاجاز والأفران</h3>
               <p className="text-gray-700 mb-4">متخصصون في إصلاح وصيانة البوتاجاز والأفران الكهربائية والغازية. نقدم خدمات تنظيف شاملة وإصلاح سريع.</p>

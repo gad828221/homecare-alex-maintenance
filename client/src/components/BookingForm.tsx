@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, CheckCircle } from "lucide-react";
 import { useState } from "react";
 
 interface BookingFormProps {
@@ -77,14 +77,17 @@ export default function BookingForm({
   };
 
   return (
-    <section className="py-12 bg-orange-50">
+    <section className="py-16 bg-gradient-to-b from-slate-50 to-white">
       <div className="container max-w-2xl">
-        <h2 className="text-3xl font-bold text-center mb-2">{title}</h2>
-        <p className="text-center text-gray-600 mb-8">{description}</p>
-        <Card className="p-8 shadow-lg">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold mb-3 bg-gradient-to-r from-slate-900 to-orange-600 bg-clip-text text-transparent">{title}</h2>
+          <p className="text-lg text-gray-600">{description}</p>
+        </div>
+        <Card className="p-8 shadow-2xl border-2 border-orange-100 hover:border-orange-300 transition-all">
           {submitMessage && (
-            <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
-              {submitMessage}
+            <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-400 text-green-700 rounded-lg flex items-center gap-3">
+              <CheckCircle className="w-5 h-5 flex-shrink-0" />
+              <span className="font-medium">{submitMessage}</span>
             </div>
           )}
           <form 
@@ -97,71 +100,71 @@ export default function BookingForm({
             <input type="hidden" name="form-name" value="booking" />
             
             <div>
-              <label className="block text-sm font-medium mb-2">الاسم</label>
+              <label className="block text-sm font-bold text-slate-900 mb-2">👤 الاسم الكامل</label>
               <input
                 type="text"
                 name="name"
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="أدخل اسمك"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                placeholder="أدخل اسمك الكامل"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">رقم الهاتف</label>
+              <label className="block text-sm font-bold text-slate-900 mb-2">📱 رقم الهاتف</label>
               <input
                 type="tel"
                 name="phone"
                 required
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
                 placeholder="01234567890"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">البريد الإلكتروني (اختياري)</label>
+              <label className="block text-sm font-bold text-slate-900 mb-2">📧 البريد الإلكتروني (اختياري)</label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
                 placeholder="your@email.com"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">نوع الخدمة</label>
+              <label className="block text-sm font-bold text-slate-900 mb-2">🔧 نوع الخدمة المطلوبة</label>
               <select
                 name="service"
                 required
                 value={formData.service}
                 onChange={(e) => setFormData({ ...formData, service: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all bg-white"
               >
                 <option value="">اختر الخدمة</option>
-                <option value="fridge">صيانة الثلاجات</option>
-                <option value="washer">صيانة الغسالات</option>
-                <option value="ac">صيانة المكيفات</option>
-                <option value="oven">صيانة الأفران</option>
-                <option value="heater">صيانة السخانات</option>
-                <option value="dishwasher">صيانة غسالات الأطباق</option>
+                <option value="fridge">❄️ صيانة الثلاجات</option>
+                <option value="washer">🌊 صيانة الغسالات</option>
+                <option value="ac">❄️ صيانة المكيفات</option>
+                <option value="oven">🔥 صيانة الأفران</option>
+                <option value="heater">🌡️ صيانة السخانات</option>
+                <option value="dishwasher">🍽️ صيانة غسالات الأطباق</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">العنوان بالتفصيل</label>
+              <label className="block text-sm font-bold text-slate-900 mb-2">📍 العنوان بالتفصيل</label>
               <input
                 type="text"
                 name="address"
                 required
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
                 placeholder="مثال: سموحة، شارع عزيز كحيل"
               />
             </div>
@@ -170,12 +173,30 @@ export default function BookingForm({
               type="submit"
               size="lg"
               disabled={isSubmitting}
-              className="w-full bg-green-500 hover:bg-green-600 text-white font-bold text-lg"
+              className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold text-lg py-3 transition-all transform hover:scale-105 shadow-lg hover:shadow-green-500/50"
             >
               <MessageCircle className="w-5 h-5 ml-2" />
-              {isSubmitting ? "جاري الإرسال..." : "إرسال عبر WhatsApp"}
+              {isSubmitting ? "جاري الإرسال..." : "احجز الآن عبر WhatsApp"}
             </Button>
           </form>
+
+          {/* Additional Info */}
+          <div className="mt-8 pt-8 border-t-2 border-gray-100">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+              <div className="p-4 bg-orange-50 rounded-lg">
+                <p className="text-2xl font-bold text-orange-600">⚡ 60 دقيقة</p>
+                <p className="text-sm text-gray-600">وصول الفني</p>
+              </div>
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <p className="text-2xl font-bold text-blue-600">✅ ضمان</p>
+                <p className="text-sm text-gray-600">على جميع الإصلاحات</p>
+              </div>
+              <div className="p-4 bg-green-50 rounded-lg">
+                <p className="text-2xl font-bold text-green-600">🎁 خصم 20%</p>
+                <p className="text-sm text-gray-600">على أول زيارة</p>
+              </div>
+            </div>
+          </div>
         </Card>
       </div>
     </section>
