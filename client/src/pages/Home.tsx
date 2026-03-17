@@ -14,6 +14,59 @@ import washerRepair from "/images/services/washing-machine-repair-pro.jpg";
 import acRepair from "/images/services/ac-repair-pro.jpg";
 import stoveRepair from "/images/services/stove-repair-pro.jpg";
 
+// تنسيقات شريط الماركات (يمكن نقلها إلى ملف CSS عام لاحقاً)
+const brandsStripStyles = `
+.brands-strip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 15px 25px;
+  background: white;
+  padding: 15px 25px;
+  border-radius: 60px;
+  margin: 30px auto;
+  max-width: 1100px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,0.03);
+}
+
+.brands-strip span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0A2647;
+  transition: transform 0.3s ease;
+}
+
+.brands-strip span i {
+  color: #FF5F1F;
+  font-size: 1.2rem;
+  transition: transform 0.3s ease;
+}
+
+.brands-strip span:hover {
+  transform: translateY(-2px);
+}
+
+.brands-strip span:hover i {
+  transform: scale(1.1);
+  color: #FF8A4F;
+}
+
+@media (max-width: 768px) {
+  .brands-strip {
+    gap: 10px 15px;
+    padding: 12px 20px;
+  }
+  .brands-strip span {
+    font-size: 0.9rem;
+  }
+}
+`;
+
 export default function Home() {
   const services = [
     {
@@ -63,6 +116,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
+      <style>{brandsStripStyles}</style>
       <Header />
 
       {/* Hero Section */}
@@ -90,6 +144,18 @@ export default function Home() {
       {/* Contact Section */}
       <section id="contact">
         <BookingForm />
+      </section>
+
+      {/* ===== شريط الماركات ===== */}
+      <section className="container mx-auto px-4">
+        <div className="brands-strip">
+          <span><i className="fas fa-check-circle"></i> سامسونج</span>
+          <span><i className="fas fa-check-circle"></i> LG</span>
+          <span><i className="fas fa-check-circle"></i> توشيبا</span>
+          <span><i className="fas fa-check-circle"></i> شارب</span>
+          <span><i className="fas fa-check-circle"></i> زانوسي</span>
+          <span><i className="fas fa-check-circle"></i> وايت ويل</span>
+        </div>
       </section>
 
       {/* Features Section */}
