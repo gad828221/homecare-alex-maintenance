@@ -3,12 +3,18 @@ import { Card } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BookingForm from "@/components/BookingForm";
-import { Zap, Droplet, Wind, Flame, Star, Clock, Shield, Users, Phone, MessageCircle } from "lucide-react";
-import { useState } from "react";
+import { Zap, Droplet, Wind, Flame, Star, Clock, Shield, Users } from "lucide-react";
+
+// استيراد الصور مباشرة
+import heroBgNew from "/images/hero-bg-new.jpg";
+import heroBgPro from "/images/hero-bg-pro.jpg";
+import heroBg from "/images/hero-bg.jpg";
+import fridgeRepair from "/images/services/refrigerator-repair-pro.jpg";
+import washerRepair from "/images/services/washing-machine-repair-pro.jpg";
+import acRepair from "/images/services/ac-repair-pro.jpg";
+import stoveRepair from "/images/services/stove-repair-pro.jpg";
 
 export default function Home() {
-  // Booking form is now in a separate component
-
   const services = [
     {
       icon: Zap,
@@ -55,8 +61,6 @@ export default function Home() {
     },
   ];
 
-  // Booking form logic moved to BookingForm component
-
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
@@ -64,7 +68,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative h-96 overflow-hidden">
         <img
-          src="/images/hero-bg-new.jpg"
+          src={heroBgNew}
           alt="صيانة احترافية"
           className="w-full h-full object-cover"
         />
@@ -83,7 +87,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Contact Section - Using BookingForm Component */}
+      {/* Contact Section */}
       <section id="contact">
         <BookingForm />
       </section>
@@ -184,12 +188,12 @@ export default function Home() {
                 <li>✓ استبدال قطع الغيار الأصلية</li>
               </ul>
             </div>
-            <img src="/images/services/refrigerator-repair-pro.jpg" alt="صيانة الثلاجات" className="rounded-lg shadow-lg" />
+            <img src={fridgeRepair} alt="صيانة الثلاجات" className="rounded-lg shadow-lg" />
           </div>
 
           {/* Washing Machines */}
           <div className="mb-16 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            <img src="/images/services/washing-machine-repair-pro.jpg" alt="صيانة الغسالات" className="rounded-lg shadow-lg order-2 md:order-1" />
+            <img src={washerRepair} alt="صيانة الغسالات" className="rounded-lg shadow-lg order-2 md:order-1" />
             <div className="order-1 md:order-2">
               <h3 className="text-2xl font-bold text-orange-600 mb-4">صيانة الغسالات (ملابس وأطباق)</h3>
               <p className="text-gray-700 mb-4">متخصصون في صيانة غسالات الملابس الأوتوماتيكية والعادية وغسالات الأطباق. نقدم حلول سريعة وفعالة لجميع الأعطال.</p>
@@ -214,12 +218,12 @@ export default function Home() {
                 <li>✓ صيانة الوحدات الداخلية والخارجية</li>
               </ul>
             </div>
-            <img src="/images/services/ac-repair-pro.jpg" alt="صيانة المكيفات" className="rounded-lg shadow-lg" />
+            <img src={acRepair} alt="صيانة المكيفات" className="rounded-lg shadow-lg" />
           </div>
 
           {/* Stoves and Ovens */}
           <div className="mb-16 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            <img src="/images/services/stove-repair-pro.jpg" alt="صيانة البوتاجاز" className="rounded-lg shadow-lg order-2 md:order-1" />
+            <img src={stoveRepair} alt="صيانة البوتاجاز" className="rounded-lg shadow-lg order-2 md:order-1" />
             <div className="order-1 md:order-2">
               <h3 className="text-2xl font-bold text-orange-600 mb-4">صيانة البوتاجاز والأفران</h3>
               <p className="text-gray-700 mb-4">متخصصون في إصلاح وصيانة البوتاجاز والأفران الكهربائية والغازية. نقدم خدمات تنظيف شاملة وإصلاح سريع.</p>
@@ -244,7 +248,7 @@ export default function Home() {
                 <li>✓ صيانة دورية وفحص شامل</li>
               </ul>
             </div>
-            <img src="/images/hero-bg.jpg" alt="صيانة السخانات" className="rounded-lg shadow-lg" />
+            <img src={heroBg} alt="صيانة السخانات" className="rounded-lg shadow-lg" />
           </div>
         </div>
       </section>
