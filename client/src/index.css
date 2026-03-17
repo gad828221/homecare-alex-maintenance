@@ -180,3 +180,58 @@
     }
   }
 }
+/* ===== شريط الماركات ===== */
+.brands-strip {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 20px 30px !important;
+  background: white !important;
+  padding: 18px 25px !important;
+  border-radius: 60px !important;
+  margin: 30px auto !important;
+  max-width: 1100px !important;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.08) !important;
+  border: 1px solid rgba(0,0,0,0.03) !important;
+}
+
+.brands-strip span {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  color: #0A2647 !important;
+  transition: transform 0.3s ease !important;
+}
+
+.brands-strip span svg {
+  width: 1.2rem !important;
+  height: 1.2rem !important;
+  color: #FF5F1F !important;
+  transition: transform 0.3s ease !important;
+}
+
+.brands-strip span:hover {
+  transform: translateY(-2px) !important;
+}
+
+.brands-strip span:hover svg {
+  transform: scale(1.1) !important;
+  color: #FF8A4F !important;
+}
+
+@media (max-width: 768px) {
+  .brands-strip {
+    gap: 12px 18px !important;
+    padding: 12px 20px !important;
+  }
+  .brands-strip span {
+    font-size: 0.95rem !important;
+  }
+  .brands-strip span svg {
+    width: 1rem !important;
+    height: 1rem !important;
+  }
+}
