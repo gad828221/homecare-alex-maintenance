@@ -28,7 +28,7 @@ function Router() {
       <Route path={"/zanussi-service"} component={ZanussiService} />
       <Route path={"/unionaire-service"} component={UnionaireService} />
       <Route path={"/fresh-service"} component={FreshService} />
-      <Route path={"/whitewhale-service"} component={WhiteWhaleService} />
+      <Route path={"/white-whale-service"} component={WhiteWhaleService} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
