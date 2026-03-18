@@ -7,19 +7,21 @@ interface BookingFormProps {
   title?: string;
   description?: string;
   defaultService?: string;
+  defaultBrand?: string; // القيمة الافتراضية للماركة (عندما تكون الصفحة خاصة بماركة معينة)
 }
 
 export default function BookingForm({ 
   title = "احجز خدمتك الآن", 
   description = "استجابة سريعة وخدمة احترافية",
-  defaultService = ""
+  defaultService = "",
+  defaultBrand = "" // إذا كانت الصفحة خاصة بماركة (مثل LG) نمرر اسم الماركة هنا
 }: BookingFormProps) {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     service: defaultService,
     address: "",
-    deviceType: "", // نوع الجهاز
+    brand: defaultBrand, // ماركة الجهاز (يكتبها العميل أو تأتي افتراضية)
     problemDesc: "", // وصف المشكلة
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,18 +35,6 @@ export default function BookingForm({
     heater: "صيانة السخانات",
     dishwasher: "صيانة غسالات الأطباق",
   };
-
-  const deviceTypes = [
-    "غسالة",
-    "ثلاجة",
-    "تكييف",
-    "بوتاجاز",
-    "ديب فريزر",
-    "ميكروويف",
-    "غسالة أطباق",
-    "سخان",
-    "أخرى",
-  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,9 +60,9 @@ export default function BookingForm({
 
     // إرسال رسالة WhatsApp
     const serviceName = serviceNames[formData.service] || formData.service;
-    const deviceText = formData.deviceType || "غير محدد";
+    const brandText = formData.brand || "غير محدد";
     const problemText = formData.problemDesc || "(بدون وصف)";
-    const message = `مرحباً، أنا ${formData.name}\nرقم الهاتف: ${formData.phone}\nالخدمة المطلوبة: ${serviceName}\nنوع الجهاز: ${deviceText}\nوصف المشكلة: ${problemText}\nالعنوان: ${formData.address}\n\nأرجو تأكيد الحجز في أقرب وقت.`;
+    const message = `مرحباً، أنا ${formData.name}\nرقم الهاتف: ${formData.phone}\nالخدمة المطلوبة: ${serviceName}\nماركة الجهاز: ${brandText}\nوصف المشكلة: ${problemText}\nالعنوان: ${formData.address}\n\nأرجو تأكيد الحجز في أقرب وقت.`;
     const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(message)}`;
     
     // فتح WhatsApp
@@ -83,14 +73,14 @@ export default function BookingForm({
       setSubmitMessage("تم إرسال طلب الحجز عبر WhatsApp! سيتم التواصل معك قريباً.");
     }
     
-    // إعادة تعيين النموذج
+    // إعادة تعيين النموذج (مع الاحتفاظ بالقيم الافتراضية)
     setTimeout(() => {
       setFormData({ 
         name: "", 
         phone: "", 
         service: defaultService, 
         address: "", 
-        deviceType: "", 
+        brand: defaultBrand, // نعيد تعيينها إلى القيمة الافتراضية
         problemDesc: "" 
       });
       setIsSubmitting(false);
@@ -121,6 +111,7 @@ export default function BookingForm({
           >
             <input type="hidden" name="form-name" value="booking" />
             
+            {/* الاسم */}
             <div>
               <label className="block text-sm font-bold text-slate-900 mb-2">👤 الاسم الكامل</label>
               <input
@@ -134,6 +125,7 @@ export default function BookingForm({
               />
             </div>
 
+            {/* رقم الهاتف */}
             <div>
               <label className="block text-sm font-bold text-slate-900 mb-2">📱 رقم الهاتف</label>
               <input
@@ -147,6 +139,7 @@ export default function BookingForm({
               />
             </div>
 
+            {/* نوع الخدمة (كما هو) */}
             <div>
               <label className="block text-sm font-bold text-slate-900 mb-2">🔧 نوع الخدمة المطلوبة</label>
               <select
@@ -166,24 +159,24 @@ export default function BookingForm({
               </select>
             </div>
 
-            {/* حقل نوع الجهاز (جديد بدلاً من البريد الإلكتروني) */}
+            {/* ماركة الجهاز (حقل نصي جديد) */}
             <div>
-              <label className="block text-sm font-bold text-slate-900 mb-2">📱 نوع الجهاز</label>
-              <select
-                name="deviceType"
+              <label className="block text-sm font-bold text-slate-900 mb-2">📱 ماركة الجهاز</label>
+              <input
+                type="text"
+                name="brand"
                 required
-                value={formData.deviceType}
-                onChange={(e) => setFormData({ ...formData, deviceType: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all bg-white"
-              >
-                <option value="">اختر نوع الجهاز</option>
-                {deviceTypes.map((type) => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
+                value={formData.brand}
+                onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                placeholder="مثال: سامسونج، LG، توشيبا، إلخ"
+              />
+              {formData.brand && formData.brand === defaultBrand && defaultBrand && (
+                <p className="text-xs text-gray-500 mt-1">* يمكنك تغيير الماركة إذا لزم الأمر</p>
+              )}
             </div>
 
-            {/* حقل وصف المشكلة (جديد) */}
+            {/* وصف المشكلة */}
             <div>
               <label className="block text-sm font-bold text-slate-900 mb-2">📝 وصف المشكلة (اختياري)</label>
               <textarea
@@ -196,6 +189,7 @@ export default function BookingForm({
               />
             </div>
 
+            {/* العنوان */}
             <div>
               <label className="block text-sm font-bold text-slate-900 mb-2">📍 العنوان بالتفصيل</label>
               <input
@@ -220,7 +214,7 @@ export default function BookingForm({
             </Button>
           </form>
 
-          {/* Additional Info */}
+          {/* معلومات إضافية (ثابتة) */}
           <div className="mt-8 pt-8 border-t-2 border-gray-100">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
               <div className="p-4 bg-orange-50 rounded-lg">
