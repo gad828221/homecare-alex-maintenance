@@ -19,7 +19,8 @@ export default function BookingForm({
     phone: "",
     service: defaultService,
     address: "",
-    email: "",
+    deviceType: "", // نوع الجهاز
+    problemDesc: "", // وصف المشكلة
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
@@ -32,6 +33,18 @@ export default function BookingForm({
     heater: "صيانة السخانات",
     dishwasher: "صيانة غسالات الأطباق",
   };
+
+  const deviceTypes = [
+    "غسالة",
+    "ثلاجة",
+    "تكييف",
+    "بوتاجاز",
+    "ديب فريزر",
+    "ميكروويف",
+    "غسالة أطباق",
+    "سخان",
+    "أخرى",
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +70,9 @@ export default function BookingForm({
 
     // إرسال رسالة WhatsApp
     const serviceName = serviceNames[formData.service] || formData.service;
-    const message = `مرحباً، أنا ${formData.name}\nرقم الهاتف: ${formData.phone}\nالخدمة المطلوبة: ${serviceName}\nالعنوان: ${formData.address}\n\nأرجو تأكيد الحجز في أقرب وقت.`;
+    const deviceText = formData.deviceType || "غير محدد";
+    const problemText = formData.problemDesc || "(بدون وصف)";
+    const message = `مرحباً، أنا ${formData.name}\nرقم الهاتف: ${formData.phone}\nالخدمة المطلوبة: ${serviceName}\nنوع الجهاز: ${deviceText}\nوصف المشكلة: ${problemText}\nالعنوان: ${formData.address}\n\nأرجو تأكيد الحجز في أقرب وقت.`;
     const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(message)}`;
     
     // فتح WhatsApp
@@ -70,7 +85,14 @@ export default function BookingForm({
     
     // إعادة تعيين النموذج
     setTimeout(() => {
-      setFormData({ name: "", phone: "", service: defaultService, address: "", email: "" });
+      setFormData({ 
+        name: "", 
+        phone: "", 
+        service: defaultService, 
+        address: "", 
+        deviceType: "", 
+        problemDesc: "" 
+      });
       setIsSubmitting(false);
       setSubmitMessage("");
     }, 2000);
@@ -126,18 +148,6 @@ export default function BookingForm({
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-900 mb-2">📧 البريد الإلكتروني (اختياري)</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                placeholder="your@email.com"
-              />
-            </div>
-
-            <div>
               <label className="block text-sm font-bold text-slate-900 mb-2">🔧 نوع الخدمة المطلوبة</label>
               <select
                 name="service"
@@ -154,6 +164,36 @@ export default function BookingForm({
                 <option value="heater">🌡️ صيانة السخانات</option>
                 <option value="dishwasher">🍽️ صيانة غسالات الأطباق</option>
               </select>
+            </div>
+
+            {/* حقل نوع الجهاز (جديد بدلاً من البريد الإلكتروني) */}
+            <div>
+              <label className="block text-sm font-bold text-slate-900 mb-2">📱 نوع الجهاز</label>
+              <select
+                name="deviceType"
+                required
+                value={formData.deviceType}
+                onChange={(e) => setFormData({ ...formData, deviceType: e.target.value })}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all bg-white"
+              >
+                <option value="">اختر نوع الجهاز</option>
+                {deviceTypes.map((type) => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* حقل وصف المشكلة (جديد) */}
+            <div>
+              <label className="block text-sm font-bold text-slate-900 mb-2">📝 وصف المشكلة (اختياري)</label>
+              <textarea
+                name="problemDesc"
+                value={formData.problemDesc}
+                onChange={(e) => setFormData({ ...formData, problemDesc: e.target.value })}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                placeholder="مثال: الغسالة بتسرب مياه، التكييف مش بيبرد"
+                rows={3}
+              />
             </div>
 
             <div>
