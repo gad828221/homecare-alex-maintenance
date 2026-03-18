@@ -15,8 +15,7 @@ import FreshService from "./pages/FreshService";
 import WhiteWhaleService from "./pages/WhiteWhaleService";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-import FloatingWhatsAppButton from "./components/FloatingWhatsAppButton";
-
+import { Phone, MessageCircle } from "lucide-react";
 
 function Router() {
   return (
@@ -31,34 +30,53 @@ function Router() {
       <Route path={"/fresh-service"} component={FreshService} />
       <Route path={"/whitewhale-service"} component={WhiteWhaleService} />
       <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-// Wrapper component to include FloatingWhatsAppButton
+function FloatingButtons() {
+  return (
+    <div className="fixed bottom-6 left-0 right-0 flex justify-between px-4 pointer-events-none z-50">
+      {/* زر الاتصال (يمين) */}
+      <a
+        href="tel:01278885772"
+        onClick={() => gtag('event', 'conversion', {'send_to': 'AW-16866300615/Hg5gCNz5nvkbEMelveo-'})}
+        className="pointer-events-auto bg-blue-600 hover:bg-blue-700 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 ml-auto"
+        style={{ marginRight: '10px' }}
+        aria-label="اتصال"
+      >
+        <Phone className="w-6 h-6" />
+      </a>
+
+      {/* زر واتساب (يسار) */}
+      <a
+        href="https://wa.me/201558625259"
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => gtag('event', 'conversion', {'send_to': 'AW-16866300615/Hg5gCNz5nvkbEMelveo-'})}
+        className="pointer-events-auto bg-green-600 hover:bg-green-700 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110"
+        aria-label="واتساب"
+      >
+        <MessageCircle className="w-6 h-6" />
+      </a>
+    </div>
+  );
+}
+
 function AppContent() {
   return (
     <>
       <Router />
-      <FloatingWhatsAppButton />
+      <FloatingButtons />
     </>
   );
 }
 
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
-
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
+      <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster />
           <AppContent />
