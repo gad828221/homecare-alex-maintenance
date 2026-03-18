@@ -9,10 +9,10 @@ import SamsungService from "./pages/SamsungService";
 import LGService from "./pages/LGService";
 import SharpService from "./pages/SharpService";
 import ToshibaService from "./pages/ToshibaService";
-// import ZanussiService from "./pages/ZanussiService";
-// import UnionaireService from "./pages/UnionaireService";
-// import FreshService from "./pages/FreshService";
-// import WhiteWhaleService from "./pages/WhiteWhaleService";
+import ZanussiService from "./pages/ZanussiService";
+import UnionaireService from "./pages/UnionaireService";
+import FreshService from "./pages/FreshService";
+import WhiteWhaleService from "./pages/WhiteWhaleService";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import FloatingWhatsAppButton from "./components/FloatingWhatsAppButton";
@@ -26,10 +26,10 @@ function Router() {
       <Route path={"/lg-service"} component={LGService} />
       <Route path={"/sharp-service"} component={SharpService} />
       <Route path={"/toshiba-service"} component={ToshibaService} />
-      {/* <Route path={"/zanussi-service"} component={ZanussiService} /> */}
-      {/* <Route path={"/unionaire-service"} component={UnionaireService} /> */}
-      {/* <Route path={"/fresh-service"} component={FreshService} /> */}
-      {/* <Route path={"/whitewhale-service"} component={WhiteWhaleService} /> */}
+      <Route path={"/zanussi-service"} component={ZanussiService} />
+      <Route path={"/unionaire-service"} component={UnionaireService} />
+      <Route path={"/fresh-service"} component={FreshService} />
+      <Route path={"/whitewhale-service"} component={WhiteWhaleService} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
