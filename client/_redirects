@@ -1,6 +1,0 @@
-# إجبار HTTPS (اختياري)
-http://maintenanceguide.life/*    https://maintenanceguide.life/:splat   301!
-http://*.maintenanceguide.life/*  https://maintenanceguide.life/:splat   301!
-
-# أهم قاعدة: إعادة جميع طلبات React إلى index.html
-/*  /index.html  200
