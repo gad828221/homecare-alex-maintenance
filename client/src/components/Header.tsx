@@ -15,6 +15,10 @@ export default function Header() {
     { name: "Unionaire", path: "/unionaire-service" },
     { name: "Fresh", path: "/fresh-service" },
     { name: "White Whale", path: "/white-whale-service" },
+    { name: "Ariston", path: "/ariston-service" },
+    { name: "Beko", path: "/beko-service" },
+    { name: "Hoover", path: "/hoover-service" },
+    { name: "Indesit", path: "/indesit-service" },
   ];
 
   return (

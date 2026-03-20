@@ -13,6 +13,10 @@ import ZanussiService from "./pages/ZanussiService";
 import UnionaireService from "./pages/UnionaireService";
 import FreshService from "./pages/FreshService";
 import WhiteWhaleService from "./pages/WhiteWhaleService";
+import AristonService from "./pages/AristonService";
+import BekoService from "./pages/BekoService";
+import HooverService from "./pages/HooverService";
+import IndesitService from "./pages/IndesitService";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import { Phone, MessageCircle } from "lucide-react";
@@ -29,6 +33,10 @@ function Router() {
       <Route path={"/unionaire-service"} component={UnionaireService} />
       <Route path={"/fresh-service"} component={FreshService} />
       <Route path={"/white-whale-service"} component={WhiteWhaleService} />
+      <Route path={"/ariston-service"} component={AristonService} />
+      <Route path={"/beko-service"} component={BekoService} />
+      <Route path={"/hoover-service"} component={HooverService} />
+      <Route path={"/indesit-service"} component={IndesitService} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
