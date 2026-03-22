@@ -1,3 +1,6 @@
+# ملف خريطة الموقع
+/sitemap.xml              /sitemap.xml                     200
+
 # تحسين الصور عبر Netlify CDN
 /assets/* /.netlify/images?url=/assets/:splat&fm=webp&w=800 200
 /images/* /.netlify/images?url=/images/:splat&fm=webp&w=800 200
