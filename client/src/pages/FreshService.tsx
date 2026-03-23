@@ -11,21 +11,27 @@ export default function FreshService() {
       <Header />
 
       {/* Hero Section */}
-      <section className="relative h-96 overflow-hidden bg-gradient-to-r from-purple-600 to-purple-800">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center text-white px-4">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">صيانة فريش في الإسكندرية</h1>
-            <p className="text-xl md:text-2xl mb-8">خدمة متخصصة لجميع أجهزة فريش - سخانات، غسالات، بوتاجازات</p>
-            <Button
-              size="lg"
-              className="bg-green-500 hover:bg-green-600 text-white"
-              onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
-            >
-              احجز الآن
-            </Button>
-          </div>
-        </div>
-      </section>
+<section className="relative h-96 overflow-hidden">
+  <div className="absolute inset-0 bg-gradient-to-r from-lime-600 to-lime-800 mix-blend-multiply" />
+  <img 
+    src="/images/brands/fresh-hero.jpg" 
+    alt="صيانة فريش" 
+    className="absolute inset-0 w-full h-full object-cover"
+  />
+  <div className="absolute inset-0 flex items-center justify-center">
+    <div className="text-center text-white px-4">
+      <h1 className="text-4xl md:text-5xl font-bold mb-4">صيانة فريش في الإسكندرية</h1>
+      <p className="text-xl md:text-2xl mb-8">خدمة متخصصة لجميع أجهزة فريش - غسالات، ثلاجات، بوتاجاز</p>
+      <Button
+        size="lg"
+        className="bg-green-500 hover:bg-green-600 text-white"
+        onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+      >
+        احجز الآن
+      </Button>
+    </div>
+  </div>
+</section>
 
       {/* About Fresh Service */}
       <section className="py-12 bg-gray-50">
