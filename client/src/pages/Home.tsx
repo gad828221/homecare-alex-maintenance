@@ -121,7 +121,7 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="relative h-96 overflow-hidden">
-        <img
+  
           <img
   src={heroBgNew}
   alt="صيانة احترافية"
