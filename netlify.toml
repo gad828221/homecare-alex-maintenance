@@ -38,14 +38,21 @@
   to = "/:splat.webp"
   status = 200
 
-# أخيراً: كل المسارات الأخرى ترجع إلى index.html (لـ React Router)
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
 # تحويل جميع الصور إلى WebP ديناميكياً
 [[redirects]]
   from = "/images/*"
   to = "/.netlify/images?url=/images/:splat&w=1200&q=75&fm=webp"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/assets/*"
+  to = "/.netlify/images?url=/assets/:splat&w=1200&q=75&fm=webp"
+  status = 200
+  force = true
+
+# أخيراً: كل المسارات الأخرى ترجع إلى index.html (لـ React Router)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
