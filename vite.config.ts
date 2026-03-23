@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
+import { ViteImageOptimizer } from "vite-plugin-image-optimizer"; // <--- أضفنا هذا السطر
 
 // =============================================================================
 // Manus Debug Collector - Vite Plugin
@@ -150,7 +151,21 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+const plugins = [
+  react(),
+  tailwindcss(),
+  jsxLocPlugin(),
+  vitePluginManusRuntime(),
+  vitePluginManusDebugCollector(),
+  ViteImageOptimizer({
+    test: /\.(jpe?g|png|gif|tiff|webp|svg|avif)$/i,
+    includePublic: true,         // يشمل مجلد public
+    logStats: true,              // يعرض إحصائيات التحسين
+    png: { quality: 80 },
+    jpeg: { quality: 80 },
+    webp: { lossless: false, quality: 75 },
+  }),
+];
 
 export default defineConfig({
   plugins,
@@ -163,14 +178,14 @@ export default defineConfig({
   },
   envDir: path.resolve(import.meta.dirname),
   root: path.resolve(import.meta.dirname, "client"),
-  publicDir: path.resolve(import.meta.dirname, "client/public"),  // <--- أضفت هذا السطر
+  publicDir: path.resolve(import.meta.dirname, "client/public"),
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist"),  // <--- غيرت هذا السطر (شيلت /public)
+    outDir: path.resolve(import.meta.dirname, "dist"),
     emptyOutDir: true,
   },
   server: {
     port: 3000,
-    strictPort: false, // Will find next available port if 3000 is busy
+    strictPort: false,
     host: true,
     allowedHosts: [
       ".manuspre.computer",
