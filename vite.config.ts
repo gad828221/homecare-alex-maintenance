@@ -5,7 +5,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
-import { ViteImageOptimizer } from "vite-plugin-image-optimizer"; // <--- أضفنا هذا السطر
 
 // =============================================================================
 // Manus Debug Collector - Vite Plugin
@@ -151,21 +150,7 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [
-  react(),
-  tailwindcss(),
-  jsxLocPlugin(),
-  vitePluginManusRuntime(),
-  vitePluginManusDebugCollector(),
-  ViteImageOptimizer({
-    test: /\.(jpe?g|png|gif|tiff|webp|svg|avif)$/i,
-    includePublic: true,         // يشمل مجلد public
-    logStats: true,              // يعرض إحصائيات التحسين
-    png: { quality: 80 },
-    jpeg: { quality: 80 },
-    webp: { lossless: false, quality: 75 },
-  }),
-];
+const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
 
 export default defineConfig({
   plugins,
