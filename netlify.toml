@@ -4,19 +4,3 @@
 
 [build.environment]
   NODE_VERSION = "20"
-
-[[redirects]]
-  from = "/sitemap.xml"
-  to = "/sitemap.xml"
-  status = 200
-  force = true
-
-[[headers]]
-  for = "/sitemap.xml"
-  [headers.values]
-    Content-Type = "application/xml"
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
