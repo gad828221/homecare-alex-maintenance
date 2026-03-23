@@ -11,21 +11,27 @@ export default function UnionaireService() {
       <Header />
 
       {/* Hero Section */}
-      <section className="relative h-96 overflow-hidden bg-gradient-to-r from-cyan-600 to-cyan-800">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center text-white px-4">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">صيانة يونيون إير في الإسكندرية</h1>
-            <p className="text-xl md:text-2xl mb-8">خدمة متخصصة لأجهزة يونيون إير - تكييفات، غسالات، ثلاجات</p>
-            <Button
-              size="lg"
-              className="bg-green-500 hover:bg-green-600 text-white"
-              onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
-            >
-              احجز الآن
-            </Button>
-          </div>
-        </div>
-      </section>
+<section className="relative h-96 overflow-hidden">
+  <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-cyan-800 mix-blend-multiply" />
+  <img 
+    src="/images/brands/unionaire-hero.jpg" 
+    alt="صيانة يونيون إير" 
+    className="absolute inset-0 w-full h-full object-cover"
+  />
+  <div className="absolute inset-0 flex items-center justify-center">
+    <div className="text-center text-white px-4">
+      <h1 className="text-4xl md:text-5xl font-bold mb-4">صيانة يونيون إير في الإسكندرية</h1>
+      <p className="text-xl md:text-2xl mb-8">خدمة متخصصة لجميع أجهزة يونيون إير - تكييفات، غسالات</p>
+      <Button
+        size="lg"
+        className="bg-green-500 hover:bg-green-600 text-white"
+        onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+      >
+        احجز الآن
+      </Button>
+    </div>
+  </div>
+</section>
 
       {/* About Unionaire Service */}
       <section className="py-12 bg-gray-50">
