@@ -4,8 +4,42 @@
 
 [build.environment]
   NODE_VERSION = "20"
+
+# أولاً: تأكد من أن ملف sitemap.xml يخدم مباشرة
 [[redirects]]
   from = "/sitemap.xml"
   to = "/sitemap.xml"
   status = 200
   force = true
+
+# ثانياً: جميع الملفات الثابتة (الصور، css، js) تخدم مباشرة
+[[redirects]]
+  from = "/*.css"
+  to = "/:splat.css"
+  status = 200
+
+[[redirects]]
+  from = "/*.js"
+  to = "/:splat.js"
+  status = 200
+
+[[redirects]]
+  from = "/*.json"
+  to = "/:splat.json"
+  status = 200
+
+[[redirects]]
+  from = "/*.xml"
+  to = "/:splat.xml"
+  status = 200
+
+[[redirects]]
+  from = "/*.webp"
+  to = "/:splat.webp"
+  status = 200
+
+# أخيراً: كل المسارات الأخرى ترجع إلى index.html (لـ React Router)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
