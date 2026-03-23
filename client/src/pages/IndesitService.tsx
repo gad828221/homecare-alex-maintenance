@@ -9,23 +9,29 @@ export default function IndesitService() {
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
-
-      {/* Hero Section */}
-      <section className="relative h-96 overflow-hidden bg-gradient-to-r from-blue-600 to-blue-800">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center text-white px-4">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">صيانة إنديسيت في الإسكندرية</h1>
-            <p className="text-xl md:text-2xl mb-8">خدمة متخصصة لجميع أجهزة إنديسيت - غسالات، ثلاجات، بوتاجازات</p>
-            <Button
-              size="lg"
-              className="bg-green-500 hover:bg-green-600 text-white"
-              onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
-            >
-              احجز الآن
-            </Button>
-          </div>
-        </div>
-      </section>
+{/* Hero Section */}
+<section className="relative h-96 overflow-hidden">
+  <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-red-800 mix-blend-multiply" />
+  <img 
+    src="/images/brands/indesit-hero.jpg" 
+    alt="صيانة إنديسيت" 
+    className="absolute inset-0 w-full h-full object-cover"
+  />
+  <div className="absolute inset-0 flex items-center justify-center">
+    <div className="text-center text-white px-4">
+      <h1 className="text-4xl md:text-5xl font-bold mb-4">صيانة إنديسيت في الإسكندرية</h1>
+      <p className="text-xl md:text-2xl mb-8">خدمة متخصصة لجميع أجهزة إنديسيت - غسالات، ثلاجات، بوتاجازات</p>
+      <Button
+        size="lg"
+        className="bg-green-500 hover:bg-green-600 text-white"
+        onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+      >
+        احجز الآن
+      </Button>
+    </div>
+  </div>
+</section>
+      
 
       {/* About Indesit Service */}
       <section className="py-12 bg-gray-50">
