@@ -19,7 +19,6 @@ export default function BookingForm({
     phone: "",
     service: defaultService,
     address: "",
-    email: "",
     brand: "",
     problem: "",
   });
@@ -72,22 +71,22 @@ export default function BookingForm({
     
     // إعادة تعيين النموذج
     setTimeout(() => {
-      setFormData({ name: "", phone: "", service: defaultService, address: "", email: "", brand: "", problem: "" });
+      setFormData({ name: "", phone: "", service: defaultService, address: "", brand: "", problem: "" });
       setIsSubmitting(false);
       setSubmitMessage("");
     }, 2000);
   };
 
   return (
-    <section className="py-20 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+    <section className="py-20 bg-gradient-to-b from-blue-50 via-white to-orange-50">
       <div className="container max-w-4xl">
         <div className="text-center mb-16">
-          <h2 className="text-5xl font-bold mb-4 bg-gradient-to-r from-orange-400 via-orange-500 to-red-500 bg-clip-text text-transparent">{title}</h2>
-          <p className="text-xl text-gray-300">{description}</p>
+          <h2 className="text-5xl font-bold mb-4 bg-gradient-to-r from-slate-900 to-orange-600 bg-clip-text text-transparent">{title}</h2>
+          <p className="text-xl text-gray-700">{description}</p>
           <div className="w-24 h-1 bg-gradient-to-r from-orange-400 to-red-500 mx-auto mt-6 rounded-full"></div>
         </div>
         
-        <Card className="p-10 shadow-2xl border-0 bg-gradient-to-br from-slate-800 to-slate-700 hover:shadow-orange-500/20 transition-all duration-300">
+        <Card className="p-10 shadow-2xl border-2 border-orange-200 bg-gradient-to-br from-white to-blue-50/50 hover:shadow-orange-500/30 transition-all duration-300">
           {submitMessage && (
             <div className="mb-8 p-5 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-400 text-green-300 rounded-xl flex items-center gap-3 animate-pulse">
               <CheckCircle className="w-6 h-6 flex-shrink-0 text-green-400" />
@@ -107,8 +106,8 @@ export default function BookingForm({
             {/* Row 1: Name and Phone */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="group">
-                <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
-                  <User className="w-5 h-5 text-orange-400" />
+                <label className="block text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                  <User className="w-5 h-5 text-orange-500" />
                   الاسم الكامل
                 </label>
                 <input
@@ -117,14 +116,14 @@ export default function BookingForm({
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-5 py-3 bg-slate-700 border-2 border-slate-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400"
+                  className="w-full px-5 py-3 bg-white border-2 border-orange-200 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400"
                   placeholder="أدخل اسمك الكامل"
                 />
               </div>
 
               <div className="group">
-                <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
-                  <Phone className="w-5 h-5 text-orange-400" />
+                <label className="block text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                  <Phone className="w-5 h-5 text-orange-500" />
                   رقم الهاتف
                 </label>
                 <input
@@ -133,32 +132,17 @@ export default function BookingForm({
                   required
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-5 py-3 bg-slate-700 border-2 border-slate-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400"
+                  className="w-full px-5 py-3 bg-white border-2 border-orange-200 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400"
                   placeholder="01234567890"
                 />
               </div>
             </div>
 
-            {/* Row 2: Email and Service */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Row 2: Service Only */}
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
               <div className="group">
-                <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
-                  <Mail className="w-5 h-5 text-orange-400" />
-                  البريد الإلكتروني (اختياري)
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-5 py-3 bg-slate-700 border-2 border-slate-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400"
-                  placeholder="your@email.com"
-                />
-              </div>
-
-              <div className="group">
-                <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
-                  <Wrench className="w-5 h-5 text-orange-400" />
+                <label className="block text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                  <Wrench className="w-5 h-5 text-orange-500" />
                   نوع الخدمة المطلوبة
                 </label>
                 <select
@@ -166,7 +150,7 @@ export default function BookingForm({
                   required
                   value={formData.service}
                   onChange={(e) => setFormData({ ...formData, service: e.target.value })}
-                  className="w-full px-5 py-3 bg-slate-700 border-2 border-slate-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400"
+                  className="w-full px-5 py-3 bg-white border-2 border-orange-200 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400"
                 >
                   <option value="">اختر الخدمة</option>
                   <option value="fridge">❄️ صيانة الثلاجات</option>
@@ -182,8 +166,8 @@ export default function BookingForm({
             {/* Row 3: Brand and Problem */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="group">
-                <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
-                  <Wrench className="w-5 h-5 text-orange-400" />
+                <label className="block text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                  <Wrench className="w-5 h-5 text-orange-500" />
                   ماركة الجهاز
                 </label>
                 <input
@@ -191,14 +175,14 @@ export default function BookingForm({
                   name="brand"
                   value={formData.brand}
                   onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                  className="w-full px-5 py-3 bg-slate-700 border-2 border-slate-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400"
+                  className="w-full px-5 py-3 bg-white border-2 border-orange-200 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400"
                   placeholder="مثال: سامسونج، LG، توشيبا"
                 />
               </div>
 
               <div className="group">
-                <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
-                  <Wrench className="w-5 h-5 text-orange-400" />
+                <label className="block text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-orange-500" />
                   وصف المشكلة (اختياري)
                 </label>
                 <input
@@ -206,7 +190,7 @@ export default function BookingForm({
                   name="problem"
                   value={formData.problem}
                   onChange={(e) => setFormData({ ...formData, problem: e.target.value })}
-                  className="w-full px-5 py-3 bg-slate-700 border-2 border-slate-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400"
+                  className="w-full px-5 py-3 bg-white border-2 border-orange-200 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400"
                   placeholder="مثال: الغسالة بتسرب مياه"
                 />
               </div>
@@ -214,17 +198,16 @@ export default function BookingForm({
 
             {/* Address */}
             <div className="group">
-              <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-orange-400" />
-                العنوان بالتفصيل
-              </label>
-              <input
-                type="text"
-                name="address"
-                required
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                className="w-full px-5 py-3 bg-slate-700 border-2 border-slate-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400"
+                <label className="block text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-orange-500" />
+                  العنوان بالتفصيل
+                </label>
+                <input
+                  type="text"
+                  name="address"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  className="w-full px-5 py-3 bg-white border-2 border-orange-200 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400"-400"
                 placeholder="مثال: سموحة، شارع عزيز كحيل"
               />
             </div>
