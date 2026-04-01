@@ -14,7 +14,7 @@ export default function Footer() {
               <h3 className="font-bold text-lg">Maintenance Guide</h3>
             </div>
             <p className="text-gray-300 text-sm leading-relaxed">
-              نقدم خدمات صيانة احترافية لجميع الأجهزة المنزلية بأسعار منافسة وضمان الجودة. فريقنا متخصص وذو خبرة عالية.
+              نقدم خدمات صيانة احترافية وشاملة لجميع الأجهزة المنزلية بأسعار منافسة مع ضمان الجودة المعتمد. فريقنا الفني مدرب على أعلى مستوى لخدمتكم على مدار الساعة.
             </p>
             <div className="flex gap-3 pt-4">
               <a href="https://wa.me/201558625259" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center transition-all transform hover:scale-110">
