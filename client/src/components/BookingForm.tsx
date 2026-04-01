@@ -1,28 +1,27 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MessageCircle, CheckCircle } from "lucide-react";
+import { MessageCircle, CheckCircle, User, Phone, Mail, Wrench, MapPin, Zap, Shield, Gift } from "lucide-react";
 import { useState } from "react";
 
 interface BookingFormProps {
   title?: string;
   description?: string;
   defaultService?: string;
-  defaultBrand?: string; // القيمة الافتراضية للماركة (عندما تكون الصفحة خاصة بماركة معينة)
 }
 
 export default function BookingForm({ 
   title = "احجز خدمتك الآن", 
   description = "استجابة سريعة وخدمة احترافية",
-  defaultService = "",
-  defaultBrand = "" // إذا كانت الصفحة خاصة بماركة (مثل LG) نمرر اسم الماركة هنا
+  defaultService = ""
 }: BookingFormProps) {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     service: defaultService,
     address: "",
-    brand: defaultBrand, // ماركة الجهاز (يكتبها العميل أو تأتي افتراضية)
-    problemDesc: "", // وصف المشكلة
+    email: "",
+    brand: "",
+    problem: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
@@ -60,9 +59,7 @@ export default function BookingForm({
 
     // إرسال رسالة WhatsApp
     const serviceName = serviceNames[formData.service] || formData.service;
-    const brandText = formData.brand || "غير محدد";
-    const problemText = formData.problemDesc || "(بدون وصف)";
-    const message = `مرحباً، أنا ${formData.name}\nرقم الهاتف: ${formData.phone}\nالخدمة المطلوبة: ${serviceName}\nماركة الجهاز: ${brandText}\nوصف المشكلة: ${problemText}\nالعنوان: ${formData.address}\n\nأرجو تأكيد الحجز في أقرب وقت.`;
+    const message = `مرحباً، أنا ${formData.name}\nرقم الهاتف: ${formData.phone}\nالخدمة المطلوبة: ${serviceName}\nماركة الجهاز: ${formData.brand}\nالمشكلة: ${formData.problem}\nالعنوان: ${formData.address}\n\nأرجو تأكيد الحجز في أقرب وقت.`;
     const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(message)}`;
     
     // فتح WhatsApp
@@ -73,35 +70,31 @@ export default function BookingForm({
       setSubmitMessage("تم إرسال طلب الحجز عبر WhatsApp! سيتم التواصل معك قريباً.");
     }
     
-    // إعادة تعيين النموذج (مع الاحتفاظ بالقيم الافتراضية)
+    // إعادة تعيين النموذج
     setTimeout(() => {
-      setFormData({ 
-        name: "", 
-        phone: "", 
-        service: defaultService, 
-        address: "", 
-        brand: defaultBrand, // نعيد تعيينها إلى القيمة الافتراضية
-        problemDesc: "" 
-      });
+      setFormData({ name: "", phone: "", service: defaultService, address: "", email: "", brand: "", problem: "" });
       setIsSubmitting(false);
       setSubmitMessage("");
     }, 2000);
   };
 
   return (
-    <section className="py-16 bg-gradient-to-b from-slate-50 to-white">
-      <div className="container max-w-2xl">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-3 bg-gradient-to-r from-slate-900 to-orange-600 bg-clip-text text-transparent">{title}</h2>
-          <p className="text-lg text-gray-600">{description}</p>
+    <section className="py-20 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+      <div className="container max-w-4xl">
+        <div className="text-center mb-16">
+          <h2 className="text-5xl font-bold mb-4 bg-gradient-to-r from-orange-400 via-orange-500 to-red-500 bg-clip-text text-transparent">{title}</h2>
+          <p className="text-xl text-gray-300">{description}</p>
+          <div className="w-24 h-1 bg-gradient-to-r from-orange-400 to-red-500 mx-auto mt-6 rounded-full"></div>
         </div>
-        <Card className="p-8 shadow-2xl border-2 border-orange-100 hover:border-orange-300 transition-all">
+        
+        <Card className="p-10 shadow-2xl border-0 bg-gradient-to-br from-slate-800 to-slate-700 hover:shadow-orange-500/20 transition-all duration-300">
           {submitMessage && (
-            <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-400 text-green-700 rounded-lg flex items-center gap-3">
-              <CheckCircle className="w-5 h-5 flex-shrink-0" />
-              <span className="font-medium">{submitMessage}</span>
+            <div className="mb-8 p-5 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-400 text-green-300 rounded-xl flex items-center gap-3 animate-pulse">
+              <CheckCircle className="w-6 h-6 flex-shrink-0 text-green-400" />
+              <span className="font-semibold text-lg">{submitMessage}</span>
             </div>
           )}
+          
           <form 
             onSubmit={handleSubmit} 
             className="space-y-6"
@@ -111,123 +104,168 @@ export default function BookingForm({
           >
             <input type="hidden" name="form-name" value="booking" />
             
-            {/* الاسم */}
-            <div>
-              <label className="block text-sm font-bold text-slate-900 mb-2">👤 الاسم الكامل</label>
-              <input
-                type="text"
-                name="name"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                placeholder="أدخل اسمك الكامل"
-              />
+            {/* Row 1: Name and Phone */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="group">
+                <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+                  <User className="w-5 h-5 text-orange-400" />
+                  الاسم الكامل
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-5 py-3 bg-slate-700 border-2 border-slate-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400"
+                  placeholder="أدخل اسمك الكامل"
+                />
+              </div>
+
+              <div className="group">
+                <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+                  <Phone className="w-5 h-5 text-orange-400" />
+                  رقم الهاتف
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  required
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="w-full px-5 py-3 bg-slate-700 border-2 border-slate-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400"
+                  placeholder="01234567890"
+                />
+              </div>
             </div>
 
-            {/* رقم الهاتف */}
-            <div>
-              <label className="block text-sm font-bold text-slate-900 mb-2">📱 رقم الهاتف</label>
-              <input
-                type="tel"
-                name="phone"
-                required
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                placeholder="01234567890"
-              />
+            {/* Row 2: Email and Service */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="group">
+                <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+                  <Mail className="w-5 h-5 text-orange-400" />
+                  البريد الإلكتروني (اختياري)
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full px-5 py-3 bg-slate-700 border-2 border-slate-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400"
+                  placeholder="your@email.com"
+                />
+              </div>
+
+              <div className="group">
+                <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+                  <Wrench className="w-5 h-5 text-orange-400" />
+                  نوع الخدمة المطلوبة
+                </label>
+                <select
+                  name="service"
+                  required
+                  value={formData.service}
+                  onChange={(e) => setFormData({ ...formData, service: e.target.value })}
+                  className="w-full px-5 py-3 bg-slate-700 border-2 border-slate-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400"
+                >
+                  <option value="">اختر الخدمة</option>
+                  <option value="fridge">❄️ صيانة الثلاجات</option>
+                  <option value="washer">🌊 صيانة الغسالات</option>
+                  <option value="ac">❄️ صيانة المكيفات</option>
+                  <option value="oven">🔥 صيانة الأفران</option>
+                  <option value="heater">🌡️ صيانة السخانات</option>
+                  <option value="dishwasher">🍽️ صيانة غسالات الأطباق</option>
+                </select>
+              </div>
             </div>
 
-            {/* نوع الخدمة (كما هو) */}
-            <div>
-              <label className="block text-sm font-bold text-slate-900 mb-2">🔧 نوع الخدمة المطلوبة</label>
-              <select
-                name="service"
-                required
-                value={formData.service}
-                onChange={(e) => setFormData({ ...formData, service: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all bg-white"
-              >
-                <option value="">اختر الخدمة</option>
-                <option value="fridge">❄️ صيانة الثلاجات</option>
-                <option value="washer">🌊 صيانة الغسالات</option>
-                <option value="ac">❄️ صيانة المكيفات</option>
-                <option value="oven">🔥 صيانة الأفران</option>
-                <option value="heater">🌡️ صيانة السخانات</option>
-                <option value="dishwasher">🍽️ صيانة غسالات الأطباق</option>
-              </select>
+            {/* Row 3: Brand and Problem */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="group">
+                <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+                  <Wrench className="w-5 h-5 text-orange-400" />
+                  ماركة الجهاز
+                </label>
+                <input
+                  type="text"
+                  name="brand"
+                  value={formData.brand}
+                  onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                  className="w-full px-5 py-3 bg-slate-700 border-2 border-slate-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400"
+                  placeholder="مثال: سامسونج، LG، توشيبا"
+                />
+              </div>
+
+              <div className="group">
+                <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+                  <Wrench className="w-5 h-5 text-orange-400" />
+                  وصف المشكلة (اختياري)
+                </label>
+                <input
+                  type="text"
+                  name="problem"
+                  value={formData.problem}
+                  onChange={(e) => setFormData({ ...formData, problem: e.target.value })}
+                  className="w-full px-5 py-3 bg-slate-700 border-2 border-slate-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400"
+                  placeholder="مثال: الغسالة بتسرب مياه"
+                />
+              </div>
             </div>
 
-            {/* ماركة الجهاز (حقل نصي جديد) */}
-            <div>
-              <label className="block text-sm font-bold text-slate-900 mb-2">📱 ماركة الجهاز</label>
-              <input
-                type="text"
-                name="brand"
-                required
-                value={formData.brand}
-                onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                placeholder="مثال: سامسونج، LG، توشيبا، إلخ"
-              />
-              {formData.brand && formData.brand === defaultBrand && defaultBrand && (
-                <p className="text-xs text-gray-500 mt-1">* يمكنك تغيير الماركة إذا لزم الأمر</p>
-              )}
-            </div>
-
-            {/* وصف المشكلة */}
-            <div>
-              <label className="block text-sm font-bold text-slate-900 mb-2">📝 وصف المشكلة (اختياري)</label>
-              <textarea
-                name="problemDesc"
-                value={formData.problemDesc}
-                onChange={(e) => setFormData({ ...formData, problemDesc: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                placeholder="مثال: الغسالة بتسرب مياه، التكييف مش بيبرد"
-                rows={3}
-              />
-            </div>
-
-            {/* العنوان */}
-            <div>
-              <label className="block text-sm font-bold text-slate-900 mb-2">📍 العنوان بالتفصيل</label>
+            {/* Address */}
+            <div className="group">
+              <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-orange-400" />
+                العنوان بالتفصيل
+              </label>
               <input
                 type="text"
                 name="address"
                 required
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                className="w-full px-5 py-3 bg-slate-700 border-2 border-slate-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400"
                 placeholder="مثال: سموحة، شارع عزيز كحيل"
               />
             </div>
 
+            {/* Submit Button */}
             <Button
               type="submit"
               size="lg"
               disabled={isSubmitting}
-              className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold text-lg py-3 transition-all transform hover:scale-105 shadow-lg hover:shadow-green-500/50"
+              className="w-full bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 hover:from-orange-600 hover:via-orange-700 hover:to-red-700 text-white font-bold text-lg py-4 transition-all transform hover:scale-105 shadow-xl hover:shadow-orange-500/50 rounded-lg flex items-center justify-center gap-3"
             >
-              <MessageCircle className="w-5 h-5 ml-2" />
+              <MessageCircle className="w-6 h-6" />
               {isSubmitting ? "جاري الإرسال..." : "احجز الآن عبر WhatsApp"}
             </Button>
           </form>
 
-          {/* معلومات إضافية (ثابتة) */}
-          <div className="mt-8 pt-8 border-t-2 border-gray-100">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-              <div className="p-4 bg-orange-50 rounded-lg">
-                <p className="text-2xl font-bold text-orange-600">⚡ 60 دقيقة</p>
-                <p className="text-sm text-gray-600">وصول الفني</p>
+          {/* Additional Info - Enhanced */}
+          <div className="mt-10 pt-10 border-t-2 border-slate-600">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="p-6 bg-gradient-to-br from-orange-500/20 to-orange-600/10 border-2 border-orange-500/30 rounded-xl hover:border-orange-500/60 transition-all transform hover:scale-105">
+                <div className="flex items-center justify-center mb-3">
+                  <Zap className="w-8 h-8 text-orange-400" />
+                </div>
+                <p className="text-2xl font-bold text-orange-400 text-center">60 دقيقة</p>
+                <p className="text-sm text-gray-300 text-center mt-2">وصول الفني</p>
               </div>
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <p className="text-2xl font-bold text-blue-600">✅ ضمان</p>
-                <p className="text-sm text-gray-600">على جميع الإصلاحات</p>
+
+              <div className="p-6 bg-gradient-to-br from-blue-500/20 to-blue-600/10 border-2 border-blue-500/30 rounded-xl hover:border-blue-500/60 transition-all transform hover:scale-105">
+                <div className="flex items-center justify-center mb-3">
+                  <Shield className="w-8 h-8 text-blue-400" />
+                </div>
+                <p className="text-2xl font-bold text-blue-400 text-center">ضمان</p>
+                <p className="text-sm text-gray-300 text-center mt-2">على جميع الإصلاحات</p>
               </div>
-              <div className="p-4 bg-green-50 rounded-lg">
-                <p className="text-2xl font-bold text-green-600">🎁 خصم 20%</p>
-                <p className="text-sm text-gray-600">على أول زيارة</p>
+
+              <div className="p-6 bg-gradient-to-br from-green-500/20 to-green-600/10 border-2 border-green-500/30 rounded-xl hover:border-green-500/60 transition-all transform hover:scale-105">
+                <div className="flex items-center justify-center mb-3">
+                  <Gift className="w-8 h-8 text-green-400" />
+                </div>
+                <p className="text-2xl font-bold text-green-400 text-center">خصم 20%</p>
+                <p className="text-sm text-gray-300 text-center mt-2">على أول زيارة</p>
               </div>
             </div>
           </div>

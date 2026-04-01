@@ -3,71 +3,12 @@ import { Card } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BookingForm from "@/components/BookingForm";
-import { Zap, Droplet, Wind, Flame, Star, Clock, Shield, Users } from "lucide-react";
-
-// استيراد الصور مباشرة
-import heroBgNew from "/images/hero-bg-new.jpg";
-import heroBgPro from "/images/hero-bg-pro.jpg";
-import heroBg from "/images/hero-bg.jpg";
-import fridgeRepair from "/images/services/refrigerator-repair-pro.jpg";
-import washerRepair from "/images/services/washing-machine-repair-pro.jpg";
-import acRepair from "/images/services/ac-repair-pro.jpg";
-import stoveRepair from "/images/services/stove-repair-pro.jpg";
-
-// تنسيقات شريط الماركات (يمكن نقلها إلى ملف CSS عام لاحقاً)
-const brandsStripStyles = `
-.brands-strip {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 15px 25px;
-  background: white;
-  padding: 15px 25px;
-  border-radius: 60px;
-  margin: 30px auto;
-  max-width: 1100px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-  border: 1px solid rgba(0,0,0,0.03);
-}
-
-.brands-strip span {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 1rem;
-  font-weight: 700;
-  color: #0A2647;
-  transition: transform 0.3s ease;
-}
-
-.brands-strip span i {
-  color: #FF5F1F;
-  font-size: 1.2rem;
-  transition: transform 0.3s ease;
-}
-
-.brands-strip span:hover {
-  transform: translateY(-2px);
-}
-
-.brands-strip span:hover i {
-  transform: scale(1.1);
-  color: #FF8A4F;
-}
-
-@media (max-width: 768px) {
-  .brands-strip {
-    gap: 10px 15px;
-    padding: 12px 20px;
-  }
-  .brands-strip span {
-    font-size: 0.9rem;
-  }
-}
-`;
+import { Zap, Droplet, Wind, Flame, Star, Clock, Shield, Users, Phone, MessageCircle } from "lucide-react";
+import { useState } from "react";
 
 export default function Home() {
+  // Booking form is now in a separate component
+
   const services = [
     {
       icon: Zap,
@@ -114,63 +55,56 @@ export default function Home() {
     },
   ];
 
+  // Booking form logic moved to BookingForm component
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <style>{brandsStripStyles}</style>
       <Header />
 
       {/* Hero Section */}
-<section className="relative h-96 overflow-hidden bg-gray-900">
-  <img
-    src={heroBgNew}
-    alt="صيانة احترافية"
-    className="absolute inset-0 w-full h-full object-contain"
-    loading="eager"
-    fetchpriority="high"
-  />
-  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-    <div className="text-center text-white px-4">
-      <h1 className="text-4xl md:text-5xl font-bold mb-4">خدمات صيانة احترافية بالإسكندرية</h1>
-      <p className="text-xl md:text-2xl mb-8">صيانة متخصصة لجميع الأجهزة المنزلية - ثلاجات، غسالات، تكييفات، سخانات، بوتاجاز</p>
-      <Button
-        size="lg"
-        className="bg-orange-500 hover:bg-orange-600 text-white"
-        onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
-      >
-        احجز خدمتك الآن
-      </Button>
-    </div>
-  </div>
-</section>
-      {/* Contact Section */}
+      <section className="relative h-96 overflow-hidden">
+        <img
+          src="/images/hero-bg-new.jpg"
+          alt="صيانة احترافية"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+          <div className="text-center text-white px-4">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">خدمات صيانة احترافية بالإسكندرية</h1>
+            <p className="text-xl md:text-2xl mb-8">صيانة متخصصة لجميع الأجهزة المنزلية - ثلاجات، غسالات، تكييفات، سخانات، بوتاجاز</p>
+            <Button
+              size="lg"
+              className="bg-orange-500 hover:bg-orange-600 text-white"
+              onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+            >
+              احجز خدمتك الآن
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section - Using BookingForm Component */}
       <section id="contact">
         <BookingForm />
       </section>
 
-      {/* ===== شريط الماركات ===== */}
-      <section className="container mx-auto px-4">
-        <div className="brands-strip">
-          <span><i className="fas fa-check-circle"></i> سامسونج</span>
-          <span><i className="fas fa-check-circle"></i> LG</span>
-          <span><i className="fas fa-check-circle"></i> توشيبا</span>
-          <span><i className="fas fa-check-circle"></i> شارب</span>
-          <span><i className="fas fa-check-circle"></i> زانوسي</span>
-          <span><i className="fas fa-check-circle"></i> وايت ويل</span>
-        </div>
-      </section>
-
       {/* Features Section */}
-      <section className="py-12 bg-gray-50">
+      <section className="py-16 bg-gradient-to-b from-slate-50 to-white">
         <div className="container">
-          <h2 className="text-3xl font-bold text-center mb-12">لماذا تختارنا؟</h2>
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-slate-900 to-orange-600 bg-clip-text text-transparent">لماذا تختارنا؟</h2>
+            <div className="w-24 h-1 bg-gradient-to-r from-orange-400 to-red-500 mx-auto rounded-full"></div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, index) => {
               const IconComponent = feature.icon;
+              const colors = ['from-blue-500/20 to-blue-600/10 border-blue-500/30 text-blue-600', 'from-orange-500/20 to-orange-600/10 border-orange-500/30 text-orange-600', 'from-green-500/20 to-green-600/10 border-green-500/30 text-green-600', 'from-purple-500/20 to-purple-600/10 border-purple-500/30 text-purple-600'];
+              const colorClass = colors[index % colors.length];
               return (
-                <Card key={index} className="p-6 text-center hover:shadow-lg transition-shadow">
-                  <IconComponent className="w-12 h-12 text-primary mx-auto mb-4" />
-                  <h3 className="font-bold text-lg mb-2">{feature.title}</h3>
-                  <p className="text-gray-600 text-sm">{feature.description}</p>
+                <Card key={index} className={`p-8 text-center hover:shadow-xl transition-all transform hover:scale-105 bg-gradient-to-br ${colorClass} border-2`}>
+                  <IconComponent className="w-14 h-14 mx-auto mb-4" />
+                  <h3 className="font-bold text-lg mb-3 text-slate-900">{feature.title}</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">{feature.description}</p>
                 </Card>
               );
             })}
@@ -179,20 +113,25 @@ export default function Home() {
       </section>
 
       {/* Services Section */}
-      <section className="py-12">
+      <section className="py-16 bg-gradient-to-b from-white to-slate-50">
         <div className="container">
-          <h2 className="text-3xl font-bold text-center mb-12">خدماتنا</h2>
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-slate-900 to-orange-600 bg-clip-text text-transparent">خدماتنا</h2>
+            <div className="w-24 h-1 bg-gradient-to-r from-orange-400 to-red-500 mx-auto rounded-full"></div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {services.map((service, index) => {
               const IconComponent = service.icon;
+              const bgColors = ['from-red-500/20 to-red-600/10 border-red-500/30', 'from-blue-500/20 to-blue-600/10 border-blue-500/30', 'from-cyan-500/20 to-cyan-600/10 border-cyan-500/30', 'from-orange-500/20 to-orange-600/10 border-orange-500/30'];
+              const bgColor = bgColors[index % bgColors.length];
               return (
                 <Card
                   key={index}
-                  className="p-6 hover:shadow-lg hover:scale-105 transition-all cursor-pointer"
+                  className={`p-8 hover:shadow-2xl hover:scale-105 transition-all cursor-pointer transform bg-gradient-to-br ${bgColor} border-2`}
                 >
-                  <IconComponent className="w-12 h-12 text-orange-500 mb-4" />
-                  <h3 className="font-bold text-lg mb-2">{service.title}</h3>
-                  <p className="text-gray-600 text-sm">{service.description}</p>
+                  <IconComponent className="w-16 h-16 text-orange-500 mb-4" />
+                  <h3 className="font-bold text-lg mb-3 text-slate-900">{service.title}</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">{service.description}</p>
                 </Card>
               );
             })}
@@ -201,9 +140,12 @@ export default function Home() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-12 bg-gray-50">
+      <section className="py-16 bg-gradient-to-b from-slate-50 to-white">
         <div className="container">
-          <h2 className="text-3xl font-bold text-center mb-12">آراء عملائنا</h2>
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-slate-900 to-orange-600 bg-clip-text text-transparent">آراء عملائنا</h2>
+            <div className="w-24 h-1 bg-gradient-to-r from-orange-400 to-red-500 mx-auto rounded-full"></div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
@@ -255,12 +197,12 @@ export default function Home() {
                 <li>✓ استبدال قطع الغيار الأصلية</li>
               </ul>
             </div>
-            <img src={fridgeRepair} alt="صيانة الثلاجات" className="rounded-lg shadow-lg" />
+            <img src="/images/services/refrigerator-repair-pro.jpg" alt="صيانة الثلاجات" className="rounded-lg shadow-lg" />
           </div>
 
           {/* Washing Machines */}
           <div className="mb-16 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            <img src={washerRepair} alt="صيانة الغسالات" className="rounded-lg shadow-lg order-2 md:order-1" />
+            <img src="/images/services/washing-machine-repair-pro.jpg" alt="صيانة الغسالات" className="rounded-lg shadow-lg order-2 md:order-1" />
             <div className="order-1 md:order-2">
               <h3 className="text-2xl font-bold text-orange-600 mb-4">صيانة الغسالات (ملابس وأطباق)</h3>
               <p className="text-gray-700 mb-4">متخصصون في صيانة غسالات الملابس الأوتوماتيكية والعادية وغسالات الأطباق. نقدم حلول سريعة وفعالة لجميع الأعطال.</p>
@@ -285,12 +227,12 @@ export default function Home() {
                 <li>✓ صيانة الوحدات الداخلية والخارجية</li>
               </ul>
             </div>
-            <img src={acRepair} alt="صيانة المكيفات" className="rounded-lg shadow-lg" />
+            <img src="/images/services/ac-repair-pro.jpg" alt="صيانة المكيفات" className="rounded-lg shadow-lg" />
           </div>
 
           {/* Stoves and Ovens */}
           <div className="mb-16 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            <img src={stoveRepair} alt="صيانة البوتاجاز" className="rounded-lg shadow-lg order-2 md:order-1" />
+            <img src="/images/services/stove-repair-pro.jpg" alt="صيانة البوتاجاز" className="rounded-lg shadow-lg order-2 md:order-1" />
             <div className="order-1 md:order-2">
               <h3 className="text-2xl font-bold text-orange-600 mb-4">صيانة البوتاجاز والأفران</h3>
               <p className="text-gray-700 mb-4">متخصصون في إصلاح وصيانة البوتاجاز والأفران الكهربائية والغازية. نقدم خدمات تنظيف شاملة وإصلاح سريع.</p>
@@ -315,7 +257,7 @@ export default function Home() {
                 <li>✓ صيانة دورية وفحص شامل</li>
               </ul>
             </div>
-            <img src={heroBg} alt="صيانة السخانات" className="rounded-lg shadow-lg" />
+            <img src="/images/hero-bg.jpg" alt="صيانة السخانات" className="rounded-lg shadow-lg" />
           </div>
         </div>
       </section>
