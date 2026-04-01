@@ -2,7 +2,7 @@ import { Phone, MapPin, Clock, Mail, MessageCircle } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="bg-gradient-to-b from-slate-900 to-slate-950 text-white border-t border-orange-500">
+    <footer className="bg-gradient-to-b from-slate-800 to-slate-900 text-white border-t-4 border-orange-500 shadow-2xl">
       <div className="container py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
           {/* Company Info */}
