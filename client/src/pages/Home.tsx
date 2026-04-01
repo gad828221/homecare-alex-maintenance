@@ -58,7 +58,7 @@ export default function Home() {
   // Booking form logic moved to BookingForm component
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 via-white to-orange-50">
       <Header />
 
       {/* Hero Section */}
@@ -68,7 +68,7 @@ export default function Home() {
           alt="صيانة احترافية"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/25 flex items-center justify-center">
           <div className="text-center text-white px-4">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">خدمات صيانة احترافية بالإسكندرية</h1>
             <p className="text-xl md:text-2xl mb-8">صيانة متخصصة لجميع الأجهزة المنزلية - ثلاجات، غسالات، تكييفات، سخانات، بوتاجاز</p>
@@ -89,7 +89,7 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 bg-gradient-to-b from-slate-50 to-white">
+      <section className="py-16 bg-gradient-to-b from-blue-100/50 to-white">
         <div className="container">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-slate-900 to-orange-600 bg-clip-text text-transparent">لماذا تختارنا؟</h2>
@@ -113,7 +113,7 @@ export default function Home() {
       </section>
 
       {/* Services Section */}
-      <section className="py-16 bg-gradient-to-b from-white to-slate-50">
+      <section className="py-16 bg-gradient-to-b from-white to-orange-50/30">
         <div className="container">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-slate-900 to-orange-600 bg-clip-text text-transparent">خدماتنا</h2>
@@ -140,7 +140,7 @@ export default function Home() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-16 bg-gradient-to-b from-slate-50 to-white">
+      <section className="py-16 bg-gradient-to-b from-yellow-50/50 to-white">
         <div className="container">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-slate-900 to-orange-600 bg-clip-text text-transparent">آراء عملائنا</h2>
