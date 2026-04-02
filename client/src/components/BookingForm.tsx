@@ -197,20 +197,20 @@ export default function BookingForm({
             </div>
 
             {/* Address */}
-            <div className="group">
-                <label className="block text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-orange-500" />
-                  العنوان بالتفصيل
-                </label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full px-5 py-3 bg-white border-2 border-orange-200 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400
-                placeholder="مثال: سموحة، شارع عزيز كحيل"
-              />
-            </div>
+<div className="group">
+  <label className="block text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+    <MapPin className="w-5 h-5 text-orange-500" />
+    العنوان بالتفصيل
+  </label>
+  <input
+    type="text"
+    name="address"
+    value={formData.address}
+    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+    className="w-full px-5 py-3 bg-white border-2 border-orange-200 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400"
+    placeholder="مثال: سموحة، شارع عزيز كحيل"
+  />
+</div>
 
             {/* Submit Button */}
             <Button
