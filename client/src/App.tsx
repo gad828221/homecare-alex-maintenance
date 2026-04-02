@@ -17,6 +17,7 @@ import AristonService from "./pages/AristonService";
 import BekoService from "./pages/BekoService";
 import HooverService from "./pages/HooverService";
 import IndesitService from "./pages/IndesitService";
+import ProtectedOrders from "./components/ProtectedOrders";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import { Phone, MessageCircle } from "lucide-react";
@@ -37,6 +38,7 @@ function Router() {
       <Route path={"/beko-service"} component={BekoService} />
       <Route path={"/hoover-service"} component={HooverService} />
       <Route path={"/indesit-service"} component={IndesitService} />
+      <Route path={"/orders"} component={ProtectedOrders} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
