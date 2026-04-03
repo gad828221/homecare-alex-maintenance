@@ -1,6 +1,5 @@
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MessageCircle, CheckCircle, User, Phone, Mail, Wrench, MapPin, Zap, Shield, Gift } from "lucide-react";
+import { MessageCircle, CheckCircle, User, Phone, Wrench, MapPin, Zap, Shield, Gift } from "lucide-react";
 import { useState } from "react";
 
 interface BookingFormProps {
@@ -39,7 +38,28 @@ export default function BookingForm({
     setIsSubmitting(true);
     
     try {
-      // إرسال البيانات إلى Netlify Forms
+      // 1️⃣ حفظ البيانات تلقائياً في صفحة الأوردرات
+      const newOrder = {
+        id: Date.now().toString(),
+        orderNumber: `MG-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${Math.floor(Math.random() * 10000)}`,
+        customerName: formData.name,
+        phone: formData.phone,
+        address: formData.address,
+        device: serviceNames[formData.service] || formData.service,
+        brand: formData.brand,
+        problem: formData.problem,
+        status: "pending",
+        assignedTechnician: null,
+        date: new Date().toLocaleString("ar-EG"),
+      };
+
+      // حفظ في Local Storage
+      const savedOrders = localStorage.getItem("maintenanceOrders");
+      const orders = savedOrders ? JSON.parse(savedOrders) : [];
+      orders.unshift(newOrder);
+      localStorage.setItem("maintenanceOrders", JSON.stringify(orders));
+
+      // 2️⃣ إرسال البيانات إلى Netlify Forms
       const formElement = e.currentTarget as HTMLFormElement;
       const formDataObj = new FormData(formElement);
       
@@ -50,15 +70,15 @@ export default function BookingForm({
       });
 
       if (response.ok) {
-        setSubmitMessage("تم استقبال طلبك بنجاح! سيتم التواصل معك قريباً.");
+        setSubmitMessage("✅ تم حفظ طلبك! جاري التوجيه إلى WhatsApp...");
       }
     } catch (error) {
-      console.error("Error submitting form to Netlify:", error);
+      console.error("Error:", error);
     }
 
-    // إرسال رسالة WhatsApp
+    // 3️⃣ إرسال رسالة WhatsApp
     const serviceName = serviceNames[formData.service] || formData.service;
-    const message = `مرحباً، أنا ${formData.name}\nرقم الهاتف: ${formData.phone}\nالخدمة المطلوبة: ${serviceName}\nماركة الجهاز: ${formData.brand}\nالمشكلة: ${formData.problem}\nالعنوان: ${formData.address}\n\nأرجو تأكيد الحجز في أقرب وقت.`;
+    const message = `🔧 *طلب صيانة جديد*\n\n👤 *الاسم:* ${formData.name}\n📞 *الهاتف:* ${formData.phone}\n🔨 *الخدمة:* ${serviceName}\n🏷️ *الماركة:* ${formData.brand}\n⚠️ *المشكلة:* ${formData.problem}\n📍 *العنوان:* ${formData.address}\n\n⏰ *الوقت:* ${new Date().toLocaleString("ar-EG")}`;
     const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(message)}`;
     
     // فتح WhatsApp
@@ -66,7 +86,7 @@ export default function BookingForm({
     
     // إظهار رسالة تأكيد
     if (!submitMessage) {
-      setSubmitMessage("تم إرسال طلب الحجز عبر WhatsApp! سيتم التواصل معك قريباً.");
+      setSubmitMessage("✅ تم حفظ طلبك وإرساله عبر WhatsApp! سيتم التواصل معك قريباً.");
     }
     
     // إعادة تعيين النموذج
@@ -74,7 +94,7 @@ export default function BookingForm({
       setFormData({ name: "", phone: "", service: defaultService, address: "", brand: "", problem: "" });
       setIsSubmitting(false);
       setSubmitMessage("");
-    }, 2000);
+    }, 3000);
   };
 
   return (
@@ -197,31 +217,30 @@ export default function BookingForm({
             </div>
 
             {/* Address */}
-<div className="group">
-  <label className="block text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
-    <MapPin className="w-5 h-5 text-orange-500" />
-    العنوان بالتفصيل
-  </label>
-  <input
-    type="text"
-    name="address"
-    value={formData.address}
-    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-    className="w-full px-5 py-3 bg-white border-2 border-orange-200 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400"
-    placeholder="مثال: سموحة، شارع عزيز كحيل"
-  />
-</div>
+            <div className="group">
+              <label className="block text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-orange-500" />
+                العنوان بالتفصيل
+              </label>
+              <input
+                type="text"
+                name="address"
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                className="w-full px-5 py-3 bg-white border-2 border-orange-200 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all group-hover:border-orange-400"
+                placeholder="مثال: سموحة، شارع عزيز كحيل"
+              />
+            </div>
 
             {/* Submit Button */}
-            <Button
+            <button
               type="submit"
-              size="lg"
               disabled={isSubmitting}
               className="w-full bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 hover:from-orange-600 hover:via-orange-700 hover:to-red-700 text-white font-bold text-lg py-4 transition-all transform hover:scale-105 shadow-xl hover:shadow-orange-500/50 rounded-lg flex items-center justify-center gap-3"
             >
               <MessageCircle className="w-6 h-6" />
               {isSubmitting ? "جاري الإرسال..." : "احجز الآن عبر WhatsApp"}
-            </Button>
+            </button>
           </form>
 
           {/* Additional Info - Enhanced */}
@@ -248,7 +267,7 @@ export default function BookingForm({
                   <Gift className="w-8 h-8 text-green-400" />
                 </div>
                 <p className="text-2xl font-bold text-green-400 text-center">خصم 20%</p>
-                <p className="text-sm text-gray-300 text-center mt-2">على أول زيارة</p>
+                <p className="text-sm text-gray-300 text-center mt-2">للعملاء الجدد</p>
               </div>
             </div>
           </div>
