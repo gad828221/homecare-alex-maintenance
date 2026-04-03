@@ -5,6 +5,7 @@
 [build.environment]
   NODE_VERSION = "20"
 
+# SPA Redirects - يحل مشكلة 404 للروابط الجديدة (login, tech-portal, data-entry)
 [[redirects]]
   from = "/*"
   to = "/index.html"
