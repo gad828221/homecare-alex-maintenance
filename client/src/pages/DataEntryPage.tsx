@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { CheckCircle, LogOut } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import BookingForm from "@/components/BookingForm";
 
 export default function DataEntryPage() {
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const [successCount, setSuccessCount] = useState(0);
 
   const handleLogout = () => {
     localStorage.removeItem("currentUser");
     localStorage.removeItem("userRole");
-    navigate("/login");
+    setLocation("/login");
   };
 
   return (
