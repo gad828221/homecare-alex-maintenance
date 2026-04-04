@@ -1,7 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { MessageCircle, CheckCircle, User, Phone, Wrench, MapPin, Zap, Shield, Gift } from "lucide-react";
 import { useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
 
 interface BookingFormProps {
   title?: string;
@@ -32,62 +31,65 @@ export default function BookingForm({
     oven: "صيانة الأفران",
     heater: "صيانة السخانات",
     dishwasher: "صيانة غسالات الأطباق",
-  };;const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setIsSubmitting(true);
-  
-  try {
-    const serviceName = serviceNames[formData.service] || formData.service;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
     
-    const orderData = {
-      order_number: `MG-${Date.now()}`,
-      customer_name: formData.name,
-      phone: formData.phone,
-      address: formData.address,
-      device: serviceName,
-      brand: formData.brand,
-      problem: formData.problem,
-      status: "pending",
-      date: new Date().toLocaleString("ar-EG"),
-    };
+    try {
+      const serviceName = serviceNames[formData.service] || formData.service;
+      
+      const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
+      
+      const response = await fetch(`${supabaseUrl}/rest/v1/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`
+        },
+        body: JSON.stringify({
+          customer_name: formData.name,
+          phone: formData.phone,
+          address: formData.address,
+          device: serviceName,
+          brand: formData.brand,
+          problem: formData.problem,
+          status: 'pending',
+          date: new Date().toLocaleString("ar-EG")
+        })
+      });
 
-    const response = await fetch('https://hjrnsfsdvrrwgyppqhwml.supabase.co/rest/v1/orders', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE'
-      },
-      body: JSON.stringify(orderData)
-    });
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('Supabase error:', error);
+        setSubmitMessage("❌ خطأ في الحفظ: " + error);
+        setIsSubmitting(false);
+        return;
+      }
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Supabase error:', errorText);
-      setSubmitMessage("❌ خطأ: " + errorText);
+      // واتساب
+      const message = `🔧 *طلب صيانة جديد*\n\n👤 *الاسم:* ${formData.name}\n📞 *الهاتف:* ${formData.phone}\n🔨 *الخدمة:* ${serviceName}\n🏷️ *الماركة:* ${formData.brand}\n⚠️ *المشكلة:* ${formData.problem}\n📍 *العنوان:* ${formData.address}`;
+      const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, "_blank");
+
+      setSubmitMessage("✅ تم حفظ طلبك وإرساله عبر WhatsApp!");
+      
+      setTimeout(() => {
+        setFormData({ name: "", phone: "", service: defaultService, address: "", brand: "", problem: "" });
+        setIsSubmitting(false);
+        setSubmitMessage("");
+      }, 3000);
+      
+    } catch (err: any) {
+      console.error("Error:", err);
+      setSubmitMessage("❌ خطأ: " + err.message);
       setIsSubmitting(false);
-      return;
     }
+  };
 
-    // واتساب
-    const message = `🔧 *طلب صيانة جديد*\n\n👤 *الاسم:* ${formData.name}\n📞 *الهاتف:* ${formData.phone}\n🔨 *الخدمة:* ${serviceName}\n🏷️ *الماركة:* ${formData.brand}\n⚠️ *المشكلة:* ${formData.problem}\n📍 *العنوان:* ${formData.address}`;
-    const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, "_blank");
-
-    setSubmitMessage("✅ تم حفظ طلبك وإرساله عبر WhatsApp!");
-    
-    setTimeout(() => {
-      setFormData({ name: "", phone: "", service: defaultService, address: "", brand: "", problem: "" });
-      setIsSubmitting(false);
-      setSubmitMessage("");
-    }, 3000);
-    
-  } catch (err: any) {
-    console.error("Error:", err);
-    setSubmitMessage("❌ خطأ: " + (err.message || "غير معروف"));
-    setIsSubmitting(false);
-  }
-};
   return (
     <section className="py-20 bg-gradient-to-b from-blue-50 via-white to-orange-50">
       <div className="container max-w-4xl">
