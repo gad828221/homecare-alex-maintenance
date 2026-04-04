@@ -36,13 +36,14 @@ export default function BookingForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setSubmitMessage("");
+
+    const serviceName = serviceNames[formData.service] || formData.service;
     
+    const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
+
     try {
-      const serviceName = serviceNames[formData.service] || formData.service;
-      
-      const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
-      
       const response = await fetch(`${supabaseUrl}/rest/v1/orders`, {
         method: 'POST',
         headers: {
@@ -63,30 +64,29 @@ export default function BookingForm({
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        console.error('Supabase error:', error);
-        setSubmitMessage("❌ خطأ في الحفظ: " + error);
+        const errorText = await response.text();
+        console.error('Supabase Error:', errorText);
+        setSubmitMessage(`❌ فشل الحفظ في قاعدة البيانات: ${errorText}`);
         setIsSubmitting(false);
         return;
       }
 
-      // واتساب
+      console.log('✅ تم الحفظ في Supabase بنجاح');
+      
       const message = `🔧 *طلب صيانة جديد*\n\n👤 *الاسم:* ${formData.name}\n📞 *الهاتف:* ${formData.phone}\n🔨 *الخدمة:* ${serviceName}\n🏷️ *الماركة:* ${formData.brand}\n⚠️ *المشكلة:* ${formData.problem}\n📍 *العنوان:* ${formData.address}`;
       const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, "_blank");
 
       setSubmitMessage("✅ تم حفظ طلبك وإرساله عبر WhatsApp!");
       
-      setTimeout(() => {
-        setFormData({ name: "", phone: "", service: defaultService, address: "", brand: "", problem: "" });
-        setIsSubmitting(false);
-        setSubmitMessage("");
-      }, 3000);
+      setFormData({ name: "", phone: "", service: defaultService, address: "", brand: "", problem: "" });
       
     } catch (err: any) {
-      console.error("Error:", err);
-      setSubmitMessage("❌ خطأ: " + err.message);
+      console.error('Network Error:', err);
+      setSubmitMessage(`❌ خطأ في الاتصال: ${err.message}`);
+    } finally {
       setIsSubmitting(false);
+      setTimeout(() => setSubmitMessage(""), 5000);
     }
   };
 
@@ -101,8 +101,8 @@ export default function BookingForm({
         
         <Card className="p-10 shadow-2xl border-2 border-orange-200 bg-gradient-to-br from-white to-blue-50/50">
           {submitMessage && (
-            <div className="mb-8 p-5 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-400 text-green-300 rounded-xl flex items-center gap-3">
-              <CheckCircle className="w-6 h-6 text-green-400" />
+            <div className={`mb-8 p-5 rounded-xl flex items-center gap-3 ${submitMessage.includes("✅") ? "bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-400 text-green-300" : "bg-gradient-to-r from-red-500/20 to-red-600/20 border-2 border-red-400 text-red-300"}`}>
+              <CheckCircle className="w-6 h-6 flex-shrink-0" />
               <span className="font-semibold text-lg">{submitMessage}</span>
             </div>
           )}
@@ -203,7 +203,7 @@ export default function BookingForm({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-bold text-lg py-4 rounded-lg flex items-center justify-center gap-3"
+              className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-bold text-lg py-4 rounded-lg flex items-center justify-center gap-3 transition-all transform hover:scale-105"
             >
               <MessageCircle className="w-6 h-6" />
               {isSubmitting ? "جاري الإرسال..." : "احجز الآن عبر WhatsApp"}
