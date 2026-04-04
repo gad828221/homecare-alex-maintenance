@@ -1,38 +1,36 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabaseClient";
 
 export default function ProtectedOrders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // تأكد من وجود userRole
-    const userRole = localStorage.getItem("userRole");
-    console.log("userRole:", userRole);
+    const fetchOrders = async () => {
+      try {
+        const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
+        
+        const response = await fetch(`${supabaseUrl}/rest/v1/orders?select=*`, {
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`
+          }
+        });
+        
+        const data = await response.json();
+        console.log("Orders:", data);
+        setOrders(data || []);
+      } catch (err) {
+        console.error("Error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
     
     fetchOrders();
   }, []);
 
-  const fetchOrders = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*")
-        .order("created_at", { ascending: false });
-      
-      if (error) throw error;
-      console.log("Orders loaded:", data);
-      setOrders(data || []);
-    } catch (err) {
-      console.error("Error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return <div className="p-8 text-white text-center">جاري التحميل...</div>;
-  }
+  if (loading) return <div className="p-8 text-white text-center">جاري التحميل...</div>;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 p-6">
@@ -41,15 +39,14 @@ export default function ProtectedOrders() {
         <div className="space-y-3">
           {orders.map((order) => (
             <div key={order.id} className="bg-slate-800 p-4 rounded-lg border border-orange-500/30">
-              <p className="text-white font-bold">{order.customer_name}</p>
-              <p className="text-slate-400 text-sm">{order.phone}</p>
-              <p className="text-slate-400 text-sm">{order.device}</p>
+              <p className="text-white font-bold">{order.customer_name || "غير معروف"}</p>
+              <p className="text-slate-400 text-sm">{order.phone || "رقم غير متوفر"}</p>
+              <p className="text-slate-400 text-sm">{order.device || "جهاز غير محدد"}</p>
+              <p className="text-slate-500 text-xs mt-1">{order.date || "تاريخ غير محدد"}</p>
             </div>
           ))}
           {orders.length === 0 && (
-            <div className="text-center py-12 text-slate-400">
-              لا توجد أوردرات حالياً
-            </div>
+            <div className="text-center py-12 text-slate-400">لا توجد أوردرات حالياً</div>
           )}
         </div>
       </div>
