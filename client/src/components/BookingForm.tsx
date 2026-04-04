@@ -41,7 +41,7 @@ export default function BookingForm({
     try {
       const serviceName = serviceNames[formData.service] || formData.service;
       
-      const { data, error } = await supabase.from("orders").insert([
+      const { error } = await supabase.from("orders").insert([
         {
           order_number: `MG-${Date.now()}`,
           customer_name: formData.name,
