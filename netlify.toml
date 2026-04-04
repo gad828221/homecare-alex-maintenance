@@ -1,8 +1,4 @@
 [build]
-  command = "pnpm install --ignore-scripts && pnpm build"
+  base = "client"
+  command = "pnpm install && pnpm build"
   publish = "dist"
-
-[build.environment]
-  NODE_VERSION = "20"
-
-# الـ redirects هناكون في ملف _redirects فقط
