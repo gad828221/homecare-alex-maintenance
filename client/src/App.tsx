@@ -1,8 +1,8 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Login from "./pages/Login";
-import TechPortal from "./pages/TechPortal";
-import DataEntry from "./pages/DataEntry";
+import Login from "./pages/LoginPage";
+import TechPortal from "./pages/TechnicianPortal";
+import DataEntry from "./pages/DataEntryPage";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -21,8 +21,6 @@ import BekoService from "./pages/BekoService";
 import HooverService from "./pages/HooverService";
 import IndesitService from "./pages/IndesitService";
 import ProtectedOrders from "./components/ProtectedOrders";
-import Header from "./components/Header";
-import Footer from "./components/Footer";
 import { Phone, MessageCircle } from "lucide-react";
 
 function Router() {
