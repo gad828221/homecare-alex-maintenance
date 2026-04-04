@@ -1,12 +1,22 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { useLocation } from "wouter";
 
 export default function ProtectedOrders() {
+  const [, setLocation] = useLocation();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  // التحقق من تسجيل الدخول
   useEffect(() => {
-    fetchOrders();
+    const userRole = localStorage.getItem("userRole");
+    if (userRole === "admin") {
+      setIsAuthenticated(true);
+      fetchOrders();
+    } else {
+      setLocation("/login");
+    }
   }, []);
 
   const fetchOrders = async () => {
@@ -23,6 +33,10 @@ export default function ProtectedOrders() {
     setLoading(false);
   };
 
+  if (!isAuthenticated) {
+    return <div className="p-8 text-white text-center">جاري التحقق...</div>;
+  }
+
   if (loading) {
     return <div className="p-8 text-white text-center">جاري التحميل...</div>;
   }
@@ -30,7 +44,19 @@ export default function ProtectedOrders() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 p-6">
       <div className="container max-w-6xl mx-auto">
-        <h1 className="text-2xl font-bold text-white mb-6">📋 الأوردرات ({orders.length})</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-white">📋 الأوردرات ({orders.length})</h1>
+          <button
+            onClick={() => {
+              localStorage.removeItem("userRole");
+              localStorage.removeItem("currentUser");
+              setLocation("/login");
+            }}
+            className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30"
+          >
+            تسجيل خروج
+          </button>
+        </div>
         <div className="space-y-3">
           {orders.map((order) => (
             <div key={order.id} className="bg-slate-800 p-4 rounded-lg border border-orange-500/30">
