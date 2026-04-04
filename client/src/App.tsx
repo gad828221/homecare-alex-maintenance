@@ -1,5 +1,8 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import Login from "./pages/Login";
+import TechPortal from "./pages/TechPortal";
+import DataEntry from "./pages/DataEntry";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -39,6 +42,9 @@ function Router() {
       <Route path={"/hoover-service"} component={HooverService} />
       <Route path={"/indesit-service"} component={IndesitService} />
       <Route path={"/orders"} component={ProtectedOrders} />
+      <Route path={"/login"} component={Login} />
+<Route path={"/tech-portal"} component={TechPortal} />
+<Route path={"/data-entry"} component={DataEntry} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
