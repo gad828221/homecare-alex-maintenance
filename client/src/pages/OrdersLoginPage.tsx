@@ -1,98 +1,111 @@
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Lock, Eye, EyeOff } from "lucide-react";
 import { useLocation } from "wouter";
 
-const ADMIN_PASSWORD = "19882@retal";
-
-export default function OrdersLoginPage() {
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
+export default function LoginPage() {
   const [, setLocation] = useLocation();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState<"admin" | "data-entry" | "tech">("admin");
+  const [error, setError] = useState("");
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (password === ADMIN_PASSWORD) {
-      // حفظ حالة تسجيل الدخول في Session Storage
-      sessionStorage.setItem("ordersAuthenticated", "true");
-      setLocation("/orders");
-    } else {
-      setError("❌ كلمة المرور غير صحيحة!");
-      setPassword("");
+    // بيانات الدخول
+    if (role === "admin" && username === "admin" && password === "19882@retal") {
+      localStorage.setItem("userRole", "admin");
+      localStorage.setItem("currentUser", JSON.stringify({ username: "admin", role: "admin" }));
+      // تحويل مباشر
+      window.location.href = "/orders";
+      return;
     }
+    
+    if (role === "data-entry" && username === "dataentry" && password === "dataentry123") {
+      localStorage.setItem("userRole", "data-entry");
+      localStorage.setItem("currentUser", JSON.stringify({ username: "dataentry", role: "data-entry" }));
+      window.location.href = "/data-entry";
+      return;
+    }
+    
+    if (role === "tech" && username === "tech" && password === "tech123") {
+      localStorage.setItem("userRole", "tech");
+      localStorage.setItem("currentUser", JSON.stringify({ username: "tech", role: "tech" }));
+      window.location.href = "/tech-portal";
+      return;
+    }
+    
+    setError("اسم المستخدم أو كلمة المرور غير صحيحة");
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 flex items-center justify-center py-12 px-4">
-      <Card className="w-full max-w-md p-12 shadow-2xl border-2 border-orange-200 bg-gradient-to-br from-white to-blue-50/50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-orange-900 flex items-center justify-center p-4">
+      <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-8 rounded-2xl border-2 border-orange-500/30 max-w-md w-full shadow-2xl">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Lock className="w-8 h-8 text-white" />
+          <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-orange-600 bg-clip-text text-transparent mb-2">
-            🔐 صفحة الأوردرات
-          </h1>
-          <p className="text-gray-700 text-lg">الوصول المحمي - إدارة الأوردرات</p>
-          <div className="w-16 h-1 bg-gradient-to-r from-orange-400 to-red-500 mx-auto mt-4 rounded-full"></div>
+          <h1 className="text-3xl font-bold text-white">نظام الصيانة</h1>
+          <p className="text-slate-400 mt-2">تسجيل الدخول الآمن</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
+          <div>
+            <label className="block text-sm font-bold text-gray-300 mb-3">اختر دورك</label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value as any)}
+              className="w-full px-4 py-3 bg-slate-700 text-white rounded-lg border-2 border-orange-500/30 focus:border-orange-500 focus:outline-none transition-all"
+            >
+              <option value="admin">👨‍💼 مدير النظام (Admin)</option>
+              <option value="data-entry">📝 مدخل البيانات (Data Entry)</option>
+              <option value="tech">🔧 الفني (Technician)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-gray-300 mb-3">اسم المستخدم</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full px-4 py-3 bg-slate-700 text-white rounded-lg border-2 border-orange-500/30 focus:border-orange-500 focus:outline-none transition-all"
+              placeholder="أدخل اسم المستخدم"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-gray-300 mb-3">كلمة المرور</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3 bg-slate-700 text-white rounded-lg border-2 border-orange-500/30 focus:border-orange-500 focus:outline-none transition-all"
+              placeholder="أدخل كلمة المرور"
+            />
+          </div>
+
           {error && (
-            <div className="p-4 bg-red-100 border-2 border-red-400 text-red-800 rounded-lg text-center font-semibold">
-              {error}
+            <div className="p-4 bg-red-500/20 border-2 border-red-500/50 text-red-300 rounded-lg text-sm">
+              ❌ {error}
             </div>
           )}
 
-          <div className="relative">
-            <label className="block text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
-              <Lock className="w-6 h-6 text-orange-500" />
-              كلمة المرور
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setError("");
-                }}
-                className="w-full px-6 py-4 bg-white border-3 border-orange-200 text-gray-800 rounded-xl focus:outline-none focus:ring-3 focus:ring-orange-500 focus:border-transparent transition-all text-lg font-semibold placeholder-gray-400"
-                placeholder="أدخل كلمة المرور"
-                autoFocus
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 text-orange-500 hover:text-orange-600 transition-colors"
-              >
-                {showPassword ? (
-                  <EyeOff className="w-6 h-6" />
-                ) : (
-                  <Eye className="w-6 h-6" />
-                )}
-              </button>
-            </div>
-          </div>
-
           <button
             type="submit"
-            className="w-full py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-lg rounded-xl hover:from-orange-600 hover:to-red-600 transition-all transform hover:scale-105 shadow-lg active:scale-95"
+            className="w-full bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 hover:from-orange-600 hover:via-orange-700 hover:to-red-700 text-white font-bold py-3 rounded-lg transition-all transform hover:scale-105 shadow-lg"
           >
-            🔓 دخول
+            تسجيل الدخول
           </button>
         </form>
 
-        <div className="mt-8 p-6 bg-orange-50 border-2 border-orange-200 rounded-xl">
-          <p className="text-center text-gray-700 text-sm">
-            <span className="font-bold text-orange-600">⚠️ تنبيه:</span> هذه الصفحة محمية بكلمة مرور
-          </p>
-          <p className="text-center text-gray-600 text-xs mt-2">
-            يُسمح بالوصول للمسؤولين فقط
+        <div className="mt-8 p-4 bg-blue-500/10 border-2 border-blue-500/30 rounded-lg">
+          <p className="text-xs text-slate-300 text-center">
+            🔐 <strong>ملاحظة:</strong> هذا النظام محمي بكلمات مرور. استخدم بيانات الدخول المناسبة لدورك.
           </p>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
