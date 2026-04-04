@@ -41,8 +41,7 @@ export default function BookingForm({
     try {
       const serviceName = serviceNames[formData.service] || formData.service;
       
-      // حفظ في Supabase
-      const { error } = await supabase.from("orders").insert([
+      const { data, error } = await supabase.from("orders").insert([
         {
           order_number: `MG-${Date.now()}`,
           customer_name: formData.name,
@@ -57,13 +56,11 @@ export default function BookingForm({
       ]);
 
       if (error) {
-        console.error("Supabase error:", error);
-        setSubmitMessage("❌ حدث خطأ في حفظ الطلب");
+        setSubmitMessage("❌ خطأ: " + error.message);
         setIsSubmitting(false);
         return;
       }
 
-      // إرسال WhatsApp
       const message = `🔧 *طلب صيانة جديد*\n\n👤 *الاسم:* ${formData.name}\n📞 *الهاتف:* ${formData.phone}\n🔨 *الخدمة:* ${serviceName}\n🏷️ *الماركة:* ${formData.brand}\n⚠️ *المشكلة:* ${formData.problem}\n📍 *العنوان:* ${formData.address}\n\n⏰ *الوقت:* ${new Date().toLocaleString("ar-EG")}`;
       const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, "_blank");
@@ -76,9 +73,8 @@ export default function BookingForm({
         setSubmitMessage("");
       }, 3000);
       
-    } catch (error) {
-      console.error("Error:", error);
-      setSubmitMessage("❌ حدث خطأ غير متوقع.");
+    } catch (err: any) {
+      setSubmitMessage("❌ خطأ غير متوقع: " + (err.message || "غير معروف"));
       setIsSubmitting(false);
     }
   };
