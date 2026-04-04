@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Lock, User, LogOut } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 
 interface LoginPageProps {
   onLoginSuccess?: (role: string, username: string) => void;
@@ -13,7 +13,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [error, setError] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ username: string; role: string } | null>(null);
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
 
   // Credentials (يمكن تعديلها)
   const credentials: Record<string, Record<string, string>> = {
@@ -48,11 +48,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
       // التوجيه حسب الدور
       if (role === "admin") {
-        navigate("/orders");
+        setLocation("/orders");
       } else if (role === "data-entry") {
-        navigate("/data-entry");
+        setLocation("/data-entry");
       } else if (role === "tech") {
-        navigate("/tech-portal");
+        setLocation("/tech-portal");
       }
     } else {
       setError("اسم المستخدم أو كلمة المرور غير صحيحة");
