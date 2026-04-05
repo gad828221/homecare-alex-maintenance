@@ -46,17 +46,13 @@ export default function TechnicianPortal() {
     company_share: 0
   });
 
-  // دالة مساعدة لتنسيق رقم الهاتف للواتساب (إضافة +20)
+  // دالة مساعدة لتنسيق رقم الهاتف للواتساب
   const formatPhoneForWhatsApp = (phone: string) => {
     if (!phone) return '';
     let cleaned = phone.toString().replace(/[^\d+]/g, '');
-    if (cleaned.startsWith('0')) {
-      cleaned = '+20' + cleaned.substring(1);
-    } else if (cleaned.startsWith('1') && cleaned.length === 10) {
-      cleaned = '+20' + cleaned;
-    } else if (!cleaned.startsWith('+')) {
-      cleaned = '+20' + cleaned;
-    }
+    if (cleaned.startsWith('0')) cleaned = '+20' + cleaned.substring(1);
+    else if (cleaned.startsWith('1') && cleaned.length === 10) cleaned = '+20' + cleaned;
+    else if (!cleaned.startsWith('+')) cleaned = '+20' + cleaned;
     return cleaned;
   };
 
@@ -67,7 +63,6 @@ export default function TechnicianPortal() {
     if (newStatus === "completed") statusMessage = "✅ تم إكمال طلب الصيانة بنجاح. شكرًا لثقتك بنا!";
     else if (newStatus === "cancelled") statusMessage = "❌ تم إلغاء طلب الصيانة. للاستفسار، يرجى الاتصال بنا.";
     else return;
-    
     const message = `📢 *تحديث حالة طلب الصيانة* 📢\n\n` +
       `🔢 *كود الأوردر:* ${order.order_number}\n` +
       `👤 *العميل:* ${order.customer_name}\n` +
@@ -77,18 +72,24 @@ export default function TechnicianPortal() {
     window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
   };
 
+  // تحديد اسم الفني من localStorage (بعد تسجيل الدخول) أو من الرابط (للتوافق القديم)
   useEffect(() => {
+    // محاولة قراءة الاسم من localStorage (بعد تسجيل الدخول)
+    const storedUser = localStorage.getItem("currentUser");
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      if (user.role === "tech" && user.techName) {
+        setTechName(user.techName);
+        return;
+      }
+    }
+    // إذا لم يوجد، حاول من الرابط (للتوافق مع الروابط القديمة)
     const params = new URLSearchParams(window.location.search);
     const nameFromUrl = params.get("name");
     if (nameFromUrl) {
       setTechName(decodeURIComponent(nameFromUrl));
     } else {
-      const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
-      if (user.role === "tech") {
-        setTechName(user.username === "tech" ? "إسلام العمده" : user.username);
-      } else if (user.role !== "admin") {
-        setLocation("/login");
-      }
+      setLocation("/login");
     }
   }, [setLocation]);
 
@@ -98,9 +99,7 @@ export default function TechnicianPortal() {
       if (!techName) return;
       try {
         const { data } = await fetchAPI(`technicians?select=is_active&name=eq.${encodeURIComponent(techName)}`);
-        if (data && data[0]) {
-          setIsActive(data[0].is_active !== false);
-        }
+        if (data && data[0]) setIsActive(data[0].is_active !== false);
       } catch (err) { console.error(err); }
     };
     checkActiveStatus();
@@ -132,7 +131,6 @@ export default function TechnicianPortal() {
         body: JSON.stringify({ status: newStatus, ...extraData })
       });
       fetchData();
-      // إرسال إشعار للعميل عند تغيير الحالة إلى مكتمل أو ملغي
       if (oldOrder && oldOrder.status !== newStatus && (newStatus === 'completed' || newStatus === 'cancelled')) {
         notifyCustomerStatusChange(oldOrder, newStatus);
       }
@@ -196,19 +194,10 @@ export default function TechnicianPortal() {
   const confirmAction = () => {
     if (!currentOrder) return;
     switch (actionType) {
-      case 'cancel':
-        if (actionValue.trim()) handleCancel(currentOrder, actionValue);
-        break;
-      case 'inspect':
-        const amount = parseFloat(actionValue);
-        if (!isNaN(amount) && amount > 0) handleInspection(currentOrder, amount);
-        break;
-      case 'defer':
-        if (actionValue.trim()) handleDefer(currentOrder, actionValue);
-        break;
-      case 'note':
-        if (actionValue.trim()) handleNote(currentOrder, actionValue);
-        break;
+      case 'cancel': if (actionValue.trim()) handleCancel(currentOrder, actionValue); break;
+      case 'inspect': const amount = parseFloat(actionValue); if (!isNaN(amount) && amount > 0) handleInspection(currentOrder, amount); break;
+      case 'defer': if (actionValue.trim()) handleDefer(currentOrder, actionValue); break;
+      case 'note': if (actionValue.trim()) handleNote(currentOrder, actionValue); break;
     }
     setShowActionModal(false);
     setActionValue("");
@@ -235,7 +224,6 @@ export default function TechnicianPortal() {
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-200">
-      {/* Header */}
       <div className="bg-slate-800/80 border-b border-slate-700 sticky top-0 z-40 px-4 py-3">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3"><Wrench className="w-6 h-6 text-orange-400" /><div><h1 className="text-lg font-bold text-white">بوابة الفنيين</h1><p className="text-xs text-orange-400">{techName}</p></div></div>
@@ -244,7 +232,6 @@ export default function TechnicianPortal() {
       </div>
 
       <main className="max-w-4xl mx-auto p-4 space-y-5">
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-2xl font-bold text-orange-400">{stats.active}</div><div className="text-xs text-slate-400">نشط</div></div>
           <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-2xl font-bold text-green-400">{stats.completed}</div><div className="text-xs text-slate-400">مكتمل</div></div>
@@ -291,7 +278,6 @@ export default function TechnicianPortal() {
         </div>
       </main>
 
-      {/* Modal for actions */}
       {showActionModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70" onClick={() => setShowActionModal(false)}>
           <div className="bg-slate-800 rounded-xl max-w-md w-full p-5" onClick={e => e.stopPropagation()}>
@@ -314,7 +300,6 @@ export default function TechnicianPortal() {
         </div>
       )}
 
-      {/* Settlement Modal */}
       {showSettleModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70" onClick={() => setShowSettleModal(false)}>
           <div className="bg-slate-800 rounded-xl max-w-md w-full p-5" onClick={e => e.stopPropagation()}>
