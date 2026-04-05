@@ -291,12 +291,12 @@ export default function ProtectedOrders() {
           <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800"><p className="text-2xl font-black text-purple-500">{technicians.length}</p><p className="text-[10px] text-slate-500 uppercase">فني متاح</p></div>
         </div>
 
-        <div className="flex gap-1 bg-slate-900 p-1 rounded-2xl border border-slate-800 mb-6 w-fit">
-          <button onClick={() => setActiveTab('orders')} className={`px-6 py-2 rounded-xl text-sm font-bold ${activeTab === 'orders' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>الأوردرات</button>
-          <button onClick={() => setActiveTab('technicians')} className={`px-6 py-2 rounded-xl text-sm font-bold ${activeTab === 'technicians' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>الفنيين</button>
-          <button onClick={() => setActiveTab('reports')} className={`px-6 py-2 rounded-xl text-sm font-bold ${activeTab === 'reports' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>التقارير</button>
-          <button onClick={() => setActiveTab('notifications')} className={`px-6 py-2 rounded-xl text-sm font-bold ${activeTab === 'notifications' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>الإشعارات</button>
-          <button onClick={() => setActiveTab('invoices')} className={`px-6 py-2 rounded-xl text-sm font-bold ${activeTab === 'invoices' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>الفواتير</button>
+        <div className="flex gap-1 bg-slate-900 p-1 rounded-2xl border border-slate-800 mb-6 overflow-x-auto scrollbar-hide">
+          <button onClick={() => setActiveTab('orders')} className={`px-4 md:px-6 py-2 rounded-xl text-xs md:text-sm font-bold whitespace-nowrap ${activeTab === 'orders' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>الأوردرات</button>
+          <button onClick={() => setActiveTab('technicians')} className={`px-4 md:px-6 py-2 rounded-xl text-xs md:text-sm font-bold whitespace-nowrap ${activeTab === 'technicians' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>الفنيين</button>
+          <button onClick={() => setActiveTab('reports')} className={`px-4 md:px-6 py-2 rounded-xl text-xs md:text-sm font-bold whitespace-nowrap ${activeTab === 'reports' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>التقارير</button>
+          <button onClick={() => setActiveTab('notifications')} className={`px-4 md:px-6 py-2 rounded-xl text-xs md:text-sm font-bold whitespace-nowrap ${activeTab === 'notifications' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>🔔 الإشعارات</button>
+          <button onClick={() => setActiveTab('invoices')} className={`px-4 md:px-6 py-2 rounded-xl text-xs md:text-sm font-bold whitespace-nowrap ${activeTab === 'invoices' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>📑 الفواتير</button>
         </div>
 
         {activeTab === 'notifications' && (
