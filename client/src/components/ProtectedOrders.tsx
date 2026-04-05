@@ -119,27 +119,44 @@ export default function ProtectedOrders() {
 
   // دالة مساعدة لتنسيق رقم الهاتف للواتساب (إضافة +20)
   const formatPhoneForWhatsApp = (phone: string) => {
-    let cleaned = phone?.toString().replace(/\s|-|\(|\)/g, '') || '';
-    if (cleaned.startsWith('0')) cleaned = '+20' + cleaned.substring(1);
-    else if (cleaned.startsWith('1')) cleaned = '+20' + cleaned;
-    else if (!cleaned.startsWith('+')) cleaned = '+20' + cleaned;
+    if (!phone) return '';
+    let cleaned = phone.toString().replace(/[^\d+]/g, '');
+    if (cleaned.startsWith('0')) {
+      cleaned = '+20' + cleaned.substring(1);
+    } else if (cleaned.startsWith('1') && cleaned.length === 10) {
+      cleaned = '+20' + cleaned;
+    } else if (!cleaned.startsWith('+')) {
+      cleaned = '+20' + cleaned;
+    }
     return cleaned;
   };
 
-  // إرسال واتساب للعميل
+  // إرسال واتساب للعميل (رسالة مبسطة + كود الأوردر)
   const sendToWhatsApp = (order: any) => {
     const phone = formatPhoneForWhatsApp(order.phone);
-    const message = `🔧 *أوردر صيانة جديد*\n\n📋 *البيانات:*\n👤 العميل: ${order.customer_name}\n📞 الهاتف: ${order.phone}\n📍 العنوان: ${order.address}\n🔧 الجهاز: ${order.device_type} - ${order.brand}\n⚠️ المشكلة: ${order.problem_description}\n\n💰 *المبالغ:*\n💵 الإجمالي: ${order.total_amount || 0} ج.م\n🛠️ قطع الغيار: ${order.parts_cost || 0} ج.م\n🚗 المواصلات: ${order.transport_cost || 0} ج.م\n✅ الصافي: ${order.net_amount || 0} ج.م`;
+    const message = `📝 *تم استلام طلب الصيانة بنجاح* 📝\n\n` +
+      `🔢 *كود الأوردر:* ${order.order_number}\n` +
+      `👤 *العميل:* ${order.customer_name}\n` +
+      `📞 *رقمك:* ${order.phone}\n\n` +
+      `✅ تم تسجيل طلبك وسيتم التواصل معك قريباً من قبل الفني المختص.\n\n` +
+      `شكراً لثقتك بنا. 🌟`;
     const encodedMessage = encodeURIComponent(message);
     window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
   };
 
-  // إرسال واتساب للفني عند إضافة أوردر جديد
+  // إرسال واتساب للفني عند إضافة أوردر جديد (مع كود الأوردر)
   const notifyTechnician = (techName: string, orderData: any) => {
     const tech = technicians.find(t => t.name === techName);
     if (tech && tech.phone) {
       const phone = formatPhoneForWhatsApp(tech.phone);
-      const message = `🔧 *أوردر جديد موكل إليك* 🔧\n\n👤 العميل: ${orderData.customer_name}\n📞 هاتف العميل: ${orderData.phone}\n📍 العنوان: ${orderData.address}\n🔧 الجهاز: ${orderData.device_type} - ${orderData.brand}\n⚠️ المشكلة: ${orderData.problem_description}\n💰 الإجمالي: ${orderData.total_amount} ج.م`;
+      const message = `🔧 *أوردر صيانة جديد* 🔧\n\n` +
+        `🔢 *كود الأوردر:* ${orderData.order_number}\n` +
+        `👤 *العميل:* ${orderData.customer_name}\n` +
+        `📞 *هاتف العميل:* ${orderData.phone}\n` +
+        `📍 *العنوان:* ${orderData.address}\n` +
+        `🔧 *الجهاز:* ${orderData.device_type} - ${orderData.brand}\n` +
+        `⚠️ *المشكلة:* ${orderData.problem_description}\n` +
+        `💰 *الإجمالي:* ${orderData.total_amount} ج.م`;
       const encodedMessage = encodeURIComponent(message);
       window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
     }
@@ -147,17 +164,20 @@ export default function ProtectedOrders() {
 
   const saveOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    // توليد كود الأوردر إذا لم يكن موجوداً (للتأكيد)
+    const orderNumber = `MG-${Date.now()}`;
     try {
       if (editingOrder) {
         await fetchAPI(`orders?id=eq.${editingOrder.id}`, { method: 'PATCH', body: JSON.stringify(formData) });
       } else {
         await fetchAPI('orders', { 
           method: 'POST', 
-          body: JSON.stringify({ ...formData, date: new Date().toLocaleString("ar-EG") }) 
+          body: JSON.stringify({ ...formData, order_number: orderNumber, date: new Date().toLocaleString("ar-EG") }) 
         });
         // إرسال إشعار للفني إذا تم اختيار فني
         if (formData.technician) {
-          notifyTechnician(formData.technician, formData);
+          // تمرير orderNumber مع البيانات
+          notifyTechnician(formData.technician, { ...formData, order_number: orderNumber });
         }
       }
       setShowOrderModal(false);
