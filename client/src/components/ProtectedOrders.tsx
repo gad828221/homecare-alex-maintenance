@@ -1,13 +1,17 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
   Plus, Download, Search, LayoutDashboard, Users, 
   Clock, CheckCircle2, AlertCircle, XCircle, 
   Edit, Trash2, RefreshCw, Phone,
-  TrendingUp, Wallet, PieChart, Calendar, Copy, Check
+  TrendingUp, Wallet, PieChart, Calendar, Copy, Check,
+  Send, MessageCircle
 } from "lucide-react";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
+
+const DEVICE_TYPES = ['غسالة', 'ثلاجة', 'بوتاجاز', 'سخان', 'تكييف', 'ميكروويف', 'غسالة أطباق'];
+const BRANDS = ['سامسونج', 'LG', 'شارب', 'توشيبا', 'زانوسي', 'يونيون إير', 'فريش', 'وايت ويل', 'أريستون', 'بيكو', 'هوفر', 'إنديست'];
 
 const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   const res = await fetch(`${supabaseUrl}/rest/v1/${endpoint}`, {
@@ -35,7 +39,7 @@ export default function ProtectedOrders() {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   
   const [formData, setFormData] = useState({
-    customer_name: '', phone: '', device: '', address: '', brand: '', problem: '', technician: '',
+    customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '',
     status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, 
     net_amount: 0, company_share: 0, technician_share: 0, is_paid: false
   });
@@ -80,7 +84,7 @@ export default function ProtectedOrders() {
     const transport = parseFloat(data.transport_cost) || 0;
     
     const net = total - parts - transport;
-    const companyShare = Math.round(net * 0.5); // 50% للشركة
+    const companyShare = Math.round(net * 0.5);
     const techShare = net - companyShare;
     
     return {
@@ -139,7 +143,7 @@ export default function ProtectedOrders() {
       setShowOrderModal(false);
       setEditingOrder(null);
       setFormData({
-        customer_name: '', phone: '', device: '', address: '', brand: '', problem: '', technician: '',
+        customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '',
         status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, 
         net_amount: 0, company_share: 0, technician_share: 0, is_paid: false
       });
@@ -176,6 +180,12 @@ export default function ProtectedOrders() {
     navigator.clipboard.writeText(link);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const sendToWhatsApp = (order: any) => {
+    const message = `🔧 *أوردر صيانة جديد*\n\n📋 *البيانات:*\n👤 العميل: ${order.customer_name}\n📞 الهاتف: ${order.phone}\n📍 العنوان: ${order.address}\n🔧 الجهاز: ${order.device_type} - ${order.brand}\n⚠️ المشكلة: ${order.problem_description}\n\n💰 *المبالغ:*\n💵 الإجمالي: ${order.total_amount} ج.م\n🛠️ قطع الغيار: ${order.parts_cost} ج.م\n🚗 المواصلات: ${order.transport_cost} ج.م\n✅ الصافي: ${order.net_amount} ج.م`;
+    const encodedMessage = encodeURIComponent(message);
+    window.open(`https://wa.me/${order.phone.replace(/\D/g, '')}?text=${encodedMessage}`, '_blank');
   };
 
   const filteredOrders = orders.filter(o => {
@@ -245,7 +255,7 @@ export default function ProtectedOrders() {
                 <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                 <input type="text" placeholder="ابحث عن عميل، هاتف، أو فني..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-2xl py-3 pr-12 pl-4 text-sm outline-none focus:ring-2 focus:ring-orange-500" />
               </div>
-              <button onClick={() => { setEditingOrder(null); setFormData({ customer_name: '', phone: '', device: '', address: '', brand: '', problem: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false }); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-2xl text-sm font-bold flex items-center gap-2 transition-all active:scale-95 shadow-lg shadow-orange-900/20"><Plus className="w-5 h-5" />أوردر جديد</button>
+              <button onClick={() => { setEditingOrder(null); setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false }); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-2xl text-sm font-bold flex items-center gap-2 transition-all active:scale-95 shadow-lg shadow-orange-900/20"><Plus className="w-5 h-5" />أوردر جديد</button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -263,6 +273,7 @@ export default function ProtectedOrders() {
                       <button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`p-2 rounded-xl transition-all ${order.is_paid ? 'bg-green-500/20 text-green-500' : 'bg-slate-800 text-slate-500'}`} title={order.is_paid ? 'تم التحصيل' : 'لم يتم التحصيل'}>
                         {order.is_paid ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
                       </button>
+                      <button onClick={() => sendToWhatsApp(order)} className="p-2 text-slate-500 hover:text-green-500 hover:bg-green-500/10 rounded-xl transition-all"><MessageCircle className="w-4 h-4" /></button>
                       <button onClick={() => { setEditingOrder(order); setFormData(order); setShowOrderModal(true); }} className="p-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-xl transition-all"><Edit className="w-4 h-4" /></button>
                       <button onClick={() => deleteOrder(order.id)} className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"><Trash2 className="w-4 h-4" /></button>
                     </div>
@@ -270,11 +281,14 @@ export default function ProtectedOrders() {
 
                   <div className="space-y-3">
                     <h3 className="text-white font-black text-lg truncate">{order.customer_name}</h3>
+                    <div className="text-xs text-slate-400 space-y-1">
+                      <p>📍 {order.address}</p>
+                      <p>🔧 {order.device_type} - {order.brand}</p>
+                      <p>⚠️ {order.problem_description}</p>
+                    </div>
                     <div className="grid grid-cols-2 gap-2 py-3 border-y border-slate-800/50">
                       <div><p className="text-[10px] text-slate-500 font-bold uppercase">الإجمالي</p><p className="text-xs text-white font-bold">{order.total_amount || 0} ج.م</p></div>
                       <div><p className="text-[10px] text-slate-500 font-bold uppercase">الصافي</p><p className="text-xs text-green-500 font-bold">{order.net_amount || 0} ج.م</p></div>
-                      <div><p className="text-[10px] text-slate-500 font-bold uppercase">قطع الغيار</p><p className="text-xs text-red-400 font-bold">{order.parts_cost || 0} ج.م</p></div>
-                      <div><p className="text-[10px] text-slate-500 font-bold uppercase">المواصلات</p><p className="text-xs text-blue-400 font-bold">{order.transport_cost || 0} ج.م</p></div>
                     </div>
                     <div className="flex justify-between items-center pt-1">
                       <div><p className="text-[10px] text-slate-500 font-bold uppercase">الفني</p><p className="text-sm font-black text-orange-400">{order.technician || 'لم يحدد'}</p></div>
@@ -352,20 +366,36 @@ export default function ProtectedOrders() {
               <h2 className="text-xl font-black text-white">{editingOrder ? 'تعديل أوردر' : 'أوردر جديد'}</h2>
               <button onClick={() => setShowOrderModal(false)} className="p-2 text-slate-500 hover:text-white"><XCircle className="w-6 h-6" /></button>
             </div>
-            <form onSubmit={saveOrder} className="p-6 space-y-4">
+            <form onSubmit={saveOrder} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+              {/* بيانات العميل */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">اسم العميل</label><input type="text" required value={formData.customer_name} onChange={(e) => handleFormChange('customer_name', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div>
-                <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">رقم الهاتف</label><input type="tel" required value={formData.phone} onChange={(e) => handleFormChange('phone', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div>
-                <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">الجهاز</label><input type="text" required value={formData.device} onChange={(e) => handleFormChange('device', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div>
-                <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">الفني</label><select value={formData.technician} onChange={(e) => handleFormChange('technician', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500"><option value="">اختر فني</option>{technicians.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}</select></div>
-              </div>
-              
-              <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-800">
-                <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">الإجمالي</label><input type="number" value={formData.total_amount} onChange={(e) => handleFormChange('total_amount', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div>
-                <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">قطع الغيار</label><input type="number" value={formData.parts_cost} onChange={(e) => handleFormChange('parts_cost', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div>
-                <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">المواصلات</label><input type="number" value={formData.transport_cost} onChange={(e) => handleFormChange('transport_cost', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div>
+                <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">👤 اسم العميل</label><input type="text" required value={formData.customer_name} onChange={(e) => handleFormChange('customer_name', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div>
+                <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">📞 رقم الهاتف</label><input type="tel" required value={formData.phone} onChange={(e) => handleFormChange('phone', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div>
+                <div className="space-y-1 md:col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">📍 العنوان</label><input type="text" required value={formData.address} onChange={(e) => handleFormChange('address', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" placeholder="الشارع والحي والمدينة" /></div>
               </div>
 
+              {/* بيانات الجهاز */}
+              <div className="border-t border-slate-800 pt-4">
+                <h3 className="text-sm font-bold text-white mb-3">🔧 بيانات الجهاز</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">نوع الجهاز</label><select required value={formData.device_type} onChange={(e) => handleFormChange('device_type', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500"><option value="">اختر الجهاز</option>{DEVICE_TYPES.map(d => <option key={d} value={d}>{d}</option>)}</select></div>
+                  <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">الماركة</label><select required value={formData.brand} onChange={(e) => handleFormChange('brand', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500"><option value="">اختر الماركة</option>{BRANDS.map(b => <option key={b} value={b}>{b}</option>)}</select></div>
+                  <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">الفني</label><select value={formData.technician} onChange={(e) => handleFormChange('technician', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500"><option value="">اختر فني</option>{technicians.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}</select></div>
+                </div>
+                <div className="mt-4 space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">⚠️ وصف العطل</label><textarea required value={formData.problem_description} onChange={(e) => handleFormChange('problem_description', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500 resize-none" rows={3} placeholder="اشرح المشكلة بالتفصيل..."></textarea></div>
+              </div>
+              
+              {/* المبالغ المالية */}
+              <div className="border-t border-slate-800 pt-4">
+                <h3 className="text-sm font-bold text-white mb-3">💰 المبالغ المالية</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">الإجمالي</label><input type="number" value={formData.total_amount} onChange={(e) => handleFormChange('total_amount', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div>
+                  <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">قطع الغيار</label><input type="number" value={formData.parts_cost} onChange={(e) => handleFormChange('parts_cost', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div>
+                  <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">المواصلات</label><input type="number" value={formData.transport_cost} onChange={(e) => handleFormChange('transport_cost', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div>
+                </div>
+              </div>
+
+              {/* الأرباح */}
               <div className="grid grid-cols-2 gap-4 p-4 bg-slate-950 rounded-2xl border border-slate-800">
                 <div className="text-center"><p className="text-[10px] text-slate-500 font-bold uppercase mb-1">نصيب الشركة (50%)</p><p className="text-lg font-black text-blue-500">{formData.company_share} ج.م</p></div>
                 <div className="text-center border-r border-slate-800"><p className="text-[10px] text-slate-500 font-bold uppercase mb-1">نصيب الفني (50%)</p><p className="text-lg font-black text-purple-500">{formData.technician_share} ج.م</p></div>
@@ -373,10 +403,10 @@ export default function ProtectedOrders() {
 
               <div className="flex items-center gap-2 bg-slate-800 p-3 rounded-xl border border-slate-700">
                 <input type="checkbox" id="is_paid" checked={formData.is_paid} onChange={(e) => handleFormChange('is_paid', e.target.checked)} className="w-5 h-5 accent-orange-500" />
-                <label htmlFor="is_paid" className="text-sm font-bold text-white cursor-pointer">تم تحصيل المبلغ بالكامل</label>
+                <label htmlFor="is_paid" className="text-sm font-bold text-white cursor-pointer">✅ تم تحصيل المبلغ بالكامل</label>
               </div>
 
-              <button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white font-black py-4 rounded-2xl shadow-lg transition-all active:scale-95 mt-4">حفظ الأوردر</button>
+              <button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white font-black py-4 rounded-2xl shadow-lg transition-all active:scale-95 mt-4">💾 حفظ الأوردر</button>
             </form>
           </div>
         </div>
@@ -391,10 +421,10 @@ export default function ProtectedOrders() {
               <button onClick={() => setShowTechModal(false)} className="p-2 text-slate-500 hover:text-white"><XCircle className="w-6 h-6" /></button>
             </div>
             <form onSubmit={saveTechnician} className="p-6 space-y-4">
-              <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">اسم الفني</label><input type="text" required value={techForm.name} onChange={(e) => setTechForm({ ...techForm, name: e.target.value })} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div>
-              <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">رقم الهاتف</label><input type="tel" required value={techForm.phone} onChange={(e) => setTechForm({ ...techForm, phone: e.target.value })} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div>
-              <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">التخصص</label><input type="text" value={techForm.specialization} onChange={(e) => setTechForm({ ...techForm, specialization: e.target.value })} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div>
-              <button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white font-black py-4 rounded-2xl shadow-lg transition-all active:scale-95 mt-4">حفظ الفني</button>
+              <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">👤 اسم الفني</label><input type="text" required value={techForm.name} onChange={(e) => setTechForm({ ...techForm, name: e.target.value })} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div>
+              <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">📞 رقم الهاتف</label><input type="tel" required value={techForm.phone} onChange={(e) => setTechForm({ ...techForm, phone: e.target.value })} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div>
+              <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">🔧 التخصص</label><input type="text" value={techForm.specialization} onChange={(e) => setTechForm({ ...techForm, specialization: e.target.value })} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" placeholder="مثال: صيانة ثلاجات" /></div>
+              <button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white font-black py-4 rounded-2xl shadow-lg transition-all active:scale-95 mt-4">💾 حفظ الفني</button>
             </form>
           </div>
         </div>
