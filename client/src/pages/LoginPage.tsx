@@ -2,6 +2,9 @@ import { useState } from "react";
 import { Lock, User, LogOut } from "lucide-react";
 import { useLocation } from "wouter";
 
+const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
+
 export default function LoginPage() {
   const [, setLocation] = useLocation();
   const [username, setUsername] = useState("");
@@ -9,15 +12,16 @@ export default function LoginPage() {
   const [role, setRole] = useState<"admin" | "data-entry" | "tech">("admin");
   const [error, setError] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState<{ username: string; role: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ username: string; role: string; techName?: string } | null>(null);
 
-  // قائمة المدراء (أضف أي مدير جديد هنا)
+  // بيانات المدراء ومدخل البيانات (ثابتة أو من قاعدة البيانات)
   const adminList = [
     { username: "admin", password: "19882@retal" },
     { username: "kajo", password: "@kajo" }
   ];
+  const dataEntry = { username: "dataentry", password: "dataentry123" };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -32,7 +36,7 @@ export default function LoginPage() {
         return;
       }
     } else if (role === "data-entry") {
-      if (username === "dataentry" && password === "dataentry123") {
+      if (username === dataEntry.username && password === dataEntry.password) {
         setIsLoggedIn(true);
         setCurrentUser({ username, role: "data-entry" });
         localStorage.setItem("currentUser", JSON.stringify({ username, role: "data-entry" }));
@@ -41,14 +45,32 @@ export default function LoginPage() {
         return;
       }
     } else if (role === "tech") {
-      if (username === "tech" && password === "tech123") {
-        setIsLoggedIn(true);
-        setCurrentUser({ username, role: "tech" });
-        localStorage.setItem("currentUser", JSON.stringify({ username, role: "tech" }));
-        localStorage.setItem("userRole", "tech");
-        setLocation("/tech-portal");
-        return;
+      // التحقق من الفني من قاعدة البيانات
+      try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/technicians?select=name,username,password,is_active&username=eq.${username}`, {
+          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
+        });
+        const data = await response.json();
+        if (data && data.length > 0 && data[0].password === password) {
+          if (data[0].is_active === false) {
+            setError("حساب الفني غير نشط، يرجى التواصل مع الإدارة");
+            return;
+          }
+          setIsLoggedIn(true);
+          const techName = data[0].name;
+          setCurrentUser({ username, role: "tech", techName });
+          localStorage.setItem("currentUser", JSON.stringify({ username, role: "tech", techName }));
+          localStorage.setItem("userRole", "tech");
+          setLocation(`/tech-portal?name=${encodeURIComponent(techName)}`);
+          return;
+        } else {
+          setError("اسم المستخدم أو كلمة المرور غير صحيحة");
+        }
+      } catch (err) {
+        console.error(err);
+        setError("خطأ في الاتصال بقاعدة البيانات");
       }
+      return;
     }
 
     setError("اسم المستخدم أو كلمة المرور غير صحيحة");
@@ -101,7 +123,7 @@ export default function LoginPage() {
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
             <label className="block text-sm font-bold text-gray-300 mb-3">اختر دورك</label>
-            <select value={role} onChange={(e) => setRole(e.target.value as any)} className="w-full px-4 py-3 bg-slate-700 text-white rounded-lg border-2 border-orange-500/30">
+            <select value={role} onChange={(e) => setRole(e.target.value as any)} className="w-full px-4 py-3 bg-slate-700 text-white rounded-lg border-2 border-orange-500/30 focus:border-orange-500 focus:outline-none transition-all">
               <option value="admin">👨‍💼 مدير النظام (Admin)</option>
               <option value="data-entry">📝 مدخل البيانات (Data Entry)</option>
               <option value="tech">🔧 الفني (Technician)</option>
@@ -110,15 +132,19 @@ export default function LoginPage() {
 
           <div>
             <label className="block text-sm font-bold text-gray-300 mb-3">اسم المستخدم</label>
-            <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full px-4 py-3 bg-slate-700 text-white rounded-lg border-2 border-orange-500/30" placeholder="أدخل اسم المستخدم" />
+            <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full px-4 py-3 bg-slate-700 text-white rounded-lg border-2 border-orange-500/30 focus:border-orange-500 focus:outline-none transition-all" placeholder="أدخل اسم المستخدم" />
           </div>
 
           <div>
             <label className="block text-sm font-bold text-gray-300 mb-3">كلمة المرور</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-3 bg-slate-700 text-white rounded-lg border-2 border-orange-500/30" placeholder="أدخل كلمة المرور" />
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-3 bg-slate-700 text-white rounded-lg border-2 border-orange-500/30 focus:border-orange-500 focus:outline-none transition-all" placeholder="أدخل كلمة المرور" />
           </div>
 
-          {error && <div className="p-4 bg-red-500/20 border-2 border-red-500/50 text-red-300 rounded-lg text-sm">❌ {error}</div>}
+          {error && (
+            <div className="p-4 bg-red-500/20 border-2 border-red-500/50 text-red-300 rounded-lg text-sm">
+              ❌ {error}
+            </div>
+          )}
 
           <button type="submit" className="w-full bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 hover:from-orange-600 hover:via-orange-700 hover:to-red-700 text-white font-bold py-3 rounded-lg transition-all transform hover:scale-105 shadow-lg">
             تسجيل الدخول
