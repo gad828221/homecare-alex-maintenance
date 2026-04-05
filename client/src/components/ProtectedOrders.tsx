@@ -335,9 +335,28 @@ export default function ProtectedOrders() {
                       <div><p className="text-[10px] text-slate-500 uppercase">الإجمالي</p><p className="text-xs text-white font-bold">{order.total_amount || 0} ج.م</p></div>
                       <div><p className="text-[10px] text-slate-500 uppercase">الصافي</p><p className="text-xs text-green-500 font-bold">{order.net_amount || 0} ج.م</p></div>
                     </div>
+                    {/* قسم الحالة مع قائمة منسدلة */}
                     <div className="flex justify-between items-center pt-1">
-                      <div><p className="text-[10px] text-slate-500 uppercase">الفني</p><p className="text-sm font-black text-orange-400">{order.technician || 'لم يحدد'}</p></div>
-                      <div className={`text-[10px] font-black px-2 py-1 rounded ${order.is_paid ? 'text-green-500 bg-green-500/10' : 'text-red-500 bg-red-500/10'}`}>{order.is_paid ? 'تم التحصيل' : 'لم يحصل'}</div>
+                      <div>
+                        <p className="text-[10px] text-slate-500 uppercase">الفني</p>
+                        <p className="text-sm font-black text-orange-400">{order.technician || 'لم يحدد'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-500 uppercase text-left">الحالة</p>
+                        <select 
+                          value={order.status} 
+                          onChange={(e) => updateOrderStatus(order.id, e.target.value)} 
+                          className="bg-slate-700 text-white rounded px-2 py-1 text-xs"
+                        >
+                          <option value="pending">⏳ قيد الانتظار</option>
+                          <option value="in-progress">🔧 قيد التنفيذ</option>
+                          <option value="completed">✅ مكتمل</option>
+                          <option value="cancelled">❌ ملغي</option>
+                        </select>
+                      </div>
+                      <div className={`text-[10px] font-black px-2 py-1 rounded ${order.is_paid ? 'text-green-500 bg-green-500/10' : 'text-red-500 bg-red-500/10'}`}>
+                        {order.is_paid ? 'تم التحصيل' : 'لم يحصل'}
+                      </div>
                     </div>
                   </div>
                 </div>
