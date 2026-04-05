@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { 
   Wrench, LogOut, Clock, CheckCircle2, AlertCircle, 
   XCircle, RefreshCw, Phone, MapPin, ClipboardList,
-  Wallet, Share2, Calendar, X
+  Calendar, X, Trash2, Eye, ClockArrowUp, StickyNote
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -31,6 +31,9 @@ export default function TechnicianPortal() {
   const [stats, setStats] = useState({ active: 0, completed: 0, earnings: 0 });
   const [showSettleModal, setShowSettleModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [currentNote, setCurrentNote] = useState("");
+  const [currentOrderId, setCurrentOrderId] = useState<number | null>(null);
   
   const [settleForm, setSettleForm] = useState({
     total_amount: 0,
@@ -101,6 +104,16 @@ export default function TechnicianPortal() {
     window.open(`https://wa.me/201558625259?text=${encodeURIComponent(message)}`, "_blank");
   };
 
+  const addNote = async () => {
+    if (currentNote.trim() && currentOrderId) {
+      const order = orders.find(o => o.id === currentOrderId);
+      await updateStatus(currentOrderId, order?.status || 'pending', { technician_note: currentNote });
+      setShowNoteModal(false);
+      setCurrentNote("");
+      setCurrentOrderId(null);
+    }
+  };
+
   if (loading && orders.length === 0) return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center">
       <RefreshCw className="w-10 h-10 text-orange-500 animate-spin" />
@@ -119,10 +132,11 @@ export default function TechnicianPortal() {
             </div>
           </div>
           <button onClick={() => {
-  localStorage.removeItem("userRole");
-  localStorage.removeItem("currentUser");
-  setLocation("/login");
-}} className="p-2 text-slate-500 hover:text-white transition-all"><LogOut className="w-6 h-6" /></button>
+            localStorage.removeItem("userRole");
+            localStorage.removeItem("currentUser");
+            setLocation("/login");
+          }} className="p-2 text-slate-500 hover:text-white transition-all"><LogOut className="w-6 h-6" /></button>
+        </div>
       </nav>
 
       <main className="max-w-4xl mx-auto p-4 space-y-6">
@@ -145,15 +159,15 @@ export default function TechnicianPortal() {
           <h2 className="text-xl font-black text-white flex items-center gap-2 px-2"><ClipboardList className="w-5 h-5 text-orange-500" />أوردراتي</h2>
           {orders.map(order => (
             <div key={order.id} className="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden shadow-xl">
-              <div className={`h-1.5 ${order.status === 'completed' ? 'bg-green-500' : order.status === 'in-progress' ? 'bg-blue-500' : 'bg-yellow-500'}`}></div>
+              <div className={`h-1.5 ${order.status === 'completed' ? 'bg-green-500' : order.status === 'in-progress' ? 'bg-blue-500' : order.status === 'cancelled' ? 'bg-red-500' : order.status === 'deferred' ? 'bg-purple-500' : 'bg-yellow-500'}`}></div>
               <div className="p-5 space-y-4">
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="text-lg font-black text-white">{order.customer_name}</h3>
                     <p className="text-xs text-slate-500 font-bold flex items-center gap-1 mt-1"><Calendar className="w-3 h-3" />{order.date}</p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-black ${order.status === 'completed' ? 'bg-green-500/10 text-green-500' : order.status === 'in-progress' ? 'bg-blue-500/10 text-blue-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
-                    {order.status === 'completed' ? 'مكتمل' : order.status === 'in-progress' ? 'جاري العمل' : 'قيد الانتظار'}
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-black ${order.status === 'completed' ? 'bg-green-500/10 text-green-500' : order.status === 'in-progress' ? 'bg-blue-500/10 text-blue-500' : order.status === 'cancelled' ? 'bg-red-500/10 text-red-500' : order.status === 'deferred' ? 'bg-purple-500/10 text-purple-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
+                    {order.status === 'completed' ? 'مكتمل' : order.status === 'in-progress' ? 'جاري العمل' : order.status === 'cancelled' ? 'ملغي' : order.status === 'deferred' ? 'مؤجل' : 'قيد الانتظار'}
                   </span>
                 </div>
                 
@@ -163,23 +177,96 @@ export default function TechnicianPortal() {
                   <div className="md:col-span-2 flex items-start gap-2 border-t border-slate-800/50 pt-2"><AlertCircle className="w-4 h-4 text-yellow-500 mt-0.5" /><div><p className="text-[10px] text-slate-500 font-bold uppercase">المشكلة</p><p className="text-xs text-slate-300">{order.problem_description || 'لا يوجد وصف'}</p></div></div>
                 </div>
 
-                <div className="flex gap-2 pt-2">
+                {/* عرض تعليق الفني إن وجد */}
+                {order.technician_note && (
+                  <div className="bg-slate-800/50 p-3 rounded-xl border-r-4 border-orange-500">
+                    <p className="text-[10px] text-slate-500 font-bold uppercase flex items-center gap-1"><StickyNote className="w-3 h-3" /> تعليق الفني:</p>
+                    <p className="text-sm text-slate-300">{order.technician_note}</p>
+                  </div>
+                )}
+
+                {/* عرض مبلغ الكشف إن وجد */}
+                {order.inspection_amount > 0 && (
+                  <div className="bg-yellow-500/10 p-3 rounded-xl">
+                    <p className="text-[10px] text-yellow-500 font-bold uppercase">قيمة الكشف:</p>
+                    <p className="text-lg font-black text-yellow-400">{order.inspection_amount} ج.م</p>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-2 pt-2">
                   <a href={`tel:${order.phone}`} className="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95"><Phone className="w-4 h-4" />اتصال</a>
-                  {order.status !== 'completed' && order.status !== 'cancelled' && (
+                  
+                  {/* إلغاء */}
+                  <button 
+                    onClick={() => {
+                      const reason = prompt("سبب الإلغاء:");
+                      if (reason) updateStatus(order.id, 'cancelled', { technician_note: reason, action_date: new Date().toLocaleString("ar-EG") });
+                    }}
+                    className="flex-1 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white font-bold py-3 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95"
+                    disabled={order.status === 'completed' || order.status === 'cancelled'}
+                  >
+                    <Trash2 className="w-4 h-4" /> إلغاء
+                  </button>
+                  
+                  {/* كشف بقيمة */}
+                  <button 
+                    onClick={() => {
+                      const amount = prompt("قيمة الكشف:");
+                      if (amount && !isNaN(parseFloat(amount))) {
+                        updateStatus(order.id, 'inspected', { inspection_amount: parseFloat(amount), technician_note: `كشف بقيمة ${amount} ج.م`, action_date: new Date().toLocaleString("ar-EG") });
+                      }
+                    }}
+                    className="flex-1 bg-yellow-600/20 hover:bg-yellow-600 text-yellow-400 hover:text-white font-bold py-3 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95"
+                    disabled={order.status === 'completed' || order.status === 'cancelled'}
+                  >
+                    <Eye className="w-4 h-4" /> كشف بقيمة
+                  </button>
+                  
+                  {/* تأجيل */}
+                  <button 
+                    onClick={() => {
+                      const reason = prompt("سبب التأجيل:");
+                      if (reason) updateStatus(order.id, 'deferred', { technician_note: reason, action_date: new Date().toLocaleString("ar-EG") });
+                    }}
+                    className="flex-1 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white font-bold py-3 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95"
+                    disabled={order.status === 'completed' || order.status === 'cancelled'}
+                  >
+                    <ClockArrowUp className="w-4 h-4" /> تأجيل
+                  </button>
+
+                  {/* إضافة تعليق عام */}
+                  <button 
+                    onClick={() => {
+                      setCurrentOrderId(order.id);
+                      setCurrentNote(order.technician_note || "");
+                      setShowNoteModal(true);
+                    }}
+                    className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95"
+                  >
+                    <StickyNote className="w-4 h-4" /> تعليق
+                  </button>
+
+                  {/* تصفية الأوردر (تبقى كما هي) */}
+                  {order.status === 'in-progress' && (
                     <button 
                       onClick={() => {
-                        if (order.status === 'pending') {
-                          updateStatus(order.id, 'in-progress');
-                        } else {
-                          setSelectedOrder(order);
-                          setSettleForm({ total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, technician_share: 0, company_share: 0 });
-                          setShowSettleModal(true);
-                        }
+                        setSelectedOrder(order);
+                        setSettleForm({ total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, technician_share: 0, company_share: 0 });
+                        setShowSettleModal(true);
                       }}
-                      className={`flex-[2] font-black py-3 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg ${order.status === 'pending' ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-900/20' : 'bg-green-600 hover:bg-green-700 text-white shadow-green-900/20'}`}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-green-900/20"
                     >
-                      {order.status === 'pending' ? <RefreshCw className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
-                      {order.status === 'pending' ? 'بدء العمل' : 'تصفية الأوردر'}
+                      <CheckCircle2 className="w-4 h-4" /> تصفية الأوردر
+                    </button>
+                  )}
+
+                  {/* بدء العمل (يبقى كما هي) */}
+                  {order.status === 'pending' && (
+                    <button 
+                      onClick={() => updateStatus(order.id, 'in-progress')}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-blue-900/20"
+                    >
+                      <RefreshCw className="w-4 h-4" /> بدء العمل
                     </button>
                   )}
                 </div>
@@ -189,9 +276,35 @@ export default function TechnicianPortal() {
         </div>
       </main>
 
+      {/* مودال إضافة تعليق */}
+      {showNoteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+              <h2 className="text-xl font-black text-white">إضافة تعليق</h2>
+              <button onClick={() => setShowNoteModal(false)} className="p-2 text-slate-500 hover:text-white"><X className="w-6 h-6" /></button>
+            </div>
+            <div className="p-6">
+              <textarea
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-orange-500"
+                rows={4}
+                placeholder="اكتب تعليقك هنا..."
+                value={currentNote}
+                onChange={(e) => setCurrentNote(e.target.value)}
+              />
+              <div className="flex gap-2 mt-6">
+                <button onClick={addNote} className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-2xl transition-all">حفظ التعليق</button>
+                <button onClick={() => setShowNoteModal(false)} className="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-2xl transition-all">إلغاء</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* مودال تصفية الأوردر (كما هو) */}
       {showSettleModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] w-full max-w-md shadow-2xl overflow-hidden">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
             <div className="p-6 border-b border-slate-800 flex justify-between items-center">
               <h2 className="text-xl font-black text-white">تصفية الأوردر</h2>
               <button onClick={() => setShowSettleModal(false)} className="p-2 text-slate-500 hover:text-white"><X className="w-6 h-6" /></button>
