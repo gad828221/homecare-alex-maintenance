@@ -7,79 +7,59 @@ interface LoginPageProps {
 }
 
 export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
+  const [, setLocation] = useLocation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"admin" | "data-entry" | "tech">("admin");
   const [error, setError] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ username: string; role: string } | null>(null);
-  const [, setLocation] = useLocation();
 
-  // بيانات الدخول (يمكن تعديلها)
-  const credentials: Record<string, Record<string, string>> = {
-    admin: {
-      username: "admin",
-      password: "19882@retal",
-    },
-    // إضافة المدير الثاني
-    admin2: {
-      username: "kajo",
-      password: "@kajo",
-    },
-    "data-entry": {
-      username: "dataentry",
-      password: "dataentry123",
-    },
-    tech: {
-      username: "tech",
-      password: "tech123",
-    },
+  // قائمة المدراء (يمكن إضافة المزيد بسهولة)
+  const adminAccounts = [
+    { username: "admin", password: "19882@retal" },
+    { username: "kajo", password: "@kajo" }
+  ];
+
+  // بيانات باقي الأدوار
+  const roleCredentials = {
+    "data-entry": { username: "dataentry", password: "dataentry123" },
+    "tech": { username: "tech", password: "tech123" }
   };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    // التحقق من المدير الأول
-    if (
-      (role === "admin" && username === credentials.admin.username && password === credentials.admin.password) ||
-      (role === "admin" && username === credentials.admin2.username && password === credentials.admin2.password)
-    ) {
-      setIsLoggedIn(true);
-      setCurrentUser({ username, role: "admin" });
-      localStorage.setItem("currentUser", JSON.stringify({ username, role: "admin" }));
-      localStorage.setItem("userRole", "admin");
-
-      if (onLoginSuccess) {
-        onLoginSuccess("admin", username);
-      }
-
-      setLocation("/orders");
-      return;
-    }
-
-    // التحقق من باقي الأدوار
-    const creds = credentials[role];
-    if (username === creds.username && password === creds.password) {
-      setIsLoggedIn(true);
-      setCurrentUser({ username, role });
-      localStorage.setItem("currentUser", JSON.stringify({ username, role }));
-      localStorage.setItem("userRole", role);
-
-      if (onLoginSuccess) {
-        onLoginSuccess(role, username);
-      }
-
-      if (role === "admin") {
+    // التحقق من المدير
+    if (role === "admin") {
+      const foundAdmin = adminAccounts.find(acc => acc.username === username && acc.password === password);
+      if (foundAdmin) {
+        setIsLoggedIn(true);
+        setCurrentUser({ username, role: "admin" });
+        localStorage.setItem("currentUser", JSON.stringify({ username, role: "admin" }));
+        localStorage.setItem("userRole", "admin");
+        if (onLoginSuccess) onLoginSuccess("admin", username);
         setLocation("/orders");
-      } else if (role === "data-entry") {
-        setLocation("/data-entry");
-      } else if (role === "tech") {
-        setLocation("/tech-portal");
+        return;
       }
-    } else {
-      setError("اسم المستخدم أو كلمة المرور غير صحيحة");
+    } 
+    // التحقق من مدخل البيانات أو الفني
+    else {
+      const creds = roleCredentials[role as keyof typeof roleCredentials];
+      if (creds && username === creds.username && password === creds.password) {
+        setIsLoggedIn(true);
+        setCurrentUser({ username, role });
+        localStorage.setItem("currentUser", JSON.stringify({ username, role }));
+        localStorage.setItem("userRole", role);
+        if (onLoginSuccess) onLoginSuccess(role, username);
+        if (role === "data-entry") setLocation("/data-entry");
+        else if (role === "tech") setLocation("/tech-portal");
+        return;
+      }
     }
+
+    setError("اسم المستخدم أو كلمة المرور غير صحيحة");
   };
 
   const handleLogout = () => {
@@ -107,13 +87,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
               {currentUser.role === "tech" && "🔧 الفني"}
             </p>
           </div>
-
-          <button
-            onClick={handleLogout}
-            className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all"
-          >
-            <LogOut className="w-5 h-5" />
-            تسجيل الخروج
+          <button onClick={handleLogout} className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all">
+            <LogOut className="w-5 h-5" /> تسجيل الخروج
           </button>
         </div>
       </div>
@@ -132,7 +107,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
-          {/* اختيار الدور */}
           <div>
             <label className="block text-sm font-bold text-gray-300 mb-3">اختر دورك</label>
             <select
@@ -146,19 +120,17 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             </select>
           </div>
 
-          {/* اسم المستخدم */}
           <div>
             <label className="block text-sm font-bold text-gray-300 mb-3">اسم المستخدم</label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-700 text-white rounded-lg border-2 border-orange-500/30 focus:border-orange-500 focus:outline-none transition-all placeholder-slate-500"
+              className="w-full px-4 py-3 bg-slate-700 text-white rounded-lg border-2 border-orange-500/30 focus:border-orange-500 focus:outline-none transition-all"
               placeholder="أدخل اسم المستخدم"
             />
           </div>
 
-          {/* كلمة المرور */}
           <div>
             <label className="block text-sm font-bold text-gray-300 mb-3">كلمة المرور</label>
             <input
@@ -170,14 +142,12 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             />
           </div>
 
-          {/* رسالة الخطأ */}
           {error && (
             <div className="p-4 bg-red-500/20 border-2 border-red-500/50 text-red-300 rounded-lg text-sm">
               ❌ {error}
             </div>
           )}
 
-          {/* زر تسجيل الدخول */}
           <button
             type="submit"
             className="w-full bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 hover:from-orange-600 hover:via-orange-700 hover:to-red-700 text-white font-bold py-3 rounded-lg transition-all transform hover:scale-105 shadow-lg"
@@ -186,7 +156,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           </button>
         </form>
 
-        {/* مربع معلومات */}
         <div className="mt-8 p-4 bg-blue-500/10 border-2 border-blue-500/30 rounded-lg">
           <p className="text-xs text-slate-300 text-center">
             🔐 <strong>ملاحظة:</strong> هذا النظام محمي بكلمات مرور. استخدم بيانات الدخول المناسبة لدورك.
