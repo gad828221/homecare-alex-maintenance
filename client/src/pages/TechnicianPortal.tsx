@@ -118,8 +118,11 @@ export default function TechnicianPortal() {
               <p className="text-[10px] text-orange-500 mt-1 font-bold uppercase tracking-widest">{techName}</p>
             </div>
           </div>
-          <button onClick={() => setLocation("/")} className="p-2 text-slate-500 hover:text-white transition-all"><LogOut className="w-6 h-6" /></button>
-        </div>
+          <button onClick={() => {
+  localStorage.removeItem("userRole");
+  localStorage.removeItem("currentUser");
+  setLocation("/login");
+}} className="p-2 text-slate-500 hover:text-white transition-all"><LogOut className="w-6 h-6" /></button>
       </nav>
 
       <main className="max-w-4xl mx-auto p-4 space-y-6">
