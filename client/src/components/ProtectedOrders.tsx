@@ -31,7 +31,7 @@ export default function ProtectedOrders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [technicians, setTechnicians] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'orders' | 'technicians' | 'reports'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'technicians' | 'reports' | 'notifications' | 'invoices'>('orders');
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showTechModal, setShowTechModal] = useState(false);
   const [editingOrder, setEditingOrder] = useState<any>(null);
@@ -295,7 +295,60 @@ export default function ProtectedOrders() {
           <button onClick={() => setActiveTab('orders')} className={`px-6 py-2 rounded-xl text-sm font-bold ${activeTab === 'orders' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>الأوردرات</button>
           <button onClick={() => setActiveTab('technicians')} className={`px-6 py-2 rounded-xl text-sm font-bold ${activeTab === 'technicians' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>الفنيين</button>
           <button onClick={() => setActiveTab('reports')} className={`px-6 py-2 rounded-xl text-sm font-bold ${activeTab === 'reports' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>التقارير</button>
+          <button onClick={() => setActiveTab('notifications')} className={`px-6 py-2 rounded-xl text-sm font-bold ${activeTab === 'notifications' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>الإشعارات</button>
+          <button onClick={() => setActiveTab('invoices')} className={`px-6 py-2 rounded-xl text-sm font-bold ${activeTab === 'invoices' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>الفواتير</button>
         </div>
+
+        {activeTab === 'notifications' && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-black text-white mb-4">🔔 الإشعارات الأخيرة</h2>
+            <div className="space-y-3">
+              {orders.slice(0, 10).map(order => (
+                <div key={order.id} className="bg-slate-900 p-4 rounded-2xl border-r-4 border-orange-500 flex justify-between items-center">
+                  <div>
+                    <p className="text-white font-bold text-sm">أوردر جديد من {order.customer_name}</p>
+                    <p className="text-slate-500 text-[10px] mt-1">الجهاز: {order.device_type} - {order.brand} | الفني: {order.technician || 'لم يحدد'}</p>
+                  </div>
+                  <span className="text-[10px] text-slate-600">{order.date}</span>
+                </div>
+              ))}
+              {orders.length === 0 && <div className="text-center py-12 text-slate-500">لا توجد إشعارات حالياً</div>}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'invoices' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-black text-white">📑 نظام الفواتير</h2>
+              <button onClick={() => alert('سيتم تفعيل إنشاء فاتورة مستقلة قريباً. حالياً يمكنك إرسال فاتورة من تفاصيل الأوردر.')} className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl text-sm font-bold">إنشاء فاتورة</button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {orders.filter(o => o.status === 'completed').map(order => (
+                <div key={order.id} className="bg-slate-900 rounded-3xl p-5 border border-slate-800">
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="text-white font-black text-lg">{order.customer_name}</h3>
+                    <span className="bg-green-500/10 text-green-500 px-2 py-1 rounded-lg text-[10px] font-bold">مكتمل</span>
+                  </div>
+                  <div className="bg-slate-800/50 p-3 rounded-2xl mb-4 space-y-1 text-xs">
+                    <p className="text-slate-400">💰 الإجمالي: <span className="text-white font-bold">{order.total_amount} ج.م</span></p>
+                    <p className="text-slate-400">🔧 قطع الغيار: <span className="text-white font-bold">{order.parts_cost} ج.م</span></p>
+                    <p className="text-slate-400">🚗 المواصلات: <span className="text-white font-bold">{order.transport_cost} ج.م</span></p>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      const message = `📋 *فاتورة صيانة* 📋\n\n👤 *العميل:* ${order.customer_name}\n🔧 *الجهاز:* ${order.device_type} - ${order.brand}\n━━━━━━━━━━━━━━━━\n💰 *التكاليف:* \n  • الإجمالي: ${order.total_amount} ج.م\n  • قطع الغيار: ${order.parts_cost} ج.م\n  • المواصلات: ${order.transport_cost} ج.م\n━━━━━━━━━━━━━━━━\n✅ *الحالة:* تم التحصيل بنجاح\n\nشكراً لتعاملك معنا. ✨`;
+                      window.open(`https://wa.me/${order.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+                    }}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-2"
+                  >
+                    <MessageCircle className="w-4 h-4" /> إرسال الفاتورة WhatsApp
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {activeTab === 'orders' && (
           <div className="space-y-4">
