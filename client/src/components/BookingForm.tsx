@@ -1,6 +1,6 @@
-import { Card } from "@/components/ui/card";
 import { MessageCircle, CheckCircle, User, Phone, Wrench, MapPin, Zap, Shield, Gift } from "lucide-react";
 import { useState } from "react";
+import { Card } from "@/components/ui/card";
 
 interface BookingFormProps {
   title?: string;
@@ -25,12 +25,13 @@ export default function BookingForm({
   const [submitMessage, setSubmitMessage] = useState("");
 
   const serviceNames: { [key: string]: string } = {
-    fridge: "صيانة الثلاجات",
-    washer: "صيانة الغسالات",
-    ac: "صيانة المكيفات",
-    oven: "صيانة الأفران",
-    heater: "صيانة السخانات",
-    dishwasher: "صيانة غسالات الأطباق",
+    fridge: "ثلاجة",
+    washer: "غسالة",
+    ac: "تكييف",
+    oven: "بوتاجاز",
+    heater: "سخان",
+    dishwasher: "غسالة أطباق",
+    microwave: "ميكروويف"
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,7 +39,7 @@ export default function BookingForm({
     setIsSubmitting(true);
     setSubmitMessage("");
 
-    const serviceName = serviceNames[formData.service] || formData.service;
+    const deviceType = serviceNames[formData.service] || formData.service;
     
     const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -56,9 +57,9 @@ export default function BookingForm({
           customer_name: formData.name,
           phone: formData.phone,
           address: formData.address,
-          device: serviceName,
+          device_type: deviceType,
           brand: formData.brand,
-          problem: formData.problem,
+          problem_description: formData.problem,
           status: 'pending',
           date: new Date().toLocaleString("ar-EG")
         })
@@ -70,7 +71,7 @@ export default function BookingForm({
         return;
       }
 
-      const message = `🔧 *طلب صيانة جديد*\n\n👤 *الاسم:* ${formData.name}\n📞 *الهاتف:* ${formData.phone}\n🔨 *الخدمة:* ${serviceName}\n🏷️ *الماركة:* ${formData.brand}\n⚠️ *المشكلة:* ${formData.problem}\n📍 *العنوان:* ${formData.address}`;
+      const message = `🔧 *طلب صيانة جديد*\n\n👤 *الاسم:* ${formData.name}\n📞 *الهاتف:* ${formData.phone}\n🔨 *الجهاز:* ${deviceType}\n🏷️ *الماركة:* ${formData.brand}\n⚠️ *المشكلة:* ${formData.problem}\n📍 *العنوان:* ${formData.address}`;
       const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, "_blank");
 
@@ -137,7 +138,7 @@ export default function BookingForm({
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-500 uppercase pr-2 flex items-center gap-2">
                 <Wrench className="w-3 h-3 text-orange-500" />
-                نوع الخدمة
+                نوع الجهاز
               </label>
               <select
                 required
@@ -145,13 +146,14 @@ export default function BookingForm({
                 onChange={(e) => setFormData({ ...formData, service: e.target.value })}
                 className="w-full px-5 py-3.5 bg-slate-800 border-2 border-slate-700 text-white rounded-2xl focus:outline-none focus:border-orange-500 transition-all appearance-none"
               >
-                <option value="">اختر الخدمة</option>
-                <option value="fridge">❄️ صيانة الثلاجات</option>
-                <option value="washer">🌊 صيانة الغسالات</option>
-                <option value="ac">❄️ صيانة المكيفات</option>
-                <option value="oven">🔥 صيانة الأفران</option>
-                <option value="heater">🌡️ صيانة السخانات</option>
-                <option value="dishwasher">🍽️ صيانة غسالات الأطباق</option>
+                <option value="">اختر الجهاز</option>
+                <option value="fridge">❄️ ثلاجة</option>
+                <option value="washer">🌊 غسالة</option>
+                <option value="ac">❄️ تكييف</option>
+                <option value="oven">🔥 بوتاجاز</option>
+                <option value="heater">🌡️ سخان</option>
+                <option value="dishwasher">🍽️ غسالة أطباق</option>
+                <option value="microwave">📻 ميكروويف</option>
               </select>
             </div>
 
@@ -160,6 +162,7 @@ export default function BookingForm({
                 <label className="text-[10px] font-black text-slate-500 uppercase pr-2">ماركة الجهاز</label>
                 <input
                   type="text"
+                  required
                   value={formData.brand}
                   onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
                   className="w-full px-5 py-3.5 bg-slate-800 border-2 border-slate-700 text-white rounded-2xl focus:outline-none focus:border-orange-500 transition-all"
@@ -171,6 +174,7 @@ export default function BookingForm({
                 <label className="text-[10px] font-black text-slate-500 uppercase pr-2">وصف المشكلة</label>
                 <input
                   type="text"
+                  required
                   value={formData.problem}
                   onChange={(e) => setFormData({ ...formData, problem: e.target.value })}
                   className="w-full px-5 py-3.5 bg-slate-800 border-2 border-slate-700 text-white rounded-2xl focus:outline-none focus:border-orange-500 transition-all"
