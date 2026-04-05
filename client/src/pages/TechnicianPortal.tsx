@@ -46,6 +46,37 @@ export default function TechnicianPortal() {
     company_share: 0
   });
 
+  // دالة مساعدة لتنسيق رقم الهاتف للواتساب (إضافة +20)
+  const formatPhoneForWhatsApp = (phone: string) => {
+    if (!phone) return '';
+    let cleaned = phone.toString().replace(/[^\d+]/g, '');
+    if (cleaned.startsWith('0')) {
+      cleaned = '+20' + cleaned.substring(1);
+    } else if (cleaned.startsWith('1') && cleaned.length === 10) {
+      cleaned = '+20' + cleaned;
+    } else if (!cleaned.startsWith('+')) {
+      cleaned = '+20' + cleaned;
+    }
+    return cleaned;
+  };
+
+  // إرسال إشعار للعميل عند تغيير الحالة
+  const notifyCustomerStatusChange = (order: any, newStatus: string) => {
+    const phone = formatPhoneForWhatsApp(order.phone);
+    let statusMessage = "";
+    if (newStatus === "completed") statusMessage = "✅ تم إكمال طلب الصيانة بنجاح. شكرًا لثقتك بنا!";
+    else if (newStatus === "cancelled") statusMessage = "❌ تم إلغاء طلب الصيانة. للاستفسار، يرجى الاتصال بنا.";
+    else return;
+    
+    const message = `📢 *تحديث حالة طلب الصيانة* 📢\n\n` +
+      `🔢 *كود الأوردر:* ${order.order_number}\n` +
+      `👤 *العميل:* ${order.customer_name}\n` +
+      `📝 *الحالة الجديدة:* ${statusMessage}\n\n` +
+      `شكرًا لتواصلك معنا. 🌟`;
+    const encodedMessage = encodeURIComponent(message);
+    window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
+  };
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const nameFromUrl = params.get("name");
@@ -95,11 +126,16 @@ export default function TechnicianPortal() {
 
   const updateStatus = async (id: number, newStatus: string, extraData = {}) => {
     try {
+      const oldOrder = orders.find(o => o.id === id);
       await fetchAPI(`orders?id=eq.${id}`, {
         method: 'PATCH',
         body: JSON.stringify({ status: newStatus, ...extraData })
       });
       fetchData();
+      // إرسال إشعار للعميل عند تغيير الحالة إلى مكتمل أو ملغي
+      if (oldOrder && oldOrder.status !== newStatus && (newStatus === 'completed' || newStatus === 'cancelled')) {
+        notifyCustomerStatusChange(oldOrder, newStatus);
+      }
     } catch (err) { console.error(err); }
   };
 
