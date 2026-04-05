@@ -4,7 +4,7 @@ import {
   Clock, CheckCircle2, AlertCircle, XCircle, 
   Edit, Trash2, RefreshCw, Phone,
   TrendingUp, Wallet, PieChart, Calendar, Copy, Check,
-  Send, MessageCircle
+  Send, MessageCircle, StickyNote, Eye
 } from "lucide-react";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -265,9 +265,16 @@ export default function ProtectedOrders() {
                     <span className={`px-3 py-1 rounded-full text-[10px] font-black ${
                       order.status === 'completed' ? 'bg-green-500/10 text-green-500' :
                       order.status === 'in-progress' ? 'bg-blue-500/10 text-blue-500' :
-                      order.status === 'cancelled' ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-500'
+                      order.status === 'cancelled' ? 'bg-red-500/10 text-red-500' :
+                      order.status === 'deferred' ? 'bg-purple-500/10 text-purple-500' :
+                      order.status === 'inspected' ? 'bg-yellow-500/10 text-yellow-500' :
+                      'bg-yellow-500/10 text-yellow-500'
                     }`}>
-                      {order.status === 'completed' ? 'مكتمل' : order.status === 'in-progress' ? 'جاري العمل' : order.status === 'cancelled' ? 'ملغي' : 'قيد الانتظار'}
+                      {order.status === 'completed' ? 'مكتمل' : 
+                       order.status === 'in-progress' ? 'جاري العمل' : 
+                       order.status === 'cancelled' ? 'ملغي' : 
+                       order.status === 'deferred' ? 'مؤجل' : 
+                       order.status === 'inspected' ? 'تم الكشف' : 'قيد الانتظار'}
                     </span>
                     <div className="flex gap-1">
                       <button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`p-2 rounded-xl transition-all ${order.is_paid ? 'bg-green-500/20 text-green-500' : 'bg-slate-800 text-slate-500'}`} title={order.is_paid ? 'تم التحصيل' : 'لم يتم التحصيل'}>
@@ -286,6 +293,23 @@ export default function ProtectedOrders() {
                       <p>🔧 {order.device_type} - {order.brand}</p>
                       <p>⚠️ {order.problem_description}</p>
                     </div>
+
+                    {/* عرض تعليق الفني إن وجد */}
+                    {order.technician_note && (
+                      <div className="mt-2 p-2 bg-slate-800/50 rounded-lg border-r-2 border-orange-500">
+                        <p className="text-[10px] text-slate-400 uppercase flex items-center gap-1"><StickyNote className="w-3 h-3" /> ملاحظة الفني</p>
+                        <p className="text-xs text-slate-300 whitespace-pre-wrap">{order.technician_note}</p>
+                      </div>
+                    )}
+
+                    {/* عرض مبلغ الكشف إن وجد */}
+                    {order.inspection_amount > 0 && (
+                      <div className="mt-2 p-2 bg-yellow-500/10 rounded-lg flex justify-between items-center">
+                        <span className="text-xs text-yellow-500 flex items-center gap-1"><Eye className="w-3 h-3" /> كشف بقيمة</span>
+                        <span className="text-sm font-bold text-yellow-500">{order.inspection_amount} ج.م</span>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-2 gap-2 py-3 border-y border-slate-800/50">
                       <div><p className="text-[10px] text-slate-500 font-bold uppercase">الإجمالي</p><p className="text-xs text-white font-bold">{order.total_amount || 0} ج.م</p></div>
                       <div><p className="text-[10px] text-slate-500 font-bold uppercase">الصافي</p><p className="text-xs text-green-500 font-bold">{order.net_amount || 0} ج.م</p></div>
