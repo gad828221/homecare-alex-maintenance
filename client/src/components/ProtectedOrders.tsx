@@ -39,6 +39,15 @@ export default function ProtectedOrders() {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [filterTechStatus, setFilterTechStatus] = useState<'all' | 'active' | 'inactive'>('active');
   
+  // فلاتر الأوردرات
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterTechnician, setFilterTechnician] = useState('');
+  const [filterDeviceType, setFilterDeviceType] = useState('');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
+  const [filterDelay, setFilterDelay] = useState<'all' | 'delayed'>('all');
+  
   const [formData, setFormData] = useState({
     customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '',
     status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, 
@@ -47,8 +56,23 @@ export default function ProtectedOrders() {
   
   const [techForm, setTechForm] = useState({ name: '', phone: '', specialization: '', is_active: true });
   const [stats, setStats] = useState({ pending: 0, inProgress: 0, completed: 0, cancelled: 0, totalIncome: 0 });
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
+
+  // دالة حساب فارق الأيام
+  const getDaysDifference = (dateStr: string) => {
+    if (!dateStr) return 0;
+    const parts = dateStr.split('/');
+    if (parts.length !== 3) return 0;
+    const orderDate = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
+    const today = new Date();
+    const diffTime = today.getTime() - orderDate.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  const isDelayed = (order: any) => {
+    if (order.status === 'completed' || order.status === 'cancelled') return false;
+    const daysDiff = getDaysDifference(order.date);
+    return daysDiff > 2;
+  };
 
   const fetchData = useCallback(async () => {
     try {
@@ -94,7 +118,6 @@ export default function ProtectedOrders() {
     setFormData(calculateAmounts(updated));
   };
 
-  // دالة مساعدة لتنسيق رقم الهاتف للواتساب (إضافة +20)
   const formatPhoneForWhatsApp = (phone: string) => {
     if (!phone) return '';
     let cleaned = phone.toString().replace(/[^\d+]/g, '');
@@ -108,7 +131,6 @@ export default function ProtectedOrders() {
     return cleaned;
   };
 
-  // إرسال إشعار للعميل عند تغيير الحالة
   const notifyCustomerStatusChange = (order: any, newStatus: string) => {
     const phone = formatPhoneForWhatsApp(order.phone);
     let statusMessage = "";
@@ -126,7 +148,6 @@ export default function ProtectedOrders() {
     window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
   };
 
-  // تحديث حالة الأوردر مع إرسال إشعار للعميل
   const updateOrderStatus = async (id: number, newStatus: string) => {
     try {
       const oldOrder = orders.find(o => o.id === id);
@@ -154,7 +175,6 @@ export default function ProtectedOrders() {
     }
   };
 
-  // إرسال واتساب للعميل (رسالة مبسطة + كود الأوردر)
   const sendToWhatsApp = (order: any) => {
     const phone = formatPhoneForWhatsApp(order.phone);
     const message = `📝 *تم استلام طلب الصيانة بنجاح* 📝\n\n` +
@@ -167,7 +187,6 @@ export default function ProtectedOrders() {
     window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
   };
 
-  // إرسال واتساب للفني عند إضافة أوردر جديد (مع كود الأوردر)
   const notifyTechnician = (techName: string, orderData: any) => {
     const tech = technicians.find(t => t.name === techName);
     if (tech && tech.phone) {
@@ -247,13 +266,19 @@ export default function ProtectedOrders() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  // فلترة الأوردرات (دالة متقدمة)
   const filteredOrders = orders.filter(o => {
     const matchesSearch = 
       o.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       o.phone?.includes(searchTerm) ||
       o.technician?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || o.status === filterStatus;
-    return matchesSearch && matchesFilter;
+    const matchesStatus = filterStatus === 'all' || o.status === filterStatus;
+    const matchesTechnician = !filterTechnician || o.technician === filterTechnician;
+    const matchesDeviceType = !filterDeviceType || o.device_type === filterDeviceType;
+    const matchesDateFrom = !filterDateFrom || (o.date && o.date >= filterDateFrom);
+    const matchesDateTo = !filterDateTo || (o.date && o.date <= filterDateTo);
+    const matchesDelay = filterDelay === 'all' || (filterDelay === 'delayed' && isDelayed(o));
+    return matchesSearch && matchesStatus && matchesTechnician && matchesDeviceType && matchesDateFrom && matchesDateTo && matchesDelay;
   });
 
   const filteredTechnicians = technicians.filter(tech => {
@@ -261,6 +286,17 @@ export default function ProtectedOrders() {
     if (filterTechStatus === 'inactive') return tech.is_active === false;
     return true;
   });
+
+  // مسح جميع الفلاتر
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setFilterStatus('all');
+    setFilterTechnician('');
+    setFilterDeviceType('');
+    setFilterDateFrom('');
+    setFilterDateTo('');
+    setFilterDelay('all');
+  };
 
   if (loading && orders.length === 0) return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -298,13 +334,60 @@ export default function ProtectedOrders() {
 
         {activeTab === 'orders' && (
           <div className="space-y-4">
-            <div className="flex flex-col md:flex-row gap-4 mb-4">
-              <div className="relative flex-1"><Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" /><input type="text" placeholder="ابحث عن عميل، هاتف، أو فني..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-2xl py-3 pr-12 pl-4 text-sm outline-none focus:ring-2 focus:ring-orange-500" /></div>
+            {/* شريط البحث والأوردر الجديد */}
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                <input type="text" placeholder="ابحث عن عميل، هاتف، أو فني..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-2xl py-3 pr-12 pl-4 text-sm outline-none focus:ring-2 focus:ring-orange-500" />
+              </div>
               <button onClick={() => { setEditingOrder(null); setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false }); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-2xl text-sm font-bold flex items-center gap-2"> <Plus className="w-5 h-5" /> أوردر جديد</button>
             </div>
+
+            {/* شريط الفلاتر المتقدمة */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="bg-slate-900 border border-slate-800 rounded-2xl px-4 py-2 text-sm">
+                <option value="all">جميع الحالات</option>
+                <option value="pending">⏳ قيد الانتظار</option>
+                <option value="in-progress">🔧 قيد التنفيذ</option>
+                <option value="completed">✅ مكتمل</option>
+                <option value="cancelled">❌ ملغي</option>
+                <option value="deferred">📅 مؤجل</option>
+                <option value="inspected">💰 تم الكشف</option>
+              </select>
+
+              <select value={filterTechnician} onChange={(e) => setFilterTechnician(e.target.value)} className="bg-slate-900 border border-slate-800 rounded-2xl px-4 py-2 text-sm">
+                <option value="">جميع الفنيين</option>
+                {technicians.filter(t => t.is_active !== false).map(tech => <option key={tech.id} value={tech.name}>{tech.name}</option>)}
+              </select>
+
+              <select value={filterDeviceType} onChange={(e) => setFilterDeviceType(e.target.value)} className="bg-slate-900 border border-slate-800 rounded-2xl px-4 py-2 text-sm">
+                <option value="">جميع الأجهزة</option>
+                {DEVICE_TYPES.map(device => <option key={device} value={device}>{device}</option>)}
+              </select>
+
+              <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="bg-slate-900 border border-slate-800 rounded-2xl px-4 py-2 text-sm" placeholder="من تاريخ" />
+              <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="bg-slate-900 border border-slate-800 rounded-2xl px-4 py-2 text-sm" placeholder="إلى تاريخ" />
+            </div>
+
+            {/* شريط الفلاتر الإضافية (تأخير ومسح الكل) */}
+            <div className="flex justify-between items-center">
+              <div className="flex gap-2">
+                <button onClick={() => setFilterDelay(filterDelay === 'delayed' ? 'all' : 'delayed')} className={`px-3 py-1 rounded-full text-xs ${filterDelay === 'delayed' ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300'}`}>⚠️ المتأخرة فقط</button>
+              </div>
+              <button onClick={clearAllFilters} className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-1 rounded-full text-xs">مسح جميع الفلاتر</button>
+            </div>
+
+            {/* قائمة الأوردرات */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredOrders.map(order => (
-                <div key={order.id} className="bg-slate-900 rounded-3xl p-5 border border-slate-800 hover:border-slate-700 transition-all">
+                <div key={order.id} className="bg-slate-900 rounded-3xl p-5 border border-slate-800 hover:border-slate-700 transition-all relative overflow-hidden">
+                  {/* شعار التأخير */}
+                  {isDelayed(order) && (
+                    <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-lg z-10">
+                      ⚠️ تأخير {getDaysDifference(order.date)} أيام
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between items-start mb-4">
                     <span className={`px-3 py-1 rounded-full text-[10px] font-black ${
                       order.status === 'completed' ? 'bg-green-500/10 text-green-500' :
@@ -335,7 +418,6 @@ export default function ProtectedOrders() {
                       <div><p className="text-[10px] text-slate-500 uppercase">الإجمالي</p><p className="text-xs text-white font-bold">{order.total_amount || 0} ج.م</p></div>
                       <div><p className="text-[10px] text-slate-500 uppercase">الصافي</p><p className="text-xs text-green-500 font-bold">{order.net_amount || 0} ج.م</p></div>
                     </div>
-                    {/* قسم الحالة مع قائمة منسدلة */}
                     <div className="flex justify-between items-center pt-1">
                       <div>
                         <p className="text-[10px] text-slate-500 uppercase">الفني</p>
@@ -352,6 +434,8 @@ export default function ProtectedOrders() {
                           <option value="in-progress">🔧 قيد التنفيذ</option>
                           <option value="completed">✅ مكتمل</option>
                           <option value="cancelled">❌ ملغي</option>
+                          <option value="deferred">📅 مؤجل</option>
+                          <option value="inspected">💰 تم الكشف</option>
                         </select>
                       </div>
                       <div className={`text-[10px] font-black px-2 py-1 rounded ${order.is_paid ? 'text-green-500 bg-green-500/10' : 'text-red-500 bg-red-500/10'}`}>
@@ -362,6 +446,9 @@ export default function ProtectedOrders() {
                 </div>
               ))}
             </div>
+            {filteredOrders.length === 0 && (
+              <div className="text-center py-12 text-slate-400">لا توجد أوردرات مطابقة للبحث</div>
+            )}
           </div>
         )}
 
