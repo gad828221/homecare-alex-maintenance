@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
   Wrench, LogOut, Clock, CheckCircle2, AlertCircle, 
   XCircle, RefreshCw, Phone, MapPin, ClipboardList,
@@ -153,10 +153,13 @@ export default function TechnicianPortal() {
                     {order.status === 'completed' ? 'مكتمل' : order.status === 'in-progress' ? 'جاري العمل' : 'قيد الانتظار'}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-4 bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
-                  <div className="flex items-start gap-2"><Wrench className="w-4 h-4 text-orange-500 mt-0.5" /><div><p className="text-[10px] text-slate-500 font-bold uppercase">الجهاز</p><p className="text-sm text-slate-200 font-bold">{order.device}</p></div></div>
-                  <div className="flex items-start gap-2"><MapPin className="w-4 h-4 text-orange-500 mt-0.5" /><div><p className="text-[10px] text-slate-500 font-bold uppercase">العنوان</p><p className="text-sm text-slate-200 font-bold truncate">{order.address || 'غير محدد'}</p></div></div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
+                  <div className="flex items-start gap-2"><Wrench className="w-4 h-4 text-orange-500 mt-0.5" /><div><p className="text-[10px] text-slate-500 font-bold uppercase">الجهاز</p><p className="text-sm text-slate-200 font-bold">{order.device_type} - {order.brand}</p></div></div>
+                  <div className="flex items-start gap-2"><MapPin className="w-4 h-4 text-orange-500 mt-0.5" /><div><p className="text-[10px] text-slate-500 font-bold uppercase">العنوان</p><p className="text-sm text-slate-200 font-bold">{order.address || 'غير محدد'}</p></div></div>
+                  <div className="md:col-span-2 flex items-start gap-2 border-t border-slate-800/50 pt-2"><AlertCircle className="w-4 h-4 text-yellow-500 mt-0.5" /><div><p className="text-[10px] text-slate-500 font-bold uppercase">المشكلة</p><p className="text-xs text-slate-300">{order.problem_description || 'لا يوجد وصف'}</p></div></div>
                 </div>
+
                 <div className="flex gap-2 pt-2">
                   <a href={`tel:${order.phone}`} className="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95"><Phone className="w-4 h-4" />اتصال</a>
                   {order.status !== 'completed' && order.status !== 'cancelled' && (
