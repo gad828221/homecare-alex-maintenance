@@ -94,10 +94,47 @@ export default function ProtectedOrders() {
     setFormData(calculateAmounts(updated));
   };
 
+  // دالة مساعدة لتنسيق رقم الهاتف للواتساب (إضافة +20)
+  const formatPhoneForWhatsApp = (phone: string) => {
+    if (!phone) return '';
+    let cleaned = phone.toString().replace(/[^\d+]/g, '');
+    if (cleaned.startsWith('0')) {
+      cleaned = '+20' + cleaned.substring(1);
+    } else if (cleaned.startsWith('1') && cleaned.length === 10) {
+      cleaned = '+20' + cleaned;
+    } else if (!cleaned.startsWith('+')) {
+      cleaned = '+20' + cleaned;
+    }
+    return cleaned;
+  };
+
+  // إرسال إشعار للعميل عند تغيير الحالة
+  const notifyCustomerStatusChange = (order: any, newStatus: string) => {
+    const phone = formatPhoneForWhatsApp(order.phone);
+    let statusMessage = "";
+    if (newStatus === "in-progress") statusMessage = "🔧 تم بدء العمل على طلبك بواسطة الفني.";
+    else if (newStatus === "completed") statusMessage = "✅ تم إكمال طلب الصيانة بنجاح. شكرًا لثقتك بنا!";
+    else if (newStatus === "cancelled") statusMessage = "❌ تم إلغاء طلب الصيانة. للاستفسار، يرجى الاتصال بنا.";
+    else return;
+    
+    const message = `📢 *تحديث حالة طلب الصيانة* 📢\n\n` +
+      `🔢 *كود الأوردر:* ${order.order_number}\n` +
+      `👤 *العميل:* ${order.customer_name}\n` +
+      `📝 *الحالة الجديدة:* ${statusMessage}\n\n` +
+      `شكرًا لتواصلك معنا. 🌟`;
+    const encodedMessage = encodeURIComponent(message);
+    window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
+  };
+
+  // تحديث حالة الأوردر مع إرسال إشعار للعميل
   const updateOrderStatus = async (id: number, newStatus: string) => {
     try {
+      const oldOrder = orders.find(o => o.id === id);
       await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ status: newStatus }) });
       fetchData();
+      if (oldOrder && oldOrder.status !== newStatus) {
+        notifyCustomerStatusChange(oldOrder, newStatus);
+      }
     } catch (err) { console.error(err); }
   };
 
@@ -115,20 +152,6 @@ export default function ProtectedOrders() {
         fetchData();
       } catch (err) { console.error(err); }
     }
-  };
-
-  // دالة مساعدة لتنسيق رقم الهاتف للواتساب (إضافة +20)
-  const formatPhoneForWhatsApp = (phone: string) => {
-    if (!phone) return '';
-    let cleaned = phone.toString().replace(/[^\d+]/g, '');
-    if (cleaned.startsWith('0')) {
-      cleaned = '+20' + cleaned.substring(1);
-    } else if (cleaned.startsWith('1') && cleaned.length === 10) {
-      cleaned = '+20' + cleaned;
-    } else if (!cleaned.startsWith('+')) {
-      cleaned = '+20' + cleaned;
-    }
-    return cleaned;
   };
 
   // إرسال واتساب للعميل (رسالة مبسطة + كود الأوردر)
@@ -164,7 +187,6 @@ export default function ProtectedOrders() {
 
   const saveOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    // توليد كود الأوردر إذا لم يكن موجوداً (للتأكيد)
     const orderNumber = `MG-${Date.now()}`;
     try {
       if (editingOrder) {
@@ -174,9 +196,7 @@ export default function ProtectedOrders() {
           method: 'POST', 
           body: JSON.stringify({ ...formData, order_number: orderNumber, date: new Date().toLocaleString("ar-EG") }) 
         });
-        // إرسال إشعار للفني إذا تم اختيار فني
         if (formData.technician) {
-          // تمرير orderNumber مع البيانات
           notifyTechnician(formData.technician, { ...formData, order_number: orderNumber });
         }
       }
