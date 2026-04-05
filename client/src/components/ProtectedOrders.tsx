@@ -117,13 +117,48 @@ export default function ProtectedOrders() {
     }
   };
 
+  // دالة مساعدة لتنسيق رقم الهاتف للواتساب (إضافة +20)
+  const formatPhoneForWhatsApp = (phone: string) => {
+    let cleaned = phone?.toString().replace(/\s|-|\(|\)/g, '') || '';
+    if (cleaned.startsWith('0')) cleaned = '+20' + cleaned.substring(1);
+    else if (cleaned.startsWith('1')) cleaned = '+20' + cleaned;
+    else if (!cleaned.startsWith('+')) cleaned = '+20' + cleaned;
+    return cleaned;
+  };
+
+  // إرسال واتساب للعميل
+  const sendToWhatsApp = (order: any) => {
+    const phone = formatPhoneForWhatsApp(order.phone);
+    const message = `🔧 *أوردر صيانة جديد*\n\n📋 *البيانات:*\n👤 العميل: ${order.customer_name}\n📞 الهاتف: ${order.phone}\n📍 العنوان: ${order.address}\n🔧 الجهاز: ${order.device_type} - ${order.brand}\n⚠️ المشكلة: ${order.problem_description}\n\n💰 *المبالغ:*\n💵 الإجمالي: ${order.total_amount || 0} ج.م\n🛠️ قطع الغيار: ${order.parts_cost || 0} ج.م\n🚗 المواصلات: ${order.transport_cost || 0} ج.م\n✅ الصافي: ${order.net_amount || 0} ج.م`;
+    const encodedMessage = encodeURIComponent(message);
+    window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
+  };
+
+  // إرسال واتساب للفني عند إضافة أوردر جديد
+  const notifyTechnician = (techName: string, orderData: any) => {
+    const tech = technicians.find(t => t.name === techName);
+    if (tech && tech.phone) {
+      const phone = formatPhoneForWhatsApp(tech.phone);
+      const message = `🔧 *أوردر جديد موكل إليك* 🔧\n\n👤 العميل: ${orderData.customer_name}\n📞 هاتف العميل: ${orderData.phone}\n📍 العنوان: ${orderData.address}\n🔧 الجهاز: ${orderData.device_type} - ${orderData.brand}\n⚠️ المشكلة: ${orderData.problem_description}\n💰 الإجمالي: ${orderData.total_amount} ج.م`;
+      const encodedMessage = encodeURIComponent(message);
+      window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
+    }
+  };
+
   const saveOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (editingOrder) {
         await fetchAPI(`orders?id=eq.${editingOrder.id}`, { method: 'PATCH', body: JSON.stringify(formData) });
       } else {
-        await fetchAPI('orders', { method: 'POST', body: JSON.stringify({ ...formData, date: new Date().toLocaleString("ar-EG") }) });
+        await fetchAPI('orders', { 
+          method: 'POST', 
+          body: JSON.stringify({ ...formData, date: new Date().toLocaleString("ar-EG") }) 
+        });
+        // إرسال إشعار للفني إذا تم اختيار فني
+        if (formData.technician) {
+          notifyTechnician(formData.technician, formData);
+        }
       }
       setShowOrderModal(false);
       setEditingOrder(null);
@@ -170,11 +205,6 @@ export default function ProtectedOrders() {
     navigator.clipboard.writeText(link);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const sendToWhatsApp = (order: any) => {
-    const message = `🔧 *أوردر صيانة جديد*\n\n👤 العميل: ${order.customer_name}\n📞 الهاتف: ${order.phone}\n📍 العنوان: ${order.address}\n🔧 الجهاز: ${order.device_type} - ${order.brand}\n⚠️ المشكلة: ${order.problem_description}\n💰 الإجمالي: ${order.total_amount} ج.م\n🛠️ قطع الغيار: ${order.parts_cost} ج.م\n🚗 المواصلات: ${order.transport_cost} ج.م\n✅ الصافي: ${order.net_amount} ج.م`;
-    window.open(`https://wa.me/${order.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const filteredOrders = orders.filter(o => {
