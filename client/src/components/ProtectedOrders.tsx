@@ -51,21 +51,39 @@ export default function ProtectedOrders() {
   const [formData, setFormData] = useState({
     customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '',
     status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, 
-    net_amount: 0, company_share: 0, technician_share: 0, is_paid: false
+    net_amount: 0, company_share: 0, technician_share: 0, is_paid: false,
+    date: new Date().toLocaleDateString("ar-EG")  // التاريخ الافتراضي (اليوم)
   });
   
   const [techForm, setTechForm] = useState({ name: '', phone: '', specialization: '', is_active: true });
   const [stats, setStats] = useState({ pending: 0, inProgress: 0, completed: 0, cancelled: 0, totalIncome: 0 });
 
-  // دالة حساب فارق الأيام
+  // دالة محسنة لحساب فارق الأيام (تدعم صيغ متعددة)
   const getDaysDifference = (dateStr: string) => {
-    if (!dateStr) return 0;
-    const parts = dateStr.split('/');
-    if (parts.length !== 3) return 0;
-    const orderDate = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
+    if (!dateStr || dateStr === 'null' || dateStr === 'undefined') return 0;
+    let orderDate: Date;
+    // صيغة DD/MM/YYYY
+    if (dateStr.includes('/')) {
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+        const day = parseInt(parts[0]);
+        const month = parseInt(parts[1]) - 1;
+        const year = parseInt(parts[2]);
+        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+          orderDate = new Date(year, month, day);
+        } else return 0;
+      } else return 0;
+    } 
+    // صيغة YYYY-MM-DD (من input date)
+    else {
+      orderDate = new Date(dateStr);
+      if (isNaN(orderDate.getTime())) return 0;
+    }
     const today = new Date();
-    const diffTime = today.getTime() - orderDate.getTime();
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const diffTime = todayDate.getTime() - orderDate.getTime();
+    const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return days > 0 ? days : 0;
   };
 
   const isDelayed = (order: any) => {
@@ -207,13 +225,15 @@ export default function ProtectedOrders() {
   const saveOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     const orderNumber = `MG-${Date.now()}`;
+    // استخدام التاريخ المختار أو التاريخ الحالي
+    const orderDate = formData.date || new Date().toLocaleDateString("ar-EG");
     try {
       if (editingOrder) {
-        await fetchAPI(`orders?id=eq.${editingOrder.id}`, { method: 'PATCH', body: JSON.stringify(formData) });
+        await fetchAPI(`orders?id=eq.${editingOrder.id}`, { method: 'PATCH', body: JSON.stringify({ ...formData, date: orderDate }) });
       } else {
         await fetchAPI('orders', { 
           method: 'POST', 
-          body: JSON.stringify({ ...formData, order_number: orderNumber, date: new Date().toLocaleString("ar-EG") }) 
+          body: JSON.stringify({ ...formData, order_number: orderNumber, date: orderDate }) 
         });
         if (formData.technician) {
           notifyTechnician(formData.technician, { ...formData, order_number: orderNumber });
@@ -224,7 +244,8 @@ export default function ProtectedOrders() {
       setFormData({
         customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '',
         status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, 
-        net_amount: 0, company_share: 0, technician_share: 0, is_paid: false
+        net_amount: 0, company_share: 0, technician_share: 0, is_paid: false,
+        date: new Date().toLocaleDateString("ar-EG")
       });
       fetchData();
     } catch (err) { console.error(err); }
@@ -266,7 +287,7 @@ export default function ProtectedOrders() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // فلترة الأوردرات (دالة متقدمة)
+  // فلترة الأوردرات
   const filteredOrders = orders.filter(o => {
     const matchesSearch = 
       o.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -287,7 +308,6 @@ export default function ProtectedOrders() {
     return true;
   });
 
-  // مسح جميع الفلاتر
   const clearAllFilters = () => {
     setSearchTerm('');
     setFilterStatus('all');
@@ -340,7 +360,7 @@ export default function ProtectedOrders() {
                 <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                 <input type="text" placeholder="ابحث عن عميل، هاتف، أو فني..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-2xl py-3 pr-12 pl-4 text-sm outline-none focus:ring-2 focus:ring-orange-500" />
               </div>
-              <button onClick={() => { setEditingOrder(null); setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false }); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-2xl text-sm font-bold flex items-center gap-2"> <Plus className="w-5 h-5" /> أوردر جديد</button>
+              <button onClick={() => { setEditingOrder(null); setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") }); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-2xl text-sm font-bold flex items-center gap-2"> <Plus className="w-5 h-5" /> أوردر جديد</button>
             </div>
 
             {/* شريط الفلاتر المتقدمة */}
@@ -401,7 +421,7 @@ export default function ProtectedOrders() {
                     <div className="flex gap-1">
                       <button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`p-2 rounded-xl ${order.is_paid ? 'bg-green-500/20 text-green-500' : 'bg-slate-800 text-slate-500'}`}>{order.is_paid ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}</button>
                       <button onClick={() => sendToWhatsApp(order)} className="p-2 text-slate-500 hover:text-green-500 hover:bg-green-500/10 rounded-xl"><MessageCircle className="w-4 h-4" /></button>
-                      <button onClick={() => { setEditingOrder(order); setFormData(order); setShowOrderModal(true); }} className="p-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-xl"><Edit className="w-4 h-4" /></button>
+                      <button onClick={() => { setEditingOrder(order); setFormData({ ...order, date: order.date || new Date().toLocaleDateString("ar-EG") }); setShowOrderModal(true); }} className="p-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-xl"><Edit className="w-4 h-4" /></button>
                       <button onClick={() => deleteOrder(order.id)} className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-500/10 rounded-xl"><Trash2 className="w-4 h-4" /></button>
                     </div>
                   </div>
@@ -530,6 +550,35 @@ export default function ProtectedOrders() {
               <div className="grid grid-cols-2 gap-4 p-4 bg-slate-950 rounded-2xl border border-slate-800">
                 <div className="text-center"><p className="text-[10px] text-slate-500 uppercase">نصيب الشركة (50%)</p><p className="text-lg font-black text-blue-500">{formData.company_share} ج.م</p></div>
                 <div className="text-center border-r border-slate-800"><p className="text-[10px] text-slate-500 uppercase">نصيب الفني (50%)</p><p className="text-lg font-black text-purple-500">{formData.technician_share} ج.م</p></div>
+              </div>
+              {/* حقل التاريخ اليدوي */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase pr-2">📅 تاريخ الأوردر</label>
+                  <input
+                    type="date"
+                    value={(() => {
+                      if (!formData.date) return new Date().toISOString().split('T')[0];
+                      // تحويل من DD/MM/YYYY إلى YYYY-MM-DD
+                      if (formData.date.includes('/')) {
+                        const parts = formData.date.split('/');
+                        if (parts.length === 3) {
+                          return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+                        }
+                      }
+                      return formData.date;
+                    })()}
+                    onChange={(e) => {
+                      const selectedDate = e.target.value;
+                      if (selectedDate) {
+                        const [year, month, day] = selectedDate.split('-');
+                        const formattedDate = `${day}/${month}/${year}`;
+                        handleFormChange('date', formattedDate);
+                      }
+                    }}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500"
+                  />
+                </div>
               </div>
               <div className="flex items-center gap-2 bg-slate-800 p-3 rounded-xl border border-slate-700"><input type="checkbox" id="is_paid" checked={formData.is_paid} onChange={(e) => handleFormChange('is_paid', e.target.checked)} className="w-5 h-5 accent-orange-500" /><label htmlFor="is_paid" className="text-sm font-bold text-white cursor-pointer">✅ تم تحصيل المبلغ بالكامل</label></div>
               <button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white font-black py-4 rounded-2xl shadow-lg transition-all active:scale-95 mt-4">💾 حفظ الأوردر</button>
