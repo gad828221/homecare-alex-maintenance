@@ -92,9 +92,10 @@ function App() {
   useEffect(() => {
     const userRole = localStorage.getItem("userRole");
     const currentPath = window.location.pathname;
-    const isTechPath = currentPath.includes("/tech-portal") || currentPath.startsWith("/tech/");
+    const allowedPaths = ["/login", "/tech-portal", "/invoice"];
+    const isAllowed = allowedPaths.some(path => currentPath.startsWith(path));
     
-    if (userRole === "tech" && !isTechPath) {
+    if (userRole === "tech" && !isAllowed) {
       window.location.href = "/tech-portal";
     }
   }, []);
