@@ -310,11 +310,30 @@ export default function TechnicianPortal() {
                       </button>
                       {openDropdown === order.id && (
                         <div className="absolute bottom-full left-0 mb-1 w-48 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 z-20 overflow-hidden">
-                          <button onClick={() => { setSelectedOrder(order); setSettleForm({ total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, technician_share: 0, company_share: 0 }); setShowSettleModal(true); setOpenDropdown(null); }} className="w-full text-right px-4 py-2.5 text-sm hover:bg-slate-700 flex items-center gap-2 transition-all"><FileCheck className="w-4 h-4 text-green-400" /> تصفية الأوردر</button>
-                          <button onClick={() => openActionModal(order, 'inspect')} className="w-full text-right px-4 py-2.5 text-sm hover:bg-slate-700 flex items-center gap-2 transition-all"><DollarSign className="w-4 h-4 text-yellow-400" /> كشف بقيمة</button>
-                          <button onClick={() => openActionModal(order, 'defer')} className="w-full text-right px-4 py-2.5 text-sm hover:bg-slate-700 flex items-center gap-2 transition-all"><CalendarX className="w-4 h-4 text-purple-400" /> تأجيل</button>
-                          <button onClick={() => openActionModal(order, 'cancel')} className="w-full text-right px-4 py-2.5 text-sm hover:bg-slate-700 flex items-center gap-2 transition-all"><Ban className="w-4 h-4 text-red-400" /> إلغاء</button>
-                          <button onClick={() => openActionModal(order, 'note')} className="w-full text-right px-4 py-2.5 text-sm hover:bg-slate-700 flex items-center gap-2 transition-all"><MessageSquare className="w-4 h-4 text-blue-400" /> تعليق</button>
+                          {/* زر تصفية الأوردر */}
+                          <button 
+                            onClick={() => { 
+                              setSelectedOrder(order); 
+                              setSettleForm({ total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, technician_share: 0, company_share: 0 }); 
+                              setShowSettleModal(true); 
+                              setOpenDropdown(null); 
+                            }} 
+                            className="w-full text-right px-4 py-2.5 text-sm hover:bg-slate-700 flex items-center gap-2 transition-all"
+                          >
+                            <FileCheck className="w-4 h-4 text-green-400" /> تصفية الأوردر
+                          </button>
+                          <button onClick={() => openActionModal(order, 'inspect')} className="w-full text-right px-4 py-2.5 text-sm hover:bg-slate-700 flex items-center gap-2 transition-all">
+                            <DollarSign className="w-4 h-4 text-yellow-400" /> كشف بقيمة
+                          </button>
+                          <button onClick={() => openActionModal(order, 'defer')} className="w-full text-right px-4 py-2.5 text-sm hover:bg-slate-700 flex items-center gap-2 transition-all">
+                            <CalendarX className="w-4 h-4 text-purple-400" /> تأجيل
+                          </button>
+                          <button onClick={() => openActionModal(order, 'cancel')} className="w-full text-right px-4 py-2.5 text-sm hover:bg-slate-700 flex items-center gap-2 transition-all">
+                            <Ban className="w-4 h-4 text-red-400" /> إلغاء
+                          </button>
+                          <button onClick={() => openActionModal(order, 'note')} className="w-full text-right px-4 py-2.5 text-sm hover:bg-slate-700 flex items-center gap-2 transition-all">
+                            <MessageSquare className="w-4 h-4 text-blue-400" /> تعليق
+                          </button>
                         </div>
                       )}
                     </div>
