@@ -2,7 +2,8 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { 
   Wrench, LogOut, Clock, CheckCircle2, AlertCircle, 
   RefreshCw, Phone, MapPin, ClipboardList,
-  Calendar, X, Trash2, Eye, ClockArrowUp, StickyNote
+  Calendar, X, Trash2, Eye, ClockArrowUp, StickyNote,
+  ChevronDown, Play, FileCheck, DollarSign, CalendarX, Ban, MessageSquare
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -36,6 +37,7 @@ export default function TechnicianPortal() {
   const [actionType, setActionType] = useState<'cancel' | 'inspect' | 'defer' | 'note'>('note');
   const [actionValue, setActionValue] = useState("");
   const [currentOrder, setCurrentOrder] = useState<any>(null);
+  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
   
   const [settleForm, setSettleForm] = useState({
     total_amount: 0,
@@ -46,18 +48,23 @@ export default function TechnicianPortal() {
     company_share: 0
   });
 
-  // التحقق من صلاحية الجلسة عند تحميل الصفحة
+  // إغلاق القائمة المنسدلة عند النقر خارجها
+  useEffect(() => {
+    const handleClickOutside = () => setOpenDropdown(null);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  // التحقق من صلاحية الجلسة
   useEffect(() => {
     const userRole = localStorage.getItem("userRole");
     const currentUser = localStorage.getItem("currentUser");
-    
     if (userRole !== "tech" || !currentUser) {
       window.location.href = "/login";
       return;
     }
   }, []);
 
-  // دالة للتحقق من مرور 3 أيام على إكمال الأوردر (لإخفاء رقم الهاتف)
   const isPhoneHidden = (order: any) => {
     if (order.status !== 'completed') return false;
     if (!order.completed_at) return false;
@@ -84,11 +91,9 @@ export default function TechnicianPortal() {
     else if (newStatus === "cancelled") statusMessage = "❌ تم إلغاء طلب الصيانة. للاستفسار، يرجى الاتصال بنا.";
     else return;
     const message = `📢 *تحديث حالة طلب الصيانة* 📢\n\n🔢 *كود الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n📝 *الحالة الجديدة:* ${statusMessage}\n\nشكرًا لتواصلك معنا. 🌟`;
-    const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
-  // تحديد اسم الفني من localStorage أو من الرابط
   useEffect(() => {
     const storedUser = localStorage.getItem("currentUser");
     if (storedUser) {
@@ -107,7 +112,6 @@ export default function TechnicianPortal() {
     }
   }, []);
 
-  // التحقق من حالة الفني (نشط/غير نشط)
   useEffect(() => {
     const checkActiveStatus = async () => {
       if (!techName) return;
@@ -210,6 +214,7 @@ export default function TechnicianPortal() {
     setActionType(type);
     setActionValue('');
     setShowActionModal(true);
+    setOpenDropdown(null);
   };
 
   const confirmAction = () => {
@@ -248,16 +253,7 @@ export default function TechnicianPortal() {
       <div className="bg-slate-800/80 border-b border-slate-700 sticky top-0 z-40 px-4 py-3">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3"><Wrench className="w-6 h-6 text-orange-400" /><div><h1 className="text-lg font-bold text-white">بوابة الفنيين</h1><p className="text-xs text-orange-400">{techName}</p></div></div>
-          <button 
-            onClick={() => {
-              localStorage.clear();
-              sessionStorage.clear();
-              window.location.href = "/login";
-            }} 
-            className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg"
-          >
-            <LogOut className="w-5 h-5" />
-          </button>
+          <button onClick={() => { localStorage.clear(); sessionStorage.clear(); window.location.href = "/login"; }} className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg"><LogOut className="w-5 h-5" /></button>
         </div>
       </div>
 
@@ -289,21 +285,39 @@ export default function TechnicianPortal() {
                 {order.inspection_amount > 0 && order.status === 'completed' && <div className="bg-yellow-500/10 p-2 rounded-lg text-xs flex justify-between"><span>💰 كشف بقيمة</span><span className="font-bold text-yellow-400">{order.inspection_amount} ج.م</span></div>}
 
                 <div className="flex flex-wrap gap-2 pt-2">
+                  {/* زر الاتصال */}
                   {!isPhoneHidden(order) ? (
-                    <a href={`tel:${order.phone}`} className="flex-1 bg-slate-700 hover:bg-slate-600 text-center text-sm font-medium py-2 rounded-lg transition">📞 اتصل</a>
+                    <a href={`tel:${order.phone}`} className="flex-1 bg-slate-700 hover:bg-slate-600 text-center text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1"><Phone className="w-4 h-4" /> اتصل</a>
                   ) : (
-                    <div className="flex-1 bg-slate-800 text-slate-500 text-center text-sm font-medium py-2 rounded-lg cursor-not-allowed">📞 غير متاح (انتهت المهلة)</div>
+                    <div className="flex-1 bg-slate-800 text-slate-500 text-center text-sm font-medium py-2 rounded-lg cursor-not-allowed flex items-center justify-center gap-1"><Phone className="w-4 h-4" /> غير متاح</div>
                   )}
                   
-                  {order.status === 'pending' && <button onClick={() => updateStatus(order.id, 'in-progress')} className="flex-1 bg-blue-600 hover:bg-blue-700 text-sm font-medium py-2 rounded-lg transition">▶ بدء العمل</button>}
-                  {order.status === 'in-progress' && <button onClick={() => { setSelectedOrder(order); setSettleForm({ total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, technician_share: 0, company_share: 0 }); setShowSettleModal(true); }} className="flex-1 bg-green-600 hover:bg-green-700 text-sm font-medium py-2 rounded-lg transition">✅ تصفية</button>}
-                  {order.status !== 'completed' && order.status !== 'cancelled' && (
-                    <>
-                      <button onClick={() => openActionModal(order, 'inspect')} className="flex-1 bg-yellow-600/80 hover:bg-yellow-600 text-sm font-medium py-2 rounded-lg transition">💰 كشف</button>
-                      <button onClick={() => openActionModal(order, 'defer')} className="flex-1 bg-purple-600/80 hover:bg-purple-600 text-sm font-medium py-2 rounded-lg transition">⏰ تأجيل</button>
-                      <button onClick={() => openActionModal(order, 'cancel')} className="flex-1 bg-red-600/80 hover:bg-red-600 text-sm font-medium py-2 rounded-lg transition">✖ إلغاء</button>
-                      <button onClick={() => openActionModal(order, 'note')} className="flex-1 bg-slate-600 hover:bg-slate-500 text-sm font-medium py-2 rounded-lg transition">📝 تعليق</button>
-                    </>
+                  {/* إذا كان الأوردر قيد الانتظار: يظهر زر بدء العمل فقط */}
+                  {order.status === 'pending' && (
+                    <button onClick={() => updateStatus(order.id, 'in-progress')} className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1 shadow-lg shadow-blue-900/20">
+                      <Play className="w-4 h-4" /> بدء العمل
+                    </button>
+                  )}
+                  
+                  {/* إذا كان الأوردر جاري العمل: يظهر زر إجراءات مع قائمة منسدلة */}
+                  {order.status === 'in-progress' && (
+                    <div className="flex-1 relative" onClick={(e) => e.stopPropagation()}>
+                      <button 
+                        onClick={() => setOpenDropdown(openDropdown === order.id ? null : order.id)}
+                        className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1 shadow-lg shadow-orange-900/20"
+                      >
+                        <FileCheck className="w-4 h-4" /> إجراءات <ChevronDown className="w-3 h-3" />
+                      </button>
+                      {openDropdown === order.id && (
+                        <div className="absolute bottom-full left-0 mb-1 w-48 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 z-20 overflow-hidden">
+                          <button onClick={() => { setSelectedOrder(order); setSettleForm({ total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, technician_share: 0, company_share: 0 }); setShowSettleModal(true); setOpenDropdown(null); }} className="w-full text-right px-4 py-2.5 text-sm hover:bg-slate-700 flex items-center gap-2 transition-all"><FileCheck className="w-4 h-4 text-green-400" /> تصفية الأوردر</button>
+                          <button onClick={() => openActionModal(order, 'inspect')} className="w-full text-right px-4 py-2.5 text-sm hover:bg-slate-700 flex items-center gap-2 transition-all"><DollarSign className="w-4 h-4 text-yellow-400" /> كشف بقيمة</button>
+                          <button onClick={() => openActionModal(order, 'defer')} className="w-full text-right px-4 py-2.5 text-sm hover:bg-slate-700 flex items-center gap-2 transition-all"><CalendarX className="w-4 h-4 text-purple-400" /> تأجيل</button>
+                          <button onClick={() => openActionModal(order, 'cancel')} className="w-full text-right px-4 py-2.5 text-sm hover:bg-slate-700 flex items-center gap-2 transition-all"><Ban className="w-4 h-4 text-red-400" /> إلغاء</button>
+                          <button onClick={() => openActionModal(order, 'note')} className="w-full text-right px-4 py-2.5 text-sm hover:bg-slate-700 flex items-center gap-2 transition-all"><MessageSquare className="w-4 h-4 text-blue-400" /> تعليق</button>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -313,41 +327,58 @@ export default function TechnicianPortal() {
         </div>
       </main>
 
+      {/* Modal for actions */}
       {showActionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70" onClick={() => setShowActionModal(false)}>
-          <div className="bg-slate-800 rounded-xl max-w-md w-full p-5" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-bold text-white mb-3">
-              {actionType === 'cancel' && 'إلغاء الأوردر'}
-              {actionType === 'inspect' && 'كشف بقيمة'}
-              {actionType === 'defer' && 'تأجيل الأوردر'}
-              {actionType === 'note' && 'إضافة تعليق'}
-            </h2>
-            {actionType === 'inspect' ? (
-              <input type="number" value={actionValue} onChange={e => setActionValue(e.target.value)} placeholder="المبلغ (ج.م)" className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white mb-4" autoFocus />
-            ) : (
-              <textarea rows={3} value={actionValue} onChange={e => setActionValue(e.target.value)} placeholder={actionType === 'note' ? 'اكتب تعليقك...' : 'اكتب السبب...'} className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white mb-4" autoFocus />
-            )}
-            <div className="flex gap-2">
-              <button onClick={confirmAction} className="flex-1 bg-orange-600 hover:bg-orange-700 py-2 rounded-lg font-medium">تأكيد</button>
-              <button onClick={() => setShowActionModal(false)} className="flex-1 bg-slate-700 hover:bg-slate-600 py-2 rounded-lg font-medium">إلغاء</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowActionModal(false)}>
+          <div className="bg-slate-800 rounded-2xl max-w-md w-full p-6 border border-slate-700 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-white">
+                {actionType === 'cancel' && 'إلغاء الأوردر'}
+                {actionType === 'inspect' && 'كشف بقيمة'}
+                {actionType === 'defer' && 'تأجيل الأوردر'}
+                {actionType === 'note' && 'إضافة تعليق'}
+              </h2>
+              <button onClick={() => setShowActionModal(false)} className="p-1 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="space-y-4">
+              {actionType === 'inspect' ? (
+                <div>
+                  <label className="block text-sm text-slate-400 mb-2">💰 قيمة الكشف (ج.م)</label>
+                  <input type="number" value={actionValue} onChange={e => setActionValue(e.target.value)} placeholder="مثال: 500" className="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white outline-none focus:border-orange-500" autoFocus />
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm text-slate-400 mb-2">
+                    {actionType === 'cancel' && '📝 سبب الإلغاء'}
+                    {actionType === 'defer' && '⏰ سبب التأجيل'}
+                    {actionType === 'note' && '✏️ نص التعليق'}
+                  </label>
+                  <textarea rows={3} value={actionValue} onChange={e => setActionValue(e.target.value)} placeholder={actionType === 'note' ? 'اكتب ملاحظتك هنا...' : 'اكتب السبب...'} className="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white outline-none focus:border-orange-500" autoFocus />
+                </div>
+              )}
+              <button onClick={confirmAction} className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-xl transition-all">تأكيد</button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Settlement Modal */}
       {showSettleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70" onClick={() => setShowSettleModal(false)}>
-          <div className="bg-slate-800 rounded-xl max-w-md w-full p-5" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-bold text-white mb-3">تصفية الأوردر</h2>
-            <div className="space-y-3">
-              <div><label className="text-sm text-slate-400">المبلغ الإجمالي</label><input type="number" value={settleForm.total_amount} onChange={e => handleSettleChange('total_amount', e.target.value)} className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white" /></div>
-              <div className="grid grid-cols-2 gap-3"><div><label className="text-sm text-slate-400">قطع غيار</label><input type="number" value={settleForm.parts_cost} onChange={e => handleSettleChange('parts_cost', e.target.value)} className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white" /></div><div><label className="text-sm text-slate-400">مواصلات</label><input type="number" value={settleForm.transport_cost} onChange={e => handleSettleChange('transport_cost', e.target.value)} className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white" /></div></div>
-              <div className="bg-slate-700 p-3 rounded-lg space-y-1">
-                <div className="flex justify-between"><span>الصافي:</span><span className="text-green-400">{settleForm.net_amount} ج.م</span></div>
-                <div className="flex justify-between"><span>نصيبك (50%):</span><span className="text-purple-400">{settleForm.technician_share} ج.م</span></div>
-                <div className="flex justify-between"><span>نصيب الشركة:</span><span className="text-blue-400">{settleForm.company_share} ج.م</span></div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowSettleModal(false)}>
+          <div className="bg-slate-800 rounded-2xl max-w-md w-full p-6 border border-slate-700 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-white">تصفية الأوردر</h2>
+              <button onClick={() => setShowSettleModal(false)} className="p-1 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="space-y-4">
+              <div><label className="text-sm text-slate-400 mb-1 block">💰 المبلغ الإجمالي</label><input type="number" value={settleForm.total_amount} onChange={e => handleSettleChange('total_amount', e.target.value)} className="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white outline-none focus:border-orange-500" /></div>
+              <div className="grid grid-cols-2 gap-3"><div><label className="text-sm text-slate-400 mb-1 block">🛠️ قطع غيار</label><input type="number" value={settleForm.parts_cost} onChange={e => handleSettleChange('parts_cost', e.target.value)} className="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white" /></div><div><label className="text-sm text-slate-400 mb-1 block">🚗 مواصلات</label><input type="number" value={settleForm.transport_cost} onChange={e => handleSettleChange('transport_cost', e.target.value)} className="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white" /></div></div>
+              <div className="bg-slate-700/50 p-4 rounded-xl space-y-2">
+                <div className="flex justify-between"><span className="text-slate-400">الصافي:</span><span className="text-green-400 font-bold">{settleForm.net_amount} ج.م</span></div>
+                <div className="flex justify-between"><span className="text-slate-400">نصيبك (50%):</span><span className="text-purple-400 font-bold">{settleForm.technician_share} ج.م</span></div>
+                <div className="flex justify-between"><span className="text-slate-400">نصيب الشركة:</span><span className="text-blue-400 font-bold">{settleForm.company_share} ج.م</span></div>
               </div>
-              <button onClick={submitSettlement} className="w-full bg-orange-600 hover:bg-orange-700 py-2 rounded-lg font-medium">تأكيد التصفية</button>
+              <button onClick={submitSettlement} className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-xl transition-all">تأكيد التصفية</button>
             </div>
           </div>
         </div>
