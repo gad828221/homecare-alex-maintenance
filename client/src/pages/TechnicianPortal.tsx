@@ -76,10 +76,10 @@ export default function TechnicianPortal() {
     return cleaned;
   };
 
-  // إرسال إشعار للمدير ولرقمك مع فتح واتساب مباشرة
+  // إرسال إشعار للمدير ولرقمك (حل مضمون)
   const notifyAdmin = async (action: string, order: any, details: string = "") => {
-    // أرقام المستلمين (المدير + رقمك)
-    const phoneNumbers = ["201558625259", "201278885772"];
+    const adminPhone = "201558625259";
+    const yourPhone = "201278885772";
     
     const message = `🔔 *إشعار من الفني* 🔔\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -92,12 +92,10 @@ export default function TechnicianPortal() {
       `⏰ *الوقت:* ${new Date().toLocaleString("ar-EG")}\n\n` +
       `يرجى المراجعة.`;
     
-    // إرسال لكل رقم في القائمة (فتح واتساب مباشرة)
-    for (const phone of phoneNumbers) {
-      const formattedPhone = phone.replace(/\D/g, '');
-      const whatsappUrl = `whatsapp://send?phone=${formattedPhone}&text=${encodeURIComponent(message)}`;
-      window.location.href = whatsappUrl;
-    }
+    // إرسال للمدير
+    window.open(`https://wa.me/${adminPhone}?text=${encodeURIComponent(message)}`, '_blank');
+    // إرسال لك
+    window.open(`https://wa.me/${yourPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const notifyCustomerStatusChange = (order: any, newStatus: string) => {
@@ -107,8 +105,8 @@ export default function TechnicianPortal() {
     else if (newStatus === "cancelled") statusMessage = "❌ تم إلغاء طلب الصيانة. للاستفسار، يرجى الاتصال بنا.";
     else return;
     const message = `📢 *تحديث حالة طلب الصيانة* 📢\n\n🔢 *كود الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n📝 *الحالة الجديدة:* ${statusMessage}\n\nشكرًا لتواصلك معنا. 🌟`;
-    const whatsappUrl = `whatsapp://send?phone=${phone.replace(/\D/g, '')}&text=${encodeURIComponent(message)}`;
-    window.location.href = whatsappUrl;
+    const whatsappUrl = `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   useEffect(() => {
