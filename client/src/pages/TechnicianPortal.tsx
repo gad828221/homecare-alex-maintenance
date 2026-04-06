@@ -76,10 +76,10 @@ export default function TechnicianPortal() {
     return cleaned;
   };
 
-  // إرسال إشعار للمدير عند قيام الفني بأي إجراء
+  // إرسال إشعار للمدير ولرقم إضافي عند قيام الفني بأي إجراء
   const notifyAdmin = async (action: string, order: any, details: string = "") => {
-    const adminPhone = "201558625259"; // رقم هاتف المدير
-    const formattedPhone = formatPhoneForWhatsApp(adminPhone);
+    // أرقام المستلمين (أضف أي رقم تريده)
+    const phoneNumbers = ["201558625259", "201234567890"]; // ضع رقمك الثاني هنا
     
     const message = `🔔 *إشعار من الفني* 🔔\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -92,7 +92,11 @@ export default function TechnicianPortal() {
       `⏰ *الوقت:* ${new Date().toLocaleString("ar-EG")}\n\n` +
       `يرجى المراجعة.`;
     
-    window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, '_blank');
+    // إرسال لكل رقم في القائمة
+    for (const phone of phoneNumbers) {
+      const formattedPhone = formatPhoneForWhatsApp(phone);
+      window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, '_blank');
+    }
   };
 
   const notifyCustomerStatusChange = (order: any, newStatus: string) => {
