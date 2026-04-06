@@ -76,10 +76,10 @@ export default function TechnicianPortal() {
     return cleaned;
   };
 
-  // إرسال إشعار للمدير ولرقم إضافي عند قيام الفني بأي إجراء
+  // إرسال إشعار للمدير والأرقام المضافة مع فتح واتساب مباشرة
   const notifyAdmin = async (action: string, order: any, details: string = "") => {
-    // أرقام المستلمين (أضف أي رقم تريده)
-    const phoneNumbers = ["201558625259", "201234567890"]; // ضع رقمك الثاني هنا
+    // أرقام المستلمين (المدير + رقمك)
+    const phoneNumbers = ["201558625259", "201278885772"];
     
     const message = `🔔 *إشعار من الفني* 🔔\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -92,10 +92,11 @@ export default function TechnicianPortal() {
       `⏰ *الوقت:* ${new Date().toLocaleString("ar-EG")}\n\n` +
       `يرجى المراجعة.`;
     
-    // إرسال لكل رقم في القائمة
+    // إرسال لكل رقم في القائمة (فتح واتساب مباشرة)
     for (const phone of phoneNumbers) {
-      const formattedPhone = formatPhoneForWhatsApp(phone);
-      window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, '_blank');
+      const formattedPhone = phone.replace(/\D/g, ''); // إزالة أي أحرف غير أرقام
+      const whatsappUrl = `whatsapp://send?phone=${formattedPhone}&text=${encodeURIComponent(message)}`;
+      window.location.href = whatsappUrl;
     }
   };
 
@@ -106,7 +107,8 @@ export default function TechnicianPortal() {
     else if (newStatus === "cancelled") statusMessage = "❌ تم إلغاء طلب الصيانة. للاستفسار، يرجى الاتصال بنا.";
     else return;
     const message = `📢 *تحديث حالة طلب الصيانة* 📢\n\n🔢 *كود الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n📝 *الحالة الجديدة:* ${statusMessage}\n\nشكرًا لتواصلك معنا. 🌟`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+    const whatsappUrl = `whatsapp://send?phone=${phone.replace(/\D/g, '')}&text=${encodeURIComponent(message)}`;
+    window.location.href = whatsappUrl;
   };
 
   useEffect(() => {
@@ -190,19 +192,16 @@ export default function TechnicianPortal() {
       action_date: now,
       invoice_approved: false
     });
-    // إرسال إشعار للمدير
     notifyAdmin("💰 كشف بقيمة", order, `قيمة الكشف: ${total} ج.م`);
   };
 
   const handleCancel = (order: any, reason: string) => {
     updateStatus(order.id, 'cancelled', { technician_note: `إلغاء: ${reason}`, action_date: new Date().toLocaleString("ar-EG") });
-    // إرسال إشعار للمدير
     notifyAdmin("✖️ إلغاء الأوردر", order, `السبب: ${reason}`);
   };
 
   const handleDefer = (order: any, reason: string) => {
     updateStatus(order.id, 'deferred', { technician_note: `تأجيل: ${reason}`, action_date: new Date().toLocaleString("ar-EG") });
-    // إرسال إشعار للمدير
     notifyAdmin("⏰ تأجيل الأوردر", order, `السبب: ${reason}`);
   };
 
@@ -210,7 +209,6 @@ export default function TechnicianPortal() {
     const oldNote = order.technician_note || '';
     const newNote = oldNote ? `${oldNote}\n${note}` : note;
     updateStatus(order.id, order.status, { technician_note: newNote });
-    // إرسال إشعار للمدير
     notifyAdmin("📝 إضافة تعليق", order, `التعليق: ${note}`);
   };
 
@@ -229,7 +227,6 @@ export default function TechnicianPortal() {
       invoice_approved: false
     });
     setShowSettleModal(false);
-    // إرسال إشعار للمدير
     notifyAdmin("✅ تصفية الأوردر (إكمال)", selectedOrder, `المبلغ: ${settleForm.total_amount} ج.م | قطع غيار: ${settleForm.parts_cost} ج.م | مواصلات: ${settleForm.transport_cost} ج.م`);
     alert("✅ تم إكمال الأوردر وانتظار موافقة المدير على الفاتورة.");
   };
