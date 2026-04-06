@@ -76,7 +76,7 @@ export default function TechnicianPortal() {
     return cleaned;
   };
 
-// إرسال إشعار للمدير ولرقمك
+// // إرسال إشعار للمدير ولرقمك (كلاهما يفتح مباشرة)
 const notifyAdmin = async (action: string, order: any, details: string = "") => {
   const message = `🔔 *إشعار من الفني* 🔔\n\n` +
     `━━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -89,15 +89,11 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
     `⏰ *الوقت:* ${new Date().toLocaleString("ar-EG")}\n\n` +
     `يرجى المراجعة.`;
   
-  // فتح للمدير
-  setTimeout(() => {
-    window.open(`https://wa.me/201558625259?text=${encodeURIComponent(message)}`, '_blank');
-  }, 100);
+  // للمدير (مباشر)
+  window.location.href = `whatsapp://send?phone=201558625259&text=${encodeURIComponent(message)}`;
   
-  // فتح لك
-  setTimeout(() => {
-    window.open(`https://wa.me/201278885772?text=${encodeURIComponent(message)}`, '_blank');
-  }, 500);
+  // لك (مباشر)
+  window.location.href = `whatsapp://send?phone=201278885772&text=${encodeURIComponent(message)}`;
 };
 
   const notifyCustomerStatusChange = (order: any, newStatus: string) => {
