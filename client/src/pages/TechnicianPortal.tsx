@@ -11,7 +11,7 @@ const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
 
 const fetchAPI = async (endpoint: string, options?: RequestInit) => {
-  const res = await fetch(`\( {supabaseUrl}/rest/v1/ \){endpoint}`, {
+  const res = await fetch(`${supabaseUrl}/rest/v1/${endpoint}`, {
     headers: { 
       'apikey': supabaseKey, 
       'Authorization': `Bearer ${supabaseKey}`, 
@@ -59,9 +59,12 @@ export default function TechnicianPortal() {
     }
   }, []);
 
-  // إخفاء رقم الهاتف فوراً
+  // إخفاء رقم الهاتف فوراً للمكتمل أو الملغي أو تم الكشف
   const isPhoneHidden = (order: any) => {
-    return order.status === 'completed' || order.status === 'cancelled' || order.status === 'inspected';
+    if (order.status === 'completed' || order.status === 'cancelled' || order.status === 'inspected') {
+      return true;
+    }
+    return false;
   };
 
   const formatPhoneForWhatsApp = (phone: string) => {
@@ -73,43 +76,39 @@ export default function TechnicianPortal() {
     return cleaned;
   };
 
-  // إرسال إشعار للرقمين (012 و 015) عند أي إجراء
+  // إرسال إشعار للمدير ولرقمك مع فتح واتساب مباشرة
   const notifyAdmin = async (action: string, order: any, details: string = "") => {
-    const phoneNumbers = [
-      "201278885772",   // 01278885772
-      "201558625259"    // 01558625259
-    ];
-
+    // أرقام المستلمين (المدير + رقمك)
+    const phoneNumbers = ["201558625259", "201278885772"];
+    
     const message = `🔔 *إشعار من الفني* 🔔\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `👤 *الفني:* ${techName || "فني غير معروف"}\n` +
-      `🔢 *كود الأوردر:* ${order.order_number || "غير متوفر"}\n` +
-      `👤 *العميل:* ${order.customer_name || "غير متوفر"}\n` +
+      `👤 *الفني:* ${techName}\n` +
+      `🔢 *كود الأوردر:* ${order.order_number}\n` +
+      `👤 *العميل:* ${order.customer_name}\n` +
       `📋 *الإجراء:* ${action}\n` +
       `${details ? `📝 *التفاصيل:* ${details}\n` : ''}` +
       `━━━━━━━━━━━━━━━━━━━━━━\n` +
       `⏰ *الوقت:* ${new Date().toLocaleString("ar-EG")}\n\n` +
-      `يرجى المراجعة فوراً.`;
-
+      `يرجى المراجعة.`;
+    
+    // إرسال لكل رقم في القائمة (فتح واتساب مباشرة)
     for (const phone of phoneNumbers) {
-      try {
-        const whatsappUrl = `https://wa.me/\( {phone}?text= \){encodeURIComponent(message)}`;
-        window.open(whatsappUrl, '_blank');
-        await new Promise(resolve => setTimeout(resolve, 700));
-      } catch (err) {
-        console.error(`فشل فتح واتساب للرقم ${phone}`, err);
-      }
+      const formattedPhone = phone.replace(/\D/g, '');
+      const whatsappUrl = `whatsapp://send?phone=${formattedPhone}&text=${encodeURIComponent(message)}`;
+      window.location.href = whatsappUrl;
     }
   };
 
   const notifyCustomerStatusChange = (order: any, newStatus: string) => {
     const phone = formatPhoneForWhatsApp(order.phone);
-    let statusMessage = newStatus === "completed" 
-      ? "✅ تم إكمال طلب الصيانة بنجاح." 
-      : "❌ تم إلغاء طلب الصيانة.";
-    
-    const message = `📢 *تحديث حالة طلب الصيانة* 📢\n\n🔢 *كود الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n📝 *الحالة الجديدة:* ${statusMessage}`;
-    window.open(`https://wa.me/\( {phone.replace(/\D/g, '')}?text= \){encodeURIComponent(message)}`, '_blank');
+    let statusMessage = "";
+    if (newStatus === "completed") statusMessage = "✅ تم إكمال طلب الصيانة بنجاح. شكرًا لثقتك بنا!";
+    else if (newStatus === "cancelled") statusMessage = "❌ تم إلغاء طلب الصيانة. للاستفسار، يرجى الاتصال بنا.";
+    else return;
+    const message = `📢 *تحديث حالة طلب الصيانة* 📢\n\n🔢 *كود الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n📝 *الحالة الجديدة:* ${statusMessage}\n\nشكرًا لتواصلك معنا. 🌟`;
+    const whatsappUrl = `whatsapp://send?phone=${phone.replace(/\D/g, '')}&text=${encodeURIComponent(message)}`;
+    window.location.href = whatsappUrl;
   };
 
   useEffect(() => {
@@ -141,25 +140,17 @@ export default function TechnicianPortal() {
     checkActiveStatus();
   }, [techName]);
 
-  // جلب كل الأوردرات (القديمة والجديدة) بدون فلترة على الفني
   const fetchData = useCallback(async () => {
-    if (!isActive) return;
+    if (!techName || !isActive) return;
     try {
-      const data = await fetchAPI(`orders?order=created_at.desc`);
+      const data = await fetchAPI(`orders?technician=eq.${encodeURIComponent(techName)}&order=created_at.desc`);
       setOrders(data);
-
       const active = data.filter((o: any) => o.status === 'pending' || o.status === 'in-progress').length;
       const completed = data.filter((o: any) => o.status === 'completed').length;
-      const earnings = data.filter((o: any) => o.status === 'completed')
-        .reduce((acc: number, o: any) => acc + (o.technician_share || 0), 0);
-
+      const earnings = data.filter((o: any) => o.status === 'completed').reduce((acc: number, o: any) => acc + (o.technician_share || 0), 0);
       setStats({ active, completed, earnings });
-    } catch (err) {
-      console.error("Error fetching orders:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [isActive]);
+    } catch (err) { console.error(err); } finally { setLoading(false); }
+  }, [techName, isActive]);
 
   useEffect(() => {
     if (isActive) fetchData();
@@ -216,7 +207,7 @@ export default function TechnicianPortal() {
 
   const handleNote = (order: any, note: string) => {
     const oldNote = order.technician_note || '';
-    const newNote = oldNote ? `\( {oldNote}\n \){note}` : note;
+    const newNote = oldNote ? `${oldNote}\n${note}` : note;
     updateStatus(order.id, order.status, { technician_note: newNote });
     notifyAdmin("📝 إضافة تعليق", order, `التعليق: ${note}`);
   };
@@ -236,10 +227,7 @@ export default function TechnicianPortal() {
       invoice_approved: false
     });
     setShowSettleModal(false);
-    
-    notifyAdmin("✅ تصفية وإكمال الأوردر", selectedOrder, 
-      `المبلغ الكلي: ${settleForm.total_amount} ج.م | قطع غيار: ${settleForm.parts_cost} ج.م | مواصلات: ${settleForm.transport_cost} ج.م | صافي: ${settleForm.net_amount} ج.م`);
-    
+    notifyAdmin("✅ تصفية الأوردر (إكمال)", selectedOrder, `المبلغ: ${settleForm.total_amount} ج.م | قطع غيار: ${settleForm.parts_cost} ج.م | مواصلات: ${settleForm.transport_cost} ج.م`);
     alert("✅ تم إكمال الأوردر وانتظار موافقة المدير على الفاتورة.");
   };
 
@@ -283,91 +271,45 @@ export default function TechnicianPortal() {
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-200">
-      {/* Header */}
       <div className="bg-slate-800/80 border-b border-slate-700 sticky top-0 z-40 px-4 py-3">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <Wrench className="w-6 h-6 text-orange-400" />
-            <div>
-              <h1 className="text-lg font-bold text-white">بوابة الفنيين</h1>
-              <p className="text-xs text-orange-400">{techName}</p>
-            </div>
-          </div>
-          <button 
-            onClick={() => { localStorage.clear(); sessionStorage.clear(); window.location.href = "/login"; }} 
-            className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg"
-          >
-            <LogOut className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-3"><Wrench className="w-6 h-6 text-orange-400" /><div><h1 className="text-lg font-bold text-white">بوابة الفنيين</h1><p className="text-xs text-orange-400">{techName}</p></div></div>
+          <button onClick={() => { localStorage.clear(); sessionStorage.clear(); window.location.href = "/login"; }} className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg"><LogOut className="w-5 h-5" /></button>
         </div>
       </div>
 
       <main className="max-w-4xl mx-auto p-4 space-y-5">
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-slate-800 rounded-xl p-3 text-center">
-            <div className="text-2xl font-bold text-orange-400">{stats.active}</div>
-            <div className="text-xs text-slate-400">نشط</div>
-          </div>
-          <div className="bg-slate-800 rounded-xl p-3 text-center">
-            <div className="text-2xl font-bold text-green-400">{stats.completed}</div>
-            <div className="text-xs text-slate-400">مكتمل</div>
-          </div>
-          <div className="bg-slate-800 rounded-xl p-3 text-center">
-            <div className="text-xl font-bold text-emerald-400">{stats.earnings.toLocaleString()} ج.م</div>
-            <div className="text-xs text-slate-400">أرباحي</div>
-          </div>
+          <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-2xl font-bold text-orange-400">{stats.active}</div><div className="text-xs text-slate-400">نشط</div></div>
+          <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-2xl font-bold text-green-400">{stats.completed}</div><div className="text-xs text-slate-400">مكتمل</div></div>
+          <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-xl font-bold text-emerald-400">{stats.earnings.toLocaleString()} ج.م</div><div className="text-xs text-slate-400">أرباحي</div></div>
         </div>
 
         <div className="space-y-3">
-          <h2 className="text-md font-semibold text-white flex items-center gap-2">
-            <ClipboardList className="w-4 h-4 text-orange-400" /> أوردراتي
-          </h2>
+          <h2 className="text-md font-semibold text-white flex items-center gap-2"><ClipboardList className="w-4 h-4 text-orange-400" /> أوردراتي</h2>
           {orders.map(order => (
             <div key={order.id} className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
               <div className={`h-1 ${order.status === 'completed' ? 'bg-green-500' : order.status === 'in-progress' ? 'bg-blue-500' : order.status === 'cancelled' ? 'bg-red-500' : order.status === 'deferred' ? 'bg-purple-500' : order.status === 'inspected' ? 'bg-yellow-500' : 'bg-yellow-500'}`}></div>
               <div className="p-4 space-y-2">
                 <div className="flex justify-between items-start">
-                  <div>
-                    <div className="font-bold text-white">{order.customer_name}</div>
-                    <div className="text-[11px] text-slate-400 flex items-center gap-1">
-                      <Calendar className="w-3 h-3" /> {order.date}
-                    </div>
-                  </div>
+                  <div><div className="font-bold text-white">{order.customer_name}</div><div className="text-[11px] text-slate-400 flex items-center gap-1"><Calendar className="w-3 h-3" /> {order.date}</div></div>
                   <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${order.status === 'completed' ? 'bg-green-500/20 text-green-400' : order.status === 'in-progress' ? 'bg-blue-500/20 text-blue-400' : order.status === 'cancelled' ? 'bg-red-500/20 text-red-400' : order.status === 'deferred' ? 'bg-purple-500/20 text-purple-400' : order.status === 'inspected' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
                     {order.status === 'completed' ? 'مكتمل' : order.status === 'in-progress' ? 'جاري العمل' : order.status === 'cancelled' ? 'ملغي' : order.status === 'deferred' ? 'مؤجل' : order.status === 'inspected' ? 'تم الكشف' : 'قيد الانتظار'}
                   </div>
                 </div>
-
                 <div className="text-xs text-slate-300">
                   <div>🔧 {order.device_type || 'جهاز'} - {order.brand || 'ماركة'}</div>
-                  <div className="flex items-start gap-1 mt-1">
-                    <MapPin className="w-3 h-3 text-slate-500 mt-0.5" /> {order.address || 'لا يوجد عنوان'}
-                  </div>
+                  <div className="flex items-start gap-1 mt-1"><MapPin className="w-3 h-3 text-slate-500 mt-0.5" /> {order.address || 'لا يوجد عنوان'}</div>
                   {order.problem_description && <div className="mt-1 text-slate-400">⚠️ {order.problem_description}</div>}
                 </div>
-
-                {order.technician_note && (
-                  <div className="bg-slate-800 p-2 rounded-lg text-xs">
-                    <span className="text-slate-400">📝 ملاحظتك:</span> {order.technician_note}
-                  </div>
-                )}
-
-                {order.inspection_amount > 0 && order.status === 'inspected' && (
-                  <div className="bg-yellow-500/10 p-2 rounded-lg text-xs flex justify-between">
-                    <span>💰 كشف بقيمة</span>
-                    <span className="font-bold text-yellow-400">{order.inspection_amount} ج.م</span>
-                  </div>
-                )}
+                {order.technician_note && <div className="bg-slate-800 p-2 rounded-lg text-xs"><span className="text-slate-400">📝 ملاحظتك:</span> {order.technician_note}</div>}
+                {order.inspection_amount > 0 && order.status === 'inspected' && <div className="bg-yellow-500/10 p-2 rounded-lg text-xs flex justify-between"><span>💰 كشف بقيمة</span><span className="font-bold text-yellow-400">{order.inspection_amount} ج.م</span></div>}
 
                 <div className="flex flex-wrap gap-2 pt-2">
                   {!isPhoneHidden(order) ? (
-                    <a href={`tel:${order.phone}`} className="flex-1 bg-slate-700 hover:bg-slate-600 text-center text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1">
-                      <Phone className="w-4 h-4" /> اتصل
-                    </a>
+                    <a href={`tel:${order.phone}`} className="flex-1 bg-slate-700 hover:bg-slate-600 text-center text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1"><Phone className="w-4 h-4" /> اتصل</a>
                   ) : (
-                    <div className="flex-1 bg-slate-800 text-slate-500 text-center text-sm font-medium py-2 rounded-lg cursor-not-allowed flex items-center justify-center gap-1">
-                      <Phone className="w-4 h-4" /> غير متاح
-                    </div>
+                    <div className="flex-1 bg-slate-800 text-slate-500 text-center text-sm font-medium py-2 rounded-lg cursor-not-allowed flex items-center justify-center gap-1"><Phone className="w-4 h-4" /> غير متاح</div>
                   )}
                   
                   {order.status === 'pending' && (
@@ -429,53 +371,59 @@ export default function TechnicianPortal() {
         </div>
       )}
 
-      {/* مودال التصفية */}
-      {showSettleModal && selectedOrder && (
+      {/* Modal for actions (إلغاء، كشف، تأجيل، تعليق) */}
+      {showActionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowActionModal(false)}>
+          <div className="bg-slate-800 rounded-2xl max-w-md w-full p-6 border border-slate-700 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-white">
+                {actionType === 'cancel' && 'إلغاء الأوردر'}
+                {actionType === 'inspect' && 'كشف بقيمة'}
+                {actionType === 'defer' && 'تأجيل الأوردر'}
+                {actionType === 'note' && 'إضافة تعليق'}
+              </h2>
+              <button onClick={() => setShowActionModal(false)} className="p-1 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="space-y-4">
+              {actionType === 'inspect' ? (
+                <div>
+                  <label className="block text-sm text-slate-400 mb-2">💰 قيمة الكشف (ج.م)</label>
+                  <input type="number" value={actionValue} onChange={e => setActionValue(e.target.value)} placeholder="مثال: 500" className="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white outline-none focus:border-orange-500" autoFocus />
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm text-slate-400 mb-2">
+                    {actionType === 'cancel' && '📝 سبب الإلغاء'}
+                    {actionType === 'defer' && '⏰ سبب التأجيل'}
+                    {actionType === 'note' && '✏️ نص التعليق'}
+                  </label>
+                  <textarea rows={3} value={actionValue} onChange={e => setActionValue(e.target.value)} placeholder={actionType === 'note' ? 'اكتب ملاحظتك هنا...' : 'اكتب السبب...'} className="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white outline-none focus:border-orange-500" autoFocus />
+                </div>
+              )}
+              <button onClick={confirmAction} className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-xl transition-all">تأكيد</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settlement Modal */}
+      {showSettleModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowSettleModal(false)}>
           <div className="bg-slate-800 rounded-2xl max-w-md w-full p-6 border border-slate-700 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-white">تصفية الأوردر</h2>
               <button onClick={() => setShowSettleModal(false)} className="p-1 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
             </div>
-            
-            <form onSubmit={submitSettlement} className="space-y-4">
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">المبلغ الكلي</label>
-                <input 
-                  type="number" 
-                  value={settleForm.total_amount} 
-                  onChange={(e) => handleSettleChange('total_amount', e.target.value)} 
-                  className="w-full p-3 bg-slate-700 rounded-lg text-white"
-                  placeholder="0"
-                />
+            <div className="space-y-4">
+              <div><label className="text-sm text-slate-400 mb-1 block">💰 المبلغ الإجمالي</label><input type="number" value={settleForm.total_amount} onChange={e => handleSettleChange('total_amount', e.target.value)} className="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white outline-none focus:border-orange-500" /></div>
+              <div className="grid grid-cols-2 gap-3"><div><label className="text-sm text-slate-400 mb-1 block">🛠️ قطع غيار</label><input type="number" value={settleForm.parts_cost} onChange={e => handleSettleChange('parts_cost', e.target.value)} className="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white" /></div><div><label className="text-sm text-slate-400 mb-1 block">🚗 مواصلات</label><input type="number" value={settleForm.transport_cost} onChange={e => handleSettleChange('transport_cost', e.target.value)} className="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white" /></div></div>
+              <div className="bg-slate-700/50 p-4 rounded-xl space-y-2">
+                <div className="flex justify-between"><span className="text-slate-400">الصافي:</span><span className="text-green-400 font-bold">{settleForm.net_amount} ج.م</span></div>
+                <div className="flex justify-between"><span className="text-slate-400">نصيبك (50%):</span><span className="text-purple-400 font-bold">{settleForm.technician_share} ج.م</span></div>
+                <div className="flex justify-between"><span className="text-slate-400">نصيب الشركة:</span><span className="text-blue-400 font-bold">{settleForm.company_share} ج.م</span></div>
               </div>
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">تكلفة القطع</label>
-                <input 
-                  type="number" 
-                  value={settleForm.parts_cost} 
-                  onChange={(e) => handleSettleChange('parts_cost', e.target.value)} 
-                  className="w-full p-3 bg-slate-700 rounded-lg text-white"
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">تكلفة المواصلات</label>
-                <input 
-                  type="number" 
-                  value={settleForm.transport_cost} 
-                  onChange={(e) => handleSettleChange('transport_cost', e.target.value)} 
-                  className="w-full p-3 bg-slate-700 rounded-lg text-white"
-                  placeholder="0"
-                />
-              </div>
-              <button 
-                type="submit" 
-                className="w-full bg-green-600 hover:bg-green-700 py-3 rounded-lg font-bold text-white"
-              >
-                تأكيد التصفية والإكمال
-              </button>
-            </form>
+              <button onClick={submitSettlement} className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-xl transition-all">تأكيد التصفية</button>
+            </div>
           </div>
         </div>
       )}
