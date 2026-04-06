@@ -6,6 +6,7 @@ import {
   TrendingUp, Wallet, PieChart, Calendar, Copy, Check,
   Send, MessageCircle, StickyNote, Eye
 } from "lucide-react";
+import { useNotification } from "./NotificationSystem";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -28,6 +29,7 @@ const fetchAPI = async (endpoint: string, options?: RequestInit) => {
 };
 
 export default function ProtectedOrders() {
+  const { addNotification } = useNotification();
   const [orders, setOrders] = useState<any[]>([]);
   const [technicians, setTechnicians] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -227,8 +229,25 @@ export default function ProtectedOrders() {
 
   const deleteOrder = async (id: number) => {
     if (confirm('هل أنت متأكد من حذف هذا الأوردر؟')) {
-      try { await fetchAPI(`orders?id=eq.${id}`, { method: 'DELETE' }); fetchData(); } 
-      catch (err) { console.error(err); }
+      try { 
+        await fetchAPI(`orders?id=eq.${id}`, { method: 'DELETE' });
+        addNotification({
+          type: 'success',
+          title: '✅ تم الحذف بنجاح',
+          message: 'تم حذف الأوردر من النظام',
+          duration: 4000
+        });
+        fetchData(); 
+      } 
+      catch (err) { 
+        console.error(err);
+        addNotification({
+          type: 'error',
+          title: '❌ خطأ في الحذف',
+          message: 'حدث خطأ أثناء حذف الأوردر',
+          duration: 4000
+        });
+      }
     }
   };
 
@@ -279,15 +298,35 @@ export default function ProtectedOrders() {
     try {
       if (editingOrder) {
         await fetchAPI(`orders?id=eq.${editingOrder.id}`, { method: 'PATCH', body: JSON.stringify(orderToSave) });
+        addNotification({
+          type: 'success',
+          title: '✏️ تم التعديل بنجاح',
+          message: `تم تعديل أوردر ${formData.customer_name}`,
+          duration: 4000
+        });
       } else {
         await fetchAPI('orders', { method: 'POST', body: JSON.stringify(orderToSave) });
+        addNotification({
+          type: 'success',
+          title: '🎉 أوردر جديد!',
+          message: `تم إضافة أوردر جديد لـ ${formData.customer_name}`,
+          duration: 4000
+        });
         if (formData.technician) notifyTechnician(formData.technician, orderToSave);
       }
       setShowOrderModal(false);
       setEditingOrder(null);
       resetForm();
       fetchData();
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err);
+      addNotification({
+        type: 'error',
+        title: '❌ خطأ في الحفظ',
+        message: 'حدث خطأ أثناء حفظ الأوردر',
+        duration: 4000
+      });
+    }
   };
 
   const saveTechnician = async (e: React.FormEvent) => {
@@ -295,20 +334,57 @@ export default function ProtectedOrders() {
     try {
       if (editingTech) {
         await fetchAPI(`technicians?id=eq.${editingTech.id}`, { method: 'PATCH', body: JSON.stringify(techForm) });
+        addNotification({
+          type: 'success',
+          title: '✏️ تم تعديل الفني',
+          message: `تم تعديل بيانات ${techForm.name}`,
+          duration: 4000
+        });
       } else {
         await fetchAPI('technicians', { method: 'POST', body: JSON.stringify(techForm) });
+        addNotification({
+          type: 'success',
+          title: '👨‍🔧 فني جديد!',
+          message: `تم إضافة ${techForm.name} كفني جديد`,
+          duration: 4000
+        });
       }
       setShowTechModal(false);
       setEditingTech(null);
       setTechForm({ name: '', phone: '', specialization: '', is_active: true, username: '', password: '' });
       fetchData();
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err);
+      addNotification({
+        type: 'error',
+        title: '❌ خطأ في حفظ الفني',
+        message: 'حدث خطأ أثناء حفظ بيانات الفني',
+        duration: 4000
+      });
+    }
   };
 
   const deleteTechnician = async (id: number) => {
     if (confirm('هل أنت متأكد من حذف هذا الفني؟')) {
-      try { await fetchAPI(`technicians?id=eq.${id}`, { method: 'DELETE' }); fetchData(); } 
-      catch (err) { console.error(err); }
+      try { 
+        await fetchAPI(`technicians?id=eq.${id}`, { method: 'DELETE' });
+        addNotification({
+          type: 'success',
+          title: '✅ تم حذف الفني',
+          message: 'تم حذف الفني من النظام',
+          duration: 4000
+        });
+        fetchData(); 
+      } 
+      catch (err) { 
+        console.error(err);
+        addNotification({
+          type: 'error',
+          title: '❌ خطأ في الحذف',
+          message: 'حدث خطأ أثناء حذف الفني',
+          duration: 4000
+        });
+      }
     }
   };
 
