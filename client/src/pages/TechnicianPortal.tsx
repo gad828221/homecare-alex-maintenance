@@ -76,6 +76,25 @@ export default function TechnicianPortal() {
     return cleaned;
   };
 
+  // إرسال إشعار للمدير عند قيام الفني بأي إجراء
+  const notifyAdmin = async (action: string, order: any, details: string = "") => {
+    const adminPhone = "201558625259"; // رقم هاتف المدير
+    const formattedPhone = formatPhoneForWhatsApp(adminPhone);
+    
+    const message = `🔔 *إشعار من الفني* 🔔\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `👤 *الفني:* ${techName}\n` +
+      `🔢 *كود الأوردر:* ${order.order_number}\n` +
+      `👤 *العميل:* ${order.customer_name}\n` +
+      `📋 *الإجراء:* ${action}\n` +
+      `${details ? `📝 *التفاصيل:* ${details}\n` : ''}` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `⏰ *الوقت:* ${new Date().toLocaleString("ar-EG")}\n\n` +
+      `يرجى المراجعة.`;
+    
+    window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
   const notifyCustomerStatusChange = (order: any, newStatus: string) => {
     const phone = formatPhoneForWhatsApp(order.phone);
     let statusMessage = "";
@@ -167,20 +186,28 @@ export default function TechnicianPortal() {
       action_date: now,
       invoice_approved: false
     });
+    // إرسال إشعار للمدير
+    notifyAdmin("💰 كشف بقيمة", order, `قيمة الكشف: ${total} ج.م`);
   };
 
   const handleCancel = (order: any, reason: string) => {
     updateStatus(order.id, 'cancelled', { technician_note: `إلغاء: ${reason}`, action_date: new Date().toLocaleString("ar-EG") });
+    // إرسال إشعار للمدير
+    notifyAdmin("✖️ إلغاء الأوردر", order, `السبب: ${reason}`);
   };
 
   const handleDefer = (order: any, reason: string) => {
     updateStatus(order.id, 'deferred', { technician_note: `تأجيل: ${reason}`, action_date: new Date().toLocaleString("ar-EG") });
+    // إرسال إشعار للمدير
+    notifyAdmin("⏰ تأجيل الأوردر", order, `السبب: ${reason}`);
   };
 
   const handleNote = (order: any, note: string) => {
     const oldNote = order.technician_note || '';
     const newNote = oldNote ? `${oldNote}\n${note}` : note;
     updateStatus(order.id, order.status, { technician_note: newNote });
+    // إرسال إشعار للمدير
+    notifyAdmin("📝 إضافة تعليق", order, `التعليق: ${note}`);
   };
 
   const handleSettleChange = (field: string, value: string) => {
@@ -198,6 +225,8 @@ export default function TechnicianPortal() {
       invoice_approved: false
     });
     setShowSettleModal(false);
+    // إرسال إشعار للمدير
+    notifyAdmin("✅ تصفية الأوردر (إكمال)", selectedOrder, `المبلغ: ${settleForm.total_amount} ج.م | قطع غيار: ${settleForm.parts_cost} ج.م | مواصلات: ${settleForm.transport_cost} ج.م`);
     alert("✅ تم إكمال الأوردر وانتظار موافقة المدير على الفاتورة.");
   };
 
@@ -276,21 +305,18 @@ export default function TechnicianPortal() {
                 {order.inspection_amount > 0 && order.status === 'inspected' && <div className="bg-yellow-500/10 p-2 rounded-lg text-xs flex justify-between"><span>💰 كشف بقيمة</span><span className="font-bold text-yellow-400">{order.inspection_amount} ج.م</span></div>}
 
                 <div className="flex flex-wrap gap-2 pt-2">
-                  {/* زر الاتصال - يختفي فوراً للمكتمل أو الملغي أو تم الكشف */}
                   {!isPhoneHidden(order) ? (
                     <a href={`tel:${order.phone}`} className="flex-1 bg-slate-700 hover:bg-slate-600 text-center text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1"><Phone className="w-4 h-4" /> اتصل</a>
                   ) : (
                     <div className="flex-1 bg-slate-800 text-slate-500 text-center text-sm font-medium py-2 rounded-lg cursor-not-allowed flex items-center justify-center gap-1"><Phone className="w-4 h-4" /> غير متاح</div>
                   )}
                   
-                  {/* إذا كان الأوردر قيد الانتظار: يظهر زر بدء العمل فقط */}
                   {order.status === 'pending' && (
                     <button onClick={() => updateStatus(order.id, 'in-progress')} className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1 shadow-lg shadow-blue-900/20">
                       <Play className="w-4 h-4" /> بدء العمل
                     </button>
                   )}
                   
-                  {/* إذا كان الأوردر جاري العمل: يظهر زر إجراءات يفتح مودال */}
                   {order.status === 'in-progress' && (
                     <button 
                       onClick={() => { setSelectedOrderForActions(order); setShowActionsModal(true); }}
