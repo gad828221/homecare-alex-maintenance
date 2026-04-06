@@ -59,14 +59,12 @@ export default function TechnicianPortal() {
     }
   }, []);
 
+  // إخفاء رقم الهاتف فوراً للمكتمل أو الملغي أو تم الكشف
   const isPhoneHidden = (order: any) => {
-    if (order.status !== 'completed') return false;
-    if (!order.completed_at) return false;
-    const completedDate = new Date(order.completed_at);
-    const today = new Date();
-    const diffTime = today.getTime() - completedDate.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 3;
+    if (order.status === 'completed' || order.status === 'cancelled' || order.status === 'inspected') {
+      return true;
+    }
+    return false;
   };
 
   const formatPhoneForWhatsApp = (phone: string) => {
@@ -158,14 +156,14 @@ export default function TechnicianPortal() {
     const companyShare = total / 2;
     const techShare = total / 2;
     const now = new Date().toLocaleString("ar-EG");
-    updateStatus(order.id, 'completed', {
+    updateStatus(order.id, 'inspected', {
       total_amount: total,
       parts_cost: 0,
       transport_cost: 0,
       net_amount: total,
       company_share: companyShare,
       technician_share: techShare,
-      technician_note: `كشف بقيمة ${total} ج.م - تم الإنهاء`,
+      technician_note: `كشف بقيمة ${total} ج.م`,
       action_date: now,
       invoice_approved: false
     });
@@ -261,12 +259,12 @@ export default function TechnicianPortal() {
           <h2 className="text-md font-semibold text-white flex items-center gap-2"><ClipboardList className="w-4 h-4 text-orange-400" /> أوردراتي</h2>
           {orders.map(order => (
             <div key={order.id} className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
-              <div className={`h-1 ${order.status === 'completed' ? 'bg-green-500' : order.status === 'in-progress' ? 'bg-blue-500' : order.status === 'cancelled' ? 'bg-red-500' : order.status === 'deferred' ? 'bg-purple-500' : 'bg-yellow-500'}`}></div>
+              <div className={`h-1 ${order.status === 'completed' ? 'bg-green-500' : order.status === 'in-progress' ? 'bg-blue-500' : order.status === 'cancelled' ? 'bg-red-500' : order.status === 'deferred' ? 'bg-purple-500' : order.status === 'inspected' ? 'bg-yellow-500' : 'bg-yellow-500'}`}></div>
               <div className="p-4 space-y-2">
                 <div className="flex justify-between items-start">
                   <div><div className="font-bold text-white">{order.customer_name}</div><div className="text-[11px] text-slate-400 flex items-center gap-1"><Calendar className="w-3 h-3" /> {order.date}</div></div>
-                  <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${order.status === 'completed' ? 'bg-green-500/20 text-green-400' : order.status === 'in-progress' ? 'bg-blue-500/20 text-blue-400' : order.status === 'cancelled' ? 'bg-red-500/20 text-red-400' : order.status === 'deferred' ? 'bg-purple-500/20 text-purple-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                    {order.status === 'completed' ? 'مكتمل' : order.status === 'in-progress' ? 'جاري العمل' : order.status === 'cancelled' ? 'ملغي' : order.status === 'deferred' ? 'مؤجل' : 'قيد الانتظار'}
+                  <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${order.status === 'completed' ? 'bg-green-500/20 text-green-400' : order.status === 'in-progress' ? 'bg-blue-500/20 text-blue-400' : order.status === 'cancelled' ? 'bg-red-500/20 text-red-400' : order.status === 'deferred' ? 'bg-purple-500/20 text-purple-400' : order.status === 'inspected' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                    {order.status === 'completed' ? 'مكتمل' : order.status === 'in-progress' ? 'جاري العمل' : order.status === 'cancelled' ? 'ملغي' : order.status === 'deferred' ? 'مؤجل' : order.status === 'inspected' ? 'تم الكشف' : 'قيد الانتظار'}
                   </div>
                 </div>
                 <div className="text-xs text-slate-300">
@@ -275,10 +273,10 @@ export default function TechnicianPortal() {
                   {order.problem_description && <div className="mt-1 text-slate-400">⚠️ {order.problem_description}</div>}
                 </div>
                 {order.technician_note && <div className="bg-slate-800 p-2 rounded-lg text-xs"><span className="text-slate-400">📝 ملاحظتك:</span> {order.technician_note}</div>}
-                {order.inspection_amount > 0 && order.status === 'completed' && <div className="bg-yellow-500/10 p-2 rounded-lg text-xs flex justify-between"><span>💰 كشف بقيمة</span><span className="font-bold text-yellow-400">{order.inspection_amount} ج.م</span></div>}
+                {order.inspection_amount > 0 && order.status === 'inspected' && <div className="bg-yellow-500/10 p-2 rounded-lg text-xs flex justify-between"><span>💰 كشف بقيمة</span><span className="font-bold text-yellow-400">{order.inspection_amount} ج.م</span></div>}
 
                 <div className="flex flex-wrap gap-2 pt-2">
-                  {/* زر الاتصال */}
+                  {/* زر الاتصال - يختفي فوراً للمكتمل أو الملغي أو تم الكشف */}
                   {!isPhoneHidden(order) ? (
                     <a href={`tel:${order.phone}`} className="flex-1 bg-slate-700 hover:bg-slate-600 text-center text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1"><Phone className="w-4 h-4" /> اتصل</a>
                   ) : (
@@ -309,7 +307,7 @@ export default function TechnicianPortal() {
         </div>
       </main>
 
-      {/* مودال إجراءات الفني (بديل القائمة المنسدلة) */}
+      {/* مودال إجراءات الفني */}
       {showActionsModal && selectedOrderForActions && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowActionsModal(false)}>
           <div className="bg-slate-800 rounded-2xl max-w-md w-full p-6 border border-slate-700 shadow-2xl" onClick={e => e.stopPropagation()}>
