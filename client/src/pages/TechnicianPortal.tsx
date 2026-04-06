@@ -76,10 +76,10 @@ export default function TechnicianPortal() {
     return cleaned;
   };
 
-  // إرسال إشعار للمدير ولرقمك مع فتح واتساب مباشرة
+  // إرسال إشعار للمدير (مرتين) ولرقمك مع فتح واتساب مباشرة
   const notifyAdmin = async (action: string, order: any, details: string = "") => {
-    // أرقام المستلمين (المدير + رقمك)
-    const phoneNumbers = ["201558625259", "201278885772"];
+    // أرقام المستلمين (المدير مرتين + رقمك)
+    const phoneNumbers = ["201558625259", "201278885772", "201558625259"];
     
     const message = `🔔 *إشعار من الفني* 🔔\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━\n` +
