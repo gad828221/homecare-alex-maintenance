@@ -309,8 +309,7 @@ export default function TechnicianPortal() {
                         <FileCheck className="w-4 h-4" /> إجراءات <ChevronDown className="w-3 h-3" />
                       </button>
                       {openDropdown === order.id && (
-                        <div className="absolute bottom-full left-0 mb-1 w-48 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 z-20 overflow-hidden">
-                          {/* زر تصفية الأوردر */}
+                        <div className="absolute top-full left-0 mt-1 w-48 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 z-20 overflow-hidden">
                           <button 
                             onClick={() => { 
                               setSelectedOrder(order); 
