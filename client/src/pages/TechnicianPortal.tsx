@@ -105,8 +105,8 @@ export default function TechnicianPortal() {
   const notifyCustomerStatusChange = (order: any, newStatus: string) => {
     const phone = formatPhoneForWhatsApp(order.phone);
     let statusMessage = newStatus === "completed" 
-      ? "✅ تم إكمال طلب الصيانة بنجاح. شكرًا لثقتك بنا!" 
-      : "❌ تم إلغاء طلب الصيانة. للاستفسار، يرجى الاتصال بنا.";
+      ? "✅ تم إكمال طلب الصيانة بنجاح." 
+      : "❌ تم إلغاء طلب الصيانة.";
     
     const message = `📢 *تحديث حالة طلب الصيانة* 📢\n\n🔢 *كود الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n📝 *الحالة الجديدة:* ${statusMessage}`;
     window.open(`https://wa.me/\( {phone.replace(/\D/g, '')}?text= \){encodeURIComponent(message)}`, '_blank');
@@ -141,17 +141,25 @@ export default function TechnicianPortal() {
     checkActiveStatus();
   }, [techName]);
 
+  // جلب كل الأوردرات (القديمة والجديدة) بدون فلترة على الفني
   const fetchData = useCallback(async () => {
-    if (!techName || !isActive) return;
+    if (!isActive) return;
     try {
-      const data = await fetchAPI(`orders?technician=eq.${encodeURIComponent(techName)}&order=created_at.desc`);
+      const data = await fetchAPI(`orders?order=created_at.desc`);
       setOrders(data);
+
       const active = data.filter((o: any) => o.status === 'pending' || o.status === 'in-progress').length;
       const completed = data.filter((o: any) => o.status === 'completed').length;
-      const earnings = data.filter((o: any) => o.status === 'completed').reduce((acc: number, o: any) => acc + (o.technician_share || 0), 0);
+      const earnings = data.filter((o: any) => o.status === 'completed')
+        .reduce((acc: number, o: any) => acc + (o.technician_share || 0), 0);
+
       setStats({ active, completed, earnings });
-    } catch (err) { console.error(err); } finally { setLoading(false); }
-  }, [techName, isActive]);
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [isActive]);
 
   useEffect(() => {
     if (isActive) fetchData();
@@ -229,7 +237,6 @@ export default function TechnicianPortal() {
     });
     setShowSettleModal(false);
     
-    // إرسال إشعار للتصفية
     notifyAdmin("✅ تصفية وإكمال الأوردر", selectedOrder, 
       `المبلغ الكلي: ${settleForm.total_amount} ج.م | قطع غيار: ${settleForm.parts_cost} ج.م | مواصلات: ${settleForm.transport_cost} ج.م | صافي: ${settleForm.net_amount} ج.م`);
     
