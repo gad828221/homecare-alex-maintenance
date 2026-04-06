@@ -21,6 +21,7 @@ import BekoService from "./pages/BekoService";
 import HooverService from "./pages/HooverService";
 import IndesitService from "./pages/IndesitService";
 import ProtectedOrders from "./components/ProtectedOrders";
+import InvoicePage from "./pages/InvoicePage";  // <-- أضف هذا السطر
 import { Phone, MessageCircle } from "lucide-react";
 
 function Router() {
@@ -41,8 +42,9 @@ function Router() {
       <Route path={"/indesit-service"} component={IndesitService} />
       <Route path={"/orders"} component={ProtectedOrders} />
       <Route path={"/login"} component={Login} />
-<Route path={"/tech-portal"} component={TechPortal} />
-<Route path={"/data-entry"} component={DataEntry} />
+      <Route path={"/tech-portal"} component={TechPortal} />
+      <Route path={"/data-entry"} component={DataEntry} />
+      <Route path={"/invoice"} component={InvoicePage} />  {/* <-- أضف هذا السطر */}
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
@@ -52,7 +54,6 @@ function Router() {
 function FloatingButtons() {
   return (
     <div className="fixed bottom-6 left-0 right-0 flex justify-between px-4 pointer-events-none z-50">
-      {/* زر الاتصال (يمين) */}
       <a
         href="tel:01278885772"
         onClick={() => gtag('event', 'conversion', {'send_to': 'AW-16866300615/Hg5gCNz5nvkbEMelveo-'})}
@@ -62,8 +63,6 @@ function FloatingButtons() {
       >
         <Phone className="w-6 h-6" />
       </a>
-
-      {/* زر واتساب (يسار) */}
       <a
         href="https://wa.me/201558625259"
         target="_blank"
