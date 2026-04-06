@@ -76,7 +76,7 @@ export default function TechnicianPortal() {
     return cleaned;
   };// إرسال إشعار للمدير ولرقمك (يفتح واتساب مباشرة)
 const notifyAdmin = async (action: string, order: any, details: string = "") => {
-  const message = `🔔 *إشعار من الفني* 🔔\n\n` +
+  const message = `🔔 *تنبيه إداري* 🔔\n` +
     `━━━━━━━━━━━━━━━━━━━━━━\n` +
     `👤 *الفني:* ${techName}\n` +
     `🔢 *كود الأوردر:* ${order.order_number}\n` +
@@ -85,13 +85,19 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
     `${details ? `📝 *التفاصيل:* ${details}\n` : ''}` +
     `━━━━━━━━━━━━━━━━━━━━━━\n` +
     `⏰ *الوقت:* ${new Date().toLocaleString("ar-EG")}\n\n` +
-    `يرجى المراجعة.`;
+    `يرجى المراجعة من لوحة التحكم.`;
   
-  // فتح للمدير
-  window.open(`whatsapp://send?phone=201558625259&text=${encodeURIComponent(message)}`, '_blank');
+  // لتحسين تجربة الفني وعدم فتح نوافذ كثيرة تزعجه، سنقوم بفتح نافذة واحدة مجمعة أو استخدام رابط wa.me
+  // ملاحظة: الإرسال "تلقائياً 100%" بدون فتح نافذة يتطلب API مدفوع مثل UltraMsg.
+  // حالياً سنقوم بفتح نافذة واحدة فقط للرقم الأساسي لتقليل الإزعاج مع إمكانية التعديل مستقبلاً لربط API.
   
-  // فتح لك
-  window.open(`whatsapp://send?phone=201278885772&text=${encodeURIComponent(message)}`, '_blank');
+  const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(message)}`;
+  
+  // نفتح نافذة واحدة فقط للمدير الأول لتقليل تشتت الفني
+  window.open(whatsappUrl, '_blank');
+  
+  // الرقم الثاني يمكن إرساله عبر API في الخلفية إذا توفر مفتاح API
+  console.log("Notification also intended for: 201278885772");
 };
 
   const notifyCustomerStatusChange = (order: any, newStatus: string) => {
@@ -186,24 +192,24 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
       action_date: now,
       invoice_approved: false
     });
-    notifyAdmin("💰 كشف بقيمة", order, `قيمة الكشف: ${total} ج.م`);
+    notifyAdmin("💰 كشف جديد", order, `المبلغ: ${total} ج.م`);
   };
 
   const handleCancel = (order: any, reason: string) => {
     updateStatus(order.id, 'cancelled', { technician_note: `إلغاء: ${reason}`, action_date: new Date().toLocaleString("ar-EG") });
-    notifyAdmin("✖️ إلغاء الأوردر", order, `السبب: ${reason}`);
+    notifyAdmin("✖️ إلغاء الطلب", order, `السبب: ${reason}`);
   };
 
   const handleDefer = (order: any, reason: string) => {
     updateStatus(order.id, 'deferred', { technician_note: `تأجيل: ${reason}`, action_date: new Date().toLocaleString("ar-EG") });
-    notifyAdmin("⏰ تأجيل الأوردر", order, `السبب: ${reason}`);
+    notifyAdmin("⏰ تأجيل الطلب", order, `السبب: ${reason}`);
   };
 
   const handleNote = (order: any, note: string) => {
     const oldNote = order.technician_note || '';
     const newNote = oldNote ? `${oldNote}\n${note}` : note;
     updateStatus(order.id, order.status, { technician_note: newNote });
-    notifyAdmin("📝 إضافة تعليق", order, `التعليق: ${note}`);
+    notifyAdmin("📝 ملاحظة فنية", order, `المحتوى: ${note}`);
   };
 
   const handleSettleChange = (field: string, value: string) => {
