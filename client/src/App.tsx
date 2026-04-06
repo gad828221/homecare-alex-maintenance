@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Login from "./pages/LoginPage";
@@ -21,7 +22,7 @@ import BekoService from "./pages/BekoService";
 import HooverService from "./pages/HooverService";
 import IndesitService from "./pages/IndesitService";
 import ProtectedOrders from "./components/ProtectedOrders";
-import InvoicePage from "./pages/InvoicePage";  // <-- أضف هذا السطر
+import InvoicePage from "./pages/InvoicePage";
 import { Phone, MessageCircle } from "lucide-react";
 
 function Router() {
@@ -44,7 +45,7 @@ function Router() {
       <Route path={"/login"} component={Login} />
       <Route path={"/tech-portal"} component={TechPortal} />
       <Route path={"/data-entry"} component={DataEntry} />
-      <Route path={"/invoice"} component={InvoicePage} />  {/* <-- أضف هذا السطر */}
+      <Route path={"/invoice"} component={InvoicePage} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
@@ -87,6 +88,17 @@ function AppContent() {
 }
 
 function App() {
+  // منع الفني من رؤية الموقع العام
+  useEffect(() => {
+    const userRole = localStorage.getItem("userRole");
+    const currentPath = window.location.pathname;
+    const isTechPath = currentPath.includes("/tech-portal") || currentPath.startsWith("/tech/");
+    
+    if (userRole === "tech" && !isTechPath) {
+      window.location.href = "/tech-portal";
+    }
+  }, []);
+
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light">
