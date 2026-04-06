@@ -76,7 +76,7 @@ export default function TechnicianPortal() {
     return cleaned;
   };
 
-  // إرسال إشعار للمدير والأرقام المضافة مع فتح واتساب مباشرة
+  // إرسال إشعار للمدير ولرقمك مع فتح واتساب مباشرة
   const notifyAdmin = async (action: string, order: any, details: string = "") => {
     // أرقام المستلمين (المدير + رقمك)
     const phoneNumbers = ["201558625259", "201278885772"];
@@ -94,7 +94,7 @@ export default function TechnicianPortal() {
     
     // إرسال لكل رقم في القائمة (فتح واتساب مباشرة)
     for (const phone of phoneNumbers) {
-      const formattedPhone = phone.replace(/\D/g, ''); // إزالة أي أحرف غير أرقام
+      const formattedPhone = phone.replace(/\D/g, '');
       const whatsappUrl = `whatsapp://send?phone=${formattedPhone}&text=${encodeURIComponent(message)}`;
       window.location.href = whatsappUrl;
     }
