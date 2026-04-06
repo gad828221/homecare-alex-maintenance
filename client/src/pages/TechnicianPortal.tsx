@@ -76,30 +76,29 @@ export default function TechnicianPortal() {
     return cleaned;
   };
 
-  // إرسال إشعار للمدير ولرقمك
-  const notifyAdmin = async (action: string, order: any, details: string = "") => {
-    const adminPhone = "201558625259";
-    const yourPhone = "201278885772";
-    
-    const message = `🔔 *إشعار من الفني* 🔔\n\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `👤 *الفني:* ${techName}\n` +
-      `🔢 *كود الأوردر:* ${order.order_number}\n` +
-      `👤 *العميل:* ${order.customer_name}\n` +
-      `📋 *الإجراء:* ${action}\n` +
-      `${details ? `📝 *التفاصيل:* ${details}\n` : ''}` +
-      `━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `⏰ *الوقت:* ${new Date().toLocaleString("ar-EG")}\n\n` +
-      `يرجى المراجعة.`;
-    
-    // إرسال للمدير
-    const adminUrl = `https://wa.me/${adminPhone}?text=${encodeURIComponent(message)}`;
-    window.open(adminUrl, '_blank');
-    
-    // إرسال لك
-    const yourUrl = `https://wa.me/${yourPhone}?text=${encodeURIComponent(message)}`;
-    window.open(yourUrl, '_blank');
-  };
+// إرسال إشعار للمدير ولرقمك
+const notifyAdmin = async (action: string, order: any, details: string = "") => {
+  const message = `🔔 *إشعار من الفني* 🔔\n\n` +
+    `━━━━━━━━━━━━━━━━━━━━━━\n` +
+    `👤 *الفني:* ${techName}\n` +
+    `🔢 *كود الأوردر:* ${order.order_number}\n` +
+    `👤 *العميل:* ${order.customer_name}\n` +
+    `📋 *الإجراء:* ${action}\n` +
+    `${details ? `📝 *التفاصيل:* ${details}\n` : ''}` +
+    `━━━━━━━━━━━━━━━━━━━━━━\n` +
+    `⏰ *الوقت:* ${new Date().toLocaleString("ar-EG")}\n\n` +
+    `يرجى المراجعة.`;
+  
+  // فتح للمدير
+  setTimeout(() => {
+    window.open(`https://wa.me/201558625259?text=${encodeURIComponent(message)}`, '_blank');
+  }, 100);
+  
+  // فتح لك
+  setTimeout(() => {
+    window.open(`https://wa.me/201278885772?text=${encodeURIComponent(message)}`, '_blank');
+  }, 500);
+};
 
   const notifyCustomerStatusChange = (order: any, newStatus: string) => {
     const phone = formatPhoneForWhatsApp(order.phone);
