@@ -39,7 +39,6 @@ export default function ProtectedOrders() {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [filterTechStatus, setFilterTechStatus] = useState<'all' | 'active' | 'inactive'>('active');
   
-  // فلاتر الأوردرات
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterTechnician, setFilterTechnician] = useState('');
@@ -48,7 +47,6 @@ export default function ProtectedOrders() {
   const [filterDateTo, setFilterDateTo] = useState('');
   const [filterDelay, setFilterDelay] = useState<'all' | 'delayed'>('all');
   
-  // خيار "أخرى" للجهاز والماركة
   const [customDevice, setCustomDevice] = useState('');
   const [customBrand, setCustomBrand] = useState('');
   const [isOtherDevice, setIsOtherDevice] = useState(false);
@@ -68,7 +66,6 @@ export default function ProtectedOrders() {
   
   const [stats, setStats] = useState({ pending: 0, inProgress: 0, completed: 0, cancelled: 0, totalIncome: 0 });
 
-  // دالة حساب فارق الأيام
   const getDaysDifference = (dateStr: string) => {
     if (!dateStr || dateStr === 'null' || dateStr === 'undefined') return 0;
     let orderDate: Date;
@@ -134,7 +131,6 @@ export default function ProtectedOrders() {
   };
 
   const handleFormChange = (field: string, value: any) => {
-    // معالجة خيار "أخرى" للجهاز
     if (field === 'device_type') {
         if (value === 'other') {
             setIsOtherDevice(true);
@@ -144,7 +140,6 @@ export default function ProtectedOrders() {
             setIsOtherDevice(false);
         }
     }
-    // معالجة خيار "أخرى" للماركة
     if (field === 'brand') {
         if (value === 'other') {
             setIsOtherBrand(true);
@@ -165,6 +160,41 @@ export default function ProtectedOrders() {
     else if (cleaned.startsWith('1') && cleaned.length === 10) cleaned = '+20' + cleaned;
     else if (!cleaned.startsWith('+')) cleaned = '+20' + cleaned;
     return cleaned;
+  };
+
+  // إرسال بيانات الدخول للفني عبر واتساب
+  const sendTechCredentials = async (tech: any) => {
+    const techLink = `${window.location.origin}/login`;
+    const username = tech.username || "غير محدد";
+    const password = tech.password || "tech123";
+    const phone = tech.phone;
+    
+    if (!phone) {
+      alert("رقم هاتف الفني غير موجود");
+      return;
+    }
+    
+    const message = `🔧 *بيانات دخول بوابة الفنيين* 🔧\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `👤 *الفني:* ${tech.name}\n` +
+      `🔗 *رابط الدخول:* ${techLink}\n` +
+      `👤 *اسم المستخدم:* ${username}\n` +
+      `🔑 *كلمة المرور:* ${password}\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+      `📝 *شرح الاستخدام:*\n` +
+      `1️⃣ اضغط على رابط الدخول أعلاه.\n` +
+      `2️⃣ اختر دور "🔧 الفني (Technician)".\n` +
+      `3️⃣ أدخل اسم المستخدم وكلمة المرور الخاصة بك.\n` +
+      `4️⃣ ستظهر لك الأوردرات الموكلة إليك.\n` +
+      `5️⃣ يمكنك:\n` +
+      `   • الاتصال بالعميل\n` +
+      `   • بدء العمل\n` +
+      `   • تصفية الأوردر بعد الإكمال\n` +
+      `   • كشف بقيمة، تأجيل، إلغاء، أو إضافة تعليق\n\n` +
+      `شكراً لتعاونك. 🌟`;
+    
+    const formattedPhone = formatPhoneForWhatsApp(phone);
+    window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const notifyCustomerStatusChange = (order: any, newStatus: string) => {
@@ -235,7 +265,6 @@ export default function ProtectedOrders() {
     const orderNumber = `MG-${Date.now()}`;
     const orderDate = formData.date || new Date().toLocaleDateString("ar-EG");
     
-    // استخدام القيم المخصصة إذا تم اختيار "أخرى"
     const finalDeviceType = isOtherDevice ? customDevice : formData.device_type;
     const finalBrand = isOtherBrand ? customBrand : formData.brand;
     
@@ -452,7 +481,6 @@ export default function ProtectedOrders() {
               <button onClick={() => { setEditingOrder(null); resetForm(); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-2xl text-sm font-bold flex items-center gap-2"><Plus className="w-5 h-5" /> أوردر جديد</button>
             </div>
 
-            {/* فلاتر متقدمة */}
             <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
               <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="bg-slate-900 border border-slate-800 rounded-2xl px-4 py-2 text-sm">
                 <option value="all">جميع الحالات</option><option value="pending">⏳ قيد الانتظار</option><option value="in-progress">🔧 قيد التنفيذ</option><option value="completed">✅ مكتمل</option><option value="cancelled">❌ ملغي</option><option value="deferred">📅 مؤجل</option><option value="inspected">💰 تم الكشف</option>
@@ -466,8 +494,6 @@ export default function ProtectedOrders() {
               <div className="flex gap-2"><button onClick={() => setFilterDelay(filterDelay === 'delayed' ? 'all' : 'delayed')} className={`px-3 py-1 rounded-full text-xs ${filterDelay === 'delayed' ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300'}`}>⚠️ المتأخرة فقط</button></div>
               <button onClick={clearAllFilters} className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-1 rounded-full text-xs">مسح جميع الفلاتر</button>
             </div>
-
-            {/* قائمة الأوردرات */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredOrders.map(order => (
                 <div key={order.id} className="bg-slate-900 rounded-3xl p-5 border border-slate-800 hover:border-slate-700 transition-all relative overflow-hidden">
@@ -522,6 +548,13 @@ export default function ProtectedOrders() {
                       <button onClick={() => { setEditingTech(tech); setTechForm({ ...tech, password: '' }); setShowTechModal(true); }} className="flex-1 p-2 bg-slate-800 text-slate-400 rounded-xl hover:bg-slate-700"><Edit className="w-4 h-4 mx-auto" /></button>
                       <button onClick={() => deleteTechnician(tech.id)} className="flex-1 p-2 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20"><Trash2 className="w-4 h-4 mx-auto" /></button>
                       <button onClick={() => toggleTechnicianActive(tech)} className={`flex-1 p-2 rounded-xl ${tech.is_active !== false ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>{tech.is_active !== false ? 'نشط' : 'غير نشط'}</button>
+                      {/* زر إرسال بيانات الدخول للفني */}
+                      <button 
+                        onClick={() => sendTechCredentials(tech)}
+                        className="flex-1 p-2 bg-green-600/20 text-green-500 rounded-xl hover:bg-green-600 hover:text-white transition-all"
+                      >
+                        📤 إرسال بيانات الدخول
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -546,7 +579,7 @@ export default function ProtectedOrders() {
         )}
       </main>
 
-      {/* Order Modal مع خيار "أخرى" */}
+      {/* Order Modal */}
       {showOrderModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl shadow-2xl my-auto">
@@ -559,7 +592,6 @@ export default function ProtectedOrders() {
               </div>
               <div className="border-t border-slate-800 pt-4"><h3 className="text-sm font-bold text-white mb-3">🔧 بيانات الجهاز</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* جهاز - مع خيار أخرى */}
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-slate-500 uppercase pr-2">نوع الجهاز</label>
                     {!isOtherDevice ? (
@@ -575,7 +607,6 @@ export default function ProtectedOrders() {
                       </div>
                     )}
                   </div>
-                  {/* ماركة - مع خيار أخرى */}
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-slate-500 uppercase pr-2">الماركة</label>
                     {!isOtherBrand ? (
