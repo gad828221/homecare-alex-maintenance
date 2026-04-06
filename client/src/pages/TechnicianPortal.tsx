@@ -52,10 +52,10 @@ export default function TechnicianPortal() {
     const currentUser = localStorage.getItem("currentUser");
     
     if (userRole !== "tech" || !currentUser) {
-      setLocation("/login");
+      window.location.href = "/login";
       return;
     }
-  }, [setLocation]);
+  }, []);
 
   // دالة للتحقق من مرور 3 أيام على إكمال الأوردر (لإخفاء رقم الهاتف)
   const isPhoneHidden = (order: any) => {
@@ -103,9 +103,9 @@ export default function TechnicianPortal() {
     if (nameFromUrl) {
       setTechName(decodeURIComponent(nameFromUrl));
     } else {
-      setLocation("/login");
+      window.location.href = "/login";
     }
-  }, [setLocation]);
+  }, []);
 
   // التحقق من حالة الفني (نشط/غير نشط)
   useEffect(() => {
@@ -250,9 +250,9 @@ export default function TechnicianPortal() {
           <div className="flex items-center gap-3"><Wrench className="w-6 h-6 text-orange-400" /><div><h1 className="text-lg font-bold text-white">بوابة الفنيين</h1><p className="text-xs text-orange-400">{techName}</p></div></div>
           <button 
             onClick={() => {
-              localStorage.removeItem("userRole");
-              localStorage.removeItem("currentUser");
-              setLocation("/login");
+              localStorage.clear();
+              sessionStorage.clear();
+              window.location.href = "/login";
             }} 
             className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg"
           >
