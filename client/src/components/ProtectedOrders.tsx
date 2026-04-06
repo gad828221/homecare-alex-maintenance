@@ -3,7 +3,7 @@ import {
   Plus, Download, Search, LayoutDashboard, Users, 
   Clock, CheckCircle2, AlertCircle, XCircle, 
   Edit, Trash2, RefreshCw, Phone,
-  TrendingUp, Wallet, PieChart, Calendar, Copy, Check, MapPin
+  TrendingUp, Wallet, PieChart, Calendar, Copy, Check, MapPin, Filter, MoreVertical
 } from "lucide-react";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -34,10 +34,10 @@ export default function ProtectedOrders() {
   const [editingTech, setEditingTech] = useState<any>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   
+  // Restore user's formData structure (using expenses)
   const [formData, setFormData] = useState({
     customer_name: '', phone: '', device: '', address: '', brand: '', problem: '', technician: '',
-    status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, 
-    net_amount: 0, company_share: 0, technician_share: 0, is_paid: false
+    status: 'pending', total_amount: 0, expenses: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false
   });
 
   const [customDevice, setCustomDevice] = useState('');
@@ -81,10 +81,9 @@ export default function ProtectedOrders() {
 
   const calculateAmounts = (data: any) => {
     const total = parseFloat(data.total_amount) || 0;
-    const parts = parseFloat(data.parts_cost) || 0;
-    const transport = parseFloat(data.transport_cost) || 0;
+    const expenses = parseFloat(data.expenses) || 0;
     
-    const net = total - parts - transport;
+    const net = total - expenses;
     const companyShare = Math.round(net * 0.5); 
     const techShare = net - companyShare;
     
@@ -147,8 +146,7 @@ export default function ProtectedOrders() {
   const resetForm = () => {
     setFormData({
         customer_name: '', phone: '', device: '', address: '', brand: '', problem: '', technician: '',
-        status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, 
-        net_amount: 0, company_share: 0, technician_share: 0, is_paid: false
+        status: 'pending', total_amount: 0, expenses: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false
     });
     setCustomDevice('');
     setCustomBrand('');
@@ -229,7 +227,10 @@ export default function ProtectedOrders() {
             <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-900/20">
               <LayoutDashboard className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-lg font-bold text-white">لوحة تحكم المدير</h1>
+            <div>
+              <h1 className="text-lg font-bold text-white leading-none">لوحة التحكم</h1>
+              <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wider font-bold">Maintenance Guide</p>
+            </div>
           </div>
           <button onClick={fetchData} className="p-2 text-slate-400 hover:text-white transition-all"><RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} /></button>
         </div>
@@ -304,8 +305,8 @@ export default function ProtectedOrders() {
                     <div className="grid grid-cols-2 gap-2 py-3 border-y border-slate-800/50">
                       <div><p className="text-[10px] text-slate-500 font-bold uppercase">الإجمالي</p><p className="text-xs text-white font-bold">{order.total_amount || 0} ج.م</p></div>
                       <div><p className="text-[10px] text-slate-500 font-bold uppercase">الصافي</p><p className="text-xs text-green-500 font-bold">{order.net_amount || 0} ج.م</p></div>
-                      <div><p className="text-[10px] text-slate-500 font-bold uppercase">قطع الغيار</p><p className="text-xs text-red-400 font-bold">{order.parts_cost || 0} ج.م</p></div>
-                      <div><p className="text-[10px] text-slate-500 font-bold uppercase">المواصلات</p><p className="text-xs text-blue-400 font-bold">{order.transport_cost || 0} ج.م</p></div>
+                      <div><p className="text-[10px] text-slate-500 font-bold uppercase">المصاريف</p><p className="text-xs text-red-400 font-bold">{order.expenses || 0} ج.م</p></div>
+                      <div><p className="text-[10px] text-slate-500 font-bold uppercase">التاريخ</p><p className="text-[10px] text-slate-400 font-bold">{order.date}</p></div>
                     </div>
                     <div className="flex justify-between items-center pt-1">
                       <div><p className="text-[10px] text-slate-500 font-bold uppercase">الفني</p><p className="text-sm font-black text-orange-400">{order.technician || 'لم يحدد'}</p></div>
@@ -366,7 +367,7 @@ export default function ProtectedOrders() {
                 <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700 shadow-inner">
                   <AlertCircle className="w-8 h-8 text-red-500 mb-4" />
                   <p className="text-slate-400 text-xs font-bold mb-1 uppercase tracking-widest">إجمالي المصاريف</p>
-                  <p className="text-3xl font-black text-white">{orders.reduce((acc, o) => acc + (o.parts_cost || 0) + (o.transport_cost || 0), 0).toLocaleString()} ج.م</p>
+                  <p className="text-3xl font-black text-white">{orders.reduce((acc, o) => acc + (o.expenses || 0), 0).toLocaleString()} ج.م</p>
                 </div>
                 <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700 shadow-inner">
                   <CheckCircle2 className="w-8 h-8 text-green-500 mb-4" />
@@ -437,10 +438,9 @@ export default function ProtectedOrders() {
                 <div className="space-y-1 md:col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">الفني المكلف</label><select value={formData.technician} onChange={(e) => handleFormChange('technician', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-3 text-sm outline-none focus:border-orange-500 transition-all"><option value="">اختر فني</option>{technicians.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}</select></div>
               </div>
               
-              <div className="grid grid-cols-3 gap-4 pt-6 border-t border-slate-800">
+              <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-800">
                 <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">الإجمالي</label><input type="number" value={formData.total_amount} onChange={(e) => handleFormChange('total_amount', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-4 py-3 text-sm outline-none focus:border-orange-500 transition-all" /></div>
-                <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">قطع الغيار</label><input type="number" value={formData.parts_cost} onChange={(e) => handleFormChange('parts_cost', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-4 py-3 text-sm outline-none focus:border-orange-500 transition-all" /></div>
-                <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">المواصلات</label><input type="number" value={formData.transport_cost} onChange={(e) => handleFormChange('transport_cost', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-4 py-3 text-sm outline-none focus:border-orange-500 transition-all" /></div>
+                <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">المصاريف</label><input type="number" value={formData.expenses} onChange={(e) => handleFormChange('expenses', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-4 py-3 text-sm outline-none focus:border-orange-500 transition-all" /></div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 p-5 bg-slate-950 rounded-3xl border border-slate-800 shadow-inner">
@@ -462,7 +462,7 @@ export default function ProtectedOrders() {
       {/* Technician Modal */}
       {showTechModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] w-full max-w-md shadow-2xl overflow-hidden">
+          <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] w-full max-md shadow-2xl overflow-hidden">
             <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
               <h2 className="text-xl font-black text-white">{editingTech ? 'تعديل فني' : 'فني جديد'}</h2>
               <button onClick={() => setShowTechModal(false)} className="p-2 text-slate-500 hover:text-white transition-all"><XCircle className="w-6 h-6" /></button>
