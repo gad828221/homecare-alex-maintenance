@@ -29,9 +29,11 @@ export default function ProtectedOrders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [technicians, setTechnicians] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'orders' | 'technicians' | 'reports'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'technicians' | 'reports' | 'invoices'>('orders');
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showTechModal, setShowTechModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [editingOrder, setEditingOrder] = useState<any>(null);
   const [editingTech, setEditingTech] = useState<any>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
@@ -271,10 +273,11 @@ export default function ProtectedOrders() {
           </div>
         </div>
 
-        <div className="flex gap-1 bg-slate-900 p-1 rounded-2xl border border-slate-800 mb-6 w-fit">
-          <button onClick={() => setActiveTab('orders')} className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'orders' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-500'}`}>الأوردرات</button>
-          <button onClick={() => setActiveTab('technicians')} className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'technicians' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-500'}`}>الفنيين</button>
-          <button onClick={() => setActiveTab('reports')} className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'reports' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-500'}`}>التقارير</button>
+        <div className="flex gap-1 bg-slate-900 p-1 rounded-2xl border border-slate-800 mb-6 w-fit overflow-x-auto">
+          <button onClick={() => setActiveTab('orders')} className={`px-6 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'orders' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-500'}`}>الأوردرات</button>
+          <button onClick={() => setActiveTab('technicians')} className={`px-6 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'technicians' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-500'}`}>الفنيين</button>
+          <button onClick={() => setActiveTab('invoices')} className={`px-6 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'invoices' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-500'}`}>الفواتير</button>
+          <button onClick={() => setActiveTab('reports')} className={`px-6 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'reports' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-500'}`}>التقارير</button>
         </div>
 
         {activeTab === 'orders' && (
@@ -358,6 +361,38 @@ export default function ProtectedOrders() {
               <Plus className="w-8 h-8" />
               <span className="font-bold">إضافة فني</span>
             </button>
+          </div>
+        )}
+
+        {activeTab === 'invoices' && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-black text-white mb-4">مراجعة فواتير الفنيين</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {orders.filter(o => o.status === 'completed' && !o.invoice_approved).map(order => (
+                <div key={order.id} className="bg-slate-900 p-6 rounded-3xl border border-slate-800 flex justify-between items-center">
+                  <div>
+                    <h3 className="font-bold text-white">{order.customer_name}</h3>
+                    <p className="text-xs text-slate-500">الفني: {order.technician}</p>
+                    <p className="text-sm text-orange-500 font-bold mt-1">المبلغ: {order.total_amount} ج.م</p>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      if(confirm('هل توافق على هذه الفاتورة؟')) {
+                        fetchAPI(`orders?id=eq.${order.id}`, { method: 'PATCH', body: JSON.stringify({ invoice_approved: true }) });
+                        addNotification({ type: 'success', title: '✅ تم الاعتماد', message: 'تم اعتماد الفاتورة بنجاح', duration: 3000 });
+                        fetchData();
+                      }
+                    }}
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all"
+                  >
+                    اعتماد الفاتورة
+                  </button>
+                </div>
+              ))}
+              {orders.filter(o => o.status === 'completed' && !o.invoice_approved).length === 0 && (
+                <p className="text-slate-500 text-center col-span-2 py-10">لا توجد فواتير معلقة للمراجعة حالياً.</p>
+              )}
+            </div>
           </div>
         )}
 
