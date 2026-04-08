@@ -76,6 +76,13 @@ export default function ProtectedOrders() {
 
   useEffect(() => {
     fetchData();
+    // إشعار ترحيبي للتأكد من عمل النظام
+    addNotification({
+      type: 'info',
+      title: '👋 أهلاً بك يا مدير',
+      message: 'نظام الإشعارات والتنبيهات الصوتية نشط الآن',
+      duration: 5000
+    });
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, [fetchData]);
