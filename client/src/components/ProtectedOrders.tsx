@@ -1,4 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNotification } from "@/hooks/useNotification";
+import { NotificationCenter } from "@/components/NotificationCenter";
+import { InvoiceApprovalModal } from "@/components/InvoiceApprovalModal";
+import { whatsappService } from "@/services/whatsappService";
 import { 
   Plus, Download, Search, LayoutDashboard, Users, 
   Clock, CheckCircle2, AlertCircle, XCircle, 
@@ -24,6 +28,7 @@ const fetchAPI = async (endpoint: string, options?: RequestInit) => {
 };
 
 export default function ProtectedOrders() {
+  const { notifications, addNotification, removeNotification } = useNotification();
   const [orders, setOrders] = useState<any[]>([]);
   const [technicians, setTechnicians] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -476,6 +481,9 @@ export default function ProtectedOrders() {
           </div>
         </div>
       )}
+      
+      {/* Notification Center */}
+      <NotificationCenter notifications={notifications} onRemove={removeNotification} />
     </div>
   );
 }
