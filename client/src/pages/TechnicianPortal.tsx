@@ -6,6 +6,7 @@ import {
   Play, FileCheck, DollarSign, CalendarX, Ban, MessageSquare
 } from "lucide-react";
 import { useLocation } from "wouter";
+import { useNotification } from "../components/NotificationSystem";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -25,6 +26,7 @@ const fetchAPI = async (endpoint: string, options?: RequestInit) => {
 };
 
 export default function TechnicianPortal() {
+  const { addNotification } = useNotification();
   const [, setLocation] = useLocation();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,15 +102,9 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
   console.log("Notification also intended for: 201278885772");
 };
 
+  // تم حذف إرسال واتساب للعميل بناءً على طلب المدير ليكون التواصل للمدير فقط
   const notifyCustomerStatusChange = (order: any, newStatus: string) => {
-    const phone = formatPhoneForWhatsApp(order.phone);
-    let statusMessage = "";
-    if (newStatus === "completed") statusMessage = "✅ تم إكمال طلب الصيانة بنجاح. شكرًا لثقتك بنا!";
-    else if (newStatus === "cancelled") statusMessage = "❌ تم إلغاء طلب الصيانة. للاستفسار، يرجى الاتصال بنا.";
-    else return;
-    const message = `📢 *تحديث حالة طلب الصيانة* 📢\n\n🔢 *كود الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n📝 *الحالة الجديدة:* ${statusMessage}\n\nشكرًا لتواصلك معنا. 🌟`;
-    const whatsappUrl = `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    console.log(`Status changed to ${newStatus} for order ${order.order_number}. Customer notification disabled by Admin.`);
   };
 
   useEffect(() => {
@@ -169,9 +165,21 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
         method: 'PATCH',
         body: JSON.stringify(updateData)
       });
+      addNotification({
+        type: 'success',
+        title: '✅ تم التحديث',
+        message: 'تم حفظ التغييرات وإرسال إشعار للمدير',
+        duration: 3000
+      });
       fetchData();
-      if (oldOrder && oldOrder.status !== newStatus && (newStatus === 'completed' || newStatus === 'cancelled')) {
-        notifyCustomerStatusChange(oldOrder, newStatus);
+      if (oldOrder && oldOrder.status !== newStatus) {
+        // يتم إخطار المدير فقط بأي تغيير في الحالة
+        let statusAr = newStatus;
+        if(newStatus === 'completed') statusAr = "تم التنفيذ ✅";
+        if(newStatus === 'cancelled') statusAr = "ملغي ❌";
+        if(newStatus === 'inspected') statusAr = "تم الكشف 💰";
+        if(newStatus === 'deferred') statusAr = "مؤجل ⏰";
+        notifyAdmin(`تغيير حالة الأوردر إلى: ${statusAr}`, oldOrder);
       }
     } catch (err) { console.error(err); }
   };
