@@ -3,7 +3,7 @@ import {
   Plus, Search, LayoutDashboard, Users, 
   CheckCircle2, AlertCircle, 
   Edit, Trash2, RefreshCw, Phone,
-  Copy, Check, Trash, Bell, DollarSign, X
+  Copy, Check, Trash, Bell, DollarSign, X, Filter
 } from "lucide-react";
 import { useNotification } from "./NotificationSystem";
 import { InvoiceApprovalModal } from "./InvoiceApprovalModal";
@@ -43,7 +43,6 @@ export default function ProtectedOrders() {
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [selectedOrderForInvoice, setSelectedOrderForInvoice] = useState<any>(null);
   
-  // مودال إدخال قيمة الكشف
   const [showInspectModal, setShowInspectModal] = useState(false);
   const [selectedOrderForInspect, setSelectedOrderForInspect] = useState<any>(null);
   const [inspectAmount, setInspectAmount] = useState('');
@@ -62,8 +61,80 @@ export default function ProtectedOrders() {
   
   const [techForm, setTechForm] = useState({ name: '', phone: '', specialization: '', is_active: true });
   const [stats, setStats] = useState({ pending: 0, inProgress: 0, inspected: 0, completed: 0, cancelled: 0, totalIncome: 0 });
+  
+  // --- الفلاتر الاحترافية ---
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterTechnician, setFilterTechnician] = useState('');
+  const [filterDeviceType, setFilterDeviceType] = useState('');
+  const [filterBrand, setFilterBrand] = useState('');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Helper: تحويل الرقم إلى صيغة واتساب مصرية (تصلح لأي رقم)
+  const formatPhoneForWhatsApp = (phone: string) => {
+    if (!phone) return '';
+    // إزالة أي أحرف غير أرقام
+    let cleaned = phone.toString().replace(/[^\d+]/g, '');
+    // إذا كان يبدأ بـ 0 نبدله بـ 20
+    if (cleaned.startsWith('0')) cleaned = '20' + cleaned.substring(1);
+    // إذا كان يبدأ بـ 1 (مثل 1xxxxxxxxx) نضيف 20
+    else if (cleaned.startsWith('1') && cleaned.length === 10) cleaned = '20' + cleaned;
+    // إذا لم يبدأ بـ 20 نضيف 20
+    else if (!cleaned.startsWith('20')) cleaned = '20' + cleaned;
+    return cleaned;
+  };
+
+  // إرسال واتساب للفني عند إضافة أوردر جديد
+  const sendWhatsAppToTechnician = (technicianName: string, orderData: any) => {
+    const tech = technicians.find(t => t.name === technicianName);
+    if (!tech || !tech.phone) {
+      addNotification({ type: 'error', title: '⚠️ خطأ', message: 'رقم الفني غير موجود', duration: 3000 });
+      return;
+    }
+    const phone = formatPhoneForWhatsApp(tech.phone);
+    const message = `🔧 *أوردر صيانة جديد* 🔧\n\n` +
+      `🔢 *رقم الأوردر:* ${orderData.order_number || 'جديد'}\n` +
+      `👤 *العميل:* ${orderData.customer_name}\n` +
+      `📞 *هاتف العميل:* ${orderData.phone}\n` +
+      `📍 *العنوان:* ${orderData.address || 'غير محدد'}\n` +
+      `🔧 *الجهاز:* ${orderData.device_type} - ${orderData.brand}\n` +
+      `⚠️ *المشكلة:* ${orderData.problem_description || 'غير محددة'}\n` +
+      `💰 *الإجمالي:* ${orderData.total_amount} ج.م\n\n` +
+      `يرجى التوجه للعميل في أقرب وقت. شكراً لك.`;
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
+  // إرسال واتساب للعميل عند تغيير الحالة (من المدير فقط)
+  const sendWhatsAppToCustomer = (order: any, newStatus: string, extraAmount?: number) => {
+    const phone = formatPhoneForWhatsApp(order.phone);
+    let statusMessage = "";
+    switch (newStatus) {
+      case 'in-progress':
+        statusMessage = "🔧 تم بدء العمل على طلبك بواسطة الفني.";
+        break;
+      case 'inspected':
+        statusMessage = `🔍 تم الكشف على جهازك بقيمة ${extraAmount || order.inspection_amount || 0} ج.م. سيتم إبلاغك بالخطوات التالية.`;
+        break;
+      case 'completed':
+        statusMessage = "✅ تم إكمال طلب الصيانة بنجاح. شكراً لثقتك بنا!";
+        break;
+      case 'cancelled':
+        statusMessage = "❌ تم إلغاء طلب الصيانة. للاستفسار، يرجى الاتصال بنا.";
+        break;
+      default:
+        return;
+    }
+    const message = `📢 *تحديث حالة طلب الصيانة* 📢\n\n` +
+      `🔢 *رقم الأوردر:* ${order.order_number}\n` +
+      `👤 *العميل:* ${order.customer_name}\n` +
+      `📝 *الحالة الجديدة:* ${statusMessage}\n\n` +
+      `شكراً لتواصلك معنا. 🌟`;
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
 
   // جلب الإشعارات
   const fetchNotifications = useCallback(async () => {
@@ -133,15 +204,6 @@ export default function ProtectedOrders() {
     setFormData(calculateAmounts(updated));
   };
 
-  const formatPhoneForWhatsApp = (phone: string) => {
-    if (!phone) return '';
-    let cleaned = phone.toString().replace(/[^\d+]/g, '');
-    if (cleaned.startsWith('0')) cleaned = '+20' + cleaned.substring(1);
-    else if (cleaned.startsWith('1') && cleaned.length === 10) cleaned = '+20' + cleaned;
-    else if (!cleaned.startsWith('+')) cleaned = '+20' + cleaned;
-    return cleaned;
-  };
-
   const saveOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     const orderNumber = `MG-${Date.now()}`;
@@ -162,6 +224,11 @@ export default function ProtectedOrders() {
       } else {
         await fetchAPI('orders', { method: 'POST', body: JSON.stringify(orderToSave) });
         addNotification({ type: 'success', title: '🎉 أوردر جديد', message: `تم إضافة أوردر لـ ${formData.customer_name}`, duration: 4000 });
+        
+        // إرسال واتساب للفني
+        if (formData.technician) {
+          sendWhatsAppToTechnician(formData.technician, orderToSave);
+        }
       }
       setShowOrderModal(false);
       setEditingOrder(null);
@@ -239,25 +306,28 @@ export default function ProtectedOrders() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // تغيير حالة الأوردر (مع دعم الكشف بقيمة مالية)
+  // تغيير حالة الأوردر مع إرسال واتساب للعميل
   const handleStatusChange = async (order: any, newStatus: string) => {
     if (newStatus === 'inspected') {
-      // فتح مودال لإدخال قيمة الكشف
       setSelectedOrderForInspect(order);
       setInspectAmount('');
       setShowInspectModal(true);
       return;
     }
     
-    // تغيير مباشر للحالات الأخرى
     try {
       await fetchAPI(`orders?id=eq.${order.id}`, { method: 'PATCH', body: JSON.stringify({ status: newStatus }) });
       addNotification({ type: 'success', title: '🔄 تغيير الحالة', message: `تم تغيير حالة الأوردر إلى ${newStatus === 'pending' ? 'قيد الانتظار' : newStatus === 'in-progress' ? 'قيد التنفيذ' : newStatus === 'completed' ? 'مكتمل' : 'ملغي'}`, duration: 3000 });
+      
+      if (newStatus !== 'pending') {
+        sendWhatsAppToCustomer(order, newStatus);
+      }
+      
       fetchData();
     } catch (err) { console.error(err); }
   };
 
-  // حفظ قيمة الكشف وتحديث الحالة
+  // حفظ قيمة الكشف وإرسال واتساب للعميل
   const saveInspection = async () => {
     const amount = parseFloat(inspectAmount);
     if (isNaN(amount) || amount <= 0) {
@@ -283,6 +353,11 @@ export default function ProtectedOrders() {
         })
       });
       addNotification({ type: 'success', title: '💰 تم الكشف', message: `تم تسجيل كشف بقيمة ${amount} ج.م`, duration: 4000 });
+      
+      // إرسال واتساب للعميل بقيمة الكشف
+      const updatedOrder = { ...selectedOrderForInspect, inspection_amount: amount };
+      sendWhatsAppToCustomer(updatedOrder, 'inspected', amount);
+      
       setShowInspectModal(false);
       fetchData();
     } catch (err) { console.error(err); }
@@ -305,34 +380,70 @@ export default function ProtectedOrders() {
     }
   };
 
+  // إرسال الفاتورة عبر واتساب (تعمل 100%)
   const handleInvoiceApprove = async (warranty: string) => {
-    await fetchAPI(`orders?id=eq.${selectedOrderForInvoice.id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ warranty_text: warranty, invoice_approved: true })
-    });
-    
-    // إرسال واتساب للعميل مباشرة
-    const phone = formatPhoneForWhatsApp(selectedOrderForInvoice.phone);
-    const message = `📄 *فاتورة الصيانة - ضمان* 📄\n\nشكراً لثقتك بنا.\n\nالجهاز: ${selectedOrderForInvoice.device_type || selectedOrderForInvoice.device} - ${selectedOrderForInvoice.brand}\nالمبلغ: ${selectedOrderForInvoice.total_amount} ج.م\nالضمان: ${warranty}\n\nللاستفسار: 01278885772`;
-    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-    
-    addNotification({ type: 'success', title: '✅ تمت الموافقة', message: 'تم إرسال الفاتورة للعميل', duration: 4000 });
-    setShowInvoiceModal(false);
-    fetchData();
+    try {
+      await fetchAPI(`orders?id=eq.${selectedOrderForInvoice.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ warranty_text: warranty, invoice_approved: true })
+      });
+      
+      const phone = formatPhoneForWhatsApp(selectedOrderForInvoice.phone);
+      const message = `📄 *فاتورة الصيانة - ضمان* 📄\n\n` +
+        `شكراً لثقتك بنا.\n\n` +
+        `🔢 *رقم الأوردر:* ${selectedOrderForInvoice.order_number}\n` +
+        `👤 *العميل:* ${selectedOrderForInvoice.customer_name}\n` +
+        `🔧 *الجهاز:* ${selectedOrderForInvoice.device_type || selectedOrderForInvoice.device} - ${selectedOrderForInvoice.brand}\n` +
+        `💰 *المبلغ:* ${selectedOrderForInvoice.total_amount} ج.م\n` +
+        `🛡️ *الضمان:* ${warranty}\n\n` +
+        `للاستفسار: 01278885772`;
+      
+      const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+      
+      addNotification({ type: 'success', title: '✅ تمت الموافقة', message: 'تم فتح واتساب العميل لإرسال الفاتورة', duration: 4000 });
+      setShowInvoiceModal(false);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      addNotification({ type: 'error', title: '❌ خطأ', message: 'حدث خطأ أثناء إرسال الفاتورة', duration: 4000 });
+    }
   };
 
   const handleSendWhatsApp = (link: string) => {
     window.open(link, '_blank');
   };
 
+  // تطبيق الفلاتر على الأوردرات
   const filteredOrders = orders.filter(o => {
     const matchesSearch = o.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           o.phone?.includes(searchTerm) || 
                           (o.technician?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || o.status === filterStatus;
-    return matchesSearch && matchesFilter;
+    const matchesStatus = filterStatus === 'all' || o.status === filterStatus;
+    const matchesTechnician = !filterTechnician || o.technician === filterTechnician;
+    const matchesDeviceType = !filterDeviceType || o.device_type === filterDeviceType;
+    const matchesBrand = !filterBrand || o.brand === filterBrand;
+    let matchesDate = true;
+    if (filterDateFrom && o.date) {
+      const orderDate = o.date.split('/').reverse().join('-'); // تحويل dd/mm/yyyy إلى yyyy-mm-dd
+      if (orderDate < filterDateFrom) matchesDate = false;
+    }
+    if (filterDateTo && o.date && matchesDate) {
+      const orderDate = o.date.split('/').reverse().join('-');
+      if (orderDate > filterDateTo) matchesDate = false;
+    }
+    return matchesSearch && matchesStatus && matchesTechnician && matchesDeviceType && matchesBrand && matchesDate;
   });
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setFilterStatus('all');
+    setFilterTechnician('');
+    setFilterDeviceType('');
+    setFilterBrand('');
+    setFilterDateFrom('');
+    setFilterDateTo('');
+  };
 
   if (loading && orders.length === 0) return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -372,22 +483,51 @@ export default function ProtectedOrders() {
           <button onClick={() => setActiveTab('notifications')} className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1 ${activeTab === 'notifications' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}><Bell className="w-4 h-4" /> الإشعارات ({notifications.length})</button>
         </div>
 
-        {/* ================== الأوردرات ================== */}
+        {/* ================== الأوردرات مع فلتر احترافي ================== */}
         {activeTab === 'orders' && (
           <div className="space-y-4">
-            <div className="flex flex-wrap gap-4 mb-4">
-              <div className="relative flex-1"><Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" /><input type="text" placeholder="بحث..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-2xl py-3 pr-12 pl-4 text-sm" /></div>
-              <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm">
-                <option value="all">الكل</option>
-                <option value="pending">قيد الانتظار</option>
-                <option value="in-progress">قيد التنفيذ</option>
-                <option value="inspected">تم الكشف</option>
-                <option value="completed">مكتمل</option>
-                <option value="cancelled">ملغي</option>
-              </select>
+            {/* شريط البحث الأساسي وزر الفلتر */}
+            <div className="flex flex-wrap gap-3 items-center">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                <input type="text" placeholder="بحث (عميل، هاتف، فني)..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-2xl py-3 pr-12 pl-4 text-sm" />
+              </div>
+              <button onClick={() => setShowFilters(!showFilters)} className="bg-slate-800 hover:bg-slate-700 px-4 py-3 rounded-2xl text-sm font-bold flex items-center gap-2"><Filter className="w-4 h-4" /> {showFilters ? 'إخفاء الفلاتر' : 'فلاتر متقدمة'}</button>
               <button onClick={() => { setEditingOrder(null); resetForm(); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 px-6 py-3 rounded-2xl text-sm font-bold flex items-center gap-2"><Plus className="w-5 h-5" /> أوردر جديد</button>
             </div>
 
+            {/* الفلاتر المتقدمة */}
+            {showFilters && (
+              <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm">
+                  <option value="all">كل الحالات</option>
+                  <option value="pending">قيد الانتظار</option>
+                  <option value="in-progress">قيد التنفيذ</option>
+                  <option value="inspected">تم الكشف</option>
+                  <option value="completed">مكتمل</option>
+                  <option value="cancelled">ملغي</option>
+                </select>
+                <select value={filterTechnician} onChange={e => setFilterTechnician(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm">
+                  <option value="">كل الفنيين</option>
+                  {technicians.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
+                </select>
+                <select value={filterDeviceType} onChange={e => setFilterDeviceType(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm">
+                  <option value="">كل الأجهزة</option>
+                  {DEVICE_TYPES.map(d => <option key={d}>{d}</option>)}
+                </select>
+                <select value={filterBrand} onChange={e => setFilterBrand(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm">
+                  <option value="">كل الماركات</option>
+                  {BRANDS.map(b => <option key={b}>{b}</option>)}
+                </select>
+                <div className="flex gap-2">
+                  <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm w-full" placeholder="من تاريخ" />
+                  <input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm w-full" placeholder="إلى تاريخ" />
+                </div>
+                <button onClick={clearFilters} className="bg-red-600/20 hover:bg-red-600 text-red-400 px-3 py-2 rounded-xl text-sm font-bold">مسح الكل</button>
+              </div>
+            )}
+
+            {/* قائمة الأوردرات */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredOrders.map(order => {
                 let statusColor = '';
@@ -412,8 +552,8 @@ export default function ProtectedOrders() {
                     </div>
                     <div className="text-sm mb-2">🔧 {order.device_type || order.device || 'جهاز'} - {order.brand || 'ماركة'}</div>
                     <div className="text-xs text-slate-400 mb-3">{order.address || 'لا يوجد عنوان'}</div>
+                    <div className="text-xs text-slate-400 mb-2">📅 {order.date || 'بدون تاريخ'}</div>
                     
-                    {/* عرض قيمة الكشف إذا كانت الحالة inspected */}
                     {order.status === 'inspected' && order.inspection_amount > 0 && (
                       <div className="bg-purple-500/10 p-2 rounded-lg text-xs mb-3 flex justify-between">
                         <span>💰 قيمة الكشف:</span>
@@ -437,10 +577,11 @@ export default function ProtectedOrders() {
                         <option value="cancelled">ملغي</option>
                       </select>
                     </div>
-                    {order.technician && <div className="text-xs text-slate-400 mt-2">الفني: {order.technician}</div>}
+                    {order.technician && <div className="text-xs text-slate-400 mt-2">👨‍🔧 الفني: {order.technician}</div>}
                   </div>
                 );
               })}
+              {filteredOrders.length === 0 && <div className="text-center text-slate-400 py-8 col-span-full">لا توجد أوردرات تطابق البحث</div>}
             </div>
           </div>
         )}
@@ -520,7 +661,8 @@ export default function ProtectedOrders() {
         )}
       </main>
 
-      {/* ================== مودال إضافة/تعديل أوردر (منسق بالكامل) ================== */}
+      {/* باقي المودالات كما هي (إضافة/تعديل أوردر، فني، كشف، فاتورة) */}
+      {/* مودال إضافة/تعديل أوردر (منسق) */}
       {showOrderModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -530,80 +672,26 @@ export default function ProtectedOrders() {
             </div>
             <form onSubmit={saveOrder} className="space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-sm text-slate-400 mb-1">اسم العميل *</label>
-                  <input type="text" value={formData.customer_name} onChange={e => handleFormChange('customer_name', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-orange-500" required />
-                </div>
-                <div>
-                  <label className="block text-sm text-slate-400 mb-1">رقم الهاتف *</label>
-                  <input type="text" value={formData.phone} onChange={e => handleFormChange('phone', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-orange-500" required />
-                </div>
-                <div>
-                  <label className="block text-sm text-slate-400 mb-1">نوع الجهاز</label>
-                  <select value={formData.device_type} onChange={e => handleFormChange('device_type', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white">
-                    <option value="">اختر الجهاز</option>
-                    {DEVICE_TYPES.map(d => <option key={d}>{d}</option>)}
-                    <option value="other">أخرى</option>
-                  </select>
-                </div>
-                {isOtherDevice && (
-                  <div>
-                    <label className="block text-sm text-slate-400 mb-1">جهاز مخصص</label>
-                    <input type="text" value={customDevice} onChange={e => setCustomDevice(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" required />
-                  </div>
-                )}
-                <div>
-                  <label className="block text-sm text-slate-400 mb-1">الماركة</label>
-                  <select value={formData.brand} onChange={e => handleFormChange('brand', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white">
-                    <option value="">اختر الماركة</option>
-                    {BRANDS.map(b => <option key={b}>{b}</option>)}
-                    <option value="other">أخرى</option>
-                  </select>
-                </div>
-                {isOtherBrand && (
-                  <div>
-                    <label className="block text-sm text-slate-400 mb-1">ماركة مخصصة</label>
-                    <input type="text" value={customBrand} onChange={e => setCustomBrand(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" required />
-                  </div>
-                )}
-                <div className="md:col-span-2">
-                  <label className="block text-sm text-slate-400 mb-1">العنوان</label>
-                  <input type="text" value={formData.address} onChange={e => handleFormChange('address', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm text-slate-400 mb-1">وصف المشكلة</label>
-                  <textarea rows={3} value={formData.problem_description} onChange={e => handleFormChange('problem_description', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" />
-                </div>
-                <div>
-                  <label className="block text-sm text-slate-400 mb-1">الفني</label>
-                  <select value={formData.technician} onChange={e => handleFormChange('technician', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white">
-                    <option value="">اختر فني</option>
-                    {technicians.map(t => <option key={t.id}>{t.name}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm text-slate-400 mb-1">إجمالي المبلغ (ج.م)</label>
-                  <input type="number" value={formData.total_amount} onChange={e => handleFormChange('total_amount', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" />
-                </div>
-                <div>
-                  <label className="block text-sm text-slate-400 mb-1">قطع غيار (ج.م)</label>
-                  <input type="number" value={formData.parts_cost} onChange={e => handleFormChange('parts_cost', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" />
-                </div>
-                <div>
-                  <label className="block text-sm text-slate-400 mb-1">مواصلات (ج.م)</label>
-                  <input type="number" value={formData.transport_cost} onChange={e => handleFormChange('transport_cost', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" />
-                </div>
+                <div><label className="block text-sm text-slate-400 mb-1">اسم العميل *</label><input type="text" value={formData.customer_name} onChange={e => handleFormChange('customer_name', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-orange-500" required /></div>
+                <div><label className="block text-sm text-slate-400 mb-1">رقم الهاتف *</label><input type="text" value={formData.phone} onChange={e => handleFormChange('phone', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" required /></div>
+                <div><label className="block text-sm text-slate-400 mb-1">نوع الجهاز</label><select value={formData.device_type} onChange={e => handleFormChange('device_type', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white"><option value="">اختر الجهاز</option>{DEVICE_TYPES.map(d => <option key={d}>{d}</option>)}<option value="other">أخرى</option></select></div>
+                {isOtherDevice && <div><label className="block text-sm text-slate-400 mb-1">جهاز مخصص</label><input type="text" value={customDevice} onChange={e => setCustomDevice(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" required /></div>}
+                <div><label className="block text-sm text-slate-400 mb-1">الماركة</label><select value={formData.brand} onChange={e => handleFormChange('brand', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white"><option value="">اختر الماركة</option>{BRANDS.map(b => <option key={b}>{b}</option>)}<option value="other">أخرى</option></select></div>
+                {isOtherBrand && <div><label className="block text-sm text-slate-400 mb-1">ماركة مخصصة</label><input type="text" value={customBrand} onChange={e => setCustomBrand(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" required /></div>}
+                <div className="md:col-span-2"><label className="block text-sm text-slate-400 mb-1">العنوان</label><input type="text" value={formData.address} onChange={e => handleFormChange('address', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" /></div>
+                <div className="md:col-span-2"><label className="block text-sm text-slate-400 mb-1">وصف المشكلة</label><textarea rows={3} value={formData.problem_description} onChange={e => handleFormChange('problem_description', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" /></div>
+                <div><label className="block text-sm text-slate-400 mb-1">الفني</label><select value={formData.technician} onChange={e => handleFormChange('technician', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white"><option value="">اختر فني</option>{technicians.map(t => <option key={t.id}>{t.name}</option>)}</select></div>
+                <div><label className="block text-sm text-slate-400 mb-1">إجمالي المبلغ (ج.م)</label><input type="number" value={formData.total_amount} onChange={e => handleFormChange('total_amount', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" /></div>
+                <div><label className="block text-sm text-slate-400 mb-1">قطع غيار (ج.م)</label><input type="number" value={formData.parts_cost} onChange={e => handleFormChange('parts_cost', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" /></div>
+                <div><label className="block text-sm text-slate-400 mb-1">مواصلات (ج.م)</label><input type="number" value={formData.transport_cost} onChange={e => handleFormChange('transport_cost', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" /></div>
               </div>
-              <div className="flex gap-3 pt-4">
-                <button type="submit" className="flex-1 bg-orange-600 hover:bg-orange-700 py-3 rounded-xl font-bold">حفظ</button>
-                <button type="button" onClick={() => setShowOrderModal(false)} className="flex-1 bg-slate-700 hover:bg-slate-600 py-3 rounded-xl font-bold">إلغاء</button>
-              </div>
+              <div className="flex gap-3 pt-4"><button type="submit" className="flex-1 bg-orange-600 py-3 rounded-xl font-bold">حفظ</button><button type="button" onClick={() => setShowOrderModal(false)} className="flex-1 bg-slate-700 py-3 rounded-xl font-bold">إلغاء</button></div>
             </form>
           </div>
         </div>
       )}
 
-      {/* ================== مودال إضافة/تعديل فني ================== */}
+      {/* مودال إضافة/تعديل فني */}
       {showTechModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
@@ -621,7 +709,7 @@ export default function ProtectedOrders() {
         </div>
       )}
 
-      {/* ================== مودال إدخال قيمة الكشف ================== */}
+      {/* مودال إدخال قيمة الكشف */}
       {showInspectModal && selectedOrderForInspect && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
@@ -630,20 +718,14 @@ export default function ProtectedOrders() {
               <button onClick={() => setShowInspectModal(false)} className="p-1 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">💰 قيمة الكشف (ج.م)</label>
-                <input type="number" value={inspectAmount} onChange={e => setInspectAmount(e.target.value)} placeholder="مثال: 500" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-orange-500" autoFocus />
-              </div>
-              <div className="flex gap-3">
-                <button onClick={saveInspection} className="flex-1 bg-orange-600 hover:bg-orange-700 py-3 rounded-xl font-bold">تأكيد الكشف</button>
-                <button onClick={() => setShowInspectModal(false)} className="flex-1 bg-slate-700 hover:bg-slate-600 py-3 rounded-xl font-bold">إلغاء</button>
-              </div>
+              <div><label className="block text-sm text-slate-400 mb-1">💰 قيمة الكشف (ج.م)</label><input type="number" value={inspectAmount} onChange={e => setInspectAmount(e.target.value)} placeholder="مثال: 500" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-orange-500" autoFocus /></div>
+              <div className="flex gap-3"><button onClick={saveInspection} className="flex-1 bg-orange-600 hover:bg-orange-700 py-3 rounded-xl font-bold">تأكيد الكشف</button><button onClick={() => setShowInspectModal(false)} className="flex-1 bg-slate-700 hover:bg-slate-600 py-3 rounded-xl font-bold">إلغاء</button></div>
             </div>
           </div>
         </div>
       )}
 
-      {/* ================== مودال اعتماد الفاتورة والضمان ================== */}
+      {/* مودال اعتماد الفاتورة والضمان */}
       {showInvoiceModal && selectedOrderForInvoice && (
         <InvoiceApprovalModal
           order={selectedOrderForInvoice}
