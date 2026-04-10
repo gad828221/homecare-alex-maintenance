@@ -51,7 +51,7 @@ export default function ProtectedOrders() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  // --- إعدادات الصوت والإشعارات (تم تعديلها لاستخدام window.Notification) ---
+  // --- إعدادات الصوت والإشعارات (window.Notification) ---
   const [lastNotificationCount, setLastNotificationCount] = useState(0);
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [browserNotificationsEnabled, setBrowserNotificationsEnabled] = useState(false);
@@ -332,8 +332,8 @@ export default function ProtectedOrders() {
         </div>
       </nav>
 
-      <main className="max-w-5xl mx-auto p-2 sm:p-3 md:p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 md:gap-3 mb-5">
+      <main className="w-full max-w-5xl mx-auto px-2 sm:px-3 md:px-4 py-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 mb-4">
           <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 shadow-sm text-center">
             <p className="text-xl sm:text-2xl font-black text-white">{orders.length}</p>
             <p className="text-[9px] sm:text-[10px] text-slate-500 font-bold uppercase">إجمالي الأوردرات</p>
