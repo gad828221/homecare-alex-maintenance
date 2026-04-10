@@ -1,16 +1,18 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { 
-  Plus, Download, Search, LayoutDashboard, Users, 
-  Clock, CheckCircle2, AlertCircle, XCircle, 
+  Plus, Search, LayoutDashboard, Users, 
+  CheckCircle2, AlertCircle, 
   Edit, Trash2, RefreshCw, Phone,
-  TrendingUp, Wallet, PieChart, Calendar, Copy, Check,
-  Send, MessageCircle, StickyNote, Eye
+  Copy, Check, Trash, Bell, DollarSign, X
 } from "lucide-react";
 import { useNotification } from "./NotificationSystem";
 import { InvoiceApprovalModal } from "./InvoiceApprovalModal";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
+
+const DEVICE_TYPES = ['غسالة', 'ثلاجة', 'بوتاجاز', 'سخان', 'تكييف', 'ميكروويف', 'غسالة أطباق'];
+const BRANDS = ['سامسونج', 'LG', 'شارب', 'توشيبا', 'زانوسي', 'يونيون إير', 'فريش', 'وايت ويل', 'أريستون', 'بيكو', 'هوفر', 'إنديست'];
 
 const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   const res = await fetch(`${supabaseUrl}/rest/v1/${endpoint}`, {
@@ -30,8 +32,9 @@ export default function ProtectedOrders() {
   const { addNotification } = useNotification();
   const [orders, setOrders] = useState<any[]>([]);
   const [technicians, setTechnicians] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'orders' | 'technicians' | 'reports' | 'invoices'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'technicians' | 'reports' | 'invoices' | 'notifications'>('orders');
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showTechModal, setShowTechModal] = useState(false);
   const [editingOrder, setEditingOrder] = useState<any>(null);
@@ -39,6 +42,11 @@ export default function ProtectedOrders() {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [selectedOrderForInvoice, setSelectedOrderForInvoice] = useState<any>(null);
+  
+  // مودال إدخال قيمة الكشف
+  const [showInspectModal, setShowInspectModal] = useState(false);
+  const [selectedOrderForInspect, setSelectedOrderForInspect] = useState<any>(null);
+  const [inspectAmount, setInspectAmount] = useState('');
   
   const [formData, setFormData] = useState({
     customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '',
@@ -53,12 +61,17 @@ export default function ProtectedOrders() {
   const [isOtherBrand, setIsOtherBrand] = useState(false);
   
   const [techForm, setTechForm] = useState({ name: '', phone: '', specialization: '', is_active: true });
-  const [stats, setStats] = useState({ pending: 0, inProgress: 0, completed: 0, cancelled: 0, totalIncome: 0 });
+  const [stats, setStats] = useState({ pending: 0, inProgress: 0, inspected: 0, completed: 0, cancelled: 0, totalIncome: 0 });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  const DEVICE_TYPES = ['غسالة', 'ثلاجة', 'بوتاجاز', 'سخان', 'تكييف', 'ميكروويف', 'غسالة أطباق'];
-  const BRANDS = ['سامسونج', 'LG', 'شارب', 'توشيبا', 'زانوسي', 'يونيون إير', 'فريش', 'وايت ويل', 'أريستون', 'بيكو', 'هوفر', 'إنديست'];
+  // جلب الإشعارات
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const data = await fetchAPI('notifications?select=*&order=created_at.desc');
+      setNotifications(data);
+    } catch (err) { console.error(err); }
+  }, []);
 
   const fetchData = useCallback(async () => {
     try {
@@ -71,19 +84,21 @@ export default function ProtectedOrders() {
       
       const pending = ordersData.filter((o: any) => o.status === 'pending').length;
       const inProgress = ordersData.filter((o: any) => o.status === 'in-progress').length;
+      const inspected = ordersData.filter((o: any) => o.status === 'inspected').length;
       const completed = ordersData.filter((o: any) => o.status === 'completed').length;
       const cancelled = ordersData.filter((o: any) => o.status === 'cancelled').length;
       const totalIncome = ordersData.reduce((acc: number, o: any) => acc + (o.company_share || 0), 0);
       
-      setStats({ pending, inProgress, completed, cancelled, totalIncome });
+      setStats({ pending, inProgress, inspected, completed, cancelled, totalIncome });
     } catch (err) { console.error(err); } finally { setLoading(false); }
   }, []);
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 30000);
+    fetchNotifications();
+    const interval = setInterval(() => { fetchData(); fetchNotifications(); }, 30000);
     return () => clearInterval(interval);
-  }, [fetchData]);
+  }, [fetchData, fetchNotifications]);
 
   const calculateAmounts = (data: any) => {
     const total = parseFloat(data.total_amount) || 0;
@@ -224,11 +239,70 @@ export default function ProtectedOrders() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const updateOrderStatus = async (id: number, newStatus: string) => {
+  // تغيير حالة الأوردر (مع دعم الكشف بقيمة مالية)
+  const handleStatusChange = async (order: any, newStatus: string) => {
+    if (newStatus === 'inspected') {
+      // فتح مودال لإدخال قيمة الكشف
+      setSelectedOrderForInspect(order);
+      setInspectAmount('');
+      setShowInspectModal(true);
+      return;
+    }
+    
+    // تغيير مباشر للحالات الأخرى
     try {
-      await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ status: newStatus }) });
+      await fetchAPI(`orders?id=eq.${order.id}`, { method: 'PATCH', body: JSON.stringify({ status: newStatus }) });
+      addNotification({ type: 'success', title: '🔄 تغيير الحالة', message: `تم تغيير حالة الأوردر إلى ${newStatus === 'pending' ? 'قيد الانتظار' : newStatus === 'in-progress' ? 'قيد التنفيذ' : newStatus === 'completed' ? 'مكتمل' : 'ملغي'}`, duration: 3000 });
       fetchData();
     } catch (err) { console.error(err); }
+  };
+
+  // حفظ قيمة الكشف وتحديث الحالة
+  const saveInspection = async () => {
+    const amount = parseFloat(inspectAmount);
+    if (isNaN(amount) || amount <= 0) {
+      addNotification({ type: 'error', title: '⚠️ خطأ', message: 'يرجى إدخال قيمة كشف صحيحة', duration: 3000 });
+      return;
+    }
+    
+    const companyShare = amount / 2;
+    const techShare = amount / 2;
+    
+    try {
+      await fetchAPI(`orders?id=eq.${selectedOrderForInspect.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          status: 'inspected',
+          inspection_amount: amount,
+          total_amount: amount,
+          net_amount: amount,
+          company_share: companyShare,
+          technician_share: techShare,
+          parts_cost: 0,
+          transport_cost: 0
+        })
+      });
+      addNotification({ type: 'success', title: '💰 تم الكشف', message: `تم تسجيل كشف بقيمة ${amount} ج.م`, duration: 4000 });
+      setShowInspectModal(false);
+      fetchData();
+    } catch (err) { console.error(err); }
+  };
+
+  const deleteNotification = async (id: number) => {
+    if (confirm('حذف هذا الإشعار؟')) {
+      await fetchAPI(`notifications?id=eq.${id}`, { method: 'DELETE' });
+      fetchNotifications();
+    }
+  };
+
+  const deleteAllNotifications = async () => {
+    if (confirm('حذف كل الإشعارات نهائياً؟')) {
+      for (const n of notifications) {
+        await fetchAPI(`notifications?id=eq.${n.id}`, { method: 'DELETE' });
+      }
+      fetchNotifications();
+      addNotification({ type: 'success', title: '🧹 تم التنظيف', message: 'تم حذف جميع الإشعارات', duration: 3000 });
+    }
   };
 
   const handleInvoiceApprove = async (warranty: string) => {
@@ -236,7 +310,14 @@ export default function ProtectedOrders() {
       method: 'PATCH',
       body: JSON.stringify({ warranty_text: warranty, invoice_approved: true })
     });
-    addNotification({ type: 'success', title: '✅ تمت الموافقة', message: 'تم حفظ الضمان وإرسال الفاتورة', duration: 4000 });
+    
+    // إرسال واتساب للعميل مباشرة
+    const phone = formatPhoneForWhatsApp(selectedOrderForInvoice.phone);
+    const message = `📄 *فاتورة الصيانة - ضمان* 📄\n\nشكراً لثقتك بنا.\n\nالجهاز: ${selectedOrderForInvoice.device_type || selectedOrderForInvoice.device} - ${selectedOrderForInvoice.brand}\nالمبلغ: ${selectedOrderForInvoice.total_amount} ج.م\nالضمان: ${warranty}\n\nللاستفسار: 01278885772`;
+    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+    
+    addNotification({ type: 'success', title: '✅ تمت الموافقة', message: 'تم إرسال الفاتورة للعميل', duration: 4000 });
     setShowInvoiceModal(false);
     fetchData();
   };
@@ -246,177 +327,323 @@ export default function ProtectedOrders() {
   };
 
   const filteredOrders = orders.filter(o => {
-    const matchesSearch = o.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) || o.phone?.includes(searchTerm) || o.technician?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = o.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          o.phone?.includes(searchTerm) || 
+                          (o.technician?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === 'all' || o.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
 
-  if (loading && orders.length === 0) return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><RefreshCw className="w-12 h-12 text-orange-500 animate-spin" /></div>;
+  if (loading && orders.length === 0) return (
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <RefreshCw className="w-12 h-12 text-orange-500 animate-spin" />
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 pb-20">
       <nav className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 px-4 py-3">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3"><div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center"><LayoutDashboard className="w-6 h-6 text-white" /></div><h1 className="text-lg font-bold text-white">لوحة تحكم المدير</h1></div>
-          <button onClick={fetchData} className="p-2 text-slate-400 hover:text-white"><RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} /></button>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center"><LayoutDashboard className="w-6 h-6 text-white" /></div>
+            <h1 className="text-lg font-bold text-white">لوحة تحكم المدير</h1>
+          </div>
+          <button onClick={() => { fetchData(); fetchNotifications(); }} className="p-2 text-slate-400 hover:text-white"><RefreshCw className="w-5 h-5" /></button>
         </div>
       </nav>
 
       <main className="max-w-7xl mx-auto p-4 md:p-6">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-8">
-          <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800"><p className="text-2xl font-black text-white">{orders.length}</p><p className="text-[10px] text-slate-500 uppercase">إجمالي الأوردرات</p></div>
-          <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800"><p className="text-2xl font-black text-yellow-500">{stats.pending}</p><p className="text-[10px] text-slate-500 uppercase">قيد الانتظار</p></div>
-          <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800"><p className="text-2xl font-black text-green-500">{stats.completed}</p><p className="text-[10px] text-slate-500 uppercase">مكتمل</p></div>
-          <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800"><p className="text-2xl font-black text-orange-500">{stats.totalIncome.toLocaleString()} ج.م</p><p className="text-[10px] text-slate-500 uppercase">أرباح الشركة</p></div>
-          <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800"><p className="text-2xl font-black text-purple-500">{technicians.length}</p><p className="text-[10px] text-slate-500 uppercase">فني متاح</p></div>
+        {/* إحصائيات سريعة */}
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-8">
+          <div className="bg-slate-900 p-3 rounded-xl text-center"><p className="text-2xl font-black text-white">{orders.length}</p><p className="text-[10px] uppercase">الإجمالي</p></div>
+          <div className="bg-slate-900 p-3 rounded-xl text-center"><p className="text-2xl font-black text-yellow-500">{stats.pending}</p><p className="text-[10px] uppercase">قيد الانتظار</p></div>
+          <div className="bg-slate-900 p-3 rounded-xl text-center"><p className="text-2xl font-black text-blue-500">{stats.inProgress}</p><p className="text-[10px] uppercase">قيد التنفيذ</p></div>
+          <div className="bg-slate-900 p-3 rounded-xl text-center"><p className="text-2xl font-black text-purple-500">{stats.inspected}</p><p className="text-[10px] uppercase">تم الكشف</p></div>
+          <div className="bg-slate-900 p-3 rounded-xl text-center"><p className="text-2xl font-black text-green-500">{stats.completed}</p><p className="text-[10px] uppercase">مكتمل</p></div>
+          <div className="bg-slate-900 p-3 rounded-xl text-center"><p className="text-2xl font-black text-orange-500">{stats.totalIncome.toLocaleString()} ج.م</p><p className="text-[10px] uppercase">أرباح الشركة</p></div>
         </div>
 
-        <div className="flex gap-1 bg-slate-900 p-1 rounded-2xl border border-slate-800 mb-6 overflow-x-auto scrollbar-hide">
-          <button onClick={() => setActiveTab('orders')} className={`px-4 md:px-6 py-2 rounded-xl text-xs md:text-sm font-bold whitespace-nowrap ${activeTab === 'orders' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>الأوردرات</button>
-          <button onClick={() => setActiveTab('technicians')} className={`px-4 md:px-6 py-2 rounded-xl text-xs md:text-sm font-bold whitespace-nowrap ${activeTab === 'technicians' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>الفنيين</button>
-          <button onClick={() => setActiveTab('reports')} className={`px-4 md:px-6 py-2 rounded-xl text-xs md:text-sm font-bold whitespace-nowrap ${activeTab === 'reports' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>التقارير</button>
-          <button onClick={() => setActiveTab('invoices')} className={`px-4 md:px-6 py-2 rounded-xl text-xs md:text-sm font-bold whitespace-nowrap ${activeTab === 'invoices' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>الفواتير</button>
+        {/* تبويبات */}
+        <div className="flex gap-1 bg-slate-900 p-1 rounded-2xl border border-slate-800 mb-6 overflow-x-auto">
+          <button onClick={() => setActiveTab('orders')} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeTab === 'orders' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>الأوردرات</button>
+          <button onClick={() => setActiveTab('technicians')} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeTab === 'technicians' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>الفنيين</button>
+          <button onClick={() => setActiveTab('reports')} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeTab === 'reports' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>التقارير</button>
+          <button onClick={() => setActiveTab('invoices')} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeTab === 'invoices' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>الفواتير</button>
+          <button onClick={() => setActiveTab('notifications')} className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1 ${activeTab === 'notifications' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}><Bell className="w-4 h-4" /> الإشعارات ({notifications.length})</button>
         </div>
 
+        {/* ================== الأوردرات ================== */}
         {activeTab === 'orders' && (
           <div className="space-y-4">
-            <div className="flex flex-col md:flex-row gap-4 mb-4">
-              <div className="relative flex-1"><Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" /><input type="text" placeholder="ابحث عن عميل، هاتف، أو فني..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-2xl py-3 pr-12 pl-4 text-sm outline-none focus:ring-2 focus:ring-orange-500" /></div>
-              <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm"><option value="all">الكل</option><option value="pending">قيد الانتظار</option><option value="in-progress">قيد التنفيذ</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option></select>
-              <button onClick={() => { setEditingOrder(null); resetForm(); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-2xl text-sm font-bold flex items-center gap-2"><Plus className="w-5 h-5" />أوردر جديد</button>
+            <div className="flex flex-wrap gap-4 mb-4">
+              <div className="relative flex-1"><Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" /><input type="text" placeholder="بحث..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-2xl py-3 pr-12 pl-4 text-sm" /></div>
+              <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm">
+                <option value="all">الكل</option>
+                <option value="pending">قيد الانتظار</option>
+                <option value="in-progress">قيد التنفيذ</option>
+                <option value="inspected">تم الكشف</option>
+                <option value="completed">مكتمل</option>
+                <option value="cancelled">ملغي</option>
+              </select>
+              <button onClick={() => { setEditingOrder(null); resetForm(); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 px-6 py-3 rounded-2xl text-sm font-bold flex items-center gap-2"><Plus className="w-5 h-5" /> أوردر جديد</button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredOrders.map(order => (
-                <div key={order.id} className="bg-slate-900 rounded-3xl p-5 border border-slate-800 hover:border-slate-700 transition-all relative shadow-xl">
-                  {!order.is_paid && order.status === 'completed' && <div className="absolute top-0 left-0 w-full h-1 bg-red-500/50 animate-pulse"></div>}
-                  <div className="flex justify-between items-start mb-4">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black ${order.status === 'completed' ? 'bg-green-500/10 text-green-500' : order.status === 'in-progress' ? 'bg-blue-500/10 text-blue-500' : order.status === 'cancelled' ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
-                      {order.status === 'completed' ? 'مكتمل' : order.status === 'in-progress' ? 'جاري العمل' : order.status === 'cancelled' ? 'ملغي' : 'قيد الانتظار'}
-                    </span>
-                    <div className="flex gap-1">
-                      <button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`p-2 rounded-xl transition-all ${order.is_paid ? 'bg-green-500/20 text-green-500' : 'bg-slate-800 text-slate-500'}`}><CheckCircle2 className="w-4 h-4" /></button>
-                      <button onClick={() => { setEditingOrder(order); setFormData(order); setShowOrderModal(true); }} className="p-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-xl"><Edit className="w-4 h-4" /></button>
-                      <button onClick={() => deleteOrder(order.id)} className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-500/10 rounded-xl"><Trash2 className="w-4 h-4" /></button>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <h3 className="text-white font-black text-lg truncate">{order.customer_name}</h3>
-                    <div className="grid grid-cols-2 gap-2 py-3 border-y border-slate-800/50">
-                      <div><p className="text-[10px] text-slate-500">الإجمالي</p><p className="text-xs text-white font-bold">{order.total_amount || 0} ج.م</p></div>
-                      <div><p className="text-[10px] text-slate-500">الصافي</p><p className="text-xs text-green-500 font-bold">{order.net_amount || 0} ج.م</p></div>
-                      <div><p className="text-[10px] text-slate-500">المصاريف</p><p className="text-xs text-red-400">{order.parts_cost + order.transport_cost || 0} ج.م</p></div>
-                      <div><p className="text-[10px] text-slate-500">التاريخ</p><p className="text-[10px] text-slate-400">{order.date}</p></div>
-                    </div>
-                    <div className="flex justify-between items-center pt-1">
-                      <div><p className="text-[10px] text-slate-500">الفني</p><p className="text-sm font-black text-orange-400">{order.technician || 'لم يحدد'}</p></div>
-                      <div className={`text-[10px] font-black px-2 py-1 rounded flex items-center gap-1 ${order.is_paid ? 'text-green-500 bg-green-500/10' : 'text-red-500 bg-red-500/10'}`}>
-                        {order.is_paid ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
-                        {order.is_paid ? 'تم التحصيل' : 'لم يحصل'}
+              {filteredOrders.map(order => {
+                let statusColor = '';
+                if (order.status === 'completed') statusColor = 'text-green-500 bg-green-500/10';
+                else if (order.status === 'in-progress') statusColor = 'text-blue-500 bg-blue-500/10';
+                else if (order.status === 'inspected') statusColor = 'text-purple-500 bg-purple-500/10';
+                else if (order.status === 'cancelled') statusColor = 'text-red-500 bg-red-500/10';
+                else statusColor = 'text-yellow-500 bg-yellow-500/10';
+                
+                return (
+                  <div key={order.id} className="bg-slate-900 rounded-2xl p-4 border border-slate-800 shadow-lg">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="font-black text-white">{order.customer_name}</h3>
+                        <p className="text-xs text-slate-400">{order.phone}</p>
+                      </div>
+                      <div className="flex gap-1">
+                        <button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`p-2 rounded-xl ${order.is_paid ? 'text-green-500' : 'text-slate-500'}`}><CheckCircle2 className="w-4 h-4" /></button>
+                        <button onClick={() => { setEditingOrder(order); setFormData(order); setShowOrderModal(true); }} className="p-2 text-slate-400 hover:text-white"><Edit className="w-4 h-4" /></button>
+                        <button onClick={() => deleteOrder(order.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
                       </div>
                     </div>
+                    <div className="text-sm mb-2">🔧 {order.device_type || order.device || 'جهاز'} - {order.brand || 'ماركة'}</div>
+                    <div className="text-xs text-slate-400 mb-3">{order.address || 'لا يوجد عنوان'}</div>
+                    
+                    {/* عرض قيمة الكشف إذا كانت الحالة inspected */}
+                    {order.status === 'inspected' && order.inspection_amount > 0 && (
+                      <div className="bg-purple-500/10 p-2 rounded-lg text-xs mb-3 flex justify-between">
+                        <span>💰 قيمة الكشف:</span>
+                        <span className="font-bold text-purple-400">{order.inspection_amount} ج.م</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex justify-between items-center mt-2">
+                      <span className={`text-xs px-2 py-1 rounded-full ${statusColor}`}>
+                        {order.status === 'completed' ? 'مكتمل' : order.status === 'in-progress' ? 'قيد التنفيذ' : order.status === 'inspected' ? 'تم الكشف' : order.status === 'cancelled' ? 'ملغي' : 'قيد الانتظار'}
+                      </span>
+                      <select 
+                        value={order.status} 
+                        onChange={(e) => handleStatusChange(order, e.target.value)} 
+                        className="bg-slate-800 text-xs rounded-lg px-2 py-1 border border-slate-700"
+                      >
+                        <option value="pending">قيد الانتظار</option>
+                        <option value="in-progress">قيد التنفيذ</option>
+                        <option value="inspected">تم الكشف</option>
+                        <option value="completed">مكتمل</option>
+                        <option value="cancelled">ملغي</option>
+                      </select>
+                    </div>
+                    {order.technician && <div className="text-xs text-slate-400 mt-2">الفني: {order.technician}</div>}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
 
+        {/* ================== الفنيين ================== */}
         {activeTab === 'technicians' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {technicians.map(tech => (
-              <div key={tech.id} className="bg-slate-900 rounded-3xl p-6 border border-slate-800 text-center relative shadow-lg">
-                <div className="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4"><Users className="w-8 h-8 text-orange-500" /></div>
-                <h3 className="text-white font-black text-lg">{tech.name}</h3>
-                <p className="text-slate-500 text-xs font-bold mb-4">{tech.specialization}</p>
-                <div className="flex flex-col gap-2">
-                  <button onClick={() => copyTechLink(tech.name, tech.id)} className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2">{copiedId === tech.id ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />} نسخ رابط الفني</button>
-                  <div className="flex gap-2">
-                    <a href={`tel:${tech.phone}`} className="flex-1 p-2 bg-blue-500/10 text-blue-500 rounded-xl hover:bg-blue-500/20"><Phone className="w-4 h-4 mx-auto" /></a>
-                    <button onClick={() => { setEditingTech(tech); setTechForm(tech); setShowTechModal(true); }} className="flex-1 p-2 bg-slate-800 text-slate-400 rounded-xl hover:bg-slate-700"><Edit className="w-4 h-4 mx-auto" /></button>
-                    <button onClick={() => deleteTechnician(tech.id)} className="flex-1 p-2 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20"><Trash2 className="w-4 h-4 mx-auto" /></button>
-                  </div>
+              <div key={tech.id} className="bg-slate-900 rounded-2xl p-4 border border-slate-800 text-center">
+                <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3"><Users className="w-8 h-8 text-orange-500" /></div>
+                <h3 className="font-black text-white">{tech.name}</h3>
+                <p className="text-xs text-slate-400 mb-3">{tech.specialization}</p>
+                <div className="flex justify-center gap-2">
+                  <button onClick={() => copyTechLink(tech.name, tech.id)} className="p-2 bg-slate-800 rounded-lg text-xs">{copiedId === tech.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}</button>
+                  <button onClick={() => { setEditingTech(tech); setTechForm(tech); setShowTechModal(true); }} className="p-2 bg-slate-800 rounded-lg"><Edit className="w-4 h-4" /></button>
+                  <button onClick={() => deleteTechnician(tech.id)} className="p-2 bg-slate-800 rounded-lg"><Trash2 className="w-4 h-4" /></button>
                 </div>
               </div>
             ))}
-            <button onClick={() => { setEditingTech(null); setTechForm({ name: '', phone: '', specialization: '', is_active: true }); setShowTechModal(true); }} className="bg-slate-900/50 border-2 border-dashed border-slate-800 rounded-3xl p-6 flex flex-col items-center justify-center gap-2 hover:bg-slate-900 hover:border-orange-500/50 text-slate-500 hover:text-orange-500"><Plus className="w-8 h-8" /><span>إضافة فني</span></button>
+            <button onClick={() => { setEditingTech(null); setTechForm({ name: '', phone: '', specialization: '', is_active: true }); setShowTechModal(true); }} className="bg-slate-900/50 border-2 border-dashed border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:border-orange-500"><Plus className="w-6 h-6" /><span className="text-sm">إضافة فني</span></button>
           </div>
         )}
 
+        {/* ================== التقارير ================== */}
         {activeTab === 'reports' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 text-center"><p className="text-3xl font-black text-orange-500">{orders.filter(o => o.status === 'completed').length}</p><p className="text-sm text-slate-400">الأوردرات المكتملة</p></div>
-              <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 text-center"><p className="text-3xl font-black text-green-500">{stats.totalIncome.toLocaleString()} ج.م</p><p className="text-sm text-slate-400">أرباح الشركة</p></div>
-              <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 text-center"><p className="text-3xl font-black text-red-500">{orders.reduce((sum, o) => sum + (o.parts_cost + o.transport_cost || 0), 0).toLocaleString()} ج.م</p><p className="text-sm text-slate-400">إجمالي المصاريف</p></div>
-              <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 text-center"><p className="text-3xl font-black text-blue-500">{(stats.totalIncome - orders.reduce((sum, o) => sum + (o.parts_cost + o.transport_cost || 0), 0)).toLocaleString()} ج.م</p><p className="text-sm text-slate-400">صافي الربح</p></div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-slate-900 p-5 rounded-2xl"><p className="text-slate-400">إجمالي الأوردرات</p><p className="text-3xl font-black">{orders.length}</p></div>
+            <div className="bg-slate-900 p-5 rounded-2xl"><p className="text-slate-400">الأوردرات المكتملة</p><p className="text-3xl font-black text-green-500">{stats.completed}</p></div>
+            <div className="bg-slate-900 p-5 rounded-2xl"><p className="text-slate-400">إجمالي أرباح الشركة</p><p className="text-3xl font-black text-orange-500">{stats.totalIncome.toLocaleString()} ج.م</p></div>
+            <div className="bg-slate-900 p-5 rounded-2xl"><p className="text-slate-400">إجمالي المصاريف</p><p className="text-3xl font-black text-red-500">{orders.reduce((s,o)=>s+(o.parts_cost+o.transport_cost||0),0).toLocaleString()} ج.م</p></div>
           </div>
         )}
 
+        {/* ================== الفواتير ================== */}
         {activeTab === 'invoices' && (
           <div className="space-y-4">
             <h3 className="text-lg font-bold">🧾 الفواتير (الأوردرات المكتملة)</h3>
             {orders.filter(o => o.status === 'completed').map(order => (
-              <div key={order.id} className="bg-slate-900 p-5 rounded-2xl border border-slate-800">
-                <div className="flex justify-between items-center flex-wrap gap-3">
-                  <div><p className="font-black text-white">{order.customer_name}</p><p className="text-sm text-slate-400">{order.device_type} - {order.brand}</p></div>
-                  <button onClick={() => { setSelectedOrderForInvoice(order); setShowInvoiceModal(true); }} className="bg-orange-600 hover:bg-orange-700 px-5 py-2 rounded-xl text-sm font-bold">طباعة فاتورة مع الضمان</button>
-                </div>
-                <div className="mt-3 text-sm grid grid-cols-2 gap-2"><span>المبلغ: {order.total_amount} ج.م</span><span>المصاريف: {order.parts_cost + order.transport_cost} ج.م</span><span>صافي الربح: {order.net_amount} ج.م</span><span>نصيب الشركة: {order.company_share} ج.م</span></div>
-                {order.warranty_text && <div className="mt-3 bg-slate-800 p-2 rounded text-xs"><span className="text-orange-400">🛡️ الضمان:</span> {order.warranty_text}</div>}
+              <div key={order.id} className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex flex-wrap justify-between items-center gap-3">
+                <div><p className="font-black">{order.customer_name}</p><p className="text-sm text-slate-400">{order.device_type || order.device} - {order.brand}</p></div>
+                <button onClick={() => { setSelectedOrderForInvoice(order); setShowInvoiceModal(true); }} className="bg-orange-600 px-4 py-2 rounded-xl text-sm font-bold">طباعة فاتورة مع الضمان</button>
               </div>
             ))}
+            {orders.filter(o => o.status === 'completed').length === 0 && <div className="text-center text-slate-400">لا توجد أوردرات مكتملة</div>}
+          </div>
+        )}
+
+        {/* ================== الإشعارات ================== */}
+        {activeTab === 'notifications' && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-bold flex items-center gap-2"><Bell className="w-5 h-5" /> سجل الإشعارات</h3>
+              {notifications.length > 0 && (
+                <button onClick={deleteAllNotifications} className="bg-red-600/20 hover:bg-red-600 text-red-400 px-3 py-1 rounded-lg text-sm flex items-center gap-1"><Trash className="w-4 h-4" /> مسح الكل</button>
+              )}
+            </div>
+            <div className="space-y-3">
+              {notifications.map(notif => (
+                <div key={notif.id} className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-start">
+                  <div>
+                    <div className="flex flex-wrap gap-2 text-sm">
+                      <span className="text-orange-400 font-bold">{notif.action}</span>
+                      <span className="text-slate-400">|</span>
+                      <span>الفني: {notif.technician_name}</span>
+                      <span className="text-slate-400">|</span>
+                      <span>العميل: {notif.customer_name}</span>
+                      {notif.details && <span className="text-slate-400">| التفاصيل: {notif.details}</span>}
+                    </div>
+                    <div className="text-xs text-slate-500 mt-1">{new Date(notif.created_at).toLocaleString('ar-EG')}</div>
+                  </div>
+                  <button onClick={() => deleteNotification(notif.id)} className="text-red-400 hover:text-red-500 p-1"><Trash className="w-4 h-4" /></button>
+                </div>
+              ))}
+              {notifications.length === 0 && <div className="text-center text-slate-400 py-8">لا توجد إشعارات حتى الآن</div>}
+            </div>
           </div>
         )}
       </main>
 
-      {/* مودال إضافة/تعديل أوردر */}
+      {/* ================== مودال إضافة/تعديل أوردر (منسق بالكامل) ================== */}
       {showOrderModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold mb-4">{editingOrder ? 'تعديل أوردر' : 'أوردر جديد'}</h3>
-            <form onSubmit={saveOrder} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input type="text" placeholder="اسم العميل" value={formData.customer_name} onChange={e => handleFormChange('customer_name', e.target.value)} className="bg-slate-800 p-2 rounded" required />
-                <input type="text" placeholder="رقم الهاتف" value={formData.phone} onChange={e => handleFormChange('phone', e.target.value)} className="bg-slate-800 p-2 rounded" required />
-                <select value={formData.device_type} onChange={e => handleFormChange('device_type', e.target.value)} className="bg-slate-800 p-2 rounded">
-                  <option value="">اختر الجهاز</option>{DEVICE_TYPES.map(d => <option key={d} value={d}>{d}</option>)}<option value="other">أخرى</option>
-                </select>
-                {isOtherDevice && <input type="text" placeholder="اكتب الجهاز" value={customDevice} onChange={e => setCustomDevice(e.target.value)} className="bg-slate-800 p-2 rounded" required />}
-                <select value={formData.brand} onChange={e => handleFormChange('brand', e.target.value)} className="bg-slate-800 p-2 rounded">
-                  <option value="">اختر الماركة</option>{BRANDS.map(b => <option key={b} value={b}>{b}</option>)}<option value="other">أخرى</option>
-                </select>
-                {isOtherBrand && <input type="text" placeholder="اكتب الماركة" value={customBrand} onChange={e => setCustomBrand(e.target.value)} className="bg-slate-800 p-2 rounded" required />}
-                <input type="text" placeholder="العنوان" value={formData.address} onChange={e => handleFormChange('address', e.target.value)} className="bg-slate-800 p-2 rounded" />
-                <textarea placeholder="المشكلة" value={formData.problem_description} onChange={e => handleFormChange('problem_description', e.target.value)} className="bg-slate-800 p-2 rounded col-span-2" rows={2} />
-                <select value={formData.technician} onChange={e => handleFormChange('technician', e.target.value)} className="bg-slate-800 p-2 rounded"><option value="">اختر الفني</option>{technicians.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}</select>
-                <input type="number" placeholder="إجمالي المبلغ" value={formData.total_amount} onChange={e => handleFormChange('total_amount', e.target.value)} className="bg-slate-800 p-2 rounded" />
-                <div className="grid grid-cols-2 gap-2"><input type="number" placeholder="قطع غيار" value={formData.parts_cost} onChange={e => handleFormChange('parts_cost', e.target.value)} className="bg-slate-800 p-2 rounded" /><input type="number" placeholder="مواصلات" value={formData.transport_cost} onChange={e => handleFormChange('transport_cost', e.target.value)} className="bg-slate-800 p-2 rounded" /></div>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold">{editingOrder ? 'تعديل أوردر' : 'أوردر جديد'}</h3>
+              <button onClick={() => setShowOrderModal(false)} className="p-1 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+            <form onSubmit={saveOrder} className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1">اسم العميل *</label>
+                  <input type="text" value={formData.customer_name} onChange={e => handleFormChange('customer_name', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-orange-500" required />
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1">رقم الهاتف *</label>
+                  <input type="text" value={formData.phone} onChange={e => handleFormChange('phone', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-orange-500" required />
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1">نوع الجهاز</label>
+                  <select value={formData.device_type} onChange={e => handleFormChange('device_type', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white">
+                    <option value="">اختر الجهاز</option>
+                    {DEVICE_TYPES.map(d => <option key={d}>{d}</option>)}
+                    <option value="other">أخرى</option>
+                  </select>
+                </div>
+                {isOtherDevice && (
+                  <div>
+                    <label className="block text-sm text-slate-400 mb-1">جهاز مخصص</label>
+                    <input type="text" value={customDevice} onChange={e => setCustomDevice(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" required />
+                  </div>
+                )}
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1">الماركة</label>
+                  <select value={formData.brand} onChange={e => handleFormChange('brand', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white">
+                    <option value="">اختر الماركة</option>
+                    {BRANDS.map(b => <option key={b}>{b}</option>)}
+                    <option value="other">أخرى</option>
+                  </select>
+                </div>
+                {isOtherBrand && (
+                  <div>
+                    <label className="block text-sm text-slate-400 mb-1">ماركة مخصصة</label>
+                    <input type="text" value={customBrand} onChange={e => setCustomBrand(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" required />
+                  </div>
+                )}
+                <div className="md:col-span-2">
+                  <label className="block text-sm text-slate-400 mb-1">العنوان</label>
+                  <input type="text" value={formData.address} onChange={e => handleFormChange('address', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm text-slate-400 mb-1">وصف المشكلة</label>
+                  <textarea rows={3} value={formData.problem_description} onChange={e => handleFormChange('problem_description', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" />
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1">الفني</label>
+                  <select value={formData.technician} onChange={e => handleFormChange('technician', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white">
+                    <option value="">اختر فني</option>
+                    {technicians.map(t => <option key={t.id}>{t.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1">إجمالي المبلغ (ج.م)</label>
+                  <input type="number" value={formData.total_amount} onChange={e => handleFormChange('total_amount', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" />
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1">قطع غيار (ج.م)</label>
+                  <input type="number" value={formData.parts_cost} onChange={e => handleFormChange('parts_cost', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" />
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1">مواصلات (ج.م)</label>
+                  <input type="number" value={formData.transport_cost} onChange={e => handleFormChange('transport_cost', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" />
+                </div>
               </div>
-              <div className="flex gap-3"><button type="submit" className="flex-1 bg-orange-600 py-2 rounded-xl">حفظ</button><button type="button" onClick={() => setShowOrderModal(false)} className="flex-1 bg-slate-700 py-2 rounded-xl">إلغاء</button></div>
+              <div className="flex gap-3 pt-4">
+                <button type="submit" className="flex-1 bg-orange-600 hover:bg-orange-700 py-3 rounded-xl font-bold">حفظ</button>
+                <button type="button" onClick={() => setShowOrderModal(false)} className="flex-1 bg-slate-700 hover:bg-slate-600 py-3 rounded-xl font-bold">إلغاء</button>
+              </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* مودال إضافة/تعديل فني */}
+      {/* ================== مودال إضافة/تعديل فني ================== */}
       {showTechModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">{editingTech ? 'تعديل فني' : 'فني جديد'}</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold">{editingTech ? 'تعديل فني' : 'فني جديد'}</h3>
+              <button onClick={() => setShowTechModal(false)} className="p-1 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
             <form onSubmit={saveTechnician} className="space-y-4">
-              <input type="text" placeholder="الاسم" value={techForm.name} onChange={e => setTechForm({ ...techForm, name: e.target.value })} className="w-full bg-slate-800 p-2 rounded" required />
-              <input type="text" placeholder="رقم الهاتف" value={techForm.phone} onChange={e => setTechForm({ ...techForm, phone: e.target.value })} className="w-full bg-slate-800 p-2 rounded" required />
-              <input type="text" placeholder="التخصص" value={techForm.specialization} onChange={e => setTechForm({ ...techForm, specialization: e.target.value })} className="w-full bg-slate-800 p-2 rounded" />
-              <div className="flex gap-3"><button type="submit" className="flex-1 bg-orange-600 py-2 rounded-xl">حفظ</button><button type="button" onClick={() => setShowTechModal(false)} className="flex-1 bg-slate-700 py-2 rounded-xl">إلغاء</button></div>
+              <input type="text" placeholder="الاسم" value={techForm.name} onChange={e => setTechForm({ ...techForm, name: e.target.value })} className="w-full bg-slate-800 p-3 rounded-xl" required />
+              <input type="text" placeholder="رقم الهاتف" value={techForm.phone} onChange={e => setTechForm({ ...techForm, phone: e.target.value })} className="w-full bg-slate-800 p-3 rounded-xl" required />
+              <input type="text" placeholder="التخصص" value={techForm.specialization} onChange={e => setTechForm({ ...techForm, specialization: e.target.value })} className="w-full bg-slate-800 p-3 rounded-xl" />
+              <div className="flex gap-3"><button type="submit" className="flex-1 bg-orange-600 py-3 rounded-xl font-bold">حفظ</button><button type="button" onClick={() => setShowTechModal(false)} className="flex-1 bg-slate-700 py-3 rounded-xl font-bold">إلغاء</button></div>
             </form>
           </div>
         </div>
       )}
 
-      {/* مودال اعتماد الفاتورة والضمان */}
+      {/* ================== مودال إدخال قيمة الكشف ================== */}
+      {showInspectModal && selectedOrderForInspect && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold flex items-center gap-2"><DollarSign className="w-5 h-5 text-yellow-400" /> كشف بقيمة</h3>
+              <button onClick={() => setShowInspectModal(false)} className="p-1 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-slate-400 mb-1">💰 قيمة الكشف (ج.م)</label>
+                <input type="number" value={inspectAmount} onChange={e => setInspectAmount(e.target.value)} placeholder="مثال: 500" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-orange-500" autoFocus />
+              </div>
+              <div className="flex gap-3">
+                <button onClick={saveInspection} className="flex-1 bg-orange-600 hover:bg-orange-700 py-3 rounded-xl font-bold">تأكيد الكشف</button>
+                <button onClick={() => setShowInspectModal(false)} className="flex-1 bg-slate-700 hover:bg-slate-600 py-3 rounded-xl font-bold">إلغاء</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================== مودال اعتماد الفاتورة والضمان ================== */}
       {showInvoiceModal && selectedOrderForInvoice && (
         <InvoiceApprovalModal
           order={selectedOrderForInvoice}
