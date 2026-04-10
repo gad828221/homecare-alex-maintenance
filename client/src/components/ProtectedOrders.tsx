@@ -51,31 +51,28 @@ export default function ProtectedOrders() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  // --- إعدادات الصوت والإشعارات ---
+  // --- إعدادات الصوت والإشعارات (تم تعديلها لاستخدام window.Notification) ---
   const [lastNotificationCount, setLastNotificationCount] = useState(0);
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [browserNotificationsEnabled, setBrowserNotificationsEnabled] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // طلب إذن الإشعارات من المتصفح
   const requestNotificationPermission = async () => {
     if ('Notification' in window) {
-      const permission = await Notification.requestPermission();
+      const permission = await window.Notification.requestPermission();
       setBrowserNotificationsEnabled(permission === 'granted');
       if (permission === 'granted') {
-        addNotification({ type: 'success', title: '🔔 تم التفعيل', message: 'ستصلك الإشعارات حتى لو كان المتصفح مصغراً', duration: 4000 });
+        addNotification({ type: 'success', title: '🔔 تم التفعيل', message: 'ستصلك الإشعارات', duration: 4000 });
       }
     }
   };
 
-  // إرسال إشعار متصفح (يعمل حتى لو التطبيق في الخلفية)
   const sendBrowserNotification = (title: string, body: string) => {
-    if (browserNotificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
-      new Notification(title, { body, icon: '/favicon.ico', silent: false });
+    if (browserNotificationsEnabled && 'Notification' in window && window.Notification.permission === 'granted') {
+      new window.Notification(title, { body, icon: '/favicon.ico', silent: false });
     }
   };
 
-  // تشغيل الصوت
   const playSound = () => {
     if (audioEnabled && audioRef.current) {
       audioRef.current.currentTime = 0;
@@ -83,14 +80,12 @@ export default function ProtectedOrders() {
     }
   };
 
-  // إشعار موحد (منبثق + صوت + متصفح)
   const showUnifiedNotification = (type: 'success' | 'error' | 'info', title: string, message: string, duration: number = 4000) => {
     playSound();
     sendBrowserNotification(title, message);
     addNotification({ type, title, message, duration });
   };
 
-  // تهيئة الصوت وطلب الإذن
   useEffect(() => {
     audioRef.current = new Audio("https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3");
     audioRef.current.load();
@@ -113,7 +108,6 @@ export default function ProtectedOrders() {
         fetchAPI('technicians?select=*')
       ]);
       
-      // التحقق من الإشعارات الجديدة (للموبايل)
       const newCount = ordersData.length;
       if (newCount > lastNotificationCount && lastNotificationCount !== 0) {
         showUnifiedNotification('info', '📦 تحديث الأوردرات', `تم إضافة ${newCount - lastNotificationCount} أوردر جديد`, 5000);
@@ -272,6 +266,14 @@ export default function ProtectedOrders() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  const changeOrderStatus = async (orderId: string, newStatus: string) => {
+    try {
+      await fetchAPI(`orders?id=eq.${orderId}`, { method: 'PATCH', body: JSON.stringify({ status: newStatus }) });
+      showUnifiedNotification('success', '🔄 تغيير الحالة', `تم تغيير الحالة إلى ${newStatus === 'pending' ? 'قيد الانتظار' : newStatus === 'in-progress' ? 'قيد التنفيذ' : 'مكتمل'}`, 3000);
+      fetchData();
+    } catch (err) { console.error(err); }
+  };
+
   const filteredOrders = orders.filter(o => {
     const matchesSearch = 
       o.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -301,7 +303,6 @@ export default function ProtectedOrders() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {/* زر تفعيل الصوت */}
             <button 
               onClick={() => {
                 setAudioEnabled(!audioEnabled);
@@ -317,7 +318,6 @@ export default function ProtectedOrders() {
             >
               {audioEnabled ? "🔊" : "🔇"}
             </button>
-            {/* زر طلب إذن الإشعارات */}
             <button 
               onClick={requestNotificationPermission}
               className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-all"
@@ -332,10 +332,7 @@ export default function ProtectedOrders() {
         </div>
       </nav>
 
-      {/* الحاوية الرئيسية - أبعاد مضبوطة للموبايل */}
       <main className="max-w-5xl mx-auto p-2 sm:p-3 md:p-4">
-
-        {/* بطاقات الإحصائيات - متجاوبة مع الموبايل */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 md:gap-3 mb-5">
           <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 shadow-sm text-center">
             <p className="text-xl sm:text-2xl font-black text-white">{orders.length}</p>
@@ -359,7 +356,6 @@ export default function ProtectedOrders() {
           </div>
         </div>
 
-        {/* التبويبات - قابلة للتمرير على الموبايل */}
         <div className="flex gap-1 bg-slate-900 p-1 rounded-2xl border border-slate-800 mb-4 md:mb-6 overflow-x-auto scrollbar-hide">
           <button onClick={() => setActiveTab('orders')} className={`px-3 sm:px-5 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap ${activeTab === 'orders' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-500'}`}>الأوردرات</button>
           <button onClick={() => setActiveTab('technicians')} className={`px-3 sm:px-5 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap ${activeTab === 'technicians' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-500'}`}>الفنيين</button>
@@ -367,13 +363,107 @@ export default function ProtectedOrders() {
           <button onClick={() => setActiveTab('reports')} className={`px-3 sm:px-5 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap ${activeTab === 'reports' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-500'}`}>التقارير</button>
         </div>
 
-        {/* باقي المحتوى (الأوردرات، الفنيين، الفواتير، التقارير) - كما هو في الكود السابق */}
-        {/* ... لضيق المساحة، لم أكرر باقي المحتوى، لكنه موجود في الرد السابق */}
-        {/* يمكنك إضافة باقي التبويبات من الكود السابق هنا */}
+        {activeTab === 'orders' && (
+          <div className="space-y-4">
+            <div className="flex gap-2 flex-wrap">
+              <input type="text" placeholder="بحث..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="bg-slate-800 p-2 rounded flex-1" />
+              <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-slate-800 p-2 rounded">
+                <option value="all">الكل</option>
+                <option value="pending">قيد الانتظار</option>
+                <option value="in-progress">قيد التنفيذ</option>
+                <option value="completed">مكتمل</option>
+              </select>
+              <button onClick={() => { setEditingOrder(null); resetForm(); setShowOrderModal(true); }} className="bg-orange-600 px-4 py-2 rounded-xl flex items-center gap-2"><Plus className="w-4 h-4" /> أوردر جديد</button>
+            </div>
+            {filteredOrders.map(order => (
+              <div key={order.id} className="bg-slate-800 p-4 rounded-xl">
+                <div className="flex justify-between"><div><p className="font-bold">{order.customer_name}</p><p className="text-sm text-slate-400">{order.phone}</p></div><span className={`px-2 py-1 rounded text-xs ${order.status === 'pending' ? 'bg-yellow-500/20 text-yellow-500' : order.status === 'in-progress' ? 'bg-blue-500/20 text-blue-500' : 'bg-green-500/20 text-green-500'}`}>{order.status === 'pending' ? 'قيد الانتظار' : order.status === 'in-progress' ? 'قيد التنفيذ' : 'مكتمل'}</span></div>
+                <div className="grid grid-cols-2 gap-2 mt-2 text-sm"><span>الجهاز: {order.device}</span><span>الماركة: {order.brand}</span><span>التكلفة: {order.total_amount} ج.م</span><span>نصيب الشركة: {order.company_share} ج.م</span></div>
+                <div className="flex gap-2 mt-3">
+                  <select value={order.status} onChange={(e) => changeOrderStatus(order.id, e.target.value)} className="bg-slate-700 p-1 rounded text-sm">
+                    <option value="pending">قيد الانتظار</option>
+                    <option value="in-progress">قيد التنفيذ</option>
+                    <option value="completed">مكتمل</option>
+                  </select>
+                  <button onClick={() => { setEditingOrder(order); setFormData(order); setShowOrderModal(true); }} className="text-blue-400"><Edit className="w-4 h-4" /></button>
+                  <button onClick={() => deleteOrder(order.id)} className="text-red-400"><Trash2 className="w-4 h-4" /></button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
+        {activeTab === 'technicians' && (
+          <div className="space-y-4">
+            <button onClick={() => { setEditingTech(null); setTechForm({ name: '', phone: '', specialization: '', is_active: true }); setShowTechModal(true); }} className="bg-orange-600 px-4 py-2 rounded-xl flex items-center gap-2"><Plus className="w-4 h-4" /> إضافة فني</button>
+            <div className="space-y-3">
+              {technicians.map(tech => (
+                <div key={tech.id} className="bg-slate-800 p-4 rounded-xl flex justify-between items-center">
+                  <div><p className="font-bold">{tech.name}</p><p className="text-sm text-slate-400">{tech.phone} - {tech.specialization}</p></div>
+                  <div className="flex gap-2">
+                    <button onClick={() => { setEditingTech(tech); setTechForm(tech); setShowTechModal(true); }} className="text-blue-400"><Edit className="w-4 h-4" /></button>
+                    <button onClick={() => deleteTechnician(tech.id)} className="text-red-400"><Trash2 className="w-4 h-4" /></button>
+                    <button onClick={() => copyTechLink(tech.name, tech.id)} className="text-green-400">{copiedId === tech.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
 
-      {/* مودالات الإضافة والتعديل - كما هي */}
+      {showOrderModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-bold mb-4">{editingOrder ? 'تعديل أوردر' : 'أوردر جديد'}</h3>
+            <form onSubmit={saveOrder} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="text" placeholder="اسم العميل" value={formData.customer_name} onChange={e => handleFormChange('customer_name', e.target.value)} className="bg-slate-800 p-2 rounded" required />
+                <input type="text" placeholder="رقم الهاتف" value={formData.phone} onChange={e => handleFormChange('phone', e.target.value)} className="bg-slate-800 p-2 rounded" required />
+                <select value={formData.device} onChange={e => handleFormChange('device', e.target.value)} className="bg-slate-800 p-2 rounded">
+                  <option value="">اختر الجهاز</option>
+                  <option value="ثلاجة">ثلاجة</option><option value="غسالة">غسالة</option><option value="تكييف">تكييف</option><option value="بوتاجاز">بوتاجاز</option><option value="سخان">سخان</option><option value="other">أخرى</option>
+                </select>
+                {isOtherDevice && <input type="text" placeholder="اكتب الجهاز" value={customDevice} onChange={e => setCustomDevice(e.target.value)} className="bg-slate-800 p-2 rounded" required />}
+                <select value={formData.brand} onChange={e => handleFormChange('brand', e.target.value)} className="bg-slate-800 p-2 rounded">
+                  <option value="">اختر الماركة</option>
+                  <option value="سامسونج">سامسونج</option><option value="إل جي">إل جي</option><option value="شارب">شارب</option><option value="توشيبا">توشيبا</option><option value="زانوسي">زانوسي</option><option value="يونيون اير">يونيون اير</option><option value="فريش">فريش</option><option value="وايت ويل">وايت ويل</option><option value="أريستون">أريستون</option><option value="بيكو">بيكو</option><option value="هوفر">هوفر</option><option value="إندسيت">إندسيت</option><option value="other">أخرى</option>
+                </select>
+                {isOtherBrand && <input type="text" placeholder="اكتب الماركة" value={customBrand} onChange={e => setCustomBrand(e.target.value)} className="bg-slate-800 p-2 rounded" required />}
+                <input type="text" placeholder="العنوان" value={formData.address} onChange={e => handleFormChange('address', e.target.value)} className="bg-slate-800 p-2 rounded" />
+                <textarea placeholder="المشكلة" value={formData.problem} onChange={e => handleFormChange('problem', e.target.value)} className="bg-slate-800 p-2 rounded col-span-2" rows={2} />
+                <select value={formData.technician} onChange={e => handleFormChange('technician', e.target.value)} className="bg-slate-800 p-2 rounded">
+                  <option value="">اختر الفني</option>
+                  {technicians.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
+                </select>
+                <input type="number" placeholder="إجمالي المبلغ" value={formData.total_amount} onChange={e => handleFormChange('total_amount', e.target.value)} className="bg-slate-800 p-2 rounded" />
+                <input type="number" placeholder="المصاريف" value={formData.expenses} onChange={e => handleFormChange('expenses', e.target.value)} className="bg-slate-800 p-2 rounded" />
+              </div>
+              <div className="flex gap-3">
+                <button type="submit" className="flex-1 bg-orange-600 py-2 rounded-xl">حفظ</button>
+                <button type="button" onClick={() => setShowOrderModal(false)} className="flex-1 bg-slate-700 py-2 rounded-xl">إلغاء</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showTechModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4">{editingTech ? 'تعديل فني' : 'فني جديد'}</h3>
+            <form onSubmit={saveTechnician} className="space-y-4">
+              <input type="text" placeholder="الاسم" value={techForm.name} onChange={e => setTechForm({ ...techForm, name: e.target.value })} className="w-full bg-slate-800 p-2 rounded" required />
+              <input type="text" placeholder="رقم الهاتف" value={techForm.phone} onChange={e => setTechForm({ ...techForm, phone: e.target.value })} className="w-full bg-slate-800 p-2 rounded" required />
+              <input type="text" placeholder="التخصص" value={techForm.specialization} onChange={e => setTechForm({ ...techForm, specialization: e.target.value })} className="w-full bg-slate-800 p-2 rounded" />
+              <div className="flex gap-3">
+                <button type="submit" className="flex-1 bg-orange-600 py-2 rounded-xl">حفظ</button>
+                <button type="button" onClick={() => setShowTechModal(false)} className="flex-1 bg-slate-700 py-2 rounded-xl">إلغاء</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
