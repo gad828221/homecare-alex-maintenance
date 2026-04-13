@@ -97,7 +97,6 @@ export default function ProtectedOrders() {
   const [cashForm, setCashForm] = useState({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] });
   const [cashFilterDate, setCashFilterDate] = useState('');
   
-  // نموذج الشريك
   const [partnerForm, setPartnerForm] = useState({ name: '', share_percentage: 0, phone: '', is_active: true });
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -127,7 +126,6 @@ export default function ProtectedOrders() {
   
   const [stats, setStats] = useState({ pending: 0, inProgress: 0, completed: 0, cancelled: 0, totalIncome: 0 });
 
-  // حساب التأخير (حالة الكشف لا تحتسب تأخير)
   const getDaysDifference = (dateStr: string, status: string) => {
     if (status === 'inspected') return 0;
     if (!dateStr || dateStr === 'null' || dateStr === 'undefined') return 0;
@@ -159,7 +157,6 @@ export default function ProtectedOrders() {
     return daysDiff > 2;
   };
 
-  // جلب الإشعارات
   const fetchNotifications = useCallback(async () => {
     try {
       const data = await fetchAPI('notifications?select=*&order=created_at.desc');
@@ -167,7 +164,6 @@ export default function ProtectedOrders() {
     } catch (err) { console.error(err); }
   }, []);
 
-  // جلب الشركاء
   const fetchPartners = useCallback(async () => {
     try {
       const data = await fetchAPI('partners?select=*&order=created_at.desc');
@@ -175,7 +171,6 @@ export default function ProtectedOrders() {
     } catch (err) { console.error(err); }
   }, []);
 
-  // جلب الخزنة
   const fetchCashLedger = useCallback(async () => {
     try {
       let endpoint = 'cash_ledger?select=*&order=date.desc';
@@ -215,7 +210,6 @@ export default function ProtectedOrders() {
     }
   };
 
-  // توزيع أرباح يومية على الشركاء
   const distributeDailyProfit = async () => {
     const today = new Date().toISOString().split('T')[0];
     const todayIncome = cashLedger.filter(c => c.date === today && c.type === 'income').reduce((sum, c) => sum + c.amount, 0);
@@ -247,7 +241,6 @@ export default function ProtectedOrders() {
     alert(`✅ تم توزيع ${netProfit} ج.م على الشركاء بنسبة أسهمهم`);
   };
 
-  // جلب البيانات الأساسية
   const fetchData = useCallback(async () => {
     try {
       const [ordersData, techsData] = await Promise.all([
@@ -267,7 +260,6 @@ export default function ProtectedOrders() {
     } catch (err) { console.error(err); } finally { setLoading(false); }
   }, []);
 
-  // تسجيل دخول المدير
   useEffect(() => {
     addNotificationLog('تسجيل دخول', 'تم تسجيل دخول المدير إلى لوحة التحكم');
     fetchData();
@@ -320,7 +312,6 @@ export default function ProtectedOrders() {
     return cleaned;
   };
 
-  // إرسال واتساب للعميل عند تغيير الحالة
   const sendWhatsAppToCustomer = (order: any, newStatus: string) => {
     const phone = formatPhoneForWhatsApp(order.phone);
     let statusMessage = "";
@@ -350,7 +341,7 @@ export default function ProtectedOrders() {
     try {
       await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ status: newStatus }) });
       await addNotificationLog('تغيير حالة أوردر', `تم تغيير حالة أوردر ${order?.customer_name} إلى ${newStatus}`);
-      sendWhatsAppToCustomer(order, newStatus); // إرسال واتساب للعميل
+      sendWhatsAppToCustomer(order, newStatus);
       fetchData();
     } catch (err) { console.error(err); }
   };
@@ -423,7 +414,6 @@ export default function ProtectedOrders() {
     } catch (err) { console.error(err); }
   };
 
-  // إدارة الشركاء
   const savePartner = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -543,7 +533,7 @@ export default function ProtectedOrders() {
           <button onClick={() => setActiveTab('notifications')} className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1 ${activeTab === 'notifications' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}><Bell className="w-4 h-4" /> الإشعارات ({notifications.length})</button>
         </div>
 
-        {/* ================== الأوردرات ================== */}
+        {/* Orders Tab */}
         {activeTab === 'orders' && (
           <div className="space-y-4">
             <div className="flex flex-col md:flex-row gap-4">
@@ -594,7 +584,7 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* ================== الفنيين ================== */}
+        {/* Technicians Tab */}
         {activeTab === 'technicians' && (
           <div>
             <div className="flex justify-between items-center mb-4">
@@ -622,7 +612,7 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* ================== التقارير ================== */}
+        {/* Reports Tab */}
         {activeTab === 'reports' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-slate-900 p-6 rounded-2xl"><p className="text-slate-400">إجمالي الإيرادات</p><p className="text-3xl font-black text-white">{orders.reduce((a,o)=>a+(o.total_amount||0),0).toLocaleString()} ج.م</p></div>
@@ -631,7 +621,7 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* ================== الفواتير ================== */}
+        {/* Invoices Review Tab */}
         {activeTab === 'invoicesReview' && (
           <div className="space-y-4">
             <h2 className="text-xl font-bold">📄 فواتير بانتظار المراجعة</h2>
@@ -680,18 +670,29 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* ================== الخزنة ================== */}
+        {/* Cash Tab - مصحح */}
         {activeTab === 'cash' && (
           <div className="space-y-4">
             <div className="flex justify-between items-center flex-wrap gap-3">
               <div className="bg-emerald-500/20 p-4 rounded-2xl"><p className="text-slate-400">رصيد الخزنة</p><p className="text-3xl font-bold text-emerald-400">{cashBalance.toLocaleString()} ج.م</p></div>
-              <div className="flex gap-2"><input type="date" value={cashFilterDate} onChange={e => setCashFilterDate(e.target.value)} className="bg-slate-800 p-2 rounded" /><button onClick={() => setCashFilterDate('')} className="bg-slate-700 px-3 py-1 rounded text-sm">إلغاء الفلتر</button><button onClick={() => { setEditingCash(null); setCashForm({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] }); setShowCashModal(true); }} className="bg-orange-600 px-4 py-2 rounded-xl text-sm">+ إضافة حركة</button><button onClick={distributeDailyProfit} className="bg-purple-600 px-4 py-2 rounded-xl text-sm">📤 توزيع أرباح اليوم</button></div>
+              <div className="flex gap-2">
+                <input type="date" value={cashFilterDate} onChange={e => setCashFilterDate(e.target.value)} className="bg-slate-800 p-2 rounded" />
+                <button onClick={() => setCashFilterDate('')} className="bg-slate-700 px-3 py-1 rounded text-sm">إلغاء الفلتر</button>
+                <button onClick={() => { setEditingCash(null); setCashForm({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] }); setShowCashModal(true); }} className="bg-orange-600 px-4 py-2 rounded-xl text-sm">+ إضافة حركة</button>
+                <button onClick={distributeDailyProfit} className="bg-purple-600 px-4 py-2 rounded-xl text-sm">📤 توزيع أرباح اليوم</button>
+              </div>
             </div>
             <div className="bg-slate-900 rounded-2xl overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-slate-800"> hilab
-                  <th className="p-3">التاريخ</th><th>النوع</th><th>المبلغ</th><th>الوصف</th><th>إجراءات</th>
-                </table>
+                <thead className="bg-slate-800">
+                  <tr>
+                    <th className="p-3">التاريخ</th>
+                    <th>النوع</th>
+                    <th>المبلغ</th>
+                    <th>الوصف</th>
+                    <th>إجراءات</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {cashLedger.map(entry => (
                     <tr key={entry.id} className="border-b border-slate-800">
@@ -699,7 +700,10 @@ export default function ProtectedOrders() {
                       <td>{entry.type === 'income' ? '💰 دخل' : entry.type === 'expense' ? '💸 مصروف' : '📤 توزيع أرباح'}</td>
                       <td className={entry.type === 'income' ? 'text-green-400' : 'text-red-400'}>{entry.amount} ج.م</td>
                       <td>{entry.description}</td>
-                      <td className="flex gap-2"><button onClick={() => { setEditingCash(entry); setCashForm({ type: entry.type, amount: entry.amount, description: entry.description, date: entry.date }); setShowCashModal(true); }} className="text-blue-400"><Edit className="w-4 h-4" /></button><button onClick={() => deleteCashEntry(entry.id)} className="text-red-400"><Trash2 className="w-4 h-4" /></button></td>
+                      <td className="flex gap-2">
+                        <button onClick={() => { setEditingCash(entry); setCashForm({ type: entry.type, amount: entry.amount, description: entry.description, date: entry.date }); setShowCashModal(true); }} className="text-blue-400"><Edit className="w-4 h-4" /></button>
+                        <button onClick={() => deleteCashEntry(entry.id)} className="text-red-400"><Trash2 className="w-4 h-4" /></button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -708,7 +712,7 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* ================== الشركاء ================== */}
+        {/* Partners Tab */}
         {activeTab === 'partners' && (
           <div className="space-y-4">
             <div className="flex justify-end"><button onClick={() => { setEditingPartner(null); setPartnerForm({ name: '', share_percentage: 0, phone: '', is_active: true }); setShowPartnerModal(true); }} className="bg-orange-600 px-4 py-2 rounded-xl text-sm flex items-center gap-2"><UserPlus className="w-4 h-4" /> إضافة شريك</button></div>
@@ -725,7 +729,7 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* ================== الإشعارات ================== */}
+        {/* Notifications Tab */}
         {activeTab === 'notifications' && (
           <div className="space-y-4">
             <div className="flex justify-between items-center"><h2 className="text-xl font-bold">🔔 سجل الإشعارات</h2>{notifications.length > 0 && <button onClick={deleteAllNotifications} className="bg-red-600/20 text-red-400 px-3 py-1 rounded-lg text-sm flex items-center gap-1"><Trash className="w-4 h-4" /> مسح الكل</button>}</div>
@@ -742,7 +746,7 @@ export default function ProtectedOrders() {
         )}
       </main>
 
-      {/* مودال إضافة/تعديل أوردر */}
+      {/* Order Modal */}
       {showOrderModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -768,7 +772,7 @@ export default function ProtectedOrders() {
         </div>
       )}
 
-      {/* مودال إضافة/تعديل فني */}
+      {/* Technician Modal */}
       {showTechModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
@@ -786,7 +790,7 @@ export default function ProtectedOrders() {
         </div>
       )}
 
-      {/* مودال إضافة/تعديل شريك */}
+      {/* Partner Modal */}
       {showPartnerModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
@@ -802,7 +806,7 @@ export default function ProtectedOrders() {
         </div>
       )}
 
-      {/* مودال الخزنة */}
+      {/* Cash Modal */}
       {showCashModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
