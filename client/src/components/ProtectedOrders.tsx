@@ -3,7 +3,7 @@ import {
   Plus, Search, LayoutDashboard, Users, 
   CheckCircle2, AlertCircle, 
   Edit, Trash2, RefreshCw, Phone,
-  Copy, Check, Trash, Bell, DollarSign, X, FileText, Printer, UserPlus, UserMinus
+  Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus
 } from "lucide-react";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -26,10 +26,9 @@ const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   return res.json();
 };
 
-// دالة لإضافة إشعار (معدلة مع console.log للتأكد من عملها)
+// دالة لإضافة إشعار
 const addNotificationLog = async (action: string, details: string) => {
   try {
-    console.log("📝 محاولة تسجيل إشعار:", action, details);
     await fetchAPI('notifications', {
       method: 'POST',
       body: JSON.stringify({ 
@@ -40,16 +39,15 @@ const addNotificationLog = async (action: string, details: string) => {
         created_at: new Date().toISOString()
       })
     });
-    console.log("✅ تم تسجيل الإشعار بنجاح");
-  } catch (err) { 
-    console.error("❌ فشل تسجيل الإشعار:", err); 
-  }
+  } catch (err) { console.error("فشل تسجيل الإشعار:", err); }
 };
 
 // دالة لطباعة الفاتورة
-const printInvoice = (order: any, partsList?: string) => {
+const printInvoice = (order: any, partsList: string, warranty: string) => {
   const printWindow = window.open('', '_blank');
-  printWindow?.document.write(`
+  if (!printWindow) return;
+  
+  printWindow.document.write(`
     <html dir="rtl">
     <head><title>فاتورة صيانة</title>
     <style>
@@ -60,6 +58,7 @@ const printInvoice = (order: any, partsList?: string) => {
       .row { display: flex; justify-content: space-between; margin-bottom: 10px; }
       .label { font-weight: bold; }
       .total { font-size: 18px; font-weight: bold; color: #f97316; margin-top: 20px; padding-top: 10px; border-top: 1px solid #ddd; }
+      .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
     </style>
     </head>
     <body>
@@ -71,6 +70,7 @@ const printInvoice = (order: any, partsList?: string) => {
       <div class="row"><span class="label">العنوان:</span><span>${order.address || '-'}</span></div>
       <div class="row"><span class="label">الجهاز:</span><span>${order.device_type || order.device} - ${order.brand}</span></div>
       <div class="row"><span class="label">قطع الغيار:</span><span>${partsList || 'لا توجد'}</span></div>
+      <div class="row"><span class="label">الضمان:</span><span>${warranty}</span></div>
       <div class="row"><span class="label">المبلغ الإجمالي:</span><span>${order.total_amount || 0} ج.م</span></div>
       <div class="row"><span class="label">الصافي:</span><span>${order.net_amount || 0} ج.م</span></div>
       <div class="total">نصيب الشركة: ${order.company_share || 0} ج.م | نصيب الفني: ${order.technician_share || 0} ج.م</div>
@@ -79,8 +79,8 @@ const printInvoice = (order: any, partsList?: string) => {
     </body>
     </html>
   `);
-  printWindow?.document.close();
-  printWindow?.print();
+  printWindow.document.close();
+  printWindow.print();
 };
 
 export default function ProtectedOrders() {
@@ -99,7 +99,7 @@ export default function ProtectedOrders() {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [filterTechStatus, setFilterTechStatus] = useState<'all' | 'active' | 'inactive'>('active');
   
-  // --- نظام الخزنة ---
+  // نظام الخزنة
   const [cashLedger, setCashLedger] = useState<any[]>([]);
   const [cashBalance, setCashBalance] = useState(0);
   const [showCashModal, setShowCashModal] = useState(false);
@@ -138,7 +138,7 @@ export default function ProtectedOrders() {
 
   const getDaysDifference = (dateStr: string, status: string) => {
     if (status === 'inspected') return 0;
-    if (!dateStr || dateStr === 'null' || dateStr === 'undefined') return 0;
+    if (!dateStr) return 0;
     let orderDate: Date;
     if (dateStr.includes('/')) {
       const parts = dateStr.split('/');
@@ -203,7 +203,7 @@ export default function ProtectedOrders() {
         await addNotificationLog('تعديل حركة خزنة', `تم تعديل حركة ${cashForm.type} بقيمة ${cashForm.amount} ج.م`);
       } else {
         await fetchAPI('cash_ledger', { method: 'POST', body: JSON.stringify(cashForm) });
-        await addNotificationLog('إضافة حركة خزنة', `تم إضافة حركة ${cashForm.type} بقيمة ${cashForm.amount} ج.م`);
+        await addNotificationLog('إضافة حركة خزنة', `تم إضافة حركة ${cashForm.type} بقيمة ${cashForm.amount} ج.م - ${cashForm.description}`);
       }
       setShowCashModal(false);
       setEditingCash(null);
@@ -222,13 +222,13 @@ export default function ProtectedOrders() {
 
   const addCompanyProfitToCash = async (order: any) => {
     const companyShare = order.company_share || 0;
-    if (companyShare > 0) {
+    if (companyShare > 0 && order.is_paid) {
       await fetchAPI('cash_ledger', {
         method: 'POST',
         body: JSON.stringify({
           type: 'income',
           amount: companyShare,
-          description: `أرباح شركة من أوردر ${order.customer_name} (رقم ${order.id})`,
+          description: `أرباح شركة من أوردر ${order.customer_name}`,
           date: new Date().toISOString().split('T')[0]
         })
       });
@@ -237,35 +237,57 @@ export default function ProtectedOrders() {
     }
   };
 
+  // دالة توزيع الأرباح (معدلة ومضمونة العمل)
   const distributeDailyProfit = async () => {
-    const today = new Date().toISOString().split('T')[0];
-    const todayIncome = cashLedger.filter(c => c.date === today && c.type === 'income').reduce((sum, c) => sum + c.amount, 0);
-    const todayExpenses = cashLedger.filter(c => c.date === today && (c.type === 'expense' || c.type === 'profit_distribution')).reduce((sum, c) => sum + c.amount, 0);
-    const netProfit = todayIncome - todayExpenses;
-    
-    if (netProfit <= 0) {
-      alert("لا توجد أرباح صافية اليوم للتوزيع");
-      return;
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // حساب إجمالي الدخل اليومي من الخزنة
+      const todayIncome = cashLedger
+        .filter(c => c.date === today && c.type === 'income')
+        .reduce((sum, c) => sum + c.amount, 0);
+      
+      // حساب إجمالي المصروفات اليومية
+      const todayExpenses = cashLedger
+        .filter(c => c.date === today && c.type === 'expense')
+        .reduce((sum, c) => sum + c.amount, 0);
+      
+      const netProfit = todayIncome - todayExpenses;
+      
+      if (netProfit <= 0) {
+        alert("⚠️ لا توجد أرباح صافية اليوم للتوزيع");
+        return;
+      }
+      
+      const activePartners = partners.filter(p => p.is_active);
+      if (activePartners.length === 0) {
+        alert("⚠️ لا يوجد شركاء نشطون لتوزيع الأرباح عليهم");
+        return;
+      }
+      
+      const totalShares = activePartners.reduce((sum, p) => sum + p.share_percentage, 0);
+      
+      for (const partner of activePartners) {
+        const shareAmount = (netProfit * partner.share_percentage) / totalShares;
+        await fetchAPI('cash_ledger', {
+          method: 'POST',
+          body: JSON.stringify({
+            type: 'profit_distribution',
+            amount: shareAmount,
+            description: `توزيع أرباح يوم ${today} - ${partner.name} (${partner.share_percentage}%)`,
+            date: today
+          })
+        });
+      }
+      
+      await addNotificationLog('توزيع أرباح يومية', `تم توزيع ${netProfit.toFixed(2)} ج.م على ${activePartners.length} شريك`);
+      await fetchCashLedger();
+      alert(`✅ تم توزيع ${netProfit.toFixed(2)} ج.م على الشركاء بنسبة أسهمهم`);
+      
+    } catch (err) {
+      console.error("خطأ في توزيع الأرباح:", err);
+      alert("❌ حدث خطأ أثناء توزيع الأرباح");
     }
-    
-    const activePartners = partners.filter(p => p.is_active);
-    const totalShares = activePartners.reduce((sum, p) => sum + p.share_percentage, 0);
-    
-    for (const partner of activePartners) {
-      const shareAmount = (netProfit * partner.share_percentage) / totalShares;
-      await fetchAPI('cash_ledger', {
-        method: 'POST',
-        body: JSON.stringify({
-          type: 'profit_distribution',
-          amount: shareAmount,
-          description: `توزيع أرباح يوم ${today} - ${partner.name} (${partner.share_percentage}%)`,
-          date: today
-        })
-      });
-    }
-    await addNotificationLog('توزيع أرباح يومية', `تم توزيع ${netProfit} ج.م على ${activePartners.length} شريك`);
-    fetchCashLedger();
-    alert(`✅ تم توزيع ${netProfit} ج.م على الشركاء بنسبة أسهمهم`);
   };
 
   const fetchData = useCallback(async () => {
@@ -295,7 +317,7 @@ export default function ProtectedOrders() {
     fetchPartners();
     const interval = setInterval(() => { fetchData(); fetchNotifications(); fetchCashLedger(); }, 30000);
     return () => clearInterval(interval);
-  }, [fetchData, fetchNotifications, fetchCashLedger, fetchPartners]);
+  }, []);
 
   const calculateAmounts = (data: any) => {
     const total = parseFloat(data.total_amount) || 0;
@@ -347,7 +369,7 @@ export default function ProtectedOrders() {
         statusMessage = "🔧 تم بدء العمل على طلبك بواسطة الفني.";
         break;
       case 'inspected':
-        statusMessage = `🔍 تم الكشف على جهازك. سيتم إبلاغك بالخطوات التالية.`;
+        statusMessage = "🔍 تم الكشف على جهازك. سيتم إبلاغك بالخطوات التالية.";
         break;
       case 'completed':
         statusMessage = "✅ تم إكمال طلب الصيانة بنجاح. شكراً لثقتك بنا!";
@@ -379,6 +401,7 @@ export default function ProtectedOrders() {
       await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ is_paid: !currentStatus }) });
       await addNotificationLog('تحديث حالة الدفع', `تم تحديث حالة تحصيل أوردر ${order?.customer_name}`);
       
+      // إذا تم التفعيل والأوردر مكتمل، أضف الأرباح إلى الخزنة
       if (!currentStatus && order?.status === 'completed') {
         await addCompanyProfitToCash(order);
       }
@@ -428,7 +451,7 @@ export default function ProtectedOrders() {
   const saveOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     const orderNumber = `MG-${Date.now()}`;
-    const orderDate = formData.date || new Date().toLocaleDateString("ar-EG");
+    const orderDate = formData.date;
     const finalDeviceType = isOtherDevice ? customDevice : formData.device_type;
     const finalBrand = isOtherBrand ? customBrand : formData.brand;
     const orderToSave = { ...formData, device_type: finalDeviceType, brand: finalBrand, order_number: orderNumber, date: orderDate };
@@ -576,7 +599,7 @@ export default function ProtectedOrders() {
 
             <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
               <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm">
-                <option value="all">جميع الحالات</option><option value="pending">⏳ قيد الانتظار</option><option value="in-progress">🔧 قيد التنفيذ</option><option value="completed">✅ مكتمل</option><option value="cancelled">❌ ملغي</option><option value="deferred">📅 مؤجل</option><option value="inspected">💰 تم الكشف</option>
+                <option value="all">جميع الحالات</option><option value="pending">⏳ قيد الانتظار</option><option value="in-progress">🔧 قيد التنفيذ</option><option value="inspected">💰 تم الكشف</option><option value="completed">✅ مكتمل</option><option value="cancelled">❌ ملغي</option>
               </select>
               <select value={filterTechnician} onChange={(e) => setFilterTechnician(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm"><option value="">جميع الفنيين</option>{technicians.filter(t => t.is_active !== false).map(tech => <option key={tech.id} value={tech.name}>{tech.name}</option>)}</select>
               <select value={filterDeviceType} onChange={(e) => setFilterDeviceType(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm"><option value="">جميع الأجهزة</option>{DEVICE_TYPES.map(device => <option key={device} value={device}>{device}</option>)}</select>
@@ -590,18 +613,19 @@ export default function ProtectedOrders() {
                 <div key={order.id} className="bg-slate-900 rounded-3xl p-5 border border-slate-800 relative overflow-hidden">
                   {isDelayed(order) && <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">⚠️ تأخير {getDaysDifference(order.date, order.status)} أيام</div>}
                   <div className="flex justify-between items-start mb-4">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black ${order.status === 'completed' ? 'bg-green-500/10 text-green-500' : order.status === 'in-progress' ? 'bg-blue-500/10 text-blue-500' : order.status === 'cancelled' ? 'bg-red-500/10 text-red-500' : order.status === 'deferred' ? 'bg-purple-500/10 text-purple-500' : order.status === 'inspected' ? 'bg-yellow-500/10 text-yellow-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
-                      {order.status === 'completed' ? 'مكتمل' : order.status === 'in-progress' ? 'جاري العمل' : order.status === 'cancelled' ? 'ملغي' : order.status === 'deferred' ? 'مؤجل' : order.status === 'inspected' ? 'تم الكشف' : 'قيد الانتظار'}
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-black ${
+                      order.status === 'completed' ? 'bg-green-500/10 text-green-500' :
+                      order.status === 'in-progress' ? 'bg-blue-500/10 text-blue-500' :
+                      order.status === 'inspected' ? 'bg-yellow-500/10 text-yellow-500' :
+                      order.status === 'cancelled' ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-500'
+                    }`}>
+                      {order.status === 'completed' ? 'مكتمل' : order.status === 'in-progress' ? 'جاري العمل' : order.status === 'inspected' ? 'تم الكشف' : order.status === 'cancelled' ? 'ملغي' : 'قيد الانتظار'}
                     </span>
                     <div className="flex gap-1">
-                      <button 
-                        onClick={() => togglePaidStatus(order.id, order.is_paid)} 
-                        className={`p-2 rounded-xl ${order.is_paid ? 'bg-green-500/20 text-green-500' : 'bg-slate-800 text-slate-500'}`}
-                        title={order.is_paid ? 'تم التحصيل' : 'لم يتم التحصيل'}
-                      >
+                      <button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`p-2 rounded-xl ${order.is_paid ? 'bg-green-500/20 text-green-500' : 'bg-slate-800 text-slate-500'}`}>
                         {order.is_paid ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
                       </button>
-                      <button onClick={() => { setEditingOrder(order); setFormData({ ...order, date: order.date || new Date().toLocaleDateString("ar-EG") }); setShowOrderModal(true); }} className="p-2 text-slate-400 hover:text-white"><Edit className="w-4 h-4" /></button>
+                      <button onClick={() => { setEditingOrder(order); setFormData({ ...order, date: order.date }); setShowOrderModal(true); }} className="p-2 text-slate-400 hover:text-white"><Edit className="w-4 h-4" /></button>
                       <button onClick={() => deleteOrder(order.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
                     </div>
                   </div>
@@ -609,11 +633,18 @@ export default function ProtectedOrders() {
                     <h3 className="text-white font-black text-lg truncate">{order.customer_name}</h3>
                     <div className="text-xs text-slate-400"><p>📍 {order.address}</p><p>🔧 {order.device_type} - {order.brand}</p></div>
                     {order.inspection_amount > 0 && <div className="bg-yellow-500/10 p-2 rounded-lg"><span className="text-yellow-500">💰 كشف بقيمة: {order.inspection_amount} ج.م</span></div>}
-                    <div className="grid grid-cols-2 gap-2 py-2 border-y border-slate-800"><div><p className="text-[10px] text-slate-500">الإجمالي</p><p className="text-xs font-bold">{order.total_amount || 0} ج.م</p></div><div><p className="text-[10px] text-slate-500">الصافي</p><p className="text-xs text-green-500 font-bold">{order.net_amount || 0} ج.م</p></div></div>
+                    <div className="grid grid-cols-2 gap-2 py-2 border-y border-slate-800">
+                      <div><p className="text-[10px] text-slate-500">الإجمالي</p><p className="text-xs font-bold">{order.total_amount || 0} ج.م</p></div>
+                      <div><p className="text-[10px] text-slate-500">الصافي</p><p className="text-xs text-green-500 font-bold">{order.net_amount || 0} ج.م</p></div>
+                    </div>
                     <div className="flex justify-between items-center">
                       <div><p className="text-[10px] text-slate-500">الفني</p><p className="text-sm font-black text-orange-400">{order.technician || '-'}</p></div>
                       <select value={order.status} onChange={(e) => updateOrderStatus(order.id, e.target.value)} className="bg-slate-700 text-xs rounded px-2 py-1">
-                        <option value="pending">⏳ قيد الانتظار</option><option value="in-progress">🔧 قيد التنفيذ</option><option value="inspected">💰 تم الكشف</option><option value="completed">✅ مكتمل</option><option value="cancelled">❌ ملغي</option>
+                        <option value="pending">⏳ قيد الانتظار</option>
+                        <option value="in-progress">🔧 قيد التنفيذ</option>
+                        <option value="inspected">💰 تم الكشف</option>
+                        <option value="completed">✅ مكتمل</option>
+                        <option value="cancelled">❌ ملغي</option>
                       </select>
                     </div>
                     <div className={`text-[10px] font-black px-2 py-1 rounded ${order.is_paid ? 'text-green-500 bg-green-500/10' : 'text-red-500 bg-red-500/10'}`}>
@@ -630,7 +661,11 @@ export default function ProtectedOrders() {
         {activeTab === 'technicians' && (
           <div>
             <div className="flex justify-between items-center mb-4">
-              <div className="flex gap-2"><button onClick={() => setFilterTechStatus('active')} className={`px-3 py-1 rounded-full text-xs ${filterTechStatus === 'active' ? 'bg-orange-600' : 'bg-slate-800'}`}>النشطون</button><button onClick={() => setFilterTechStatus('inactive')} className={`px-3 py-1 rounded-full text-xs ${filterTechStatus === 'inactive' ? 'bg-orange-600' : 'bg-slate-800'}`}>غير النشطون</button><button onClick={() => setFilterTechStatus('all')} className={`px-3 py-1 rounded-full text-xs ${filterTechStatus === 'all' ? 'bg-orange-600' : 'bg-slate-800'}`}>الجميع</button></div>
+              <div className="flex gap-2">
+                <button onClick={() => setFilterTechStatus('active')} className={`px-3 py-1 rounded-full text-xs ${filterTechStatus === 'active' ? 'bg-orange-600' : 'bg-slate-800'}`}>النشطون</button>
+                <button onClick={() => setFilterTechStatus('inactive')} className={`px-3 py-1 rounded-full text-xs ${filterTechStatus === 'inactive' ? 'bg-orange-600' : 'bg-slate-800'}`}>غير النشطون</button>
+                <button onClick={() => setFilterTechStatus('all')} className={`px-3 py-1 rounded-full text-xs ${filterTechStatus === 'all' ? 'bg-orange-600' : 'bg-slate-800'}`}>الجميع</button>
+              </div>
               <button onClick={() => { setEditingTech(null); setTechForm({ name: '', phone: '', specialization: '', is_active: true, username: '', password: '' }); setShowTechModal(true); }} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2"><Plus className="w-4 h-4" /> إضافة فني</button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -640,7 +675,9 @@ export default function ProtectedOrders() {
                   <h3 className="text-white font-black text-lg">{tech.name}</h3>
                   <p className="text-slate-500 text-xs mb-4">{tech.specialization}</p>
                   <div className="flex flex-col gap-2">
-                    <button onClick={() => copyTechLink(tech.name, tech.id)} className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2">{copiedId === tech.id ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />} نسخ الرابط</button>
+                    <button onClick={() => copyTechLink(tech.name, tech.id)} className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2">
+                      {copiedId === tech.id ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />} نسخ الرابط
+                    </button>
                     <div className="flex gap-2">
                       <a href={`tel:${tech.phone}`} className="flex-1 p-2 bg-blue-500/10 text-blue-500 rounded-xl"><Phone className="w-4 h-4 mx-auto" /></a>
                       <button onClick={() => { setEditingTech(tech); setTechForm({ ...tech, password: '' }); setShowTechModal(true); }} className="flex-1 p-2 bg-slate-800 text-slate-400 rounded-xl"><Edit className="w-4 h-4 mx-auto" /></button>
@@ -663,14 +700,12 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* Invoices Review Tab - تم إصلاح خطأ useState */}
+        {/* Invoices Review Tab */}
         {activeTab === 'invoicesReview' && (
           <div className="space-y-4">
             <h2 className="text-xl font-bold">📄 فواتير بانتظار المراجعة</h2>
             {orders.filter(o => o.status === 'completed' && !o.invoice_approved).map(order => {
-              // استخدام متغير محلي بدلاً من useState داخل map
               let localPartsList = '';
-              
               return (
                 <div key={order.id} className="bg-slate-800 p-4 rounded-2xl">
                   <div className="flex justify-between items-start flex-wrap gap-3">
@@ -678,16 +713,16 @@ export default function ProtectedOrders() {
                     <div className="flex gap-2">
                       <button
                         onClick={async () => {
-                          const parts = prompt("✏️ أدخل قطع الغيار المستخدمة (مثال: تايمر - 300 ج.م)", "");
+                          const parts = prompt("✏️ أدخل قطع الغيار المستخدمة", "");
                           const partsList = parts || "";
-                          const warranty = prompt("🛡️ فترة الضمان (مثال: 6 أشهر)", order.warranty_period || "6 أشهر");
+                          const warranty = prompt("🛡️ فترة الضمان", order.warranty_period || "6 أشهر");
                           const finalWarranty = warranty || "6 أشهر";
                           await fetchAPI(`orders?id=eq.${order.id}`, {
                             method: 'PATCH',
                             body: JSON.stringify({ invoice_approved: true, warranty_period: finalWarranty, parts_used: partsList })
                           });
-                          await addNotificationLog('اعتماد فاتورة', `تم اعتماد فاتورة ${order.customer_name} مع ضمان ${finalWarranty}`);
-                          printInvoice(order, partsList);
+                          await addNotificationLog('اعتماد فاتورة', `تم اعتماد فاتورة ${order.customer_name}`);
+                          printInvoice(order, partsList, finalWarranty);
                           fetchData();
                         }}
                         className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-1"
@@ -790,7 +825,7 @@ export default function ProtectedOrders() {
 
       {/* ================== MODALS ================== */}
 
-      {/* Modal for Add/Edit Order */}
+      {/* Order Modal */}
       {showOrderModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -822,7 +857,7 @@ export default function ProtectedOrders() {
         </div>
       )}
 
-      {/* Modal for Add/Edit Technician */}
+      {/* Technician Modal */}
       {showTechModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
@@ -846,7 +881,7 @@ export default function ProtectedOrders() {
         </div>
       )}
 
-      {/* Modal for Add/Edit Partner */}
+      {/* Partner Modal */}
       {showPartnerModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
@@ -865,7 +900,7 @@ export default function ProtectedOrders() {
         </div>
       )}
 
-      {/* Modal for Cash Entry */}
+      {/* Cash Modal */}
       {showCashModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
