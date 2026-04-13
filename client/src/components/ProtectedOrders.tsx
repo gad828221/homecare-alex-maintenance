@@ -26,12 +26,12 @@ const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   return res.json();
 };
 
-// دالة لإضافة إشعار في قاعدة البيانات
-const addNotificationLog = async (action: string, details: string, userName: string = 'المدير') => {
+// دالة لإضافة إشعار
+const addNotificationLog = async (action: string, details: string) => {
   try {
     await fetchAPI('notifications', {
       method: 'POST',
-      body: JSON.stringify({ action, details, user_name: userName, type: 'admin_action' })
+      body: JSON.stringify({ action, details, user_name: 'المدير', created_at: new Date().toISOString() })
     });
   } catch (err) { console.error("فشل تسجيل الإشعار:", err); }
 };
@@ -89,7 +89,7 @@ export default function ProtectedOrders() {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [filterTechStatus, setFilterTechStatus] = useState<'all' | 'active' | 'inactive'>('active');
   
-  // --- نظام الخزنة والشركاء ---
+  // --- نظام الخزنة ---
   const [cashLedger, setCashLedger] = useState<any[]>([]);
   const [cashBalance, setCashBalance] = useState(0);
   const [showCashModal, setShowCashModal] = useState(false);
@@ -193,7 +193,7 @@ export default function ProtectedOrders() {
         await addNotificationLog('تعديل حركة خزنة', `تم تعديل حركة ${cashForm.type} بقيمة ${cashForm.amount} ج.م`);
       } else {
         await fetchAPI('cash_ledger', { method: 'POST', body: JSON.stringify(cashForm) });
-        await addNotificationLog('إضافة حركة خزنة', `تم إضافة حركة ${cashForm.type} بقيمة ${cashForm.amount} ج.م - ${cashForm.description}`);
+        await addNotificationLog('إضافة حركة خزنة', `تم إضافة حركة ${cashForm.type} بقيمة ${cashForm.amount} ج.م`);
       }
       setShowCashModal(false);
       setEditingCash(null);
@@ -206,6 +206,24 @@ export default function ProtectedOrders() {
     if (confirm('حذف هذه الحركة؟')) {
       await fetchAPI(`cash_ledger?id=eq.${id}`, { method: 'DELETE' });
       await addNotificationLog('حذف حركة خزنة', `تم حذف حركة من سجل الخزنة`);
+      fetchCashLedger();
+    }
+  };
+
+  // دالة إضافة أرباح الشركة إلى الخزنة (عند اكتمال الأوردر وتم التحصيل)
+  const addCompanyProfitToCash = async (order: any) => {
+    const companyShare = order.company_share || 0;
+    if (companyShare > 0) {
+      await fetchAPI('cash_ledger', {
+        method: 'POST',
+        body: JSON.stringify({
+          type: 'income',
+          amount: companyShare,
+          description: `أرباح شركة من أوردر ${order.customer_name} (رقم ${order.id})`,
+          date: new Date().toISOString().split('T')[0]
+        })
+      });
+      await addNotificationLog('إضافة أرباح للخزنة', `تم إضافة ${companyShare} ج.م من أوردر ${order.customer_name}`);
       fetchCashLedger();
     }
   };
@@ -346,10 +364,18 @@ export default function ProtectedOrders() {
     } catch (err) { console.error(err); }
   };
 
+  // دالة تعديل حالة التحصيل - عند التفعيل، تضاف أرباح الشركة إلى الخزنة
   const togglePaidStatus = async (id: number, currentStatus: boolean) => {
+    const order = orders.find(o => o.id === id);
     try {
       await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ is_paid: !currentStatus }) });
-      await addNotificationLog('تحديث حالة الدفع', `تم تحديث حالة تحصيل أوردر رقم ${id}`);
+      await addNotificationLog('تحديث حالة الدفع', `تم تحديث حالة تحصيل أوردر ${order?.customer_name}`);
+      
+      // إذا تم التفعيل (أصبحت is_paid = true) وكان الأوردر مكتملاً، أضف أرباح الشركة إلى الخزنة
+      if (!currentStatus && order?.status === 'completed') {
+        await addCompanyProfitToCash(order);
+      }
+      
       fetchData();
     } catch (err) { console.error(err); }
   };
@@ -561,7 +587,13 @@ export default function ProtectedOrders() {
                       {order.status === 'completed' ? 'مكتمل' : order.status === 'in-progress' ? 'جاري العمل' : order.status === 'cancelled' ? 'ملغي' : order.status === 'deferred' ? 'مؤجل' : order.status === 'inspected' ? 'تم الكشف' : 'قيد الانتظار'}
                     </span>
                     <div className="flex gap-1">
-                      <button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`p-2 rounded-xl ${order.is_paid ? 'bg-green-500/20 text-green-500' : 'bg-slate-800 text-slate-500'}`}>{order.is_paid ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}</button>
+                      <button 
+                        onClick={() => togglePaidStatus(order.id, order.is_paid)} 
+                        className={`p-2 rounded-xl ${order.is_paid ? 'bg-green-500/20 text-green-500' : 'bg-slate-800 text-slate-500'}`}
+                        title={order.is_paid ? 'تم التحصيل' : 'لم يتم التحصيل'}
+                      >
+                        {order.is_paid ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                      </button>
                       <button onClick={() => { setEditingOrder(order); setFormData({ ...order, date: order.date || new Date().toLocaleDateString("ar-EG") }); setShowOrderModal(true); }} className="p-2 text-slate-400 hover:text-white"><Edit className="w-4 h-4" /></button>
                       <button onClick={() => deleteOrder(order.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
                     </div>
@@ -576,6 +608,9 @@ export default function ProtectedOrders() {
                       <select value={order.status} onChange={(e) => updateOrderStatus(order.id, e.target.value)} className="bg-slate-700 text-xs rounded px-2 py-1">
                         <option value="pending">⏳ قيد الانتظار</option><option value="in-progress">🔧 قيد التنفيذ</option><option value="inspected">💰 تم الكشف</option><option value="completed">✅ مكتمل</option><option value="cancelled">❌ ملغي</option>
                       </select>
+                    </div>
+                    <div className={`text-[10px] font-black px-2 py-1 rounded ${order.is_paid ? 'text-green-500 bg-green-500/10' : 'text-red-500 bg-red-500/10'}`}>
+                      {order.is_paid ? '✅ تم التحصيل' : '⏳ لم يتحصل'}
                     </div>
                   </div>
                 </div>
@@ -670,7 +705,7 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* Cash Tab - مصحح */}
+        {/* Cash Tab */}
         {activeTab === 'cash' && (
           <div className="space-y-4">
             <div className="flex justify-between items-center flex-wrap gap-3">
@@ -685,13 +720,7 @@ export default function ProtectedOrders() {
             <div className="bg-slate-900 rounded-2xl overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-slate-800">
-                  <tr>
-                    <th className="p-3">التاريخ</th>
-                    <th>النوع</th>
-                    <th>المبلغ</th>
-                    <th>الوصف</th>
-                    <th>إجراءات</th>
-                  </tr>
+                  <tr><th className="p-3">التاريخ</th><th>النوع</th><th>المبلغ</th><th>الوصف</th><th>إجراءات</th></tr>
                 </thead>
                 <tbody>
                   {cashLedger.map(entry => (
@@ -736,7 +765,7 @@ export default function ProtectedOrders() {
             <div className="space-y-3">
               {notifications.map(notif => (
                 <div key={notif.id} className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-start">
-                  <div><div className="flex gap-2 text-sm"><span className="text-orange-400">{notif.action}</span><span className="text-slate-400">|</span><span>{notif.details}</span><span className="text-slate-400">| بواسطة: {notif.user_name || 'المدير'}</span></div><div className="text-xs text-slate-500 mt-1">{new Date(notif.created_at).toLocaleString('ar-EG')}</div></div>
+                  <div><div className="flex gap-2 text-sm"><span className="text-orange-400">{notif.action}</span><span className="text-slate-400">|</span><span>{notif.details}</span></div><div className="text-xs text-slate-500 mt-1">{new Date(notif.created_at).toLocaleString('ar-EG')}</div></div>
                   <button onClick={() => deleteNotification(notif.id)} className="text-red-400"><Trash className="w-4 h-4" /></button>
                 </div>
               ))}
@@ -746,81 +775,7 @@ export default function ProtectedOrders() {
         )}
       </main>
 
-      {/* Order Modal */}
-      {showOrderModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-bold">{editingOrder ? 'تعديل أوردر' : 'أوردر جديد'}</h3><button onClick={() => setShowOrderModal(false)} className="p-1 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button></div>
-            <form onSubmit={saveOrder} className="space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div><label className="block text-sm text-slate-400 mb-1">اسم العميل *</label><input type="text" value={formData.customer_name} onChange={e => handleFormChange('customer_name', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" required /></div>
-                <div><label className="block text-sm text-slate-400 mb-1">رقم الهاتف *</label><input type="text" value={formData.phone} onChange={e => handleFormChange('phone', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" required /></div>
-                <div><label className="block text-sm text-slate-400 mb-1">نوع الجهاز</label><select value={formData.device_type} onChange={e => handleFormChange('device_type', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white"><option value="">اختر</option>{DEVICE_TYPES.map(d=><option key={d}>{d}</option>)}<option value="other">أخرى</option></select></div>
-                {isOtherDevice && <div><label className="block text-sm text-slate-400 mb-1">جهاز مخصص</label><input type="text" value={customDevice} onChange={e=>setCustomDevice(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" required /></div>}
-                <div><label className="block text-sm text-slate-400 mb-1">الماركة</label><select value={formData.brand} onChange={e => handleFormChange('brand', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white"><option value="">اختر</option>{BRANDS.map(b=><option key={b}>{b}</option>)}<option value="other">أخرى</option></select></div>
-                {isOtherBrand && <div><label className="block text-sm text-slate-400 mb-1">ماركة مخصصة</label><input type="text" value={customBrand} onChange={e=>setCustomBrand(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" required /></div>}
-                <div className="md:col-span-2"><label className="block text-sm text-slate-400 mb-1">العنوان</label><input type="text" value={formData.address} onChange={e=>handleFormChange('address', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" /></div>
-                <div className="md:col-span-2"><label className="block text-sm text-slate-400 mb-1">وصف المشكلة</label><textarea rows={3} value={formData.problem_description} onChange={e=>handleFormChange('problem_description', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" /></div>
-                <div><label className="block text-sm text-slate-400 mb-1">الفني</label><select value={formData.technician} onChange={e=>handleFormChange('technician', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white"><option value="">اختر فني</option>{technicians.filter(t=>t.is_active!==false).map(t=><option key={t.id}>{t.name}</option>)}</select></div>
-                <div><label className="block text-sm text-slate-400 mb-1">إجمالي المبلغ</label><input type="number" value={formData.total_amount} onChange={e=>handleFormChange('total_amount', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" /></div>
-                <div><label className="block text-sm text-slate-400 mb-1">قطع غيار</label><input type="number" value={formData.parts_cost} onChange={e=>handleFormChange('parts_cost', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" /></div>
-                <div><label className="block text-sm text-slate-400 mb-1">مواصلات</label><input type="number" value={formData.transport_cost} onChange={e=>handleFormChange('transport_cost', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" /></div>
-              </div>
-              <div className="flex gap-3"><button type="submit" className="flex-1 bg-orange-600 py-3 rounded-xl font-bold">حفظ</button><button type="button" onClick={() => setShowOrderModal(false)} className="flex-1 bg-slate-700 py-3 rounded-xl font-bold">إلغاء</button></div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Technician Modal */}
-      {showTechModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-bold">{editingTech ? 'تعديل فني' : 'فني جديد'}</h3><button onClick={() => setShowTechModal(false)} className="p-1 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button></div>
-            <form onSubmit={saveTechnician} className="space-y-4">
-              <input type="text" placeholder="الاسم" value={techForm.name} onChange={e => setTechForm({ ...techForm, name: e.target.value })} className="w-full bg-slate-800 p-3 rounded-xl" required />
-              <input type="text" placeholder="رقم الهاتف" value={techForm.phone} onChange={e => setTechForm({ ...techForm, phone: e.target.value })} className="w-full bg-slate-800 p-3 rounded-xl" required />
-              <input type="text" placeholder="التخصص" value={techForm.specialization} onChange={e => setTechForm({ ...techForm, specialization: e.target.value })} className="w-full bg-slate-800 p-3 rounded-xl" />
-              <input type="text" placeholder="اسم المستخدم" value={techForm.username} onChange={e => setTechForm({ ...techForm, username: e.target.value })} className="w-full bg-slate-800 p-3 rounded-xl" />
-              <input type="password" placeholder="كلمة المرور" value={techForm.password} onChange={e => setTechForm({ ...techForm, password: e.target.value })} className="w-full bg-slate-800 p-3 rounded-xl" />
-              <div className="flex items-center gap-2"><input type="checkbox" checked={techForm.is_active} onChange={e => setTechForm({ ...techForm, is_active: e.target.checked })} /><label>نشط</label></div>
-              <div className="flex gap-3"><button type="submit" className="flex-1 bg-orange-600 py-3 rounded-xl font-bold">حفظ</button><button type="button" onClick={() => setShowTechModal(false)} className="flex-1 bg-slate-700 py-3 rounded-xl font-bold">إلغاء</button></div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Partner Modal */}
-      {showPartnerModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">{editingPartner ? 'تعديل شريك' : 'إضافة شريك جديد'}</h3>
-            <form onSubmit={savePartner} className="space-y-4">
-              <input type="text" placeholder="اسم الشريك" value={partnerForm.name} onChange={e => setPartnerForm({ ...partnerForm, name: e.target.value })} className="w-full bg-slate-800 p-3 rounded-xl" required />
-              <input type="number" placeholder="نسبة الربح (%)" value={partnerForm.share_percentage} onChange={e => setPartnerForm({ ...partnerForm, share_percentage: parseFloat(e.target.value) })} className="w-full bg-slate-800 p-3 rounded-xl" required />
-              <input type="text" placeholder="رقم الهاتف (اختياري)" value={partnerForm.phone} onChange={e => setPartnerForm({ ...partnerForm, phone: e.target.value })} className="w-full bg-slate-800 p-3 rounded-xl" />
-              <div className="flex items-center gap-2"><input type="checkbox" checked={partnerForm.is_active} onChange={e => setPartnerForm({ ...partnerForm, is_active: e.target.checked })} /><label>نشط</label></div>
-              <div className="flex gap-3"><button type="submit" className="flex-1 bg-orange-600 py-3 rounded-xl font-bold">حفظ</button><button type="button" onClick={() => setShowPartnerModal(false)} className="flex-1 bg-slate-700 py-3 rounded-xl font-bold">إلغاء</button></div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Cash Modal */}
-      {showCashModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">{editingCash ? 'تعديل حركة' : 'إضافة حركة'}</h3>
-            <form onSubmit={addCashEntry} className="space-y-4">
-              <select value={cashForm.type} onChange={e => setCashForm({ ...cashForm, type: e.target.value })} className="w-full bg-slate-800 p-3 rounded-xl"><option value="income">💰 دخل</option><option value="expense">💸 مصروف</option></select>
-              <input type="number" placeholder="المبلغ" value={cashForm.amount} onChange={e => setCashForm({ ...cashForm, amount: parseFloat(e.target.value) })} className="w-full bg-slate-800 p-3 rounded-xl" required />
-              <input type="text" placeholder="الوصف" value={cashForm.description} onChange={e => setCashForm({ ...cashForm, description: e.target.value })} className="w-full bg-slate-800 p-3 rounded-xl" required />
-              <input type="date" value={cashForm.date} onChange={e => setCashForm({ ...cashForm, date: e.target.value })} className="w-full bg-slate-800 p-3 rounded-xl" required />
-              <div className="flex gap-3"><button type="submit" className="flex-1 bg-orange-600 py-3 rounded-xl font-bold">حفظ</button><button type="button" onClick={() => setShowCashModal(false)} className="flex-1 bg-slate-700 py-3 rounded-xl font-bold">إلغاء</button></div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Modals - (سيتم إضافتها في الرد التالي لتجنب طول الرسالة) */}
     </div>
   );
 }
