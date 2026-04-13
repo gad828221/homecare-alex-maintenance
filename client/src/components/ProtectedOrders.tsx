@@ -42,7 +42,7 @@ const addNotificationLog = async (action: string, details: string) => {
   } catch (err) { console.error("فشل تسجيل الإشعار:", err); }
 };
 
-// دالة لطباعة الفاتورة
+// دالة لطباعة الفاتورة (معدلة)
 const printInvoice = (order: any, partsList: string, warranty: string) => {
   const printWindow = window.open('', '_blank');
   if (!printWindow) return;
@@ -99,7 +99,6 @@ export default function ProtectedOrders() {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [filterTechStatus, setFilterTechStatus] = useState<'all' | 'active' | 'inactive'>('active');
   
-  // نظام الخزنة
   const [cashLedger, setCashLedger] = useState<any[]>([]);
   const [cashBalance, setCashBalance] = useState(0);
   const [showCashModal, setShowCashModal] = useState(false);
@@ -237,47 +236,54 @@ export default function ProtectedOrders() {
     }
   };
 
-  // دالة توزيع الأرباح (معدلة ومضمونة العمل)
+  // دالة توزيع الأرباح المصححة
   const distributeDailyProfit = async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      // حساب إجمالي الدخل اليومي من الخزنة
+      // حساب إجمالي الدخل اليومي
       const todayIncome = cashLedger
         .filter(c => c.date === today && c.type === 'income')
-        .reduce((sum, c) => sum + c.amount, 0);
+        .reduce((sum, c) => sum + Number(c.amount), 0);
       
       // حساب إجمالي المصروفات اليومية
       const todayExpenses = cashLedger
         .filter(c => c.date === today && c.type === 'expense')
-        .reduce((sum, c) => sum + c.amount, 0);
+        .reduce((sum, c) => sum + Number(c.amount), 0);
       
       const netProfit = todayIncome - todayExpenses;
       
       if (netProfit <= 0) {
-        alert("⚠️ لا توجد أرباح صافية اليوم للتوزيع");
+        alert("⚠️ لا توجد أرباح صافية اليوم للتوزيع (الدخل: " + todayIncome + " - المصروفات: " + todayExpenses + ")");
         return;
       }
       
-      const activePartners = partners.filter(p => p.is_active);
+      const activePartners = partners.filter(p => p.is_active === true);
       if (activePartners.length === 0) {
         alert("⚠️ لا يوجد شركاء نشطون لتوزيع الأرباح عليهم");
         return;
       }
       
-      const totalShares = activePartners.reduce((sum, p) => sum + p.share_percentage, 0);
+      const totalShares = activePartners.reduce((sum, p) => sum + Number(p.share_percentage), 0);
+      
+      if (totalShares === 0) {
+        alert("⚠️ مجموع نسب الشركاء يساوي صفر");
+        return;
+      }
       
       for (const partner of activePartners) {
-        const shareAmount = (netProfit * partner.share_percentage) / totalShares;
-        await fetchAPI('cash_ledger', {
-          method: 'POST',
-          body: JSON.stringify({
-            type: 'profit_distribution',
-            amount: shareAmount,
-            description: `توزيع أرباح يوم ${today} - ${partner.name} (${partner.share_percentage}%)`,
-            date: today
-          })
-        });
+        const shareAmount = (netProfit * Number(partner.share_percentage)) / totalShares;
+        if (shareAmount > 0) {
+          await fetchAPI('cash_ledger', {
+            method: 'POST',
+            body: JSON.stringify({
+              type: 'profit_distribution',
+              amount: shareAmount,
+              description: `توزيع أرباح يوم ${today} - ${partner.name} (${partner.share_percentage}%)`,
+              date: today
+            })
+          });
+        }
       }
       
       await addNotificationLog('توزيع أرباح يومية', `تم توزيع ${netProfit.toFixed(2)} ج.م على ${activePartners.length} شريك`);
@@ -286,7 +292,7 @@ export default function ProtectedOrders() {
       
     } catch (err) {
       console.error("خطأ في توزيع الأرباح:", err);
-      alert("❌ حدث خطأ أثناء توزيع الأرباح");
+      alert("❌ حدث خطأ أثناء توزيع الأرباح: " + err.message);
     }
   };
 
@@ -401,7 +407,6 @@ export default function ProtectedOrders() {
       await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ is_paid: !currentStatus }) });
       await addNotificationLog('تحديث حالة الدفع', `تم تحديث حالة تحصيل أوردر ${order?.customer_name}`);
       
-      // إذا تم التفعيل والأوردر مكتمل، أضف الأرباح إلى الخزنة
       if (!currentStatus && order?.status === 'completed') {
         await addCompanyProfitToCash(order);
       }
@@ -589,7 +594,7 @@ export default function ProtectedOrders() {
           <button onClick={() => setActiveTab('notifications')} className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1 ${activeTab === 'notifications' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}><Bell className="w-4 h-4" /> الإشعارات ({notifications.length})</button>
         </div>
 
-        {/* Orders Tab */}
+        {/* Orders Tab - مختصر لتجنب طول الرسالة */}
         {activeTab === 'orders' && (
           <div className="space-y-4">
             <div className="flex flex-col md:flex-row gap-4">
@@ -613,12 +618,7 @@ export default function ProtectedOrders() {
                 <div key={order.id} className="bg-slate-900 rounded-3xl p-5 border border-slate-800 relative overflow-hidden">
                   {isDelayed(order) && <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">⚠️ تأخير {getDaysDifference(order.date, order.status)} أيام</div>}
                   <div className="flex justify-between items-start mb-4">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black ${
-                      order.status === 'completed' ? 'bg-green-500/10 text-green-500' :
-                      order.status === 'in-progress' ? 'bg-blue-500/10 text-blue-500' :
-                      order.status === 'inspected' ? 'bg-yellow-500/10 text-yellow-500' :
-                      order.status === 'cancelled' ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-500'
-                    }`}>
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-black ${order.status === 'completed' ? 'bg-green-500/10 text-green-500' : order.status === 'in-progress' ? 'bg-blue-500/10 text-blue-500' : order.status === 'inspected' ? 'bg-yellow-500/10 text-yellow-500' : order.status === 'cancelled' ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
                       {order.status === 'completed' ? 'مكتمل' : order.status === 'in-progress' ? 'جاري العمل' : order.status === 'inspected' ? 'تم الكشف' : order.status === 'cancelled' ? 'ملغي' : 'قيد الانتظار'}
                     </span>
                     <div className="flex gap-1">
@@ -640,11 +640,7 @@ export default function ProtectedOrders() {
                     <div className="flex justify-between items-center">
                       <div><p className="text-[10px] text-slate-500">الفني</p><p className="text-sm font-black text-orange-400">{order.technician || '-'}</p></div>
                       <select value={order.status} onChange={(e) => updateOrderStatus(order.id, e.target.value)} className="bg-slate-700 text-xs rounded px-2 py-1">
-                        <option value="pending">⏳ قيد الانتظار</option>
-                        <option value="in-progress">🔧 قيد التنفيذ</option>
-                        <option value="inspected">💰 تم الكشف</option>
-                        <option value="completed">✅ مكتمل</option>
-                        <option value="cancelled">❌ ملغي</option>
+                        <option value="pending">⏳ قيد الانتظار</option><option value="in-progress">🔧 قيد التنفيذ</option><option value="inspected">💰 تم الكشف</option><option value="completed">✅ مكتمل</option><option value="cancelled">❌ ملغي</option>
                       </select>
                     </div>
                     <div className={`text-[10px] font-black px-2 py-1 rounded ${order.is_paid ? 'text-green-500 bg-green-500/10' : 'text-red-500 bg-red-500/10'}`}>
@@ -700,12 +696,11 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* Invoices Review Tab */}
+        {/* Invoices Review Tab - معدل */}
         {activeTab === 'invoicesReview' && (
           <div className="space-y-4">
             <h2 className="text-xl font-bold">📄 فواتير بانتظار المراجعة</h2>
             {orders.filter(o => o.status === 'completed' && !o.invoice_approved).map(order => {
-              let localPartsList = '';
               return (
                 <div key={order.id} className="bg-slate-800 p-4 rounded-2xl">
                   <div className="flex justify-between items-start flex-wrap gap-3">
@@ -713,17 +708,18 @@ export default function ProtectedOrders() {
                     <div className="flex gap-2">
                       <button
                         onClick={async () => {
-                          const parts = prompt("✏️ أدخل قطع الغيار المستخدمة", "");
-                          const partsList = parts || "";
-                          const warranty = prompt("🛡️ فترة الضمان", order.warranty_period || "6 أشهر");
+                          const parts = prompt("✏️ أدخل قطع الغيار المستخدمة (مثال: تايمر - 300 ج.م)", "");
+                          const partsList = parts || "لا توجد";
+                          const warranty = prompt("🛡️ فترة الضمان (مثال: 6 أشهر، سنة، سنتين)", "6 أشهر");
                           const finalWarranty = warranty || "6 أشهر";
                           await fetchAPI(`orders?id=eq.${order.id}`, {
                             method: 'PATCH',
                             body: JSON.stringify({ invoice_approved: true, warranty_period: finalWarranty, parts_used: partsList })
                           });
-                          await addNotificationLog('اعتماد فاتورة', `تم اعتماد فاتورة ${order.customer_name}`);
+                          await addNotificationLog('اعتماد فاتورة', `تم اعتماد فاتورة ${order.customer_name} مع ضمان ${finalWarranty}`);
                           printInvoice(order, partsList, finalWarranty);
-                          fetchData();
+                          await fetchData();
+                          alert("✅ تم اعتماد الفاتورة وطباعتها");
                         }}
                         className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-1"
                       >
@@ -734,7 +730,7 @@ export default function ProtectedOrders() {
                           if (confirm("حذف الأوردر؟")) {
                             await fetchAPI(`orders?id=eq.${order.id}`, { method: 'DELETE' });
                             await addNotificationLog('حذف فاتورة', `تم حذف فاتورة ${order.customer_name}`);
-                            fetchData();
+                            await fetchData();
                           }
                         }}
                         className="bg-red-600/80 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm"
@@ -779,8 +775,8 @@ export default function ProtectedOrders() {
                       <td className="flex gap-2">
                         <button onClick={() => { setEditingCash(entry); setCashForm({ type: entry.type, amount: entry.amount, description: entry.description, date: entry.date }); setShowCashModal(true); }} className="text-blue-400"><Edit className="w-4 h-4" /></button>
                         <button onClick={() => deleteCashEntry(entry.id)} className="text-red-400"><Trash2 className="w-4 h-4" /></button>
-                      </td>
-                    </tr>
+                       </td>
+                     </tr>
                   ))}
                 </tbody>
               </table>
@@ -822,8 +818,6 @@ export default function ProtectedOrders() {
         )}
 
       </main>
-
-      {/* ================== MODALS ================== */}
 
       {/* Order Modal */}
       {showOrderModal && (
