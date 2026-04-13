@@ -1,12 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { 
-  Plus, Search, LayoutDashboard, Users, 
-  CheckCircle2, AlertCircle, 
+  Plus, Download, Search, LayoutDashboard, Users, 
+  Clock, CheckCircle2, AlertCircle, XCircle, 
   Edit, Trash2, RefreshCw, Phone,
-  Copy, Check, Trash, Bell, DollarSign, X, Filter
+  TrendingUp, Wallet, PieChart, Calendar, Copy, Check,
+  Send, MessageCircle, StickyNote, Eye
 } from "lucide-react";
-import { useNotification } from "./NotificationSystem";
-import { InvoiceApprovalModal } from "./InvoiceApprovalModal";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -29,23 +28,29 @@ const fetchAPI = async (endpoint: string, options?: RequestInit) => {
 };
 
 export default function ProtectedOrders() {
-  const { addNotification } = useNotification();
   const [orders, setOrders] = useState<any[]>([]);
   const [technicians, setTechnicians] = useState<any[]>([]);
-  const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'orders' | 'technicians' | 'reports' | 'invoices' | 'notifications'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'technicians' | 'reports' | 'notifications' | 'invoicesReview'>('orders');
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showTechModal, setShowTechModal] = useState(false);
   const [editingOrder, setEditingOrder] = useState<any>(null);
   const [editingTech, setEditingTech] = useState<any>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
-  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
-  const [selectedOrderForInvoice, setSelectedOrderForInvoice] = useState<any>(null);
+  const [filterTechStatus, setFilterTechStatus] = useState<'all' | 'active' | 'inactive'>('active');
   
-  const [showInspectModal, setShowInspectModal] = useState(false);
-  const [selectedOrderForInspect, setSelectedOrderForInspect] = useState<any>(null);
-  const [inspectAmount, setInspectAmount] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterTechnician, setFilterTechnician] = useState('');
+  const [filterDeviceType, setFilterDeviceType] = useState('');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
+  const [filterDelay, setFilterDelay] = useState<'all' | 'delayed'>('all');
+  
+  const [customDevice, setCustomDevice] = useState('');
+  const [customBrand, setCustomBrand] = useState('');
+  const [isOtherDevice, setIsOtherDevice] = useState(false);
+  const [isOtherBrand, setIsOtherBrand] = useState(false);
   
   const [formData, setFormData] = useState({
     customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '',
@@ -53,96 +58,42 @@ export default function ProtectedOrders() {
     net_amount: 0, company_share: 0, technician_share: 0, is_paid: false,
     date: new Date().toLocaleDateString("ar-EG")
   });
-
-  const [customDevice, setCustomDevice] = useState('');
-  const [customBrand, setCustomBrand] = useState('');
-  const [isOtherDevice, setIsOtherDevice] = useState(false);
-  const [isOtherBrand, setIsOtherBrand] = useState(false);
   
-  const [techForm, setTechForm] = useState({ name: '', phone: '', specialization: '', is_active: true });
-  const [stats, setStats] = useState({ pending: 0, inProgress: 0, inspected: 0, completed: 0, cancelled: 0, totalIncome: 0 });
+  const [techForm, setTechForm] = useState({ 
+    name: '', phone: '', specialization: '', is_active: true,
+    username: '', password: '' 
+  });
   
-  // --- الفلاتر الاحترافية ---
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [filterTechnician, setFilterTechnician] = useState('');
-  const [filterDeviceType, setFilterDeviceType] = useState('');
-  const [filterBrand, setFilterBrand] = useState('');
-  const [filterDateFrom, setFilterDateFrom] = useState('');
-  const [filterDateTo, setFilterDateTo] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
+  const [stats, setStats] = useState({ pending: 0, inProgress: 0, completed: 0, cancelled: 0, totalIncome: 0 });
 
-  // Helper: تحويل الرقم إلى صيغة واتساب مصرية (تصلح لأي رقم)
-  const formatPhoneForWhatsApp = (phone: string) => {
-    if (!phone) return '';
-    // إزالة أي أحرف غير أرقام
-    let cleaned = phone.toString().replace(/[^\d+]/g, '');
-    // إذا كان يبدأ بـ 0 نبدله بـ 20
-    if (cleaned.startsWith('0')) cleaned = '20' + cleaned.substring(1);
-    // إذا كان يبدأ بـ 1 (مثل 1xxxxxxxxx) نضيف 20
-    else if (cleaned.startsWith('1') && cleaned.length === 10) cleaned = '20' + cleaned;
-    // إذا لم يبدأ بـ 20 نضيف 20
-    else if (!cleaned.startsWith('20')) cleaned = '20' + cleaned;
-    return cleaned;
-  };
-
-  // إرسال واتساب للفني عند إضافة أوردر جديد
-  const sendWhatsAppToTechnician = (technicianName: string, orderData: any) => {
-    const tech = technicians.find(t => t.name === technicianName);
-    if (!tech || !tech.phone) {
-      addNotification({ type: 'error', title: '⚠️ خطأ', message: 'رقم الفني غير موجود', duration: 3000 });
-      return;
+  const getDaysDifference = (dateStr: string) => {
+    if (!dateStr || dateStr === 'null' || dateStr === 'undefined') return 0;
+    let orderDate: Date;
+    if (dateStr.includes('/')) {
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+        const day = parseInt(parts[0]);
+        const month = parseInt(parts[1]) - 1;
+        const year = parseInt(parts[2]);
+        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) orderDate = new Date(year, month, day);
+        else return 0;
+      } else return 0;
+    } else {
+      orderDate = new Date(dateStr);
+      if (isNaN(orderDate.getTime())) return 0;
     }
-    const phone = formatPhoneForWhatsApp(tech.phone);
-    const message = `🔧 *أوردر صيانة جديد* 🔧\n\n` +
-      `🔢 *رقم الأوردر:* ${orderData.order_number || 'جديد'}\n` +
-      `👤 *العميل:* ${orderData.customer_name}\n` +
-      `📞 *هاتف العميل:* ${orderData.phone}\n` +
-      `📍 *العنوان:* ${orderData.address || 'غير محدد'}\n` +
-      `🔧 *الجهاز:* ${orderData.device_type} - ${orderData.brand}\n` +
-      `⚠️ *المشكلة:* ${orderData.problem_description || 'غير محددة'}\n` +
-      `💰 *الإجمالي:* ${orderData.total_amount} ج.م\n\n` +
-      `يرجى التوجه للعميل في أقرب وقت. شكراً لك.`;
-    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
+    const today = new Date();
+    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const diffTime = todayDate.getTime() - orderDate.getTime();
+    const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return days > 0 ? days : 0;
   };
 
-  // إرسال واتساب للعميل عند تغيير الحالة (من المدير فقط)
-  const sendWhatsAppToCustomer = (order: any, newStatus: string, extraAmount?: number) => {
-    const phone = formatPhoneForWhatsApp(order.phone);
-    let statusMessage = "";
-    switch (newStatus) {
-      case 'in-progress':
-        statusMessage = "🔧 تم بدء العمل على طلبك بواسطة الفني.";
-        break;
-      case 'inspected':
-        statusMessage = `🔍 تم الكشف على جهازك بقيمة ${extraAmount || order.inspection_amount || 0} ج.م. سيتم إبلاغك بالخطوات التالية.`;
-        break;
-      case 'completed':
-        statusMessage = "✅ تم إكمال طلب الصيانة بنجاح. شكراً لثقتك بنا!";
-        break;
-      case 'cancelled':
-        statusMessage = "❌ تم إلغاء طلب الصيانة. للاستفسار، يرجى الاتصال بنا.";
-        break;
-      default:
-        return;
-    }
-    const message = `📢 *تحديث حالة طلب الصيانة* 📢\n\n` +
-      `🔢 *رقم الأوردر:* ${order.order_number}\n` +
-      `👤 *العميل:* ${order.customer_name}\n` +
-      `📝 *الحالة الجديدة:* ${statusMessage}\n\n` +
-      `شكراً لتواصلك معنا. 🌟`;
-    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
+  const isDelayed = (order: any) => {
+    if (order.status === 'completed' || order.status === 'cancelled') return false;
+    const daysDiff = getDaysDifference(order.date);
+    return daysDiff > 2;
   };
-
-  // جلب الإشعارات
-  const fetchNotifications = useCallback(async () => {
-    try {
-      const data = await fetchAPI('notifications?select=*&order=created_at.desc');
-      setNotifications(data);
-    } catch (err) { console.error(err); }
-  }, []);
 
   const fetchData = useCallback(async () => {
     try {
@@ -155,21 +106,19 @@ export default function ProtectedOrders() {
       
       const pending = ordersData.filter((o: any) => o.status === 'pending').length;
       const inProgress = ordersData.filter((o: any) => o.status === 'in-progress').length;
-      const inspected = ordersData.filter((o: any) => o.status === 'inspected').length;
       const completed = ordersData.filter((o: any) => o.status === 'completed').length;
       const cancelled = ordersData.filter((o: any) => o.status === 'cancelled').length;
       const totalIncome = ordersData.reduce((acc: number, o: any) => acc + (o.company_share || 0), 0);
       
-      setStats({ pending, inProgress, inspected, completed, cancelled, totalIncome });
+      setStats({ pending, inProgress, completed, cancelled, totalIncome });
     } catch (err) { console.error(err); } finally { setLoading(false); }
   }, []);
 
   useEffect(() => {
     fetchData();
-    fetchNotifications();
-    const interval = setInterval(() => { fetchData(); fetchNotifications(); }, 30000);
+    const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
-  }, [fetchData, fetchNotifications]);
+  }, [fetchData]);
 
   const calculateAmounts = (data: any) => {
     const total = parseFloat(data.total_amount) || 0;
@@ -204,39 +153,97 @@ export default function ProtectedOrders() {
     setFormData(calculateAmounts(updated));
   };
 
-  const saveOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const orderNumber = `MG-${Date.now()}`;
-    const finalDeviceType = isOtherDevice ? customDevice : formData.device_type;
-    const finalBrand = isOtherBrand ? customBrand : formData.brand;
+  const formatPhoneForWhatsApp = (phone: string) => {
+    if (!phone) return '';
+    let cleaned = phone.toString().replace(/[^\d+]/g, '');
+    if (cleaned.startsWith('0')) cleaned = '+20' + cleaned.substring(1);
+    else if (cleaned.startsWith('1') && cleaned.length === 10) cleaned = '+20' + cleaned;
+    else if (!cleaned.startsWith('+')) cleaned = '+20' + cleaned;
+    return cleaned;
+  };
+
+  // إرسال بيانات الدخول للفني عبر واتساب
+  const sendTechCredentials = async (tech: any) => {
+    const techLink = `${window.location.origin}/login`;
+    const username = tech.username || "غير محدد";
+    const password = tech.password || "tech123";
+    const phone = tech.phone;
     
-    const orderToSave = {
-      ...formData,
-      device_type: finalDeviceType,
-      brand: finalBrand,
-      order_number: orderNumber,
-    };
+    if (!phone) {
+      alert("رقم هاتف الفني غير موجود");
+      return;
+    }
     
+    const message = `🔧 *بيانات دخول بوابة الفنيين* 🔧\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `👤 *الفني:* ${tech.name}\n` +
+      `🔗 *رابط الدخول:* ${techLink}\n` +
+      `👤 *اسم المستخدم:* ${username}\n` +
+      `🔑 *كلمة المرور:* ${password}\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+      `📝 *شرح الاستخدام:*\n` +
+      `1️⃣ اضغط على رابط الدخول أعلاه.\n` +
+      `2️⃣ اختر دور "🔧 الفني (Technician)".\n` +
+      `3️⃣ أدخل اسم المستخدم وكلمة المرور الخاصة بك.\n` +
+      `4️⃣ ستظهر لك الأوردرات الموكلة إليك.\n` +
+      `5️⃣ يمكنك:\n` +
+      `   • الاتصال بالعميل\n` +
+      `   • بدء العمل\n` +
+      `   • تصفية الأوردر بعد الإكمال\n` +
+      `   • كشف بقيمة، تأجيل، إلغاء، أو إضافة تعليق\n\n` +
+      `شكراً لتعاونك. 🌟`;
+    
+    const formattedPhone = formatPhoneForWhatsApp(phone);
+    window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  const notifyCustomerStatusChange = (order: any, newStatus: string) => {
+    const phone = formatPhoneForWhatsApp(order.phone);
+    let statusMessage = "";
+    if (newStatus === "in-progress") statusMessage = "🔧 تم بدء العمل على طلبك بواسطة الفني.";
+    else if (newStatus === "completed") statusMessage = "✅ تم إكمال طلب الصيانة بنجاح. شكرًا لثقتك بنا!";
+    else if (newStatus === "cancelled") statusMessage = "❌ تم إلغاء طلب الصيانة. للاستفسار، يرجى الاتصال بنا.";
+    else return;
+    const message = `📢 *تحديث حالة طلب الصيانة* 📢\n\n🔢 *كود الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n📝 *الحالة الجديدة:* ${statusMessage}\n\nشكرًا لتواصلك معنا. 🌟`;
+    const encodedMessage = encodeURIComponent(message);
+    window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
+  };
+
+  const updateOrderStatus = async (id: number, newStatus: string) => {
     try {
-      if (editingOrder) {
-        await fetchAPI(`orders?id=eq.${editingOrder.id}`, { method: 'PATCH', body: JSON.stringify(orderToSave) });
-        addNotification({ type: 'success', title: '✏️ تم التعديل', message: `تم تعديل أوردر ${formData.customer_name}`, duration: 4000 });
-      } else {
-        await fetchAPI('orders', { method: 'POST', body: JSON.stringify(orderToSave) });
-        addNotification({ type: 'success', title: '🎉 أوردر جديد', message: `تم إضافة أوردر لـ ${formData.customer_name}`, duration: 4000 });
-        
-        // إرسال واتساب للفني
-        if (formData.technician) {
-          sendWhatsAppToTechnician(formData.technician, orderToSave);
-        }
-      }
-      setShowOrderModal(false);
-      setEditingOrder(null);
-      resetForm();
+      const oldOrder = orders.find(o => o.id === id);
+      await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ status: newStatus }) });
       fetchData();
-    } catch (err) { 
-      console.error(err);
-      addNotification({ type: 'error', title: '❌ خطأ', message: 'حدث خطأ أثناء الحفظ', duration: 4000 });
+      if (oldOrder && oldOrder.status !== newStatus) notifyCustomerStatusChange(oldOrder, newStatus);
+    } catch (err) { console.error(err); }
+  };
+
+  const togglePaidStatus = async (id: number, currentStatus: boolean) => {
+    try {
+      await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ is_paid: !currentStatus }) });
+      fetchData();
+    } catch (err) { console.error(err); }
+  };
+
+  const deleteOrder = async (id: number) => {
+    if (confirm('هل أنت متأكد من حذف هذا الأوردر؟')) {
+      try { await fetchAPI(`orders?id=eq.${id}`, { method: 'DELETE' }); fetchData(); } 
+      catch (err) { console.error(err); }
+    }
+  };
+
+  const sendToWhatsApp = (order: any) => {
+    const phone = formatPhoneForWhatsApp(order.phone);
+    const message = `📝 *تم استلام طلب الصيانة بنجاح* 📝\n\n🔢 *كود الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n📞 *رقمك:* ${order.phone}\n\n✅ تم تسجيل طلبك وسيتم التواصل معك قريباً من قبل الفني المختص.\n\nشكراً لثقتك بنا. 🌟`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  const notifyTechnician = (techName: string, orderData: any) => {
+    const tech = technicians.find(t => t.name === techName);
+    if (tech && tech.phone) {
+      const phone = formatPhoneForWhatsApp(tech.phone);
+      const message = `🔧 *أوردر صيانة جديد* 🔧\n\n🔢 *كود الأوردر:* ${orderData.order_number}\n👤 *العميل:* ${orderData.customer_name}\n📞 *هاتف العميل:* ${orderData.phone}\n📍 *العنوان:* ${orderData.address}\n🔧 *الجهاز:* ${orderData.device_type} - ${orderData.brand}\n⚠️ *المشكلة:* ${orderData.problem_description}\n💰 *الإجمالي:* ${orderData.total_amount} ج.م`;
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
     }
   };
 
@@ -253,20 +260,32 @@ export default function ProtectedOrders() {
     setIsOtherBrand(false);
   };
 
-  const deleteOrder = async (id: number) => {
-    if (confirm('هل أنت متأكد من حذف هذا الأوردر؟')) {
-      try {
-        await fetchAPI(`orders?id=eq.${id}`, { method: 'DELETE' });
-        addNotification({ type: 'success', title: '✅ تم الحذف', message: 'تم حذف الأوردر', duration: 4000 });
-        fetchData();
-      } catch (err) { console.error(err); }
-    }
-  };
-
-  const togglePaidStatus = async (id: number, currentStatus: boolean) => {
+  const saveOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const orderNumber = `MG-${Date.now()}`;
+    const orderDate = formData.date || new Date().toLocaleDateString("ar-EG");
+    
+    const finalDeviceType = isOtherDevice ? customDevice : formData.device_type;
+    const finalBrand = isOtherBrand ? customBrand : formData.brand;
+    
+    const orderToSave = {
+      ...formData,
+      device_type: finalDeviceType,
+      brand: finalBrand,
+      order_number: orderNumber,
+      date: orderDate
+    };
+    
     try {
-      await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ is_paid: !currentStatus }) });
-      addNotification({ type: 'success', title: '💰 تحديث الدفع', message: 'تم تحديث حالة التحصيل', duration: 3000 });
+      if (editingOrder) {
+        await fetchAPI(`orders?id=eq.${editingOrder.id}`, { method: 'PATCH', body: JSON.stringify(orderToSave) });
+      } else {
+        await fetchAPI('orders', { method: 'POST', body: JSON.stringify(orderToSave) });
+        if (formData.technician) notifyTechnician(formData.technician, orderToSave);
+      }
+      setShowOrderModal(false);
+      setEditingOrder(null);
+      resetForm();
       fetchData();
     } catch (err) { console.error(err); }
   };
@@ -276,464 +295,365 @@ export default function ProtectedOrders() {
     try {
       if (editingTech) {
         await fetchAPI(`technicians?id=eq.${editingTech.id}`, { method: 'PATCH', body: JSON.stringify(techForm) });
-        addNotification({ type: 'success', title: '✏️ تم التعديل', message: `تم تعديل بيانات ${techForm.name}`, duration: 4000 });
       } else {
         await fetchAPI('technicians', { method: 'POST', body: JSON.stringify(techForm) });
-        addNotification({ type: 'success', title: '👨‍🔧 فني جديد', message: `تم إضافة ${techForm.name}`, duration: 4000 });
       }
       setShowTechModal(false);
       setEditingTech(null);
-      setTechForm({ name: '', phone: '', specialization: '', is_active: true });
+      setTechForm({ name: '', phone: '', specialization: '', is_active: true, username: '', password: '' });
       fetchData();
     } catch (err) { console.error(err); }
   };
 
   const deleteTechnician = async (id: number) => {
     if (confirm('هل أنت متأكد من حذف هذا الفني؟')) {
-      try {
-        await fetchAPI(`technicians?id=eq.${id}`, { method: 'DELETE' });
-        addNotification({ type: 'success', title: '✅ تم الحذف', message: 'تم حذف الفني', duration: 4000 });
-        fetchData();
-      } catch (err) { console.error(err); }
+      try { await fetchAPI(`technicians?id=eq.${id}`, { method: 'DELETE' }); fetchData(); } 
+      catch (err) { console.error(err); }
     }
+  };
+
+  const toggleTechnicianActive = async (tech: any) => {
+    await fetchAPI(`technicians?id=eq.${tech.id}`, { method: 'PATCH', body: JSON.stringify({ is_active: !tech.is_active }) });
+    fetchData();
   };
 
   const copyTechLink = (name: string, id: number) => {
     const link = `${window.location.origin}/tech-portal?name=${encodeURIComponent(name)}`;
     navigator.clipboard.writeText(link);
     setCopiedId(id);
-    addNotification({ type: 'success', title: '📋 تم النسخ', message: 'رابط الفني جاهز للإرسال', duration: 2000 });
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // تغيير حالة الأوردر مع إرسال واتساب للعميل
-  const handleStatusChange = async (order: any, newStatus: string) => {
-    if (newStatus === 'inspected') {
-      setSelectedOrderForInspect(order);
-      setInspectAmount('');
-      setShowInspectModal(true);
-      return;
-    }
-    
-    try {
-      await fetchAPI(`orders?id=eq.${order.id}`, { method: 'PATCH', body: JSON.stringify({ status: newStatus }) });
-      addNotification({ type: 'success', title: '🔄 تغيير الحالة', message: `تم تغيير حالة الأوردر إلى ${newStatus === 'pending' ? 'قيد الانتظار' : newStatus === 'in-progress' ? 'قيد التنفيذ' : newStatus === 'completed' ? 'مكتمل' : 'ملغي'}`, duration: 3000 });
-      
-      if (newStatus !== 'pending') {
-        sendWhatsAppToCustomer(order, newStatus);
-      }
-      
-      fetchData();
-    } catch (err) { console.error(err); }
-  };
-
-  // حفظ قيمة الكشف وإرسال واتساب للعميل
-  const saveInspection = async () => {
-    const amount = parseFloat(inspectAmount);
-    if (isNaN(amount) || amount <= 0) {
-      addNotification({ type: 'error', title: '⚠️ خطأ', message: 'يرجى إدخال قيمة كشف صحيحة', duration: 3000 });
-      return;
-    }
-    
-    const companyShare = amount / 2;
-    const techShare = amount / 2;
-    
-    try {
-      await fetchAPI(`orders?id=eq.${selectedOrderForInspect.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          status: 'inspected',
-          inspection_amount: amount,
-          total_amount: amount,
-          net_amount: amount,
-          company_share: companyShare,
-          technician_share: techShare,
-          parts_cost: 0,
-          transport_cost: 0
-        })
-      });
-      addNotification({ type: 'success', title: '💰 تم الكشف', message: `تم تسجيل كشف بقيمة ${amount} ج.م`, duration: 4000 });
-      
-      // إرسال واتساب للعميل بقيمة الكشف
-      const updatedOrder = { ...selectedOrderForInspect, inspection_amount: amount };
-      sendWhatsAppToCustomer(updatedOrder, 'inspected', amount);
-      
-      setShowInspectModal(false);
-      fetchData();
-    } catch (err) { console.error(err); }
-  };
-
-  const deleteNotification = async (id: number) => {
-    if (confirm('حذف هذا الإشعار؟')) {
-      await fetchAPI(`notifications?id=eq.${id}`, { method: 'DELETE' });
-      fetchNotifications();
-    }
-  };
-
-  const deleteAllNotifications = async () => {
-    if (confirm('حذف كل الإشعارات نهائياً؟')) {
-      for (const n of notifications) {
-        await fetchAPI(`notifications?id=eq.${n.id}`, { method: 'DELETE' });
-      }
-      fetchNotifications();
-      addNotification({ type: 'success', title: '🧹 تم التنظيف', message: 'تم حذف جميع الإشعارات', duration: 3000 });
-    }
-  };
-
-  // إرسال الفاتورة عبر واتساب (تعمل 100%)
-  const handleInvoiceApprove = async (warranty: string) => {
-    try {
-      await fetchAPI(`orders?id=eq.${selectedOrderForInvoice.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ warranty_text: warranty, invoice_approved: true })
-      });
-      
-      const phone = formatPhoneForWhatsApp(selectedOrderForInvoice.phone);
-      const message = `📄 *فاتورة الصيانة - ضمان* 📄\n\n` +
-        `شكراً لثقتك بنا.\n\n` +
-        `🔢 *رقم الأوردر:* ${selectedOrderForInvoice.order_number}\n` +
-        `👤 *العميل:* ${selectedOrderForInvoice.customer_name}\n` +
-        `🔧 *الجهاز:* ${selectedOrderForInvoice.device_type || selectedOrderForInvoice.device} - ${selectedOrderForInvoice.brand}\n` +
-        `💰 *المبلغ:* ${selectedOrderForInvoice.total_amount} ج.م\n` +
-        `🛡️ *الضمان:* ${warranty}\n\n` +
-        `للاستفسار: 01278885772`;
-      
-      const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-      window.open(whatsappUrl, '_blank');
-      
-      addNotification({ type: 'success', title: '✅ تمت الموافقة', message: 'تم فتح واتساب العميل لإرسال الفاتورة', duration: 4000 });
-      setShowInvoiceModal(false);
-      fetchData();
-    } catch (err) {
-      console.error(err);
-      addNotification({ type: 'error', title: '❌ خطأ', message: 'حدث خطأ أثناء إرسال الفاتورة', duration: 4000 });
-    }
-  };
-
-  const handleSendWhatsApp = (link: string) => {
-    window.open(link, '_blank');
-  };
-
-  // تطبيق الفلاتر على الأوردرات
   const filteredOrders = orders.filter(o => {
-    const matchesSearch = o.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          o.phone?.includes(searchTerm) || 
-                          (o.technician?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+    const matchesSearch = o.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) || o.phone?.includes(searchTerm) || o.technician?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || o.status === filterStatus;
     const matchesTechnician = !filterTechnician || o.technician === filterTechnician;
     const matchesDeviceType = !filterDeviceType || o.device_type === filterDeviceType;
-    const matchesBrand = !filterBrand || o.brand === filterBrand;
-    let matchesDate = true;
-    if (filterDateFrom && o.date) {
-      const orderDate = o.date.split('/').reverse().join('-'); // تحويل dd/mm/yyyy إلى yyyy-mm-dd
-      if (orderDate < filterDateFrom) matchesDate = false;
-    }
-    if (filterDateTo && o.date && matchesDate) {
-      const orderDate = o.date.split('/').reverse().join('-');
-      if (orderDate > filterDateTo) matchesDate = false;
-    }
-    return matchesSearch && matchesStatus && matchesTechnician && matchesDeviceType && matchesBrand && matchesDate;
+    const matchesDateFrom = !filterDateFrom || (o.date && o.date >= filterDateFrom);
+    const matchesDateTo = !filterDateTo || (o.date && o.date <= filterDateTo);
+    const matchesDelay = filterDelay === 'all' || (filterDelay === 'delayed' && isDelayed(o));
+    return matchesSearch && matchesStatus && matchesTechnician && matchesDeviceType && matchesDateFrom && matchesDateTo && matchesDelay;
   });
 
-  const clearFilters = () => {
-    setSearchTerm('');
-    setFilterStatus('all');
-    setFilterTechnician('');
-    setFilterDeviceType('');
-    setFilterBrand('');
-    setFilterDateFrom('');
-    setFilterDateTo('');
+  const filteredTechnicians = technicians.filter(tech => {
+    if (filterTechStatus === 'active') return tech.is_active !== false;
+    if (filterTechStatus === 'inactive') return tech.is_active === false;
+    return true;
+  });
+
+  const clearAllFilters = () => {
+    setSearchTerm(''); setFilterStatus('all'); setFilterTechnician(''); setFilterDeviceType('');
+    setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all');
   };
 
-  if (loading && orders.length === 0) return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-      <RefreshCw className="w-12 h-12 text-orange-500 animate-spin" />
-    </div>
-  );
+  if (loading && orders.length === 0) return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><RefreshCw className="w-12 h-12 text-orange-500 animate-spin" /></div>;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 pb-20">
       <nav className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 px-4 py-3">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center"><LayoutDashboard className="w-6 h-6 text-white" /></div>
-            <h1 className="text-lg font-bold text-white">لوحة تحكم المدير</h1>
-          </div>
-          <button onClick={() => { fetchData(); fetchNotifications(); }} className="p-2 text-slate-400 hover:text-white"><RefreshCw className="w-5 h-5" /></button>
+          <div className="flex items-center gap-3"><div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center"><LayoutDashboard className="w-6 h-6 text-white" /></div><h1 className="text-lg font-bold text-white">لوحة تحكم المدير</h1></div>
+          <button onClick={fetchData} className="p-2 text-slate-400 hover:text-white"><RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} /></button>
         </div>
       </nav>
 
       <main className="max-w-7xl mx-auto p-4 md:p-6">
-        {/* إحصائيات سريعة */}
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-8">
-          <div className="bg-slate-900 p-3 rounded-xl text-center"><p className="text-2xl font-black text-white">{orders.length}</p><p className="text-[10px] uppercase">الإجمالي</p></div>
-          <div className="bg-slate-900 p-3 rounded-xl text-center"><p className="text-2xl font-black text-yellow-500">{stats.pending}</p><p className="text-[10px] uppercase">قيد الانتظار</p></div>
-          <div className="bg-slate-900 p-3 rounded-xl text-center"><p className="text-2xl font-black text-blue-500">{stats.inProgress}</p><p className="text-[10px] uppercase">قيد التنفيذ</p></div>
-          <div className="bg-slate-900 p-3 rounded-xl text-center"><p className="text-2xl font-black text-purple-500">{stats.inspected}</p><p className="text-[10px] uppercase">تم الكشف</p></div>
-          <div className="bg-slate-900 p-3 rounded-xl text-center"><p className="text-2xl font-black text-green-500">{stats.completed}</p><p className="text-[10px] uppercase">مكتمل</p></div>
-          <div className="bg-slate-900 p-3 rounded-xl text-center"><p className="text-2xl font-black text-orange-500">{stats.totalIncome.toLocaleString()} ج.م</p><p className="text-[10px] uppercase">أرباح الشركة</p></div>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-8">
+          <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800"><p className="text-2xl font-black text-white">{orders.length}</p><p className="text-[10px] text-slate-500 uppercase">إجمالي الأوردرات</p></div>
+          <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800"><p className="text-2xl font-black text-yellow-500">{stats.pending}</p><p className="text-[10px] text-slate-500 uppercase">قيد الانتظار</p></div>
+          <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800"><p className="text-2xl font-black text-green-500">{stats.completed}</p><p className="text-[10px] text-slate-500 uppercase">مكتمل</p></div>
+          <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800"><p className="text-2xl font-black text-orange-500">{stats.totalIncome.toLocaleString()} ج.م</p><p className="text-[10px] text-slate-500 uppercase">أرباح الشركة</p></div>
+          <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800"><p className="text-2xl font-black text-purple-500">{technicians.length}</p><p className="text-[10px] text-slate-500 uppercase">فني متاح</p></div>
         </div>
 
-        {/* تبويبات */}
-        <div className="flex gap-1 bg-slate-900 p-1 rounded-2xl border border-slate-800 mb-6 overflow-x-auto">
-          <button onClick={() => setActiveTab('orders')} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeTab === 'orders' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>الأوردرات</button>
-          <button onClick={() => setActiveTab('technicians')} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeTab === 'technicians' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>الفنيين</button>
-          <button onClick={() => setActiveTab('reports')} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeTab === 'reports' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>التقارير</button>
-          <button onClick={() => setActiveTab('invoices')} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeTab === 'invoices' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>الفواتير</button>
-          <button onClick={() => setActiveTab('notifications')} className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1 ${activeTab === 'notifications' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}><Bell className="w-4 h-4" /> الإشعارات ({notifications.length})</button>
+        <div className="flex gap-1 bg-slate-900 p-1 rounded-2xl border border-slate-800 mb-6 overflow-x-auto scrollbar-hide">
+          <button onClick={() => setActiveTab('orders')} className={`px-4 md:px-6 py-2 rounded-xl text-xs md:text-sm font-bold whitespace-nowrap ${activeTab === 'orders' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>الأوردرات</button>
+          <button onClick={() => setActiveTab('technicians')} className={`px-4 md:px-6 py-2 rounded-xl text-xs md:text-sm font-bold whitespace-nowrap ${activeTab === 'technicians' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>الفنيين</button>
+          <button onClick={() => setActiveTab('reports')} className={`px-4 md:px-6 py-2 rounded-xl text-xs md:text-sm font-bold whitespace-nowrap ${activeTab === 'reports' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>التقارير</button>
+          <button onClick={() => setActiveTab('notifications')} className={`px-4 md:px-6 py-2 rounded-xl text-xs md:text-sm font-bold whitespace-nowrap ${activeTab === 'notifications' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>🔔 الإشعارات</button>
+          <button onClick={() => setActiveTab('invoicesReview')} className={`px-4 md:px-6 py-2 rounded-xl text-xs md:text-sm font-bold whitespace-nowrap ${activeTab === 'invoicesReview' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>📄 مراجعة الفواتير</button>
         </div>
 
-        {/* ================== الأوردرات مع فلتر احترافي ================== */}
-        {activeTab === 'orders' && (
-          <div className="space-y-4">
-            {/* شريط البحث الأساسي وزر الفلتر */}
-            <div className="flex flex-wrap gap-3 items-center">
-              <div className="relative flex-1 min-w-[200px]">
-                <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
-                <input type="text" placeholder="بحث (عميل، هاتف، فني)..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-2xl py-3 pr-12 pl-4 text-sm" />
-              </div>
-              <button onClick={() => setShowFilters(!showFilters)} className="bg-slate-800 hover:bg-slate-700 px-4 py-3 rounded-2xl text-sm font-bold flex items-center gap-2"><Filter className="w-4 h-4" /> {showFilters ? 'إخفاء الفلاتر' : 'فلاتر متقدمة'}</button>
-              <button onClick={() => { setEditingOrder(null); resetForm(); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 px-6 py-3 rounded-2xl text-sm font-bold flex items-center gap-2"><Plus className="w-5 h-5" /> أوردر جديد</button>
-            </div>
-
-            {/* الفلاتر المتقدمة */}
-            {showFilters && (
-              <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm">
-                  <option value="all">كل الحالات</option>
-                  <option value="pending">قيد الانتظار</option>
-                  <option value="in-progress">قيد التنفيذ</option>
-                  <option value="inspected">تم الكشف</option>
-                  <option value="completed">مكتمل</option>
-                  <option value="cancelled">ملغي</option>
-                </select>
-                <select value={filterTechnician} onChange={e => setFilterTechnician(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm">
-                  <option value="">كل الفنيين</option>
-                  {technicians.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
-                </select>
-                <select value={filterDeviceType} onChange={e => setFilterDeviceType(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm">
-                  <option value="">كل الأجهزة</option>
-                  {DEVICE_TYPES.map(d => <option key={d}>{d}</option>)}
-                </select>
-                <select value={filterBrand} onChange={e => setFilterBrand(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm">
-                  <option value="">كل الماركات</option>
-                  {BRANDS.map(b => <option key={b}>{b}</option>)}
-                </select>
-                <div className="flex gap-2">
-                  <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm w-full" placeholder="من تاريخ" />
-                  <input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm w-full" placeholder="إلى تاريخ" />
-                </div>
-                <button onClick={clearFilters} className="bg-red-600/20 hover:bg-red-600 text-red-400 px-3 py-2 rounded-xl text-sm font-bold">مسح الكل</button>
-              </div>
-            )}
-
-            {/* قائمة الأوردرات */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredOrders.map(order => {
-                let statusColor = '';
-                if (order.status === 'completed') statusColor = 'text-green-500 bg-green-500/10';
-                else if (order.status === 'in-progress') statusColor = 'text-blue-500 bg-blue-500/10';
-                else if (order.status === 'inspected') statusColor = 'text-purple-500 bg-purple-500/10';
-                else if (order.status === 'cancelled') statusColor = 'text-red-500 bg-red-500/10';
-                else statusColor = 'text-yellow-500 bg-yellow-500/10';
-                
-                return (
-                  <div key={order.id} className="bg-slate-900 rounded-2xl p-4 border border-slate-800 shadow-lg">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h3 className="font-black text-white">{order.customer_name}</h3>
-                        <p className="text-xs text-slate-400">{order.phone}</p>
-                      </div>
-                      <div className="flex gap-1">
-                        <button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`p-2 rounded-xl ${order.is_paid ? 'text-green-500' : 'text-slate-500'}`}><CheckCircle2 className="w-4 h-4" /></button>
-                        <button onClick={() => { setEditingOrder(order); setFormData(order); setShowOrderModal(true); }} className="p-2 text-slate-400 hover:text-white"><Edit className="w-4 h-4" /></button>
-                        <button onClick={() => deleteOrder(order.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
-                      </div>
-                    </div>
-                    <div className="text-sm mb-2">🔧 {order.device_type || order.device || 'جهاز'} - {order.brand || 'ماركة'}</div>
-                    <div className="text-xs text-slate-400 mb-3">{order.address || 'لا يوجد عنوان'}</div>
-                    <div className="text-xs text-slate-400 mb-2">📅 {order.date || 'بدون تاريخ'}</div>
-                    
-                    {order.status === 'inspected' && order.inspection_amount > 0 && (
-                      <div className="bg-purple-500/10 p-2 rounded-lg text-xs mb-3 flex justify-between">
-                        <span>💰 قيمة الكشف:</span>
-                        <span className="font-bold text-purple-400">{order.inspection_amount} ج.م</span>
-                      </div>
-                    )}
-                    
-                    <div className="flex justify-between items-center mt-2">
-                      <span className={`text-xs px-2 py-1 rounded-full ${statusColor}`}>
-                        {order.status === 'completed' ? 'مكتمل' : order.status === 'in-progress' ? 'قيد التنفيذ' : order.status === 'inspected' ? 'تم الكشف' : order.status === 'cancelled' ? 'ملغي' : 'قيد الانتظار'}
-                      </span>
-                      <select 
-                        value={order.status} 
-                        onChange={(e) => handleStatusChange(order, e.target.value)} 
-                        className="bg-slate-800 text-xs rounded-lg px-2 py-1 border border-slate-700"
-                      >
-                        <option value="pending">قيد الانتظار</option>
-                        <option value="in-progress">قيد التنفيذ</option>
-                        <option value="inspected">تم الكشف</option>
-                        <option value="completed">مكتمل</option>
-                        <option value="cancelled">ملغي</option>
-                      </select>
-                    </div>
-                    {order.technician && <div className="text-xs text-slate-400 mt-2">👨‍🔧 الفني: {order.technician}</div>}
-                  </div>
-                );
-              })}
-              {filteredOrders.length === 0 && <div className="text-center text-slate-400 py-8 col-span-full">لا توجد أوردرات تطابق البحث</div>}
-            </div>
-          </div>
-        )}
-
-        {/* ================== الفنيين ================== */}
-        {activeTab === 'technicians' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {technicians.map(tech => (
-              <div key={tech.id} className="bg-slate-900 rounded-2xl p-4 border border-slate-800 text-center">
-                <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3"><Users className="w-8 h-8 text-orange-500" /></div>
-                <h3 className="font-black text-white">{tech.name}</h3>
-                <p className="text-xs text-slate-400 mb-3">{tech.specialization}</p>
-                <div className="flex justify-center gap-2">
-                  <button onClick={() => copyTechLink(tech.name, tech.id)} className="p-2 bg-slate-800 rounded-lg text-xs">{copiedId === tech.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}</button>
-                  <button onClick={() => { setEditingTech(tech); setTechForm(tech); setShowTechModal(true); }} className="p-2 bg-slate-800 rounded-lg"><Edit className="w-4 h-4" /></button>
-                  <button onClick={() => deleteTechnician(tech.id)} className="p-2 bg-slate-800 rounded-lg"><Trash2 className="w-4 h-4" /></button>
-                </div>
-              </div>
-            ))}
-            <button onClick={() => { setEditingTech(null); setTechForm({ name: '', phone: '', specialization: '', is_active: true }); setShowTechModal(true); }} className="bg-slate-900/50 border-2 border-dashed border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:border-orange-500"><Plus className="w-6 h-6" /><span className="text-sm">إضافة فني</span></button>
-          </div>
-        )}
-
-        {/* ================== التقارير ================== */}
-        {activeTab === 'reports' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-slate-900 p-5 rounded-2xl"><p className="text-slate-400">إجمالي الأوردرات</p><p className="text-3xl font-black">{orders.length}</p></div>
-            <div className="bg-slate-900 p-5 rounded-2xl"><p className="text-slate-400">الأوردرات المكتملة</p><p className="text-3xl font-black text-green-500">{stats.completed}</p></div>
-            <div className="bg-slate-900 p-5 rounded-2xl"><p className="text-slate-400">إجمالي أرباح الشركة</p><p className="text-3xl font-black text-orange-500">{stats.totalIncome.toLocaleString()} ج.م</p></div>
-            <div className="bg-slate-900 p-5 rounded-2xl"><p className="text-slate-400">إجمالي المصاريف</p><p className="text-3xl font-black text-red-500">{orders.reduce((s,o)=>s+(o.parts_cost+o.transport_cost||0),0).toLocaleString()} ج.م</p></div>
-          </div>
-        )}
-
-        {/* ================== الفواتير ================== */}
-        {activeTab === 'invoices' && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-bold">🧾 الفواتير (الأوردرات المكتملة)</h3>
-            {orders.filter(o => o.status === 'completed').map(order => (
-              <div key={order.id} className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex flex-wrap justify-between items-center gap-3">
-                <div><p className="font-black">{order.customer_name}</p><p className="text-sm text-slate-400">{order.device_type || order.device} - {order.brand}</p></div>
-                <button onClick={() => { setSelectedOrderForInvoice(order); setShowInvoiceModal(true); }} className="bg-orange-600 px-4 py-2 rounded-xl text-sm font-bold">طباعة فاتورة مع الضمان</button>
-              </div>
-            ))}
-            {orders.filter(o => o.status === 'completed').length === 0 && <div className="text-center text-slate-400">لا توجد أوردرات مكتملة</div>}
-          </div>
-        )}
-
-        {/* ================== الإشعارات ================== */}
+        {/* تبويب الإشعارات */}
         {activeTab === 'notifications' && (
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-bold flex items-center gap-2"><Bell className="w-5 h-5" /> سجل الإشعارات</h3>
-              {notifications.length > 0 && (
-                <button onClick={deleteAllNotifications} className="bg-red-600/20 hover:bg-red-600 text-red-400 px-3 py-1 rounded-lg text-sm flex items-center gap-1"><Trash className="w-4 h-4" /> مسح الكل</button>
-              )}
-            </div>
+            <h2 className="text-xl font-black text-white mb-4">🔔 الإشعارات الأخيرة</h2>
             <div className="space-y-3">
-              {notifications.map(notif => (
-                <div key={notif.id} className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-start">
-                  <div>
-                    <div className="flex flex-wrap gap-2 text-sm">
-                      <span className="text-orange-400 font-bold">{notif.action}</span>
-                      <span className="text-slate-400">|</span>
-                      <span>الفني: {notif.technician_name}</span>
-                      <span className="text-slate-400">|</span>
-                      <span>العميل: {notif.customer_name}</span>
-                      {notif.details && <span className="text-slate-400">| التفاصيل: {notif.details}</span>}
-                    </div>
-                    <div className="text-xs text-slate-500 mt-1">{new Date(notif.created_at).toLocaleString('ar-EG')}</div>
-                  </div>
-                  <button onClick={() => deleteNotification(notif.id)} className="text-red-400 hover:text-red-500 p-1"><Trash className="w-4 h-4" /></button>
+              {orders.slice(0, 10).map(order => (
+                <div key={order.id} className="bg-slate-900 p-4 rounded-2xl border-r-4 border-orange-500 flex justify-between items-center">
+                  <div><p className="text-white font-bold text-sm">أوردر جديد من {order.customer_name}</p><p className="text-slate-500 text-[10px] mt-1">الجهاز: {order.device_type} - {order.brand} | الفني: {order.technician || 'لم يحدد'}</p></div>
+                  <span className="text-[10px] text-slate-600">{order.date}</span>
                 </div>
               ))}
-              {notifications.length === 0 && <div className="text-center text-slate-400 py-8">لا توجد إشعارات حتى الآن</div>}
+              {orders.length === 0 && <div className="text-center py-12 text-slate-500">لا توجد إشعارات حالياً</div>}
+            </div>
+          </div>
+        )}
+
+        {/* تبويب مراجعة الفواتير */}
+        {activeTab === 'invoicesReview' && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-black text-white mb-4">📄 فواتير بانتظار المراجعة</h2>
+            <div className="space-y-3">
+              {orders.filter(o => o.status === 'completed' && !o.invoice_approved).map(order => (
+                <div key={order.id} className="bg-slate-800 p-4 rounded-2xl border border-yellow-500/30">
+                  <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+                    <div>
+                      <p className="text-white font-bold">{order.customer_name}</p>
+                      <p className="text-slate-400 text-sm">{order.device_type || order.device} - {order.brand}</p>
+                      <p className="text-green-400 font-bold">المبلغ: {order.total_amount} ج.م</p>
+                      <p className="text-slate-500 text-xs">قطع غيار: {order.parts_cost || 0} ج.م | مواصلات: {order.transport_cost || 0} ج.م</p>
+                      <p className="text-slate-500 text-xs">نصيب الشركة: {order.company_share || 0} ج.م | نصيب الفني: {order.technician_share || 0} ج.م</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={async () => {
+                          const newAmount = prompt("💰 تعديل المبلغ الإجمالي (اختياري)", order.total_amount);
+                          const finalAmount = newAmount ? parseFloat(newAmount) : order.total_amount;
+                          const warranty = prompt("🛡️ فترة الضمان (مثال: 6 أشهر، سنة، 3 سنوات)", order.warranty_period || "6 أشهر");
+                          const finalWarranty = warranty ? warranty : "6 أشهر";
+                          const net = finalAmount - (order.parts_cost || 0) - (order.transport_cost || 0);
+                          const companyShare = net * 0.5;
+                          const techShare = net - companyShare;
+                          await fetchAPI(`orders?id=eq.${order.id}`, {
+                            method: 'PATCH',
+                            body: JSON.stringify({
+                              total_amount: finalAmount,
+                              net_amount: net,
+                              company_share: companyShare,
+                              technician_share: techShare,
+                              invoice_approved: true,
+                              warranty_period: finalWarranty
+                            })
+                          });
+                          const phone = formatPhoneForWhatsApp(order.phone);
+                          const invoiceLink = `${window.location.origin}/invoice?id=${order.id}`;
+                          const message = `📄 *فاتورة صيانة - Maintenance Guide* 📄\n\n` +
+                            `━━━━━━━━━━━━━━━━━━━━━━\n` +
+                            `👤 *العميل:* ${order.customer_name}\n` +
+                            `🔢 *رقم الأوردر:* ${order.order_number}\n` +
+                            `━━━━━━━━━━━━━━━━━━━━━━\n` +
+                            `🔧 *الجهاز:* ${order.device_type || order.device} - ${order.brand}\n` +
+                            `📍 *العنوان:* ${order.address}\n` +
+                            `━━━━━━━━━━━━━━━━━━━━━━\n` +
+                            `💰 *المبلغ المدفوع:* ${finalAmount} ج.م\n` +
+                            `✅ *الحالة:* مكتمل\n` +
+                            `🛡️ *الضمان:* ${finalWarranty}\n` +
+                            `🔗 *رابط الفاتورة:* ${invoiceLink}\n` +
+                            `━━━━━━━━━━━━━━━━━━━━━━\n` +
+                            `📅 *التاريخ:* ${new Date().toLocaleDateString("ar-EG")}\n\n` +
+                            `شكراً لثقتك بنا. 🌟`;
+                          window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+                          fetchData();
+                        }}
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm"
+                      >
+                        ✅ اعتماد وإرسال الفاتورة
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (confirm("هل تريد حذف هذه الفاتورة؟ سيتم حذف الأوردر بالكامل.")) {
+                            await fetchAPI(`orders?id=eq.${order.id}`, { method: 'DELETE' });
+                            fetchData();
+                          }
+                        }}
+                        className="bg-red-600/80 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm"
+                      >
+                        🗑️ حذف
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {orders.filter(o => o.status === 'completed' && !o.invoice_approved).length === 0 && (
+                <div className="text-center py-8 text-slate-400">لا توجد فواتير بانتظار المراجعة</div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* تبويب الأوردرات */}
+        {activeTab === 'orders' && (
+          <div className="space-y-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1"><Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" /><input type="text" placeholder="ابحث عن عميل، هاتف، أو فني..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-2xl py-3 pr-12 pl-4 text-sm outline-none focus:ring-2 focus:ring-orange-500" /></div>
+              <button onClick={() => { setEditingOrder(null); resetForm(); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-2xl text-sm font-bold flex items-center gap-2"><Plus className="w-5 h-5" /> أوردر جديد</button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="bg-slate-900 border border-slate-800 rounded-2xl px-4 py-2 text-sm">
+                <option value="all">جميع الحالات</option><option value="pending">⏳ قيد الانتظار</option><option value="in-progress">🔧 قيد التنفيذ</option><option value="completed">✅ مكتمل</option><option value="cancelled">❌ ملغي</option><option value="deferred">📅 مؤجل</option><option value="inspected">💰 تم الكشف</option>
+              </select>
+              <select value={filterTechnician} onChange={(e) => setFilterTechnician(e.target.value)} className="bg-slate-900 border border-slate-800 rounded-2xl px-4 py-2 text-sm"><option value="">جميع الفنيين</option>{technicians.filter(t => t.is_active !== false).map(tech => <option key={tech.id} value={tech.name}>{tech.name}</option>)}</select>
+              <select value={filterDeviceType} onChange={(e) => setFilterDeviceType(e.target.value)} className="bg-slate-900 border border-slate-800 rounded-2xl px-4 py-2 text-sm"><option value="">جميع الأجهزة</option>{DEVICE_TYPES.map(device => <option key={device} value={device}>{device}</option>)}</select>
+              <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="bg-slate-900 border border-slate-800 rounded-2xl px-4 py-2 text-sm" placeholder="من تاريخ" />
+              <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="bg-slate-900 border border-slate-800 rounded-2xl px-4 py-2 text-sm" placeholder="إلى تاريخ" />
+            </div>
+            <div className="flex justify-between items-center">
+              <div className="flex gap-2"><button onClick={() => setFilterDelay(filterDelay === 'delayed' ? 'all' : 'delayed')} className={`px-3 py-1 rounded-full text-xs ${filterDelay === 'delayed' ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300'}`}>⚠️ المتأخرة فقط</button></div>
+              <button onClick={clearAllFilters} className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-1 rounded-full text-xs">مسح جميع الفلاتر</button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredOrders.map(order => (
+                <div key={order.id} className="bg-slate-900 rounded-3xl p-5 border border-slate-800 hover:border-slate-700 transition-all relative overflow-hidden">
+                  {isDelayed(order) && <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-lg z-10">⚠️ تأخير {getDaysDifference(order.date)} أيام</div>}
+                  <div className="flex justify-between items-start mb-4">
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-black ${order.status === 'completed' ? 'bg-green-500/10 text-green-500' : order.status === 'in-progress' ? 'bg-blue-500/10 text-blue-500' : order.status === 'cancelled' ? 'bg-red-500/10 text-red-500' : order.status === 'deferred' ? 'bg-purple-500/10 text-purple-500' : order.status === 'inspected' ? 'bg-yellow-500/10 text-yellow-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
+                      {order.status === 'completed' ? 'مكتمل' : order.status === 'in-progress' ? 'جاري العمل' : order.status === 'cancelled' ? 'ملغي' : order.status === 'deferred' ? 'مؤجل' : order.status === 'inspected' ? 'تم الكشف' : 'قيد الانتظار'}
+                    </span>
+                    <div className="flex gap-1">
+                      <button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`p-2 rounded-xl ${order.is_paid ? 'bg-green-500/20 text-green-500' : 'bg-slate-800 text-slate-500'}`}>{order.is_paid ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}</button>
+                      <button onClick={() => sendToWhatsApp(order)} className="p-2 text-slate-500 hover:text-green-500 hover:bg-green-500/10 rounded-xl"><MessageCircle className="w-4 h-4" /></button>
+                      <button onClick={() => { setEditingOrder(order); setFormData({ ...order, date: order.date || new Date().toLocaleDateString("ar-EG") }); setShowOrderModal(true); }} className="p-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-xl"><Edit className="w-4 h-4" /></button>
+                      <button onClick={() => deleteOrder(order.id)} className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-500/10 rounded-xl"><Trash2 className="w-4 h-4" /></button>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <h3 className="text-white font-black text-lg truncate">{order.customer_name}</h3>
+                    <div className="text-xs text-slate-400 space-y-1"><p>📍 {order.address}</p><p>🔧 {order.device_type} - {order.brand}</p><p>⚠️ {order.problem_description}</p></div>
+                    {order.technician_note && <div className="mt-2 p-2 bg-slate-800/50 rounded-lg border-r-2 border-orange-500"><p className="text-[10px] text-slate-400">📝 ملاحظة الفني</p><p className="text-xs text-slate-300">{order.technician_note}</p></div>}
+                    {order.inspection_amount > 0 && <div className="mt-2 p-2 bg-yellow-500/10 rounded-lg flex justify-between"><span className="text-xs text-yellow-500">💰 كشف بقيمة</span><span className="text-sm font-bold text-yellow-500">{order.inspection_amount} ج.م</span></div>}
+                    <div className="grid grid-cols-2 gap-2 py-3 border-y border-slate-800/50"><div><p className="text-[10px] text-slate-500 uppercase">الإجمالي</p><p className="text-xs text-white font-bold">{order.total_amount || 0} ج.م</p></div><div><p className="text-[10px] text-slate-500 uppercase">الصافي</p><p className="text-xs text-green-500 font-bold">{order.net_amount || 0} ج.م</p></div></div>
+                    <div className="flex justify-between items-center pt-1">
+                      <div><p className="text-[10px] text-slate-500 uppercase">الفني</p><p className="text-sm font-black text-orange-400">{order.technician || 'لم يحدد'}</p></div>
+                      <div><p className="text-[10px] text-slate-500 uppercase text-left">الحالة</p><select value={order.status} onChange={(e) => updateOrderStatus(order.id, e.target.value)} className="bg-slate-700 text-white rounded px-2 py-1 text-xs"><option value="pending">⏳ قيد الانتظار</option><option value="in-progress">🔧 قيد التنفيذ</option><option value="completed">✅ مكتمل</option><option value="cancelled">❌ ملغي</option><option value="deferred">📅 مؤجل</option><option value="inspected">💰 تم الكشف</option></select></div>
+                      <div className={`text-[10px] font-black px-2 py-1 rounded ${order.is_paid ? 'text-green-500 bg-green-500/10' : 'text-red-500 bg-red-500/10'}`}>{order.is_paid ? 'تم التحصيل' : 'لم يحصل'}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {filteredOrders.length === 0 && <div className="text-center py-12 text-slate-400">لا توجد أوردرات مطابقة للبحث</div>}
+          </div>
+        )}
+
+        {/* تبويب الفنيين */}
+        {activeTab === 'technicians' && (
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex gap-2"><button onClick={() => setFilterTechStatus('active')} className={`px-3 py-1 rounded-full text-xs ${filterTechStatus === 'active' ? 'bg-orange-600' : 'bg-slate-800'}`}>النشطون</button><button onClick={() => setFilterTechStatus('inactive')} className={`px-3 py-1 rounded-full text-xs ${filterTechStatus === 'inactive' ? 'bg-orange-600' : 'bg-slate-800'}`}>غير النشطون</button><button onClick={() => setFilterTechStatus('all')} className={`px-3 py-1 rounded-full text-xs ${filterTechStatus === 'all' ? 'bg-orange-600' : 'bg-slate-800'}`}>الجميع</button></div>
+              <button onClick={() => { setEditingTech(null); setTechForm({ name: '', phone: '', specialization: '', is_active: true, username: '', password: '' }); setShowTechModal(true); }} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2"><Plus className="w-4 h-4" /> إضافة فني</button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {filteredTechnicians.map(tech => (
+                <div key={tech.id} className="bg-slate-900 rounded-3xl p-6 border border-slate-800 text-center relative">
+                  <div className="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4"><Users className="w-8 h-8 text-orange-500" /></div>
+                  <h3 className="text-white font-black text-lg">{tech.name}</h3>
+                  <p className="text-slate-500 text-xs font-bold mb-4">{tech.specialization}</p>
+                  <div className="flex flex-col gap-2">
+                    <button onClick={() => copyTechLink(tech.name, tech.id)} className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2">{copiedId === tech.id ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}{copiedId === tech.id ? 'تم النسخ' : 'نسخ رابط الفني'}</button>
+                    <div className="flex gap-2">
+                      <a href={`tel:${tech.phone}`} className="flex-1 p-2 bg-blue-500/10 text-blue-500 rounded-xl hover:bg-blue-500/20"><Phone className="w-4 h-4 mx-auto" /></a>
+                      <button onClick={() => { setEditingTech(tech); setTechForm({ ...tech, password: '' }); setShowTechModal(true); }} className="flex-1 p-2 bg-slate-800 text-slate-400 rounded-xl hover:bg-slate-700"><Edit className="w-4 h-4 mx-auto" /></button>
+                      <button onClick={() => deleteTechnician(tech.id)} className="flex-1 p-2 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20"><Trash2 className="w-4 h-4 mx-auto" /></button>
+                      <button onClick={() => toggleTechnicianActive(tech)} className={`flex-1 p-2 rounded-xl ${tech.is_active !== false ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>{tech.is_active !== false ? 'نشط' : 'غير نشط'}</button>
+                      {/* زر إرسال بيانات الدخول للفني */}
+                      <button 
+                        onClick={() => sendTechCredentials(tech)}
+                        className="flex-1 p-2 bg-green-600/20 text-green-500 rounded-xl hover:bg-green-600 hover:text-white transition-all"
+                      >
+                        📤 إرسال بيانات الدخول
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <button onClick={() => { setEditingTech(null); setTechForm({ name: '', phone: '', specialization: '', is_active: true, username: '', password: '' }); setShowTechModal(true); }} className="bg-slate-900/50 border-2 border-dashed border-slate-800 rounded-3xl p-6 flex flex-col items-center justify-center gap-2 hover:bg-slate-900 hover:border-orange-500/50 text-slate-500 hover:text-orange-500"><Plus className="w-8 h-8" /><span className="font-bold">إضافة فني</span></button>
+            </div>
+          </div>
+        )}
+
+        {/* تبويب التقارير */}
+        {activeTab === 'reports' && (
+          <div className="space-y-6">
+            <div className="bg-slate-900 rounded-3xl p-8 border border-slate-800">
+              <h2 className="text-2xl font-black text-white mb-8">التقارير المالية</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700"><PieChart className="w-8 h-8 text-blue-500 mb-4" /><p className="text-slate-400 text-xs font-bold mb-1">إجمالي الإيرادات</p><p className="text-3xl font-black text-white">{orders.reduce((acc, o) => acc + (o.total_amount || 0), 0).toLocaleString()} ج.م</p></div>
+                <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700"><AlertCircle className="w-8 h-8 text-red-500 mb-4" /><p className="text-slate-400 text-xs font-bold mb-1">إجمالي المصاريف</p><p className="text-3xl font-black text-white">{orders.reduce((acc, o) => acc + (o.parts_cost || 0) + (o.transport_cost || 0), 0).toLocaleString()} ج.م</p></div>
+                <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700"><CheckCircle2 className="w-8 h-8 text-green-500 mb-4" /><p className="text-slate-400 text-xs font-bold mb-1">صافي أرباح الشركة</p><p className="text-3xl font-black text-white">{stats.totalIncome.toLocaleString()} ج.م</p></div>
+              </div>
             </div>
           </div>
         )}
       </main>
 
-      {/* باقي المودالات كما هي (إضافة/تعديل أوردر، فني، كشف، فاتورة) */}
-      {/* مودال إضافة/تعديل أوردر (منسق) */}
+      {/* Order Modal */}
       {showOrderModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">{editingOrder ? 'تعديل أوردر' : 'أوردر جديد'}</h3>
-              <button onClick={() => setShowOrderModal(false)} className="p-1 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
-            </div>
-            <form onSubmit={saveOrder} className="space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div><label className="block text-sm text-slate-400 mb-1">اسم العميل *</label><input type="text" value={formData.customer_name} onChange={e => handleFormChange('customer_name', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-orange-500" required /></div>
-                <div><label className="block text-sm text-slate-400 mb-1">رقم الهاتف *</label><input type="text" value={formData.phone} onChange={e => handleFormChange('phone', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" required /></div>
-                <div><label className="block text-sm text-slate-400 mb-1">نوع الجهاز</label><select value={formData.device_type} onChange={e => handleFormChange('device_type', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white"><option value="">اختر الجهاز</option>{DEVICE_TYPES.map(d => <option key={d}>{d}</option>)}<option value="other">أخرى</option></select></div>
-                {isOtherDevice && <div><label className="block text-sm text-slate-400 mb-1">جهاز مخصص</label><input type="text" value={customDevice} onChange={e => setCustomDevice(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" required /></div>}
-                <div><label className="block text-sm text-slate-400 mb-1">الماركة</label><select value={formData.brand} onChange={e => handleFormChange('brand', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white"><option value="">اختر الماركة</option>{BRANDS.map(b => <option key={b}>{b}</option>)}<option value="other">أخرى</option></select></div>
-                {isOtherBrand && <div><label className="block text-sm text-slate-400 mb-1">ماركة مخصصة</label><input type="text" value={customBrand} onChange={e => setCustomBrand(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" required /></div>}
-                <div className="md:col-span-2"><label className="block text-sm text-slate-400 mb-1">العنوان</label><input type="text" value={formData.address} onChange={e => handleFormChange('address', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" /></div>
-                <div className="md:col-span-2"><label className="block text-sm text-slate-400 mb-1">وصف المشكلة</label><textarea rows={3} value={formData.problem_description} onChange={e => handleFormChange('problem_description', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" /></div>
-                <div><label className="block text-sm text-slate-400 mb-1">الفني</label><select value={formData.technician} onChange={e => handleFormChange('technician', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white"><option value="">اختر فني</option>{technicians.map(t => <option key={t.id}>{t.name}</option>)}</select></div>
-                <div><label className="block text-sm text-slate-400 mb-1">إجمالي المبلغ (ج.م)</label><input type="number" value={formData.total_amount} onChange={e => handleFormChange('total_amount', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" /></div>
-                <div><label className="block text-sm text-slate-400 mb-1">قطع غيار (ج.م)</label><input type="number" value={formData.parts_cost} onChange={e => handleFormChange('parts_cost', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" /></div>
-                <div><label className="block text-sm text-slate-400 mb-1">مواصلات (ج.م)</label><input type="number" value={formData.transport_cost} onChange={e => handleFormChange('transport_cost', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" /></div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl shadow-2xl my-auto">
+            <div className="p-6 border-b border-slate-800 flex justify-between items-center"><h2 className="text-xl font-black text-white">{editingOrder ? 'تعديل أوردر' : 'أوردر جديد'}</h2><button onClick={() => setShowOrderModal(false)} className="p-2 text-slate-500 hover:text-white"><XCircle className="w-6 h-6" /></button></div>
+            <form onSubmit={saveOrder} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div><label className="text-[10px] font-bold text-slate-500 uppercase">👤 اسم العميل</label><input type="text" required value={formData.customer_name} onChange={(e) => handleFormChange('customer_name', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div>
+                <div><label className="text-[10px] font-bold text-slate-500 uppercase">📞 رقم الهاتف</label><input type="tel" required value={formData.phone} onChange={(e) => handleFormChange('phone', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div>
+                <div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase">📍 العنوان</label><input type="text" required value={formData.address} onChange={(e) => handleFormChange('address', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" placeholder="الشارع والحي والمدينة" /></div>
               </div>
-              <div className="flex gap-3 pt-4"><button type="submit" className="flex-1 bg-orange-600 py-3 rounded-xl font-bold">حفظ</button><button type="button" onClick={() => setShowOrderModal(false)} className="flex-1 bg-slate-700 py-3 rounded-xl font-bold">إلغاء</button></div>
+              <div className="border-t border-slate-800 pt-4"><h3 className="text-sm font-bold text-white mb-3">🔧 بيانات الجهاز</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase pr-2">نوع الجهاز</label>
+                    {!isOtherDevice ? (
+                      <select required value={formData.device_type} onChange={(e) => handleFormChange('device_type', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500">
+                        <option value="">اختر الجهاز</option>
+                        {DEVICE_TYPES.map(d => <option key={d} value={d}>{d}</option>)}
+                        <option value="other">أخرى...</option>
+                      </select>
+                    ) : (
+                      <div className="flex gap-2">
+                        <input type="text" required placeholder="نوع الجهاز" value={customDevice} onChange={(e) => setCustomDevice(e.target.value)} className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" />
+                        <button type="button" onClick={() => { setIsOtherDevice(false); setCustomDevice(''); }} className="p-2 bg-slate-700 rounded-xl"><XCircle className="w-4 h-4" /></button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase pr-2">الماركة</label>
+                    {!isOtherBrand ? (
+                      <select required value={formData.brand} onChange={(e) => handleFormChange('brand', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500">
+                        <option value="">اختر الماركة</option>
+                        {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+                        <option value="other">أخرى...</option>
+                      </select>
+                    ) : (
+                      <div className="flex gap-2">
+                        <input type="text" required placeholder="الماركة" value={customBrand} onChange={(e) => setCustomBrand(e.target.value)} className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" />
+                        <button type="button" onClick={() => { setIsOtherBrand(false); setCustomBrand(''); }} className="p-2 bg-slate-700 rounded-xl"><XCircle className="w-4 h-4" /></button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">الفني</label><select value={formData.technician} onChange={(e) => handleFormChange('technician', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500"><option value="">اختر فني</option>{technicians.filter(t => t.is_active !== false).map(t => <option key={t.id} value={t.name}>{t.name}</option>)}</select></div>
+                </div>
+                <div className="mt-4"><label className="text-[10px] font-bold text-slate-500 uppercase">⚠️ وصف العطل</label><textarea required value={formData.problem_description} onChange={(e) => handleFormChange('problem_description', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" rows={3} placeholder="اشرح المشكلة بالتفصيل..."></textarea></div>
+              </div>
+              <div className="border-t border-slate-800 pt-4"><h3 className="text-sm font-bold text-white mb-3">💰 المبالغ المالية</h3>
+                <div className="grid grid-cols-3 gap-4"><div><label className="text-[10px] font-bold text-slate-500 uppercase">الإجمالي</label><input type="number" value={formData.total_amount} onChange={(e) => handleFormChange('total_amount', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">قطع الغيار</label><input type="number" value={formData.parts_cost} onChange={(e) => handleFormChange('parts_cost', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">المواصلات</label><input type="number" value={formData.transport_cost} onChange={(e) => handleFormChange('transport_cost', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div></div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 p-4 bg-slate-950 rounded-2xl border border-slate-800"><div className="text-center"><p className="text-[10px] text-slate-500 uppercase">نصيب الشركة (50%)</p><p className="text-lg font-black text-blue-500">{formData.company_share} ج.م</p></div><div className="text-center border-r border-slate-800"><p className="text-[10px] text-slate-500 uppercase">نصيب الفني (50%)</p><p className="text-lg font-black text-purple-500">{formData.technician_share} ج.م</p></div></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase pr-2">📅 تاريخ الأوردر</label><input type="date" value={(() => { if (!formData.date) return new Date().toISOString().split('T')[0]; if (formData.date.includes('/')) { const parts = formData.date.split('/'); if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`; } return formData.date; })()} onChange={(e) => { const [year, month, day] = e.target.value.split('-'); const formattedDate = `${day}/${month}/${year}`; handleFormChange('date', formattedDate); }} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div></div>
+              <div className="flex items-center gap-2 bg-slate-800 p-3 rounded-xl border border-slate-700"><input type="checkbox" id="is_paid" checked={formData.is_paid} onChange={(e) => handleFormChange('is_paid', e.target.checked)} className="w-5 h-5 accent-orange-500" /><label htmlFor="is_paid" className="text-sm font-bold text-white cursor-pointer">✅ تم تحصيل المبلغ بالكامل</label></div>
+              <button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white font-black py-4 rounded-2xl shadow-lg transition-all active:scale-95 mt-4">💾 حفظ الأوردر</button>
             </form>
           </div>
         </div>
       )}
 
-      {/* مودال إضافة/تعديل فني */}
+      {/* Technician Modal */}
       {showTechModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">{editingTech ? 'تعديل فني' : 'فني جديد'}</h3>
-              <button onClick={() => setShowTechModal(false)} className="p-1 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
-            </div>
-            <form onSubmit={saveTechnician} className="space-y-4">
-              <input type="text" placeholder="الاسم" value={techForm.name} onChange={e => setTechForm({ ...techForm, name: e.target.value })} className="w-full bg-slate-800 p-3 rounded-xl" required />
-              <input type="text" placeholder="رقم الهاتف" value={techForm.phone} onChange={e => setTechForm({ ...techForm, phone: e.target.value })} className="w-full bg-slate-800 p-3 rounded-xl" required />
-              <input type="text" placeholder="التخصص" value={techForm.specialization} onChange={e => setTechForm({ ...techForm, specialization: e.target.value })} className="w-full bg-slate-800 p-3 rounded-xl" />
-              <div className="flex gap-3"><button type="submit" className="flex-1 bg-orange-600 py-3 rounded-xl font-bold">حفظ</button><button type="button" onClick={() => setShowTechModal(false)} className="flex-1 bg-slate-700 py-3 rounded-xl font-bold">إلغاء</button></div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md shadow-2xl">
+            <div className="p-6 border-b border-slate-800 flex justify-between items-center"><h2 className="text-xl font-black text-white">{editingTech ? 'تعديل فني' : 'فني جديد'}</h2><button onClick={() => setShowTechModal(false)} className="p-2 text-slate-500 hover:text-white"><XCircle className="w-6 h-6" /></button></div>
+            <form onSubmit={saveTechnician} className="p-6 space-y-4">
+              <div><label className="text-[10px] font-bold text-slate-500 uppercase">👤 اسم الفني</label><input type="text" required value={techForm.name} onChange={(e) => setTechForm({ ...techForm, name: e.target.value })} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div>
+              <div><label className="text-[10px] font-bold text-slate-500 uppercase">📞 رقم الهاتف</label><input type="tel" required value={techForm.phone} onChange={(e) => setTechForm({ ...techForm, phone: e.target.value })} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div>
+              <div><label className="text-[10px] font-bold text-slate-500 uppercase">🔧 التخصص</label><input type="text" value={techForm.specialization} onChange={(e) => setTechForm({ ...techForm, specialization: e.target.value })} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" placeholder="مثال: صيانة ثلاجات" /></div>
+              <div><label className="text-[10px] font-bold text-slate-500 uppercase">👤 اسم المستخدم</label><input type="text" required value={techForm.username} onChange={(e) => setTechForm({ ...techForm, username: e.target.value })} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div>
+              <div><label className="text-[10px] font-bold text-slate-500 uppercase">🔑 كلمة المرور</label><input type="password" required value={techForm.password} onChange={(e) => setTechForm({ ...techForm, password: e.target.value })} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-orange-500" /></div>
+              <div className="flex items-center gap-2"><input type="checkbox" id="is_active" checked={techForm.is_active} onChange={(e) => setTechForm({ ...techForm, is_active: e.target.checked })} className="w-5 h-5 accent-orange-500" /><label htmlFor="is_active" className="text-sm font-bold text-white cursor-pointer">✅ نشط (يظهر في قائمة الفنيين)</label></div>
+              <button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white font-black py-4 rounded-2xl shadow-lg transition-all active:scale-95 mt-4">💾 حفظ الفني</button>
             </form>
           </div>
         </div>
-      )}
-
-      {/* مودال إدخال قيمة الكشف */}
-      {showInspectModal && selectedOrderForInspect && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold flex items-center gap-2"><DollarSign className="w-5 h-5 text-yellow-400" /> كشف بقيمة</h3>
-              <button onClick={() => setShowInspectModal(false)} className="p-1 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
-            </div>
-            <div className="space-y-4">
-              <div><label className="block text-sm text-slate-400 mb-1">💰 قيمة الكشف (ج.م)</label><input type="number" value={inspectAmount} onChange={e => setInspectAmount(e.target.value)} placeholder="مثال: 500" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-orange-500" autoFocus /></div>
-              <div className="flex gap-3"><button onClick={saveInspection} className="flex-1 bg-orange-600 hover:bg-orange-700 py-3 rounded-xl font-bold">تأكيد الكشف</button><button onClick={() => setShowInspectModal(false)} className="flex-1 bg-slate-700 hover:bg-slate-600 py-3 rounded-xl font-bold">إلغاء</button></div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* مودال اعتماد الفاتورة والضمان */}
-      {showInvoiceModal && selectedOrderForInvoice && (
-        <InvoiceApprovalModal
-          order={selectedOrderForInvoice}
-          isOpen={showInvoiceModal}
-          onClose={() => setShowInvoiceModal(false)}
-          onApprove={handleInvoiceApprove}
-          onSendWhatsApp={handleSendWhatsApp}
-        />
       )}
     </div>
   );
