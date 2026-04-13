@@ -25,6 +25,28 @@ const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   return res.json();
 };
 
+// دالة لتسجيل الإشعارات
+const addNotification = async (action: string, details: string) => {
+  try {
+    await fetch('https://hjrnfsdvrrwgyppqhwml.supabase.co/rest/v1/notifications', {
+      method: 'POST',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        action: action,
+        details: details,
+        user_name: 'المدير',
+        created_at: new Date().toISOString()
+      })
+    });
+  } catch (err) {
+    console.error("خطأ في تسجيل الإشعار:", err);
+  }
+};
+
 export default function ProtectedOrders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [technicians, setTechnicians] = useState<any[]>([]);
@@ -77,31 +99,13 @@ export default function ProtectedOrders() {
   
   const [stats, setStats] = useState({ pending: 0, inProgress: 0, completed: 0, cancelled: 0, totalIncome: 0 });
 
-  // دالة بسيطة ومضمونة لتسجيل الإشعارات
-  const addNotification = async (action: string, details: string) => {
-    try {
-      const result = await fetch('https://hjrnfsdvrrwgyppqhwml.supabase.co/rest/v1/notifications', {
-        method: 'POST',
-        headers: {
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          action: action,
-          details: details,
-          user_name: 'المدير',
-          created_at: new Date().toISOString()
-        })
-      });
-      if (result.ok) {
-        console.log("✅ تم تسجيل الإشعار:", action);
-      } else {
-        console.error("فشل تسجيل الإشعار:", await result.text());
-      }
-    } catch (err) {
-      console.error("خطأ في تسجيل الإشعار:", err);
-    }
+  const formatPhoneForWhatsApp = (phone: string) => {
+    if (!phone) return '';
+    let cleaned = phone.toString().replace(/[^\d+]/g, '');
+    if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
+    if (cleaned.startsWith('1') && cleaned.length === 10) cleaned = '20' + cleaned;
+    else if (!cleaned.startsWith('20')) cleaned = '20' + cleaned;
+    return cleaned;
   };
 
   const getDaysDifference = (dateStr: string, status: string) => {
@@ -208,7 +212,6 @@ export default function ProtectedOrders() {
   const distributeDailyProfit = async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
-      
       const todayIncome = (cashLedger || []).filter(c => c.date === today && c.type === 'income').reduce((sum, c) => sum + Number(c.amount), 0);
       const todayExpenses = (cashLedger || []).filter(c => c.date === today && c.type === 'expense').reduce((sum, c) => sum + Number(c.amount), 0);
       const netProfit = todayIncome - todayExpenses;
@@ -251,7 +254,7 @@ export default function ProtectedOrders() {
       
     } catch (err) {
       console.error("خطأ في توزيع الأرباح:", err);
-      alert("❌ حدث خطأ أثناء توزيع الأرباح: " + err.message);
+      alert("❌ حدث خطأ أثناء توزيع الأرباح");
     }
   };
 
@@ -315,15 +318,6 @@ export default function ProtectedOrders() {
     }
     const updated = { ...formData, [field]: value };
     setFormData(calculateAmounts(updated));
-  };
-
-  const formatPhoneForWhatsApp = (phone: string) => {
-    if (!phone) return '';
-    let cleaned = phone.toString().replace(/[^\d+]/g, '');
-    if (cleaned.startsWith('0')) cleaned = '+20' + cleaned.substring(1);
-    else if (cleaned.startsWith('1') && cleaned.length === 10) cleaned = '+20' + cleaned;
-    else if (!cleaned.startsWith('+')) cleaned = '+20' + cleaned;
-    return cleaned;
   };
 
   const sendWhatsAppToCustomer = (order: any, newStatus: string) => {
@@ -410,6 +404,7 @@ export default function ProtectedOrders() {
     setIsOtherBrand(false);
   };
 
+  // ✅ دالة حفظ الأوردر (مصلحة تماماً)
   const saveOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     const orderNumber = `MG-${Date.now()}`;
@@ -417,19 +412,25 @@ export default function ProtectedOrders() {
     const finalDeviceType = isOtherDevice ? customDevice : formData.device_type;
     const finalBrand = isOtherBrand ? customBrand : formData.brand;
     const orderToSave = { ...formData, device_type: finalDeviceType, brand: finalBrand, order_number: orderNumber, date: orderDate };
+    
     try {
       if (editingOrder) {
         await fetchAPI(`orders?id=eq.${editingOrder.id}`, { method: 'PATCH', body: JSON.stringify(orderToSave) });
         await addNotification('تعديل أوردر', `تم تعديل أوردر ${formData.customer_name}`);
+        alert("✅ تم تعديل الأوردر بنجاح");
       } else {
         await fetchAPI('orders', { method: 'POST', body: JSON.stringify(orderToSave) });
         await addNotification('إضافة أوردر', `تم إضافة أوردر جديد للعميل ${formData.customer_name}`);
+        alert("✅ تم إضافة الأوردر بنجاح");
       }
       setShowOrderModal(false);
       setEditingOrder(null);
       resetForm();
-      fetchData();
-    } catch (err) { console.error(err); }
+      await fetchData();
+    } catch (err) { 
+      console.error(err);
+      alert("❌ حدث خطأ أثناء حفظ الأوردر: " + err.message);
+    }
   };
 
   const savePartner = async (e: React.FormEvent) => {
@@ -497,29 +498,7 @@ export default function ProtectedOrders() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const filteredOrders = (orders || []).filter(o => {
-    const matchesSearch = o.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) || o.phone?.includes(searchTerm) || o.technician?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || o.status === filterStatus;
-    const matchesTechnician = !filterTechnician || o.technician === filterTechnician;
-    const matchesDeviceType = !filterDeviceType || o.device_type === filterDeviceType;
-    const matchesDateFrom = !filterDateFrom || (o.date && o.date >= filterDateFrom);
-    const matchesDateTo = !filterDateTo || (o.date && o.date <= filterDateTo);
-    const matchesDelay = filterDelay === 'all' || (filterDelay === 'delayed' && isDelayed(o));
-    return matchesSearch && matchesStatus && matchesTechnician && matchesDeviceType && matchesDateFrom && matchesDateTo && matchesDelay;
-  });
-
-  const filteredTechnicians = (technicians || []).filter(tech => {
-    if (filterTechStatus === 'active') return tech.is_active !== false;
-    if (filterTechStatus === 'inactive') return tech.is_active === false;
-    return true;
-  });
-
-  const clearAllFilters = () => {
-    setSearchTerm(''); setFilterStatus('all'); setFilterTechnician(''); setFilterDeviceType('');
-    setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all');
-  };
-
-  // دالة طباعة الفاتورة وإرسال واتساب
+  // ✅ دالة طباعة الفاتورة وإرسال واتساب (مصلحة تماماً)
   const printAndSendInvoice = async (order: any) => {
     const parts = prompt("✏️ أدخل قطع الغيار المستخدمة (مثال: تايمر - 300 ج.م)", "");
     const partsList = parts || "لا توجد";
@@ -588,6 +567,28 @@ export default function ProtectedOrders() {
     
     alert("✅ تم اعتماد الفاتورة وطباعتها وإرسالها للعميل");
     fetchData();
+  };
+
+  const filteredOrders = (orders || []).filter(o => {
+    const matchesSearch = o.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) || o.phone?.includes(searchTerm) || o.technician?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = filterStatus === 'all' || o.status === filterStatus;
+    const matchesTechnician = !filterTechnician || o.technician === filterTechnician;
+    const matchesDeviceType = !filterDeviceType || o.device_type === filterDeviceType;
+    const matchesDateFrom = !filterDateFrom || (o.date && o.date >= filterDateFrom);
+    const matchesDateTo = !filterDateTo || (o.date && o.date <= filterDateTo);
+    const matchesDelay = filterDelay === 'all' || (filterDelay === 'delayed' && isDelayed(o));
+    return matchesSearch && matchesStatus && matchesTechnician && matchesDeviceType && matchesDateFrom && matchesDateTo && matchesDelay;
+  });
+
+  const filteredTechnicians = (technicians || []).filter(tech => {
+    if (filterTechStatus === 'active') return tech.is_active !== false;
+    if (filterTechStatus === 'inactive') return tech.is_active === false;
+    return true;
+  });
+
+  const clearAllFilters = () => {
+    setSearchTerm(''); setFilterStatus('all'); setFilterTechnician(''); setFilterDeviceType('');
+    setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all');
   };
 
   if (loading && orders.length === 0) return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><RefreshCw className="w-12 h-12 text-orange-500 animate-spin" /></div>;
@@ -721,7 +722,7 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* Invoices Review Tab - مع طباعة وإرسال واتساب */}
+        {/* Invoices Review Tab */}
         {activeTab === 'invoicesReview' && (
           <div className="space-y-4">
             <h2 className="text-xl font-bold">📄 فواتير بانتظار المراجعة</h2>
@@ -755,10 +756,15 @@ export default function ProtectedOrders() {
                 <tbody>
                   {cashLedger.map(entry => (
                     <tr key={entry.id} className="border-b border-slate-800">
-                      <td className="p-3">{entry.date}</td><td>{entry.type === 'income' ? '💰 دخل' : entry.type === 'expense' ? '💸 مصروف' : '📤 توزيع أرباح'}</td>
-                      <td className={entry.type === 'income' ? 'text-green-400' : 'text-red-400'}>{entry.amount} ج.م</td><td>{entry.description}</td>
-                      <td className="flex gap-2"><button onClick={() => { setEditingCash(entry); setCashForm(entry); setShowCashModal(true); }} className="text-blue-400"><Edit className="w-4 h-4" /></button><button onClick={() => deleteCashEntry(entry.id)} className="text-red-400"><Trash2 className="w-4 h-4" /></button></td>
-                    </tr>
+                      <td className="p-3">{entry.date}</td>
+                      <td>{entry.type === 'income' ? '💰 دخل' : entry.type === 'expense' ? '💸 مصروف' : '📤 توزيع أرباح'}</td>
+                      <td className={entry.type === 'income' ? 'text-green-400' : 'text-red-400'}>{entry.amount} ج.م</td>
+                      <td>{entry.description}</td>
+                      <td className="flex gap-2">
+                        <button onClick={() => { setEditingCash(entry); setCashForm(entry); setShowCashModal(true); }} className="text-blue-400"><Edit className="w-4 h-4" /></button>
+                        <button onClick={() => deleteCashEntry(entry.id)} className="text-red-400"><Trash2 className="w-4 h-4" /></button>
+                       </td>
+                     </tr>
                   ))}
                 </tbody>
               </table>
