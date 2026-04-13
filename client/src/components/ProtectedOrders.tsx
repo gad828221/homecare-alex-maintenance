@@ -39,10 +39,13 @@ const addNotificationLog = async (action: string, details: string) => {
         created_at: new Date().toISOString()
       })
     });
-  } catch (err) { console.error("فشل تسجيل الإشعار:", err); }
+    console.log("✅ إشعار مسجل:", action);
+  } catch (err) { 
+    console.error("❌ فشل تسجيل الإشعار:", err); 
+  }
 };
 
-// دالة لطباعة الفاتورة (معدلة)
+// دالة لطباعة الفاتورة
 const printInvoice = (order: any, partsList: string, warranty: string) => {
   const printWindow = window.open('', '_blank');
   if (!printWindow) return;
@@ -254,7 +257,7 @@ export default function ProtectedOrders() {
       const netProfit = todayIncome - todayExpenses;
       
       if (netProfit <= 0) {
-        alert("⚠️ لا توجد أرباح صافية اليوم للتوزيع (الدخل: " + todayIncome + " - المصروفات: " + todayExpenses + ")");
+        alert("⚠️ لا توجد أرباح صافية اليوم للتوزيع");
         return;
       }
       
@@ -594,7 +597,7 @@ export default function ProtectedOrders() {
           <button onClick={() => setActiveTab('notifications')} className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1 ${activeTab === 'notifications' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}><Bell className="w-4 h-4" /> الإشعارات ({notifications.length})</button>
         </div>
 
-        {/* Orders Tab - مختصر لتجنب طول الرسالة */}
+        {/* Orders Tab */}
         {activeTab === 'orders' && (
           <div className="space-y-4">
             <div className="flex flex-col md:flex-row gap-4">
@@ -696,7 +699,7 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* Invoices Review Tab - معدل */}
+        {/* Invoices Review Tab */}
         {activeTab === 'invoicesReview' && (
           <div className="space-y-4">
             <h2 className="text-xl font-bold">📄 فواتير بانتظار المراجعة</h2>
@@ -775,8 +778,8 @@ export default function ProtectedOrders() {
                       <td className="flex gap-2">
                         <button onClick={() => { setEditingCash(entry); setCashForm({ type: entry.type, amount: entry.amount, description: entry.description, date: entry.date }); setShowCashModal(true); }} className="text-blue-400"><Edit className="w-4 h-4" /></button>
                         <button onClick={() => deleteCashEntry(entry.id)} className="text-red-400"><Trash2 className="w-4 h-4" /></button>
-                       </td>
-                     </tr>
+                      </td>
+                    </tr>
                   ))}
                 </tbody>
               </table>
