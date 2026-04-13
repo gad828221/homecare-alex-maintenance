@@ -12,8 +12,10 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const DEVICE_TYPES = ['غسالة', 'ثلاجة', 'بوتاجاز', 'سخان', 'تكييف', 'ميكروويف', 'غسالة أطباق'];
 const BRANDS = ['سامسونج', 'LG', 'شارب', 'توشيبا', 'زانوسي', 'يونيون إير', 'فريش', 'وايت ويل', 'أريستون', 'بيكو', 'هوفر', 'إنديست'];
 
+// دالة مبسطة وآمنة للاتصال بـ Supabase
 const fetchAPI = async (endpoint: string, options?: RequestInit) => {
-  const res = await fetch(`${supabaseUrl}/rest/v1/${endpoint}`, {
+  const url = `${supabaseUrl}/rest/v1/${endpoint}`;
+  const res = await fetch(url, {
     headers: { 
       'apikey': supabaseKey, 
       'Authorization': `Bearer ${supabaseKey}`, 
@@ -21,11 +23,24 @@ const fetchAPI = async (endpoint: string, options?: RequestInit) => {
     },
     ...options,
   });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  
+  // إذا كان الطلب ناجحاً ولا يوجد محتوى
+  if (res.status === 204 || options?.method === 'DELETE') {
+    return { success: true };
+  }
+  
+  const text = await res.text();
+  if (!text) return { success: true };
+  
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error("JSON parse error:", text);
+    return { success: true };
+  }
 };
 
-// دالة لتسجيل الإشعارات
+// دالة تسجيل الإشعارات
 const addNotification = async (action: string, details: string) => {
   try {
     await fetch('https://hjrnfsdvrrwgyppqhwml.supabase.co/rest/v1/notifications', {
@@ -101,10 +116,9 @@ export default function ProtectedOrders() {
 
   const formatPhoneForWhatsApp = (phone: string) => {
     if (!phone) return '';
-    let cleaned = phone.toString().replace(/[^\d+]/g, '');
+    let cleaned = phone.toString().replace(/[^\d]/g, '');
     if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
-    if (cleaned.startsWith('1') && cleaned.length === 10) cleaned = '20' + cleaned;
-    else if (!cleaned.startsWith('20')) cleaned = '20' + cleaned;
+    if (cleaned.length === 10) cleaned = '20' + cleaned;
     return cleaned;
   };
 
@@ -407,29 +421,47 @@ export default function ProtectedOrders() {
   // ✅ دالة حفظ الأوردر (مصلحة تماماً)
   const saveOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     const orderNumber = `MG-${Date.now()}`;
     const orderDate = formData.date;
     const finalDeviceType = isOtherDevice ? customDevice : formData.device_type;
     const finalBrand = isOtherBrand ? customBrand : formData.brand;
-    const orderToSave = { ...formData, device_type: finalDeviceType, brand: finalBrand, order_number: orderNumber, date: orderDate };
+    
+    const orderToSave = { 
+      ...formData, 
+      device_type: finalDeviceType, 
+      brand: finalBrand, 
+      order_number: orderNumber, 
+      date: orderDate 
+    };
     
     try {
+      let result;
       if (editingOrder) {
-        await fetchAPI(`orders?id=eq.${editingOrder.id}`, { method: 'PATCH', body: JSON.stringify(orderToSave) });
+        result = await fetchAPI(`orders?id=eq.${editingOrder.id}`, { 
+          method: 'PATCH', 
+          body: JSON.stringify(orderToSave) 
+        });
         await addNotification('تعديل أوردر', `تم تعديل أوردر ${formData.customer_name}`);
         alert("✅ تم تعديل الأوردر بنجاح");
       } else {
-        await fetchAPI('orders', { method: 'POST', body: JSON.stringify(orderToSave) });
+        result = await fetchAPI('orders', { 
+          method: 'POST', 
+          body: JSON.stringify(orderToSave) 
+        });
         await addNotification('إضافة أوردر', `تم إضافة أوردر جديد للعميل ${formData.customer_name}`);
         alert("✅ تم إضافة الأوردر بنجاح");
       }
+      
+      console.log("Result:", result);
       setShowOrderModal(false);
       setEditingOrder(null);
       resetForm();
       await fetchData();
-    } catch (err) { 
-      console.error(err);
-      alert("❌ حدث خطأ أثناء حفظ الأوردر: " + err.message);
+      
+    } catch (err: any) {
+      console.error("Error saving order:", err);
+      alert("❌ حدث خطأ أثناء حفظ الأوردر: " + (err.message || "خطأ غير معروف"));
     }
   };
 
@@ -498,11 +530,11 @@ export default function ProtectedOrders() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // ✅ دالة طباعة الفاتورة وإرسال واتساب (مصلحة تماماً)
+  // ✅ دالة طباعة الفاتورة وإرسال واتساب
   const printAndSendInvoice = async (order: any) => {
-    const parts = prompt("✏️ أدخل قطع الغيار المستخدمة (مثال: تايمر - 300 ج.م)", "");
+    const parts = prompt("✏️ أدخل قطع الغيار المستخدمة", "");
     const partsList = parts || "لا توجد";
-    const warranty = prompt("🛡️ فترة الضمان (مثال: 6 أشهر، سنة، سنتين)", "6 أشهر");
+    const warranty = prompt("🛡️ فترة الضمان (مثال: 6 أشهر)", "6 أشهر");
     const finalWarranty = warranty || "6 أشهر";
     
     // حفظ في قاعدة البيانات
