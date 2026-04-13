@@ -26,14 +26,24 @@ const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   return res.json();
 };
 
-// دالة لإضافة إشعار
+// دالة لإضافة إشعار (معدلة مع console.log للتأكد من عملها)
 const addNotificationLog = async (action: string, details: string) => {
   try {
+    console.log("📝 محاولة تسجيل إشعار:", action, details);
     await fetchAPI('notifications', {
       method: 'POST',
-      body: JSON.stringify({ action, details, user_name: 'المدير', created_at: new Date().toISOString() })
+      body: JSON.stringify({ 
+        action, 
+        details, 
+        user_name: 'المدير', 
+        type: 'admin_action',
+        created_at: new Date().toISOString()
+      })
     });
-  } catch (err) { console.error("فشل تسجيل الإشعار:", err); }
+    console.log("✅ تم تسجيل الإشعار بنجاح");
+  } catch (err) { 
+    console.error("❌ فشل تسجيل الإشعار:", err); 
+  }
 };
 
 // دالة لطباعة الفاتورة
@@ -210,7 +220,6 @@ export default function ProtectedOrders() {
     }
   };
 
-  // دالة إضافة أرباح الشركة إلى الخزنة (عند اكتمال الأوردر وتم التحصيل)
   const addCompanyProfitToCash = async (order: any) => {
     const companyShare = order.company_share || 0;
     if (companyShare > 0) {
@@ -364,14 +373,12 @@ export default function ProtectedOrders() {
     } catch (err) { console.error(err); }
   };
 
-  // دالة تعديل حالة التحصيل - عند التفعيل، تضاف أرباح الشركة إلى الخزنة
   const togglePaidStatus = async (id: number, currentStatus: boolean) => {
     const order = orders.find(o => o.id === id);
     try {
       await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ is_paid: !currentStatus }) });
       await addNotificationLog('تحديث حالة الدفع', `تم تحديث حالة تحصيل أوردر ${order?.customer_name}`);
       
-      // إذا تم التفعيل (أصبحت is_paid = true) وكان الأوردر مكتملاً، أضف أرباح الشركة إلى الخزنة
       if (!currentStatus && order?.status === 'completed') {
         await addCompanyProfitToCash(order);
       }
@@ -656,12 +663,14 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* Invoices Review Tab */}
+        {/* Invoices Review Tab - تم إصلاح خطأ useState */}
         {activeTab === 'invoicesReview' && (
           <div className="space-y-4">
             <h2 className="text-xl font-bold">📄 فواتير بانتظار المراجعة</h2>
             {orders.filter(o => o.status === 'completed' && !o.invoice_approved).map(order => {
-              const [partsList, setPartsList] = useState('');
+              // استخدام متغير محلي بدلاً من useState داخل map
+              let localPartsList = '';
+              
               return (
                 <div key={order.id} className="bg-slate-800 p-4 rounded-2xl">
                   <div className="flex justify-between items-start flex-wrap gap-3">
@@ -669,8 +678,8 @@ export default function ProtectedOrders() {
                     <div className="flex gap-2">
                       <button
                         onClick={async () => {
-                          const parts = prompt("✏️ أدخل قطع الغيار المستخدمة (مثال: تايمر - 300 ج.م)", partsList);
-                          if (parts !== null) setPartsList(parts);
+                          const parts = prompt("✏️ أدخل قطع الغيار المستخدمة (مثال: تايمر - 300 ج.م)", "");
+                          const partsList = parts || "";
                           const warranty = prompt("🛡️ فترة الضمان (مثال: 6 أشهر)", order.warranty_period || "6 أشهر");
                           const finalWarranty = warranty || "6 أشهر";
                           await fetchAPI(`orders?id=eq.${order.id}`, {
@@ -702,6 +711,9 @@ export default function ProtectedOrders() {
                 </div>
               );
             })}
+            {orders.filter(o => o.status === 'completed' && !o.invoice_approved).length === 0 && (
+              <div className="text-center py-8 text-slate-400">لا توجد فواتير بانتظار المراجعة</div>
+            )}
           </div>
         )}
 
@@ -758,7 +770,7 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-                {/* Notifications Tab */}
+        {/* Notifications Tab */}
         {activeTab === 'notifications' && (
           <div className="space-y-4">
             <div className="flex justify-between items-center"><h2 className="text-xl font-bold">🔔 سجل الإشعارات</h2>{notifications.length > 0 && <button onClick={deleteAllNotifications} className="bg-red-600/20 text-red-400 px-3 py-1 rounded-lg text-sm flex items-center gap-1"><Trash className="w-4 h-4" /> مسح الكل</button>}</div>
@@ -874,5 +886,4 @@ export default function ProtectedOrders() {
 
     </div>
   );
-                       }
-        
+}
