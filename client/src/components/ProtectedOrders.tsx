@@ -3,7 +3,7 @@ import {
   Plus, Search, LayoutDashboard, Users, 
   CheckCircle2, AlertCircle, 
   Edit, Trash2, RefreshCw, Phone,
-  Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus
+  Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut
 } from "lucide-react";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -12,7 +12,6 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const DEVICE_TYPES = ['غسالة', 'ثلاجة', 'بوتاجاز', 'سخان', 'تكييف', 'ميكروويف', 'غسالة أطباق'];
 const BRANDS = ['سامسونج', 'LG', 'شارب', 'توشيبا', 'زانوسي', 'يونيون إير', 'فريش', 'وايت ويل', 'أريستون', 'بيكو', 'هوفر', 'إنديست'];
 
-// دالة مبسطة وآمنة للاتصال بـ Supabase
 const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   const url = `${supabaseUrl}/rest/v1/${endpoint}`;
   const res = await fetch(url, {
@@ -24,7 +23,6 @@ const fetchAPI = async (endpoint: string, options?: RequestInit) => {
     ...options,
   });
   
-  // إذا كان الطلب ناجحاً ولا يوجد محتوى
   if (res.status === 204 || options?.method === 'DELETE') {
     return { success: true };
   }
@@ -40,7 +38,6 @@ const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   }
 };
 
-// دالة تسجيل الإشعارات
 const addNotification = async (action: string, details: string) => {
   try {
     await fetch('https://hjrnfsdvrrwgyppqhwml.supabase.co/rest/v1/notifications', {
@@ -113,6 +110,13 @@ export default function ProtectedOrders() {
   });
   
   const [stats, setStats] = useState({ pending: 0, inProgress: 0, completed: 0, cancelled: 0, totalIncome: 0 });
+
+  // دالة تسجيل الخروج
+  const handleLogout = () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = "/login";
+  };
 
   const formatPhoneForWhatsApp = (phone: string) => {
     if (!phone) return '';
@@ -418,7 +422,6 @@ export default function ProtectedOrders() {
     setIsOtherBrand(false);
   };
 
-  // ✅ دالة حفظ الأوردر (مصلحة تماماً)
   const saveOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -436,16 +439,15 @@ export default function ProtectedOrders() {
     };
     
     try {
-      let result;
       if (editingOrder) {
-        result = await fetchAPI(`orders?id=eq.${editingOrder.id}`, { 
+        await fetchAPI(`orders?id=eq.${editingOrder.id}`, { 
           method: 'PATCH', 
           body: JSON.stringify(orderToSave) 
         });
         await addNotification('تعديل أوردر', `تم تعديل أوردر ${formData.customer_name}`);
         alert("✅ تم تعديل الأوردر بنجاح");
       } else {
-        result = await fetchAPI('orders', { 
+        await fetchAPI('orders', { 
           method: 'POST', 
           body: JSON.stringify(orderToSave) 
         });
@@ -453,7 +455,6 @@ export default function ProtectedOrders() {
         alert("✅ تم إضافة الأوردر بنجاح");
       }
       
-      console.log("Result:", result);
       setShowOrderModal(false);
       setEditingOrder(null);
       resetForm();
@@ -530,7 +531,12 @@ export default function ProtectedOrders() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // ✅ دالة طباعة الفاتورة وإرسال واتساب
+  // دالة طباعة الفاتورة - تفتح صفحة الفاتورة المنفصلة
+  const openInvoicePage = (order: any) => {
+    window.open(`/invoice?id=${order.id}`, '_blank');
+  };
+
+  // دالة اعتماد الفاتورة وإرسال واتساب
   const printAndSendInvoice = async (order: any) => {
     const parts = prompt("✏️ أدخل قطع الغيار المستخدمة", "");
     const partsList = parts || "لا توجد";
@@ -544,44 +550,8 @@ export default function ProtectedOrders() {
     });
     await addNotification('اعتماد فاتورة', `تم اعتماد فاتورة ${order.customer_name} مع ضمان ${finalWarranty}`);
     
-    // طباعة الفاتورة
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(`
-        <html dir="rtl">
-        <head><title>فاتورة صيانة</title>
-        <style>
-          body { font-family: 'Arial', sans-serif; padding: 20px; }
-          .invoice { max-width: 800px; margin: auto; border: 1px solid #ddd; padding: 20px; border-radius: 10px; }
-          .header { text-align: center; border-bottom: 2px solid #f97316; padding-bottom: 10px; margin-bottom: 20px; }
-          .title { font-size: 24px; font-weight: bold; color: #f97316; }
-          .row { display: flex; justify-content: space-between; margin-bottom: 10px; }
-          .label { font-weight: bold; }
-          .total { font-size: 18px; font-weight: bold; color: #f97316; margin-top: 20px; padding-top: 10px; border-top: 1px solid #ddd; }
-          .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
-        </style>
-        </head>
-        <body>
-        <div class="invoice">
-          <div class="header"><div class="title">🔧 Maintenance Guide</div><div>صيانة فورية بالمنزل</div></div>
-          <div class="row"><span class="label">رقم الأوردر:</span><span>${order.order_number || order.id}</span></div>
-          <div class="row"><span class="label">العميل:</span><span>${order.customer_name}</span></div>
-          <div class="row"><span class="label">الهاتف:</span><span>${order.phone}</span></div>
-          <div class="row"><span class="label">العنوان:</span><span>${order.address || '-'}</span></div>
-          <div class="row"><span class="label">الجهاز:</span><span>${order.device_type || order.device} - ${order.brand}</span></div>
-          <div class="row"><span class="label">قطع الغيار:</span><span>${partsList}</span></div>
-          <div class="row"><span class="label">الضمان:</span><span>${finalWarranty}</span></div>
-          <div class="row"><span class="label">المبلغ الإجمالي:</span><span>${order.total_amount || 0} ج.م</span></div>
-          <div class="row"><span class="label">الصافي:</span><span>${order.net_amount || 0} ج.م</span></div>
-          <div class="total">نصيب الشركة: ${order.company_share || 0} ج.م | نصيب الفني: ${order.technician_share || 0} ج.م</div>
-          <div class="footer">شكراً لثقتك بنا - للاستفسار: 01278885772</div>
-        </div>
-        </body>
-        </html>
-      `);
-      printWindow.document.close();
-      printWindow.print();
-    }
+    // فتح صفحة الفاتورة للطباعة
+    openInvoicePage(order);
     
     // إرسال واتساب للعميل
     const phone = formatPhoneForWhatsApp(order.phone);
@@ -629,8 +599,16 @@ export default function ProtectedOrders() {
     <div className="min-h-screen bg-slate-950 text-slate-200 pb-20">
       <nav className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 px-4 py-3">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3"><div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center"><LayoutDashboard className="w-6 h-6 text-white" /></div><h1 className="text-lg font-bold text-white">لوحة تحكم المدير</h1></div>
-          <button onClick={() => { fetchData(); fetchNotifications(); fetchCashLedger(); }} className="p-2 text-slate-400 hover:text-white"><RefreshCw className="w-5 h-5" /></button>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center"><LayoutDashboard className="w-6 h-6 text-white" /></div>
+            <h1 className="text-lg font-bold text-white">لوحة تحكم المدير</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => { fetchData(); fetchNotifications(); fetchCashLedger(); }} className="p-2 text-slate-400 hover:text-white transition-all"><RefreshCw className="w-5 h-5" /></button>
+            <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-white hover:bg-red-500/20 rounded-lg transition-all" title="تسجيل الخروج">
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -795,8 +773,8 @@ export default function ProtectedOrders() {
                       <td className="flex gap-2">
                         <button onClick={() => { setEditingCash(entry); setCashForm(entry); setShowCashModal(true); }} className="text-blue-400"><Edit className="w-4 h-4" /></button>
                         <button onClick={() => deleteCashEntry(entry.id)} className="text-red-400"><Trash2 className="w-4 h-4" /></button>
-                       </td>
-                     </tr>
+                      </td>
+                    </tr>
                   ))}
                 </tbody>
               </table>
