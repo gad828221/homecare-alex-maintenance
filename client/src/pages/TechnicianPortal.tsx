@@ -76,8 +76,29 @@ export default function TechnicianPortal() {
     else if (cleaned.startsWith('1') && cleaned.length === 10) cleaned = '+20' + cleaned;
     else if (!cleaned.startsWith('+')) cleaned = '+20' + cleaned;
     return cleaned;
-  };// إرسال إشعار للمدير ولرقمك (يفتح واتساب مباشرة)
+  };// إرسال إشعار للمدير (يحفظ في قاعدة البيانات ويفتح واتساب)
 const notifyAdmin = async (action: string, order: any, details: string = "") => {
+  try {
+    // حفظ الإشعار في قاعدة البيانات
+    await fetch(`${supabaseUrl}/rest/v1/notifications`, {
+      method: 'POST',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        action: action,
+        details: `الفني: ${techName}\nالأوردر: ${order.order_number}\nالعميل: ${order.customer_name}\n${details}`,
+        user_name: 'نظام',
+        created_at: new Date().toISOString()
+      })
+    });
+  } catch (err) {
+    console.error("خطأ في تسجيل الإشعار:", err);
+  }
+  
+  // إرسال واتساب للمدير
   const message = `🔔 *تنبيه إداري* 🔔\n` +
     `━━━━━━━━━━━━━━━━━━━━━━\n` +
     `👤 *الفني:* ${techName}\n` +
@@ -89,17 +110,8 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
     `⏰ *الوقت:* ${new Date().toLocaleString("ar-EG")}\n\n` +
     `يرجى المراجعة من لوحة التحكم.`;
   
-  // لتحسين تجربة الفني وعدم فتح نوافذ كثيرة تزعجه، سنقوم بفتح نافذة واحدة مجمعة أو استخدام رابط wa.me
-  // ملاحظة: الإرسال "تلقائياً 100%" بدون فتح نافذة يتطلب API مدفوع مثل UltraMsg.
-  // حالياً سنقوم بفتح نافذة واحدة فقط للرقم الأساسي لتقليل الإزعاج مع إمكانية التعديل مستقبلاً لربط API.
-  
   const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(message)}`;
-  
-  // نفتح نافذة واحدة فقط للمدير الأول لتقليل تشتت الفني
   window.open(whatsappUrl, '_blank');
-  
-  // الرقم الثاني يمكن إرساله عبر API في الخلفية إذا توفر مفتاح API
-  console.log("Notification also intended for: 201278885772");
 };
 
   // تم حذف إرسال واتساب للعميل بناءً على طلب المدير ليكون التواصل للمدير فقط

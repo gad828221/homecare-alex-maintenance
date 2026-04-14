@@ -20,6 +20,28 @@ export default function LoginPage() {
   ];
   const dataEntry = { username: "dataentry", password: "dataentry123" };
 
+  // دالة إضافة إشعار للمدير
+  const addAdminNotification = async (action: string, details: string) => {
+    try {
+      await fetch(`${supabaseUrl}/rest/v1/notifications`, {
+        method: 'POST',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: action,
+          details: details,
+          user_name: 'نظام',
+          created_at: new Date().toISOString()
+        })
+      });
+    } catch (err) {
+      console.error("خطأ في تسجيل الإشعار:", err);
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -45,7 +67,7 @@ export default function LoginPage() {
       }
     } else if (role === "tech") {
       try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/technicians?select=name,username,password,is_active&username=eq.${username}`, {
+        const response = await fetch(`${supabaseUrl}/rest/v1/technicians?select=name,username,password,is_active,phone&username=eq.${username}`, {
           headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
         });
         const data = await response.json();
@@ -56,6 +78,14 @@ export default function LoginPage() {
           }
           setIsLoggedIn(true);
           const techName = data[0].name;
+          const techPhone = data[0].phone || 'غير محدد';
+          
+          // إرسال إشعار للمدير عند تسجيل دخول الفني
+          await addAdminNotification(
+            '🔐 تسجيل دخول فني',
+            `الفني: ${techName}\nرقم الهاتف: ${techPhone}\nالوقت: ${new Date().toLocaleString('ar-EG')}`
+          );
+          
           setCurrentUser({ username, role: "tech", techName });
           localStorage.setItem("currentUser", JSON.stringify({ username, role: "tech", techName }));
           localStorage.setItem("userRole", "tech");

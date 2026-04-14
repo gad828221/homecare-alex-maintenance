@@ -212,67 +212,92 @@ export default function ProtectedOrders() {
 
   const addCompanyProfitToCash = async (order: any) => {
     const companyShare = order.company_share || 0;
-    if (companyShare > 0 && order.is_paid) {
-      await fetchAPI('cash_ledger', {
-        method: 'POST',
-        body: JSON.stringify({
-          type: 'income',
-          amount: companyShare,
-          description: `أرباح شركة من أوردر ${order.customer_name}`,
-          date: new Date().toISOString().split('T')[0]
-        })
-      });
-      await addNotification('إضافة أرباح للخزنة', `تم إضافة ${companyShare} ج.م من أوردر ${order.customer_name}`);
-      fetchCashLedger();
+    const totalAmount = order.total_amount || 0;
+    const partsCost = order.parts_cost || 0;
+    const transportCost = order.transport_cost || 0;
+    
+    if (companyShare > 0 && order.is_paid && order.status === 'completed') {
+      try {
+        // إضافة حركة خزنة لأرباح الشركة
+        await fetchAPI('cash_ledger', {
+          method: 'POST',
+          body: JSON.stringify({
+            type: 'income',
+            amount: companyShare,
+            description: `أرباح شركة - الأوردر: ${order.order_number}\nالعميل: ${order.customer_name}\nالمبلغ الإجمالي: ${totalAmount} ج.م\nقطع غيار: ${partsCost} ج.م\nمواصلات: ${transportCost} ج.م`,
+            date: new Date().toISOString().split('T')[0]
+          })
+        });
+        
+        // تحديث الأوردر بعلم أن الربح تم إضافته للخزنة
+        await fetchAPI(`orders?id=eq.${order.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ profit_added_to_cash: true })
+        });
+        
+        await addNotification('إضافة أرباح للخزنة', `✅ تم إضافة ${companyShare} ج.م للخزنة من أوردر ${order.customer_name}`);
+        fetchCashLedger();
+      } catch (err) {
+        console.error("خطأ في إضافة الأرباح للخزنة:", err);
+      }
     }
   };
 
   const distributeDailyProfit = async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
+      
+      // التحقق مما إذا كان قد تم التوزيع اليوم بالفعل
+      const alreadyDistributed = (cashLedger || []).some(c => c.date === today && c.type === 'profit_distribution');
+      if (alreadyDistributed) {
+        if (!confirm("⚠️ تم توزيع أرباح اليوم بالفعل. هل تريد التوزيع مرة أخرى؟ (قد يؤدي ذلك لتكرار الحركات)")) {
+          return;
+        }
+      }
+
       const todayIncome = (cashLedger || []).filter(c => c.date === today && c.type === 'income').reduce((sum, c) => sum + Number(c.amount), 0);
       const todayExpenses = (cashLedger || []).filter(c => c.date === today && c.type === 'expense').reduce((sum, c) => sum + Number(c.amount), 0);
       const netProfit = todayIncome - todayExpenses;
       
       if (netProfit <= 0) {
-        alert("⚠️ لا توجد أرباح صافية اليوم للتوزيع");
+        alert(`⚠️ لا توجد أرباح صافية اليوم للتوزيع.\nالإيرادات: ${todayIncome} ج.م\nالمصاريف: ${todayExpenses} ج.م`);
         return;
       }
       
       const activePartners = (partners || []).filter(p => p.is_active === true);
       if (activePartners.length === 0) {
-        alert("⚠️ لا يوجد شركاء نشطون");
+        alert("⚠️ لا يوجد شركاء نشطون لتوزيع الأرباح عليهم.");
         return;
       }
       
       const totalShares = activePartners.reduce((sum, p) => sum + Number(p.share_percentage), 0);
-      if (totalShares === 0) {
-        alert("⚠️ مجموع نسب الشركاء يساوي صفر");
+      
+      if (!confirm(`💰 سيتم توزيع صافي أرباح اليوم (${netProfit.toLocaleString()} ج.م) على ${activePartners.length} شريك.\nهل تريد الاستمرار؟`)) {
         return;
       }
-      
+
       for (const partner of activePartners) {
-        const shareAmount = (netProfit * Number(partner.share_percentage)) / totalShares;
+        const shareAmount = Math.floor((netProfit * Number(partner.share_percentage)) / 100);
         if (shareAmount > 0) {
           await fetchAPI('cash_ledger', {
             method: 'POST',
             body: JSON.stringify({
               type: 'profit_distribution',
               amount: shareAmount,
-              description: `توزيع أرباح يوم ${today} - ${partner.name} (${partner.share_percentage}%)`,
+              description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%)\nالتاريخ: ${today}\nصافي ربح اليوم: ${netProfit} ج.م`,
               date: today
             })
           });
         }
       }
       
-      await addNotification('توزيع أرباح يومية', `تم توزيع ${netProfit.toFixed(2)} ج.م على ${activePartners.length} شريك`);
+      await addNotification('توزيع أرباح يومية', `✅ تم توزيع ${netProfit.toLocaleString()} ج.م على الشركاء بنجاح.`);
       await fetchCashLedger();
-      alert(`✅ تم توزيع ${netProfit.toFixed(2)} ج.م على الشركاء`);
+      alert(`✅ تم توزيع ${netProfit.toLocaleString()} ج.م على الشركاء بنجاح.`);
       
     } catch (err) {
       console.error("خطأ في توزيع الأرباح:", err);
-      alert("❌ حدث خطأ أثناء توزيع الأرباح");
+      alert("❌ حدث خطأ أثناء توزيع الأرباح. يرجى مراجعة سجل الخزنة.");
     }
   };
 
@@ -364,24 +389,50 @@ export default function ProtectedOrders() {
 
   const updateOrderStatus = async (id: number, newStatus: string) => {
     const order = orders.find(o => o.id === id);
+    if (!order) return;
+
     try {
-      await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ status: newStatus }) });
-      await addNotification('تغيير حالة أوردر', `تم تغيير حالة أوردر ${order?.customer_name} إلى ${newStatus}`);
+      await fetchAPI(`orders?id=eq.${id}`, { 
+        method: 'PATCH', 
+        body: JSON.stringify({ status: newStatus }) 
+      });
+      
+      await addNotification('تغيير حالة أوردر', `🔄 تم تغيير حالة أوردر ${order.customer_name} إلى ${newStatus}`);
+      
+      // إذا أصبح الأوردر مكتمل وهو مدفوع أصلاً ولم يسبق إضافة ربحه للخزنة
+      if (newStatus === 'completed' && order.is_paid && !order.profit_added_to_cash) {
+        await addCompanyProfitToCash(order);
+      }
+      
       sendWhatsAppToCustomer(order, newStatus);
       fetchData();
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error("خطأ في تحديث حالة الأوردر:", err); 
+    }
   };
 
   const togglePaidStatus = async (id: number, currentStatus: boolean) => {
     const order = orders.find(o => o.id === id);
+    if (!order) return;
+
     try {
-      await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ is_paid: !currentStatus }) });
-      await addNotification('تحديث حالة الدفع', `تم تحديث حالة تحصيل أوردر ${order?.customer_name}`);
-      if (!currentStatus && order?.status === 'completed') {
+      // تحديث حالة الدفع في قاعدة البيانات
+      await fetchAPI(`orders?id=eq.${id}`, { 
+        method: 'PATCH', 
+        body: JSON.stringify({ is_paid: !currentStatus }) 
+      });
+      
+      await addNotification('تحديث حالة الدفع', `✅ تم تحديث حالة تحصيل أوردر ${order.customer_name} إلى ${!currentStatus ? 'تم التحصيل' : 'لم يتم التحصيل'}`);
+      
+      // إذا تم التحصيل الآن والأوردر مكتمل ولم يسبق إضافة ربحه للخزنة
+      if (!currentStatus && order.status === 'completed' && !order.profit_added_to_cash) {
         await addCompanyProfitToCash(order);
       }
+      
       fetchData();
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error("خطأ في تحديث حالة الدفع:", err); 
+    }
   };
 
   const deleteOrder = async (id: number) => {
@@ -536,39 +587,71 @@ export default function ProtectedOrders() {
     window.open(`/invoice?id=${order.id}`, '_blank');
   };
 
-  // دالة اعتماد الفاتورة وإرسال واتساب
+  // دالة اعتماد الفاتورة وإرسال واتساب مع رسالة احترافية
   const printAndSendInvoice = async (order: any) => {
-    const parts = prompt("✏️ أدخل قطع الغيار المستخدمة", "");
+    // فتح نافذة لإدخال بيانات الفاتورة
+    const parts = prompt("✏️ أدخل قطع الغيار المستخدمة (مثال: كمبريسور، فلتر)", "لا توجد");
     const partsList = parts || "لا توجد";
-    const warranty = prompt("🛡️ فترة الضمان (مثال: 6 أشهر)", "6 أشهر");
+    const warranty = prompt("🛡️ فترة الضمان (مثال: 6 أشهر، سنة واحدة)", "6 أشهر");
     const finalWarranty = warranty || "6 أشهر";
     
-    // حفظ في قاعدة البيانات
-    await fetchAPI(`orders?id=eq.${order.id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ invoice_approved: true, warranty_period: finalWarranty, parts_used: partsList })
-    });
-    await addNotification('اعتماد فاتورة', `تم اعتماد فاتورة ${order.customer_name} مع ضمان ${finalWarranty}`);
+    // التحقق من صحة البيانات
+    if (!order.phone || !order.customer_name) {
+      alert("❌ بيانات الأوردر غير كاملة");
+      return;
+    }
     
-    // فتح صفحة الفاتورة للطباعة
-    openInvoicePage(order);
-    
-    // إرسال واتساب للعميل
-    const phone = formatPhoneForWhatsApp(order.phone);
-    const message = `📄 *فاتورة الصيانة - ضمان* 📄\n\n` +
-      `شكراً لثقتك بنا.\n\n` +
-      `🔢 *رقم الأوردر:* ${order.order_number}\n` +
-      `👤 *العميل:* ${order.customer_name}\n` +
-      `🔧 *الجهاز:* ${order.device_type} - ${order.brand}\n` +
-      `💰 *المبلغ:* ${order.total_amount} ج.م\n` +
-      `🛡️ *الضمان:* ${finalWarranty}\n` +
-      `🔧 *قطع الغيار:* ${partsList}\n\n` +
-      `للاستفسار: 01278885772`;
-    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-    
-    alert("✅ تم اعتماد الفاتورة وطباعتها وإرسالها للعميل");
-    fetchData();
+    try {
+      // حفظ في قاعدة البيانات
+      await fetchAPI(`orders?id=eq.${order.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ 
+          invoice_approved: true, 
+          warranty_period: finalWarranty, 
+          parts_used: partsList,
+          invoice_date: new Date().toISOString().split('T')[0]
+        })
+      });
+      await addNotification('اعتماد فاتورة', `تم اعتماد فاتورة ${order.customer_name} مع ضمان ${finalWarranty}`);
+      
+      // فتح صفحة الفاتورة للطباعة والتحميل كـ PDF
+      setTimeout(() => {
+        openInvoicePage(order);
+      }, 500);
+      
+      // إرسال واتساب احترافي للعميل
+      const phone = formatPhoneForWhatsApp(order.phone);
+      const invoiceText = `📄 *فاتورة الصيانة - ضمان* 📄\n\n` +
+        `شكراً لثقتك بـ Maintenance Guide\n\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `🔢 *رقم الأوردر:* ${order.order_number}\n` +
+        `👤 *اسم العميل:* ${order.customer_name}\n` +
+        `📱 *الهاتف:* ${order.phone}\n` +
+        `📍 *العنوان:* ${order.address || 'غير محدد'}\n\n` +
+        `🔧 *تفاصيل الخدمة:*\n` +
+        `├ الجهاز: ${order.device_type || order.device}\n` +
+        `├ الماركة: ${order.brand}\n` +
+        `├ المشكلة: ${order.problem_description || order.problem || 'لم يتم تحديدها'}\n` +
+        `└ قطع الغيار: ${partsList}\n\n` +
+        `💰 *المبلغ الإجمالي:* ${order.total_amount} ج.م\n` +
+        `🛡️ *فترة الضمان:* ${finalWarranty}\n\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `✅ تم إكمال الخدمة بنجاح\n` +
+        `📅 التاريخ: ${new Date().toLocaleDateString('ar-EG')}\n\n` +
+        `📞 للاستفسارات والشكاوى:\n` +
+        `☎️ 01278885772\n` +
+        `📲 01558625259\n\n` +
+        `شكراً لاختيارك خدماتنا 🙏`;
+      
+      const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(invoiceText)}`;
+      window.open(whatsappUrl, '_blank');
+      
+      alert("✅ تم اعتماد الفاتورة بنجاح!\n📄 سيتم فتح الفاتورة للطباعة والتحميل\n📱 سيتم فتح واتساب لإرسال الفاتورة للعميل");
+      fetchData();
+    } catch (err) {
+      console.error("خطأ في اعتماد الفاتورة:", err);
+      alert("❌ حدث خطأ في اعتماد الفاتورة. يرجى المحاولة مرة أخرى.");
+    }
   };
 
   const filteredOrders = (orders || []).filter(o => {

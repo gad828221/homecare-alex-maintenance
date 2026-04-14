@@ -67,20 +67,30 @@ export default function InvoicePage() {
         <div ref={invoiceRef} className="bg-white rounded-2xl shadow-xl overflow-hidden" style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}>
           
           {/* Header */}
-          <div className="bg-gradient-to-r from-orange-600 to-red-600 p-6 text-white text-center">
-            <h1 className="text-2xl font-bold">🔧 Maintenance Guide</h1>
-            <p className="text-orange-100 text-sm">صيانة فورية بالمنزل - خدمة 24 ساعة</p>
-            <div className="flex justify-center gap-4 mt-3 text-xs">
+          <div className="bg-gradient-to-r from-orange-600 to-red-600 p-8 text-white text-center">
+            <h1 className="text-3xl font-bold mb-2">🔧 Maintenance Guide</h1>
+            <p className="text-orange-100 text-sm mb-2">فاتورة صيانة وضمان الأجهزة المنزلية</p>
+            <p className="text-orange-100 text-xs mb-3">خدمة صيانة 24 ساعة بالمنزل</p>
+            <div className="flex justify-center gap-6 mt-4 text-sm border-t border-orange-400 pt-3">
               <span>📞 01278885772</span>
+              <span>📲 01558625259</span>
               <span>📍 الإسكندرية</span>
             </div>
           </div>
           
           {/* عنوان الفاتورة */}
-          <div className="text-center py-4 border-b">
-            <h2 className="text-xl font-bold text-gray-800">فاتورة صيانة</h2>
-            <p className="text-gray-500 text-sm">رقم الأوردر: <span className="font-bold text-orange-600">{invoice.order_number || invoice.id}</span></p>
-            <p className="text-gray-500 text-sm">التاريخ: {new Date().toLocaleDateString('ar-EG')}</p>
+          <div className="text-center py-6 border-b-2 border-orange-200 bg-gray-50">
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">📄 فاتورة الصيانة والضمان</h2>
+            <div className="flex justify-center gap-8 text-sm text-gray-600 mt-2">
+              <div>
+                <span className="text-gray-500">رقم الفاتورة:</span>
+                <p className="font-bold text-orange-600 text-lg">{invoice.order_number || invoice.id}</p>
+              </div>
+              <div>
+                <span className="text-gray-500">التاريخ:</span>
+                <p className="font-bold text-gray-800">{new Date().toLocaleDateString('ar-EG')}</p>
+              </div>
+            </div>
           </div>
           
           {/* المحتوى */}
