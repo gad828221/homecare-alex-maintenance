@@ -4,7 +4,7 @@ import { MessageCircle, CheckCircle, User, Phone, Wrench, MapPin } from "lucide-
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
 
-// نفس القوائم الموجودة في لوحة التحكم
+// القوائم الأساسية
 const DEVICE_TYPES = ['غسالة', 'ثلاجة', 'بوتاجاز', 'سخان', 'تكييف', 'ميكروويف', 'غسالة أطباق'];
 const BRANDS = ['سامسونج', 'LG', 'شارب', 'توشيبا', 'زانوسي', 'يونيون إير', 'فريش', 'وايت ويل', 'أريستون', 'بيكو', 'هوفر', 'إنديست'];
 
@@ -17,26 +17,58 @@ export default function BookingForm() {
     brand: "",
     problem_description: "",
   });
+  
+  // حالات خيار "أخرى"
+  const [isOtherDevice, setIsOtherDevice] = useState(false);
+  const [customDevice, setCustomDevice] = useState("");
+  const [isOtherBrand, setIsOtherBrand] = useState(false);
+  const [customBrand, setCustomBrand] = useState("");
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
+
+  // تحديد القيمة النهائية لنوع الجهاز
+  const getFinalDeviceType = () => {
+    if (isOtherDevice) return customDevice.trim() || "جهاز آخر";
+    return formData.device_type;
+  };
+
+  // تحديد القيمة النهائية للماركة
+  const getFinalBrand = () => {
+    if (isOtherBrand) return customBrand.trim() || "ماركة أخرى";
+    return formData.brand;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitMessage("");
 
-    // إنشاء رقم أوردر فريد
+    const finalDeviceType = getFinalDeviceType();
+    const finalBrand = getFinalBrand();
+    
+    // التحقق من إدخال قيمة عند اختيار "أخرى"
+    if (isOtherDevice && !customDevice.trim()) {
+      setSubmitMessage("❌ الرجاء إدخال نوع الجهاز");
+      setIsSubmitting(false);
+      return;
+    }
+    if (isOtherBrand && !customBrand.trim()) {
+      setSubmitMessage("❌ الرجاء إدخال الماركة");
+      setIsSubmitting(false);
+      return;
+    }
+
     const orderNumber = `MG-${Date.now()}`;
     const orderDate = new Date().toLocaleDateString("ar-EG");
 
-    // البيانات المرسلة إلى قاعدة البيانات (متوافقة مع جدول orders)
     const orderToSave = {
       order_number: orderNumber,
       customer_name: formData.customer_name,
       phone: formData.phone,
-      device_type: formData.device_type,
+      device_type: finalDeviceType,
       address: formData.address,
-      brand: formData.brand,
+      brand: finalBrand,
       problem_description: formData.problem_description,
       status: 'pending',
       is_paid: false,
@@ -69,13 +101,14 @@ export default function BookingForm() {
         return;
       }
 
-      // رسالة واتساب للعميل (تأكيد الطلب)
-      const message = `🔧 *طلب صيانة جديد*\n\n🆔 *رقم الأوردر:* ${orderNumber}\n👤 *الاسم:* ${formData.customer_name}\n📞 *الهاتف:* ${formData.phone}\n🔨 *نوع الجهاز:* ${formData.device_type}\n🏷️ *الماركة:* ${formData.brand}\n⚠️ *المشكلة:* ${formData.problem_description}\n📍 *العنوان:* ${formData.address}\n\n📌 سيتم التواصل معك قريباً لتحديد موعد المعاينة.`;
+      const message = `🔧 *طلب صيانة جديد*\n\n🆔 *رقم الأوردر:* ${orderNumber}\n👤 *الاسم:* ${formData.customer_name}\n📞 *الهاتف:* ${formData.phone}\n🔨 *نوع الجهاز:* ${finalDeviceType}\n🏷️ *الماركة:* ${finalBrand}\n⚠️ *المشكلة:* ${formData.problem_description}\n📍 *العنوان:* ${formData.address}\n\n📌 سيتم التواصل معك قريباً لتحديد موعد المعاينة.`;
       
       const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, "_blank");
 
       setSubmitMessage("✅ تم استلام طلبك بنجاح! سيتم التواصل معك قريباً.");
+      
+      // إعادة تعيين النموذج
       setFormData({
         customer_name: "",
         phone: "",
@@ -84,6 +117,10 @@ export default function BookingForm() {
         brand: "",
         problem_description: "",
       });
+      setIsOtherDevice(false);
+      setCustomDevice("");
+      setIsOtherBrand(false);
+      setCustomBrand("");
       
     } catch (err: any) {
       setSubmitMessage(`❌ خطأ في الاتصال: ${err.message}`);
@@ -94,7 +131,7 @@ export default function BookingForm() {
   };
 
   return (
-    <section className="py-12 px-4 bg-gradient-to-br from-orange-50 via-white to-amber-50">
+    <section className="py-12 px-4 bg-gradient-to-br from-orange-50 via-white to-amber-50 min-h-screen">
       <div className="container max-w-3xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
@@ -150,38 +187,106 @@ export default function BookingForm() {
               />
             </div>
 
-            {/* نوع الجهاز */}
+            {/* نوع الجهاز - مع خيار أخرى */}
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
                 <Wrench className="w-4 h-4 text-orange-500" />
                 نوع الجهاز <span className="text-red-500">*</span>
               </label>
-              <select
-                required
-                value={formData.device_type}
-                onChange={(e) => setFormData({ ...formData, device_type: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-              >
-                <option value="">-- اختر نوع الجهاز --</option>
-                {DEVICE_TYPES.map((type) => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
+              
+              {!isOtherDevice ? (
+                <div className="flex gap-2">
+                  <select
+                    required
+                    value={formData.device_type}
+                    onChange={(e) => {
+                      if (e.target.value === 'other') {
+                        setIsOtherDevice(true);
+                        setFormData({ ...formData, device_type: '' });
+                      } else {
+                        setFormData({ ...formData, device_type: e.target.value });
+                      }
+                    }}
+                    className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                  >
+                    <option value="">-- اختر نوع الجهاز --</option>
+                    {DEVICE_TYPES.map((type) => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                    <option value="other">➕ أخرى (أدخل يدوياً)</option>
+                  </select>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={customDevice}
+                    onChange={(e) => setCustomDevice(e.target.value)}
+                    className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                    placeholder="أدخل نوع الجهاز"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsOtherDevice(false);
+                      setCustomDevice("");
+                    }}
+                    className="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl hover:bg-slate-300 transition"
+                  >
+                    رجوع
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* ماركة الجهاز */}
+            {/* ماركة الجهاز - مع خيار أخرى */}
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">ماركة الجهاز</label>
-              <select
-                value={formData.brand}
-                onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-              >
-                <option value="">-- اختر الماركة --</option>
-                {BRANDS.map((brand) => (
-                  <option key={brand} value={brand}>{brand}</option>
-                ))}
-              </select>
+              
+              {!isOtherBrand ? (
+                <div className="flex gap-2">
+                  <select
+                    value={formData.brand}
+                    onChange={(e) => {
+                      if (e.target.value === 'other') {
+                        setIsOtherBrand(true);
+                        setFormData({ ...formData, brand: '' });
+                      } else {
+                        setFormData({ ...formData, brand: e.target.value });
+                      }
+                    }}
+                    className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                  >
+                    <option value="">-- اختر الماركة --</option>
+                    {BRANDS.map((brand) => (
+                      <option key={brand} value={brand}>{brand}</option>
+                    ))}
+                    <option value="other">➕ أخرى (أدخل يدوياً)</option>
+                  </select>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={customBrand}
+                    onChange={(e) => setCustomBrand(e.target.value)}
+                    className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                    placeholder="أدخل الماركة"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsOtherBrand(false);
+                      setCustomBrand("");
+                    }}
+                    className="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl hover:bg-slate-300 transition"
+                  >
+                    رجوع
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* وصف المشكلة */}
