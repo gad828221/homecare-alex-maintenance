@@ -1,11 +1,18 @@
 import { Card } from "@/components/ui/card";
 import { MessageCircle, CheckCircle, User, Phone, Wrench, MapPin, Zap, Shield, Gift } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface BookingFormProps {
   title?: string;
   description?: string;
   defaultService?: string;
+}
+
+declare global {
+  interface Window {
+    gtag: (...args: any[]) => void;
+    dataLayer: any[];
+  }
 }
 
 export default function BookingForm({ 
@@ -32,6 +39,21 @@ export default function BookingForm({
     heater: "صيانة السخانات",
     dishwasher: "صيانة غسالات الأطباق",
   };
+
+  // تحميل كود Google Tag مرة واحدة عند تحميل المكون
+  useEffect(() => {
+    if (!document.querySelector('script[src*="googletagmanager/gtag/js?id=AW-16803756129"]')) {
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = 'https://www.googletagmanager.com/gtag/js?id=AW-16803756129';
+      document.head.appendChild(script);
+
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){ window.dataLayer.push(arguments); }
+      gtag('js', new Date());
+      gtag('config', 'AW-16803756129');
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +90,15 @@ export default function BookingForm({
         const errorText = await response.text();
         setSubmitMessage(`❌ فشل الحفظ: ${errorText}`);
         return;
+      }
+
+      // ✅ تسجيل التحويل في Google Ads
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('event', 'conversion', {
+          'send_to': 'AW-16803756129/A-hqCJ31ip0cEOHw08w-',
+          'value': 1.0,
+          'currency': 'EGP'
+        });
       }
 
       const message = `🔧 *طلب صيانة جديد*\n\n👤 *الاسم:* ${formData.name}\n📞 *الهاتف:* ${formData.phone}\n🔨 *الخدمة:* ${serviceName}\n🏷️ *الماركة:* ${formData.brand}\n⚠️ *المشكلة:* ${formData.problem}\n📍 *العنوان:* ${formData.address}`;
