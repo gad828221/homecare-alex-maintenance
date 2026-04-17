@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { LogIn, User, Lock, AlertCircle } from 'lucide-react';
+import { LogIn, User, Lock, AlertCircle, Wrench, LayoutDashboard } from 'lucide-react';
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
 
 export default function Login() {
+  const [role, setRole] = useState<'admin' | 'tech'>('admin');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -16,51 +17,70 @@ export default function Login() {
     setError('');
 
     try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/users?select=*&username=eq.${encodeURIComponent(username)}`, {
-        headers: {
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      const data = await res.json();
-      
-      if (data && data.length > 0 && data[0].password === password) {
-        const user = data[0];
-        if (user.is_active === false) {
-          setError('❌ الحساب غير نشط. يرجى التواصل مع الإدارة.');
-          setLoading(false);
-          return;
-        }
-        
-        localStorage.setItem('currentUser', JSON.stringify({
-          id: user.id,
-          username: user.username,
-          name: user.name,
-          role: user.role
-        }));
-        localStorage.setItem('userRole', user.role);
-        
-        // تسجيل إشعار دخول
-        await fetch('https://hjrnfsdvrrwgyppqhwml.supabase.co/rest/v1/notifications', {
-          method: 'POST',
+      if (role === 'admin') {
+        // تسجيل دخول المدير أو المستخدم العادي
+        const res = await fetch(`${supabaseUrl}/rest/v1/users?select=*&username=eq.${encodeURIComponent(username)}`, {
           headers: {
             'apikey': supabaseKey,
             'Authorization': `Bearer ${supabaseKey}`,
             'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            action: 'تسجيل دخول',
-            details: `قام ${user.name || user.username} بتسجيل الدخول إلى النظام`,
-            user_name: user.name || user.username,
-            created_at: new Date().toISOString()
-          })
+          }
         });
         
-        window.location.href = '/orders';
+        const data = await res.json();
+        
+        if (data && data.length > 0 && data[0].password === password) {
+          const user = data[0];
+          if (user.is_active === false) {
+            setError('❌ الحساب غير نشط. يرجى التواصل مع الإدارة.');
+            setLoading(false);
+            return;
+          }
+          
+          localStorage.setItem('currentUser', JSON.stringify({
+            id: user.id,
+            username: user.username,
+            name: user.name,
+            role: user.role
+          }));
+          localStorage.setItem('userRole', user.role);
+          
+          window.location.href = '/orders';
+        } else {
+          setError('❌ اسم المستخدم أو كلمة المرور غير صحيحة');
+        }
       } else {
-        setError('❌ اسم المستخدم أو كلمة المرور غير صحيحة');
+        // تسجيل دخول الفني
+        const res = await fetch(`${supabaseUrl}/rest/v1/technicians?select=*&username=eq.${encodeURIComponent(username)}`, {
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const data = await res.json();
+        
+        if (data && data.length > 0 && data[0].password === password) {
+          const tech = data[0];
+          if (tech.is_active === false) {
+            setError('❌ الحساب غير نشط. يرجى التواصل مع الإدارة.');
+            setLoading(false);
+            return;
+          }
+          
+          localStorage.setItem('currentUser', JSON.stringify({
+            id: tech.id,
+            username: tech.username,
+            name: tech.name,
+            role: 'tech'
+          }));
+          localStorage.setItem('userRole', 'tech');
+          
+          window.location.href = '/tech-portal';
+        } else {
+          setError('❌ اسم المستخدم أو كلمة المرور غير صحيحة');
+        }
       }
     } catch (err) {
       console.error(err);
@@ -81,6 +101,34 @@ export default function Login() {
           <p className="text-slate-400 text-sm mt-1">نظام إدارة الصيانة</p>
         </div>
 
+        {/* اختيار الدور */}
+        <div className="flex gap-3 mb-6">
+          <button
+            type="button"
+            onClick={() => setRole('admin')}
+            className={`flex-1 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
+              role === 'admin' 
+                ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/20' 
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            <LayoutDashboard className="w-4 h-4" />
+            مدير / مستخدم
+          </button>
+          <button
+            type="button"
+            onClick={() => setRole('tech')}
+            className={`flex-1 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
+              role === 'tech' 
+                ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/20' 
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            <Wrench className="w-4 h-4" />
+            فني
+          </button>
+        </div>
+
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
             <label className="block text-sm text-slate-400 mb-2 flex items-center gap-2">
@@ -91,7 +139,7 @@ export default function Login() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-orange-500 transition-all"
-              placeholder="أدخل اسم المستخدم"
+              placeholder={role === 'admin' ? 'أدخل اسم المستخدم' : 'أدخل اسم المستخدم (مثال: fahmy_8)'}
               required
             />
           </div>
