@@ -5,6 +5,7 @@ import {
   Edit, Trash2, RefreshCw, Phone,
   Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut
 } from "lucide-react";
+import AdminPermissions from './AdminPermissions';
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -67,7 +68,7 @@ export default function ProtectedOrders() {
   const [cashLedger, setCashLedger] = useState<any[]>([]);
   const [cashBalance, setCashBalance] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'orders' | 'technicians' | 'reports' | 'invoicesReview' | 'cash' | 'partners' | 'notifications'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'technicians' | 'reports' | 'invoicesReview' | 'cash' | 'partners' | 'notifications' | 'permissions'>('orders');
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showTechModal, setShowTechModal] = useState(false);
   const [showPartnerModal, setShowPartnerModal] = useState(false);
@@ -259,6 +260,13 @@ const addCompanyProfitToCash = async (order: any) => {
     order_number: order.order_number
   });
   
+  // التحقق من عدم إضافة الأرباح مسبقاً
+  if (order.profit_added_to_cash) {
+    console.log("⚠️ تم إضافة أرباح هذا الأوردر مسبقاً");
+    alert("⚠️ تم إضافة أرباح هذا الأوردر للخزنة مسبقاً");
+    return false;
+  }
+  
   if (companyShare <= 0) {
     console.log("❌ لا توجد أرباح للشركة");
     alert("❌ لا توجد أرباح للشركة (company_share = 0)");
@@ -311,9 +319,10 @@ const addCompanyProfitToCash = async (order: any) => {
         body: JSON.stringify({ profit_added_to_cash: true })
       });
       
-      await addNotification('إضافة أرباح للخزنة', `✅ تم إضافة ${companyShare} ج.م للخزنة من أوردر ${order.customer_name}`);
+      await addNotification('إضافة أرباح للخزنة', `✅ تم إضافة ${companyShare} ج.م للخزنة من أوردر ${order.order_number} (${order.customer_name})`);
       await fetchCashLedger();
-      alert(`✅ تم إضافة ${companyShare} ج.م إلى الخزنة بنجاح`);
+      await fetchData();
+      console.log(`✅ تم تحديث الخزنة والأوردرات بنجاح`);
       return true;
     } else {
       const error = await response.text();
@@ -505,6 +514,14 @@ const addCompanyProfitToCash = async (order: any) => {
     if (!order) return;
 
     try {
+      // إذا كان الأوردر مكتمل وهناك أرباح ولم تضف بعد
+      if (!currentStatus && order.status === 'completed' && order.company_share > 0 && !order.profit_added_to_cash) {
+        const shouldAddProfit = confirm(`هل تريد إضافة أرباح هذا الأوردر (${order.company_share} ج.م) للخزنة بالفور?`);
+        if (!shouldAddProfit) {
+          return;
+        }
+      }
+      
       await fetchAPI(`orders?id=eq.${id}`, { 
         method: 'PATCH', 
         body: JSON.stringify({ is_paid: !currentStatus }) 
@@ -514,8 +531,8 @@ const addCompanyProfitToCash = async (order: any) => {
       
       if (!currentStatus && order.status === 'completed') {
         const added = await addCompanyProfitToCash(order);
-        if (added) {
-          alert(`✅ تم إضافة ${order.company_share} ج.م إلى الخزنة`);
+        if (!added) {
+          console.warn('تحذير: لم يتم إضافة الأرباح للخزنة');
         }
       }
       
@@ -692,6 +709,46 @@ const addCompanyProfitToCash = async (order: any) => {
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
+  const copyOrder = async (order: any) => {
+    if (!canEditDelete()) {
+      alert("⚠️ ليس لديك صلاحية لنسخ الأوردرات");
+      return;
+    }
+    
+    try {
+      const newOrder = {
+        customer_name: order.customer_name,
+        phone: order.phone,
+        device_type: order.device_type,
+        address: order.address,
+        brand: order.brand,
+        problem_description: order.problem_description,
+        technician: order.technician,
+        status: 'pending',
+        total_amount: order.total_amount,
+        parts_cost: order.parts_cost,
+        transport_cost: order.transport_cost,
+        net_amount: order.net_amount,
+        company_share: 0,
+        technician_share: 0,
+        is_paid: false,
+        date: new Date().toLocaleDateString("ar-EG"),
+        order_number: `MG-${Date.now()}`
+      };
+      
+      await fetchAPI('orders', {
+        method: 'POST',
+        body: JSON.stringify(newOrder)
+      });
+      
+      await addNotification('نسخ أوردر', `تم نسخ أوردر ${order.order_number} بنجاح`);
+      alert('✅ تم نسخ الأوردر بنجاح');
+      fetchData();
+    } catch (err) {
+      console.error('خطأ في نسخ الأوردر:', err);
+      alert('❌ حدث خطأ في نسخ الأوردر');
+    }
+  };
 
   const openInvoicePage = (order: any) => {
     window.open(`/invoice?id=${order.id}`, '_blank');
@@ -812,6 +869,9 @@ const addCompanyProfitToCash = async (order: any) => {
           <button onClick={() => setActiveTab('cash')} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeTab === 'cash' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>💰 الخزنة</button>
           <button onClick={() => setActiveTab('partners')} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeTab === 'partners' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>🤝 الشركاء</button>
           <button onClick={() => setActiveTab('notifications')} className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1 ${activeTab === 'notifications' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}><Bell className="w-4 h-4" /> الإشعارات ({notifications.length})</button>
+          {userRole === 'admin' && (
+            <button onClick={() => setActiveTab('permissions')} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeTab === 'permissions' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>🔐 الصلاحيات</button>
+          )}
         </div>
 
         {/* Orders Tab */}
@@ -847,8 +907,9 @@ const addCompanyProfitToCash = async (order: any) => {
                       
                       {canEditDelete() && (
                         <>
-                          <button onClick={() => { setEditingOrder(order); setFormData(order); setShowOrderModal(true); }} className="p-2 text-slate-400 hover:text-white"><Edit className="w-4 h-4" /></button>
-                          <button onClick={() => deleteOrder(order.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                          <button onClick={() => { setEditingOrder(order); setFormData(order); setShowOrderModal(true); }} className="p-2 text-slate-400 hover:text-white" title="تعديل"><Edit className="w-4 h-4" /></button>
+                          <button onClick={() => copyOrder(order)} className="p-2 text-slate-400 hover:text-blue-500" title="نسخ الأوردر"><Copy className="w-4 h-4" /></button>
+                          <button onClick={() => deleteOrder(order.id)} className="p-2 text-slate-400 hover:text-red-500" title="حذف"><Trash2 className="w-4 h-4" /></button>
                         </>
                       )}
                     </div>
@@ -1022,6 +1083,11 @@ const addCompanyProfitToCash = async (order: any) => {
               {notifications.length === 0 && <div className="text-center py-8 text-slate-400">لا توجد إشعارات</div>}
             </div>
           </div>
+        )}
+
+        {/* Permissions Tab */}
+        {activeTab === 'permissions' && userRole === 'admin' && (
+          <AdminPermissions />
         )}
 
       </main>
