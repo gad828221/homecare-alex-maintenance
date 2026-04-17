@@ -51,15 +51,33 @@ export default function TechnicianPortal() {
     company_share: 0
   });
 
-  // التحقق من صلاحية الجلسة
-  useEffect(() => {
-    const userRole = localStorage.getItem("userRole");
-    const currentUser = localStorage.getItem("currentUser");
-    if (userRole !== "tech" || !currentUser) {
-      window.location.href = "/login";
-      return;
-    }
-  }, []);
+// التحقق من صلاحية الجلسة (معدل للتعامل مع الرابط المباشر)
+useEffect(() => {
+  const userRole = localStorage.getItem("userRole");
+  const currentUser = localStorage.getItem("currentUser");
+  
+  console.log("🔍 TechnicianPortal - userRole:", userRole);
+  console.log("🔍 TechnicianPortal - currentUser:", currentUser);
+  
+  // إذا كان المستخدم فنيًا، دعه يدخل
+  if (userRole === "tech" && currentUser) {
+    console.log("✅ فني مصرح له بالدخول");
+    return;
+  }
+  
+  // إذا كان هناك اسم في رابط URL (للتوافق مع الروابط القديمة)
+  const params = new URLSearchParams(window.location.search);
+  const nameFromUrl = params.get("name");
+  if (nameFromUrl) {
+    console.log("✅ دخول عبر الرابط المباشر باسم:", nameFromUrl);
+    setTechName(decodeURIComponent(nameFromUrl));
+    return;
+  }
+  
+  // غير ذلك، اذهب لتسجيل الدخول
+  console.log("❌ غير مصرح، التوجيه إلى login");
+  window.location.href = "/login";
+}, []);
 
   // إخفاء رقم الهاتف فوراً للمكتمل أو الملغي أو تم الكشف
   const isPhoneHidden = (order: any) => {
