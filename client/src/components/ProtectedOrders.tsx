@@ -109,18 +109,57 @@ export default function ProtectedOrders() {
   
   const [stats, setStats] = useState({ pending: 0, inProgress: 0, completed: 0, cancelled: 0, totalIncome: 0 });
 
+  // التحقق من صلاحيات المستخدم
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string>('');
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('currentUser');
+    const role = localStorage.getItem('userRole');
+    if (!storedUser) {
+      window.location.href = '/login';
+      return;
+    }
+    setCurrentUser(JSON.parse(storedUser));
+    setUserRole(role || 'user');
+  }, []);
+
+  const canEditDelete = () => {
+    return userRole === 'admin';
+  };
+
   const handleLogout = () => {
     localStorage.clear();
     sessionStorage.clear();
     window.location.href = "/login";
   };
 
+  // ✅ دالة تنسيق رقم الهاتف لواتساب (معدلة)
   const formatPhoneForWhatsApp = (phone: string) => {
     if (!phone) return '';
     let cleaned = phone.toString().replace(/[^\d]/g, '');
     if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
     if (cleaned.length === 10) cleaned = '20' + cleaned;
     return cleaned;
+  };
+
+  // ✅ إرسال واتساب للعميل عند إضافة أوردر جديد (تأكيد الحجز)
+  const sendWhatsAppToCustomerOnCreate = (order: any) => {
+    const phone = formatPhoneForWhatsApp(order.phone);
+    if (!phone) {
+      console.error("رقم الهاتف غير صالح:", order.phone);
+      return;
+    }
+    const message = `📝 *تم استلام طلب الصيانة بنجاح* 📝\n\n` +
+      `🔢 *رقم الأوردر:* ${order.order_number}\n` +
+      `👤 *العميل:* ${order.customer_name}\n` +
+      `🔧 *الجهاز:* ${order.device_type} - ${order.brand}\n` +
+      `📍 *العنوان:* ${order.address || 'غير محدد'}\n\n` +
+      `✅ تم تسجيل طلبك وسيتم التواصل معك قريباً من قبل الفني المختص.\n\n` +
+      `شكراً لثقتك بنا. 🌟`;
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    console.log("📱 إرسال واتساب تأكيد للعميل:", url);
+    window.open(url, '_blank');
   };
 
   const getDaysDifference = (dateStr: string, status: string) => {
@@ -207,24 +246,54 @@ export default function ProtectedOrders() {
     }
   };
 
+  // ✅ دالة إضافة أرباح الشركة إلى الخزنة (معدلة ومضمونة)
   const addCompanyProfitToCash = async (order: any) => {
     const companyShare = order.company_share || 0;
-    if (companyShare > 0 && order.is_paid && order.status === 'completed') {
-      try {
-        await fetchAPI('cash_ledger', {
-          method: 'POST',
-          body: JSON.stringify({
-            type: 'income',
-            amount: companyShare,
-            description: `أرباح شركة من أوردر ${order.customer_name} (رقم ${order.order_number})`,
-            date: new Date().toISOString().split('T')[0]
-          })
-        });
+    if (companyShare <= 0) {
+      console.log("لا توجد أرباح للشركة");
+      return false;
+    }
+    
+    if (!order.is_paid) {
+      console.log("الأوردر لم يتم تحصيله بعد");
+      return false;
+    }
+    
+    if (order.status !== 'completed') {
+      console.log("الأوردر لم يكتمل بعد");
+      return false;
+    }
+    
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const result = await fetch(`${supabaseUrl}/rest/v1/cash_ledger`, {
+        method: 'POST',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          type: 'income',
+          amount: companyShare,
+          description: `أرباح شركة من أوردر ${order.customer_name} (رقم ${order.order_number})`,
+          date: today
+        })
+      });
+      
+      if (result.ok) {
+        console.log(`✅ تم إضافة ${companyShare} ج.م للخزنة من أوردر ${order.customer_name}`);
         await addNotification('إضافة أرباح للخزنة', `✅ تم إضافة ${companyShare} ج.م للخزنة من أوردر ${order.customer_name}`);
-        fetchCashLedger();
-      } catch (err) {
-        console.error("خطأ في إضافة الأرباح للخزنة:", err);
+        await fetchCashLedger();
+        return true;
+      } else {
+        const error = await result.text();
+        console.error("خطأ في إضافة الخزنة:", error);
+        return false;
       }
+    } catch (err) {
+      console.error("خطأ في إضافة الأرباح للخزنة:", err);
+      return false;
     }
   };
 
@@ -345,8 +414,13 @@ export default function ProtectedOrders() {
     setFormData(calculateAmounts(updated));
   };
 
+  // ✅ إرسال واتساب للعميل عند تغيير الحالة
   const sendWhatsAppToCustomer = (order: any, newStatus: string) => {
     const phone = formatPhoneForWhatsApp(order.phone);
+    if (!phone) {
+      console.error("رقم الهاتف غير صالح:", order.phone);
+      return;
+    }
     let statusMessage = "";
     switch (newStatus) {
       case 'in-progress':
@@ -366,6 +440,7 @@ export default function ProtectedOrders() {
     }
     const message = `📢 *تحديث حالة طلب الصيانة* 📢\n\n🔢 *رقم الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n📝 *الحالة الجديدة:* ${statusMessage}\n\nشكراً لتواصلك معنا. 🌟`;
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    console.log("📱 فتح واتساب للعميل:", url);
     window.open(url, '_blank');
   };
 
@@ -381,7 +456,8 @@ export default function ProtectedOrders() {
       
       await addNotification('تغيير حالة أوردر', `🔄 تم تغيير حالة أوردر ${order.customer_name} إلى ${newStatus}`);
       
-      if (newStatus === 'completed' && order.is_paid && !order.profit_added_to_cash) {
+      // إذا أصبح الأوردر مكتمل وهو مدفوع أصلاً
+      if (newStatus === 'completed' && order.is_paid) {
         await addCompanyProfitToCash(order);
       }
       
@@ -392,6 +468,7 @@ export default function ProtectedOrders() {
     }
   };
 
+  // ✅ تغيير حالة التحصيل مع إضافة الأرباح للخزنة (معدلة)
   const togglePaidStatus = async (id: number, currentStatus: boolean) => {
     const order = orders.find(o => o.id === id);
     if (!order) return;
@@ -404,8 +481,14 @@ export default function ProtectedOrders() {
       
       await addNotification('تحديث حالة الدفع', `✅ تم تحديث حالة تحصيل أوردر ${order.customer_name} إلى ${!currentStatus ? 'تم التحصيل' : 'لم يتم التحصيل'}`);
       
-      if (!currentStatus && order.status === 'completed' && !order.profit_added_to_cash) {
-        await addCompanyProfitToCash(order);
+      // إذا تم التحصيل الآن والأوردر مكتمل
+      if (!currentStatus && order.status === 'completed') {
+        const added = await addCompanyProfitToCash(order);
+        if (added) {
+          alert(`✅ تم إضافة ${order.company_share} ج.م إلى الخزنة`);
+        } else {
+          alert(`⚠️ فشل إضافة ${order.company_share} ج.م إلى الخزنة. تحقق من وحدة التحكم.`);
+        }
       }
       
       fetchData();
@@ -415,6 +498,10 @@ export default function ProtectedOrders() {
   };
 
   const deleteOrder = async (id: number) => {
+    if (!canEditDelete()) {
+      alert("⚠️ ليس لديك صلاحية لحذف الأوردرات");
+      return;
+    }
     const order = orders.find(o => o.id === id);
     if (confirm('هل أنت متأكد من حذف هذا الأوردر؟')) {
       try { 
@@ -452,6 +539,7 @@ export default function ProtectedOrders() {
     setIsOtherBrand(false);
   };
 
+  // ✅ حفظ الأوردر مع إرسال واتساب تأكيد للعميل
   const saveOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -468,6 +556,10 @@ export default function ProtectedOrders() {
 
     try {
       if (editingOrder) {
+        if (!canEditDelete()) {
+          alert("⚠️ ليس لديك صلاحية لتعديل الأوردرات");
+          return;
+        }
         await fetchAPI(`orders?id=eq.${editingOrder.id}`, { method: 'PATCH', body: JSON.stringify(orderToSave) });
         await addNotification('تعديل أوردر', `تم تعديل أوردر ${formData.customer_name}`);
         alert("✅ تم تعديل الأوردر بنجاح");
@@ -475,6 +567,9 @@ export default function ProtectedOrders() {
         await fetchAPI('orders', { method: 'POST', body: JSON.stringify(orderToSave) });
         await addNotification('إضافة أوردر', `تم إضافة أوردر جديد للعميل ${formData.customer_name}`);
         alert("✅ تم إضافة الأوردر بنجاح");
+        
+        // ✅ إرسال واتساب تأكيد للعميل عند إضافة أوردر جديد
+        sendWhatsAppToCustomerOnCreate(orderToSave);
       }
       setShowOrderModal(false);
       setEditingOrder(null);
@@ -488,6 +583,10 @@ export default function ProtectedOrders() {
 
   const savePartner = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canEditDelete()) {
+      alert("⚠️ ليس لديك صلاحية لإدارة الشركاء");
+      return;
+    }
     try {
       if (editingPartner) {
         await fetchAPI(`partners?id=eq.${editingPartner.id}`, { method: 'PATCH', body: JSON.stringify(partnerForm) });
@@ -504,6 +603,10 @@ export default function ProtectedOrders() {
   };
 
   const deletePartner = async (id: number, name: string) => {
+    if (!canEditDelete()) {
+      alert("⚠️ ليس لديك صلاحية لحذف الشركاء");
+      return;
+    }
     if (confirm(`حذف الشريك ${name}؟`)) {
       await fetchAPI(`partners?id=eq.${id}`, { method: 'DELETE' });
       await addNotification('حذف شريك', `تم حذف الشريك ${name}`);
@@ -513,6 +616,10 @@ export default function ProtectedOrders() {
 
   const saveTechnician = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canEditDelete()) {
+      alert("⚠️ ليس لديك صلاحية لإدارة الفنيين");
+      return;
+    }
     try {
       if (editingTech) {
         await fetchAPI(`technicians?id=eq.${editingTech.id}`, { method: 'PATCH', body: JSON.stringify(techForm) });
@@ -529,6 +636,10 @@ export default function ProtectedOrders() {
   };
 
   const deleteTechnician = async (id: number, name: string) => {
+    if (!canEditDelete()) {
+      alert("⚠️ ليس لديك صلاحية لحذف الفنيين");
+      return;
+    }
     if (confirm('هل أنت متأكد من حذف هذا الفني؟')) {
       try { 
         await fetchAPI(`technicians?id=eq.${id}`, { method: 'DELETE' });
@@ -539,6 +650,10 @@ export default function ProtectedOrders() {
   };
 
   const toggleTechnicianActive = async (tech: any) => {
+    if (!canEditDelete()) {
+      alert("⚠️ ليس لديك صلاحية لتغيير حالة الفنيين");
+      return;
+    }
     await fetchAPI(`technicians?id=eq.${tech.id}`, { method: 'PATCH', body: JSON.stringify({ is_active: !tech.is_active }) });
     await addNotification('تغيير حالة فني', `تم ${!tech.is_active ? 'تفعيل' : 'تعطيل'} الفني ${tech.name}`);
     fetchData();
@@ -702,8 +817,13 @@ export default function ProtectedOrders() {
                       <button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`p-2 rounded-xl ${order.is_paid ? 'bg-green-500/20 text-green-500' : 'bg-slate-800 text-slate-500'}`}>
                         {order.is_paid ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
                       </button>
-                      <button onClick={() => { setEditingOrder(order); setFormData(order); setShowOrderModal(true); }} className="p-2 text-slate-400 hover:text-white"><Edit className="w-4 h-4" /></button>
-                      <button onClick={() => deleteOrder(order.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                      
+                      {canEditDelete() && (
+                        <>
+                          <button onClick={() => { setEditingOrder(order); setFormData(order); setShowOrderModal(true); }} className="p-2 text-slate-400 hover:text-white"><Edit className="w-4 h-4" /></button>
+                          <button onClick={() => deleteOrder(order.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                        </>
+                      )}
                     </div>
                   </div>
                   <h3 className="text-white font-black text-lg truncate">{order.customer_name}</h3>
@@ -737,7 +857,9 @@ export default function ProtectedOrders() {
                 <button onClick={() => setFilterTechStatus('inactive')} className={`px-3 py-1 rounded-full text-xs ${filterTechStatus === 'inactive' ? 'bg-orange-600' : 'bg-slate-800'}`}>غير النشطون</button>
                 <button onClick={() => setFilterTechStatus('all')} className={`px-3 py-1 rounded-full text-xs ${filterTechStatus === 'all' ? 'bg-orange-600' : 'bg-slate-800'}`}>الجميع</button>
               </div>
-              <button onClick={() => { setEditingTech(null); setTechForm({ name: '', phone: '', specialization: '', is_active: true, username: '', password: '' }); setShowTechModal(true); }} className="bg-orange-600 px-4 py-2 rounded-xl text-sm font-bold"><Plus className="w-4 h-4" /> إضافة فني</button>
+              {canEditDelete() && (
+                <button onClick={() => { setEditingTech(null); setTechForm({ name: '', phone: '', specialization: '', is_active: true, username: '', password: '' }); setShowTechModal(true); }} className="bg-orange-600 px-4 py-2 rounded-xl text-sm font-bold"><Plus className="w-4 h-4" /> إضافة فني</button>
+              )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {filteredTechnicians.map(tech => (
@@ -751,9 +873,13 @@ export default function ProtectedOrders() {
                     </button>
                     <div className="flex gap-2">
                       <a href={`tel:${tech.phone}`} className="flex-1 p-2 bg-blue-500/10 text-blue-500 rounded-xl"><Phone className="w-4 h-4 mx-auto" /></a>
-                      <button onClick={() => { setEditingTech(tech); setTechForm(tech); setShowTechModal(true); }} className="flex-1 p-2 bg-slate-800 text-slate-400 rounded-xl"><Edit className="w-4 h-4 mx-auto" /></button>
-                      <button onClick={() => deleteTechnician(tech.id, tech.name)} className="flex-1 p-2 bg-red-500/10 text-red-500 rounded-xl"><Trash2 className="w-4 h-4 mx-auto" /></button>
-                      <button onClick={() => toggleTechnicianActive(tech)} className={`flex-1 p-2 rounded-xl ${tech.is_active !== false ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>{tech.is_active !== false ? 'نشط' : 'تعطيل'}</button>
+                      {canEditDelete() && (
+                        <>
+                          <button onClick={() => { setEditingTech(tech); setTechForm(tech); setShowTechModal(true); }} className="flex-1 p-2 bg-slate-800 text-slate-400 rounded-xl"><Edit className="w-4 h-4 mx-auto" /></button>
+                          <button onClick={() => deleteTechnician(tech.id, tech.name)} className="flex-1 p-2 bg-red-500/10 text-red-500 rounded-xl"><Trash2 className="w-4 h-4 mx-auto" /></button>
+                          <button onClick={() => toggleTechnicianActive(tech)} className={`flex-1 p-2 rounded-xl ${tech.is_active !== false ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>{tech.is_active !== false ? 'نشط' : 'تعطيل'}</button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -793,8 +919,12 @@ export default function ProtectedOrders() {
               <div className="flex gap-2">
                 <input type="date" value={cashFilterDate} onChange={e => setCashFilterDate(e.target.value)} className="bg-slate-800 p-2 rounded" />
                 <button onClick={() => setCashFilterDate('')} className="bg-slate-700 px-3 py-1 rounded text-sm">إلغاء الفلتر</button>
-                <button onClick={() => { setEditingCash(null); setCashForm({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] }); setShowCashModal(true); }} className="bg-orange-600 px-4 py-2 rounded-xl text-sm">+ إضافة حركة</button>
-                <button onClick={distributeDailyProfit} className="bg-purple-600 px-4 py-2 rounded-xl text-sm">📤 توزيع أرباح اليوم</button>
+                {canEditDelete() && (
+                  <button onClick={() => { setEditingCash(null); setCashForm({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] }); setShowCashModal(true); }} className="bg-orange-600 px-4 py-2 rounded-xl text-sm">+ إضافة حركة</button>
+                )}
+                {canEditDelete() && (
+                  <button onClick={distributeDailyProfit} className="bg-purple-600 px-4 py-2 rounded-xl text-sm">📤 توزيع أرباح اليوم</button>
+                )}
               </div>
             </div>
             <div className="bg-slate-900 rounded-2xl overflow-x-auto">
@@ -808,10 +938,14 @@ export default function ProtectedOrders() {
                       <td className="p-3">{entry.date}</td>
                       <td>{entry.type === 'income' ? '💰 دخل' : entry.type === 'expense' ? '💸 مصروف' : '📤 توزيع أرباح'}</td>
                       <td className={entry.type === 'income' ? 'text-green-400' : 'text-red-400'}>{entry.amount} ج.م</td>
-                      <td>{entry.description}</td>
+                      <td className="max-w-xs break-words">{entry.description}</td>
                       <td className="flex gap-2">
-                        <button onClick={() => { setEditingCash(entry); setCashForm(entry); setShowCashModal(true); }} className="text-blue-400"><Edit className="w-4 h-4" /></button>
-                        <button onClick={() => deleteCashEntry(entry.id)} className="text-red-400"><Trash2 className="w-4 h-4" /></button>
+                        {canEditDelete() && (
+                          <>
+                            <button onClick={() => { setEditingCash(entry); setCashForm(entry); setShowCashModal(true); }} className="text-blue-400"><Edit className="w-4 h-4" /></button>
+                            <button onClick={() => deleteCashEntry(entry.id)} className="text-red-400"><Trash2 className="w-4 h-4" /></button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -824,14 +958,21 @@ export default function ProtectedOrders() {
         {/* Partners Tab */}
         {activeTab === 'partners' && (
           <div className="space-y-4">
-            <div className="flex justify-end"><button onClick={() => { setEditingPartner(null); setPartnerForm({ name: '', share_percentage: 0, phone: '', is_active: true }); setShowPartnerModal(true); }} className="bg-orange-600 px-4 py-2 rounded-xl text-sm"><UserPlus className="w-4 h-4" /> إضافة شريك</button></div>
+            {canEditDelete() && (
+              <div className="flex justify-end"><button onClick={() => { setEditingPartner(null); setPartnerForm({ name: '', share_percentage: 0, phone: '', is_active: true }); setShowPartnerModal(true); }} className="bg-orange-600 px-4 py-2 rounded-xl text-sm"><UserPlus className="w-4 h-4" /> إضافة شريك</button></div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {partners.map(partner => (
                 <div key={partner.id} className="bg-slate-900 p-4 rounded-2xl border border-slate-800">
                   <div className="flex justify-between"><h3 className="font-bold text-lg">{partner.name}</h3><span className={`text-xs px-2 py-1 rounded-full ${partner.is_active ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>{partner.is_active ? 'نشط' : 'غير نشط'}</span></div>
                   <p className="text-orange-400 text-2xl font-bold mt-2">{partner.share_percentage}%</p>
                   <p className="text-slate-400 text-sm">📞 {partner.phone || 'لا يوجد'}</p>
-                  <div className="flex gap-2 mt-3"><button onClick={() => { setEditingPartner(partner); setPartnerForm(partner); setShowPartnerModal(true); }} className="text-blue-400 text-sm"><Edit className="w-4 h-4 inline" /> تعديل</button><button onClick={() => deletePartner(partner.id, partner.name)} className="text-red-400 text-sm"><UserMinus className="w-4 h-4 inline" /> حذف</button></div>
+                  {canEditDelete() && (
+                    <div className="flex gap-2 mt-3">
+                      <button onClick={() => { setEditingPartner(partner); setPartnerForm(partner); setShowPartnerModal(true); }} className="text-blue-400 text-sm"><Edit className="w-4 h-4 inline" /> تعديل</button>
+                      <button onClick={() => deletePartner(partner.id, partner.name)} className="text-red-400 text-sm"><UserMinus className="w-4 h-4 inline" /> حذف</button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -841,12 +982,14 @@ export default function ProtectedOrders() {
         {/* Notifications Tab */}
         {activeTab === 'notifications' && (
           <div className="space-y-4">
-            <div className="flex justify-between"><h2 className="text-xl font-bold">🔔 سجل الإشعارات</h2>{notifications.length > 0 && <button onClick={deleteAllNotifications} className="bg-red-600/20 text-red-400 px-3 py-1 rounded-lg text-sm"><Trash className="w-4 h-4" /> مسح الكل</button>}</div>
+            <div className="flex justify-between"><h2 className="text-xl font-bold">🔔 سجل الإشعارات</h2>{canEditDelete() && notifications.length > 0 && <button onClick={deleteAllNotifications} className="bg-red-600/20 text-red-400 px-3 py-1 rounded-lg text-sm"><Trash className="w-4 h-4" /> مسح الكل</button>}</div>
             <div className="space-y-3">
               {notifications.map(notif => (
                 <div key={notif.id} className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between">
                   <div><span className="text-orange-400">{notif.action}</span><span className="text-slate-400 mx-2">|</span><span>{notif.details}</span><div className="text-xs text-slate-500 mt-1">{new Date(notif.created_at).toLocaleString('ar-EG')}</div></div>
-                  <button onClick={() => deleteNotification(notif.id)} className="text-red-400"><Trash className="w-4 h-4" /></button>
+                  {canEditDelete() && (
+                    <button onClick={() => deleteNotification(notif.id)} className="text-red-400"><Trash className="w-4 h-4" /></button>
+                  )}
                 </div>
               ))}
               {notifications.length === 0 && <div className="text-center py-8 text-slate-400">لا توجد إشعارات</div>}
