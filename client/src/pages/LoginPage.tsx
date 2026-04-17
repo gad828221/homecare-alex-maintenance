@@ -20,37 +20,41 @@ export default function LoginPage() {
       const resUsers = await fetch(`${supabaseUrl}/rest/v1/users?select=*&username=eq.${username}&is_active=eq.true`, {
         headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
       });
-      const users = await resUsers.json();
       
-      if (users && users.length > 0 && users[0].password === password) {
-        const user = users[0];
-        localStorage.setItem('currentUser', JSON.stringify({
-          id: user.id, username: user.username, name: user.name, role: user.role
-        }));
-        localStorage.setItem('userRole', user.role);
-        redirectUser(user.role);
-        return;
+      if (resUsers.ok) {
+        const users = await resUsers.json();
+        if (users && users.length > 0 && users[0].password === password) {
+          const user = users[0];
+          localStorage.setItem('currentUser', JSON.stringify({
+            id: user.id, username: user.username, name: user.name, role: user.role
+          }));
+          localStorage.setItem('userRole', user.role);
+          redirectUser(user.role);
+          return;
+        }
       }
 
-      // 2. إذا لم يجد في users، نبحث في جدول technicians (للفنيين)
+      // 2. البحث في جدول technicians (للفنيين)
       const resTechs = await fetch(`${supabaseUrl}/rest/v1/technicians?select=*&username=eq.${username}&is_active=eq.true`, {
         headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
       });
-      const techs = await resTechs.json();
-
-      if (techs && techs.length > 0 && techs[0].password === password) {
-        const tech = techs[0];
-        localStorage.setItem('currentUser', JSON.stringify({
-          id: tech.id, username: tech.username, name: tech.name, role: 'tech', techName: tech.name
-        }));
-        localStorage.setItem('userRole', 'tech');
-        redirectUser('tech');
-        return;
+      
+      if (resTechs.ok) {
+        const techs = await resTechs.json();
+        if (techs && techs.length > 0 && techs[0].password === password) {
+          const tech = techs[0];
+          localStorage.setItem('currentUser', JSON.stringify({
+            id: tech.id, username: tech.username, name: tech.name, role: 'tech', techName: tech.name
+          }));
+          localStorage.setItem('userRole', 'tech');
+          redirectUser('tech');
+          return;
+        }
       }
 
       setError('اسم المستخدم أو كلمة المرور غير صحيحة');
     } catch (err) {
-      console.error(err);
+      console.error("Login error:", err);
       setError('حدث خطأ في الاتصال بالخادم');
     } finally {
       setLoading(false);
