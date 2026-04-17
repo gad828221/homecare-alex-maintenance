@@ -6,15 +6,15 @@ import {
   Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut
 } from "lucide-react";
 import AdminPermissions from './AdminPermissions';
-import { supabase } from '../lib/supabaseClient'; // تأكد من مسار الاستيراد الصحيح
+import { createClient } from '@supabase/supabase-js';
 
-// const supabaseUrl و supabaseKey يمكن استيرادهما من supabaseClient أو تعريفهما هنا
-// لكن الأفضل استخدام supabase من العميل الجاهز
-// إذا لم يكن لديك supabaseClient، استخدم التعريفات التالية:
-/*
+// ============================================================
+// تعريف عميل Supabase مباشرة (لحل مشكلة onAuthStateChange)
+// ============================================================
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
-*/
+const supabase = createClient(supabaseUrl, supabaseKey);
+// ============================================================
 
 const DEVICE_TYPES = ['غسالة', 'ثلاجة', 'بوتاجاز', 'سخان', 'تكييف', 'ميكروويف', 'غسالة أطباق'];
 const BRANDS = ['سامسونج', 'LG', 'شارب', 'توشيبا', 'زانوسي', 'يونيون إير', 'فريش', 'وايت ويل', 'أريستون', 'بيكو', 'هوفر', 'إنديست'];
@@ -133,6 +133,11 @@ export default function ProtectedOrders() {
 
   // ✅ مستمع تغييرات حالة المصادقة (لحل مشكلة بقاء المستخدم القديم)
   useEffect(() => {
+    // التحقق من وجود supabase.auth قبل استخدامه
+    if (!supabase || !supabase.auth) {
+      console.error("⚠️ supabase.auth غير متاح!");
+      return;
+    }
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
         localStorage.clear();
@@ -140,9 +145,7 @@ export default function ProtectedOrders() {
         window.location.href = '/login';
       }
       if (event === 'SIGNED_IN' && session) {
-        // تحديث localStorage إذا لزم الأمر
         localStorage.setItem('currentUser', JSON.stringify(session.user));
-        // إعادة تحميل الصفحة لضمان تحديث كل شيء
         window.location.reload();
       }
     });
@@ -285,7 +288,6 @@ export default function ProtectedOrders() {
       profit_added_to_cash: order.profit_added_to_cash
     });
     
-    // التحقق من عدم إضافة الأرباح مسبقاً
     if (order.profit_added_to_cash) {
       console.log("⚠️ تم إضافة أرباح هذا الأوردر مسبقاً");
       alert("⚠️ تم إضافة أرباح هذا الأوردر للخزنة مسبقاً");
@@ -313,7 +315,6 @@ export default function ProtectedOrders() {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      // إضافة سجل في cash_ledger
       const response = await fetch(`${supabaseUrl}/rest/v1/cash_ledger`, {
         method: 'POST',
         headers: {
@@ -333,7 +334,6 @@ export default function ProtectedOrders() {
         const result = await response.json();
         console.log(`✅ تم إضافة ${companyShare} ج.م للخزنة`, result);
         
-        // تحديث الأوردر بعلم أن الربح تم إضافته
         const updateRes = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${order.id}`, {
           method: 'PATCH',
           headers: {
@@ -526,7 +526,6 @@ export default function ProtectedOrders() {
       
       await addNotification('تغيير حالة أوردر', `🔄 تم تغيير حالة أوردر ${order.customer_name} إلى ${newStatus}`);
       
-      // إنشاء نسخة محدثة من order
       const updatedOrder = { ...order, status: newStatus };
       
       if (newStatus === 'completed' && order.is_paid && !order.profit_added_to_cash) {
@@ -555,7 +554,6 @@ export default function ProtectedOrders() {
       
       await addNotification('تحديث حالة الدفع', `✅ تم تحديث حالة تحصيل أوردر ${order.customer_name} إلى ${newPaidStatus ? 'تم التحصيل' : 'لم يتم التحصيل'}`);
       
-      // إنشاء نسخة محدثة من order
       const updatedOrder = { ...order, is_paid: newPaidStatus };
       
       if (newPaidStatus && order.status === 'completed' && !order.profit_added_to_cash) {
