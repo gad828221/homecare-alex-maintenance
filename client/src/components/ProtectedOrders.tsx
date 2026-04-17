@@ -9,7 +9,7 @@ import AdminPermissions from './AdminPermissions';
 import { createClient } from '@supabase/supabase-js';
 
 // ============================================================
-// تعريف عميل Supabase مباشرة (لحل مشكلة onAuthStateChange)
+// تعريف عميل Supabase مباشرة
 // ============================================================
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -116,7 +116,6 @@ export default function ProtectedOrders() {
   
   const [stats, setStats] = useState({ pending: 0, inProgress: 0, completed: 0, cancelled: 0, totalIncome: 0 });
 
-  // التحقق من صلاحيات المستخدم
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<string>('');
 
@@ -131,9 +130,7 @@ export default function ProtectedOrders() {
     setUserRole(role || 'user');
   }, []);
 
-  // ✅ مستمع تغييرات حالة المصادقة (لحل مشكلة بقاء المستخدم القديم)
   useEffect(() => {
-    // التحقق من وجود supabase.auth قبل استخدامه
     if (!supabase || !supabase.auth) {
       console.error("⚠️ supabase.auth غير متاح!");
       return;
@@ -152,9 +149,7 @@ export default function ProtectedOrders() {
     return () => subscription?.unsubscribe();
   }, []);
 
-  const canEditDelete = () => {
-    return userRole === 'admin';
-  };
+  const canEditDelete = () => userRole === 'admin';
 
   const handleLogout = () => {
     localStorage.clear();
@@ -162,7 +157,6 @@ export default function ProtectedOrders() {
     window.location.href = "/login";
   };
 
-  // ✅ دالة تنسيق رقم الهاتف لواتساب
   const formatPhoneForWhatsApp = (phone: string) => {
     if (!phone) return '';
     let cleaned = phone.toString().replace(/[^\d]/g, '');
@@ -171,7 +165,6 @@ export default function ProtectedOrders() {
     return cleaned;
   };
 
-  // ✅ إرسال واتساب للعميل عند إضافة أوردر جديد
   const sendWhatsAppToCustomerOnCreate = (order: any) => {
     const phone = formatPhoneForWhatsApp(order.phone);
     if (!phone) {
@@ -186,7 +179,6 @@ export default function ProtectedOrders() {
       `✅ تم تسجيل طلبك وسيتم التواصل معك قريباً من قبل الفني المختص.\n\n` +
       `شكراً لثقتك بنا. 🌟`;
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-    console.log("📱 إرسال واتساب تأكيد للعميل:", url);
     window.open(url, '_blank');
   };
 
@@ -274,7 +266,7 @@ export default function ProtectedOrders() {
     }
   };
 
-  // ✅ دالة إضافة أرباح الشركة إلى الخزنة (محسنة)
+  // ✅ دالة إضافة أرباح الشركة إلى الخزنة (محسنة - تتعامل مع الاستجابات الفارغة)
   const addCompanyProfitToCash = async (order: any) => {
     const companyShare = order.company_share || 0;
     
@@ -331,8 +323,18 @@ export default function ProtectedOrders() {
       });
       
       if (response.ok) {
-        const result = await response.json();
-        console.log(`✅ تم إضافة ${companyShare} ج.م للخزنة`, result);
+        // ✅ تجنب خطأ "Unexpected end of JSON input"
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const result = await response.json();
+            console.log(`✅ تم إضافة ${companyShare} ج.م للخزنة`, result);
+          } catch (e) {
+            console.log("⚠️ استجابة JSON فارغة (ولكن العملية نجحت)");
+          }
+        } else {
+          console.log("⚠️ استجابة بدون JSON (ولكن العملية نجحت)");
+        }
         
         const updateRes = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${order.id}`, {
           method: 'PATCH',
@@ -346,12 +348,13 @@ export default function ProtectedOrders() {
         
         if (!updateRes.ok) {
           console.warn("⚠️ تمت إضافة الربح ولكن فشل تحديث profit_added_to_cash");
+        } else {
+          console.log("✅ تم تحديث profit_added_to_cash بنجاح");
         }
         
         await addNotification('إضافة أرباح للخزنة', `✅ تم إضافة ${companyShare} ج.م للخزنة من أوردر ${order.order_number} (${order.customer_name})`);
         await fetchCashLedger();
         await fetchData();
-        console.log(`✅ تم تحديث الخزنة والأوردرات بنجاح`);
         return true;
       } else {
         const error = await response.text();
@@ -366,58 +369,66 @@ export default function ProtectedOrders() {
     }
   };
 
+  // ✅ دالة توزيع أرباح الشركاء المحسنة (تعتمد على أرباح الأوردرات الفعلية)
   const distributeDailyProfit = async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      const alreadyDistributed = (cashLedger || []).some(c => c.date === today && c.type === 'profit_distribution');
-      if (alreadyDistributed) {
-        if (!confirm("⚠️ تم توزيع أرباح اليوم بالفعل. هل تريد التوزيع مرة أخرى؟")) {
-          return;
-        }
-      }
-
-      const todayIncome = (cashLedger || []).filter(c => c.date === today && c.type === 'income').reduce((sum, c) => sum + Number(c.amount), 0);
-      const todayExpenses = (cashLedger || []).filter(c => c.date === today && c.type === 'expense').reduce((sum, c) => sum + Number(c.amount), 0);
-      const netProfit = todayIncome - todayExpenses;
+      const completedOrdersToday = orders.filter(order => {
+        const orderDate = order.date;
+        const isCompleted = order.status === 'completed';
+        const isPaid = order.is_paid === true;
+        const hasProfit = (order.company_share || 0) > 0;
+        return isCompleted && isPaid && hasProfit && orderDate === today;
+      });
       
-      if (netProfit <= 0) {
-        alert(`⚠️ لا توجد أرباح صافية اليوم للتوزيع.`);
+      const totalTodayProfit = completedOrdersToday.reduce((sum, order) => sum + (order.company_share || 0), 0);
+      
+      if (totalTodayProfit <= 0) {
+        alert(`⚠️ لا توجد أرباح صافية للأوردرات المكتملة اليوم (${today}) للتوزيع.`);
         return;
       }
       
       const activePartners = (partners || []).filter(p => p.is_active === true);
       if (activePartners.length === 0) {
-        alert("⚠️ لا يوجد شركاء نشطون");
+        alert("⚠️ لا يوجد شركاء نشطون لتوزيع الأرباح.");
         return;
       }
       
-      if (!confirm(`💰 سيتم توزيع ${netProfit.toLocaleString()} ج.م على ${activePartners.length} شريك. هل تريد الاستمرار؟`)) {
+      const totalShares = activePartners.reduce((sum, p) => sum + (Number(p.share_percentage) || 0), 0);
+      if (totalShares !== 100) {
+        if (!confirm(`⚠️ إجمالي نسب الشركاء (${totalShares}%) لا يساوي 100%. هل تريد الاستمرار؟`)) {
+          return;
+        }
+      }
+      
+      if (!confirm(`💰 سيتم توزيع ${totalTodayProfit.toLocaleString()} ج.م (أرباح اليوم من الأوردرات المكتملة) على ${activePartners.length} شريك.\nهل تريد الاستمرار؟`)) {
         return;
       }
-
+      
       for (const partner of activePartners) {
-        const shareAmount = Math.floor((netProfit * Number(partner.share_percentage)) / 100);
+        const shareAmount = Math.floor((totalTodayProfit * Number(partner.share_percentage)) / 100);
         if (shareAmount > 0) {
           await fetchAPI('cash_ledger', {
             method: 'POST',
             body: JSON.stringify({
               type: 'profit_distribution',
               amount: shareAmount,
-              description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%) - ${today}`,
+              description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%) - تاريخ الأرباح: ${today}`,
               date: today
             })
           });
+          console.log(`✅ تم توزيع ${shareAmount} ج.م للشريك ${partner.name}`);
         }
       }
       
-      await addNotification('توزيع أرباح يومية', `✅ تم توزيع ${netProfit.toLocaleString()} ج.م على الشركاء`);
+      await addNotification('توزيع أرباح يومية', `✅ تم توزيع ${totalTodayProfit.toLocaleString()} ج.م على الشركاء (${activePartners.length} شريك) بنجاح.`);
       await fetchCashLedger();
-      alert(`✅ تم توزيع ${netProfit.toLocaleString()} ج.م على الشركاء`);
+      alert(`✅ تم توزيع ${totalTodayProfit.toLocaleString()} ج.م على الشركاء بنجاح.`);
       
     } catch (err) {
-      console.error("خطأ في توزيع الأرباح:", err);
-      alert("❌ حدث خطأ أثناء توزيع الأرباح");
+      console.error("❌ خطأ في توزيع الأرباح:", err);
+      alert("❌ حدث خطأ أثناء توزيع الأرباح. راجع Console.");
     }
   };
 
@@ -483,94 +494,56 @@ export default function ProtectedOrders() {
     setFormData(calculateAmounts(updated));
   };
 
-  // ✅ إرسال واتساب للعميل عند تغيير الحالة
   const sendWhatsAppToCustomer = (order: any, newStatus: string) => {
     const phone = formatPhoneForWhatsApp(order.phone);
-    if (!phone) {
-      console.error("رقم الهاتف غير صالح:", order.phone);
-      return;
-    }
+    if (!phone) return;
     let statusMessage = "";
     switch (newStatus) {
-      case 'in-progress':
-        statusMessage = "🔧 تم بدء العمل على طلبك بواسطة الفني.";
-        break;
-      case 'inspected':
-        statusMessage = "🔍 تم الكشف على جهازك. سيتم إبلاغك بالخطوات التالية.";
-        break;
-      case 'completed':
-        statusMessage = "✅ تم إكمال طلب الصيانة بنجاح. شكراً لثقتك بنا!";
-        break;
-      case 'cancelled':
-        statusMessage = "❌ تم إلغاء طلب الصيانة. للاستفسار، يرجى الاتصال بنا.";
-        break;
-      default:
-        return;
+      case 'in-progress': statusMessage = "🔧 تم بدء العمل على طلبك بواسطة الفني."; break;
+      case 'inspected': statusMessage = "🔍 تم الكشف على جهازك. سيتم إبلاغك بالخطوات التالية."; break;
+      case 'completed': statusMessage = "✅ تم إكمال طلب الصيانة بنجاح. شكراً لثقتك بنا!"; break;
+      case 'cancelled': statusMessage = "❌ تم إلغاء طلب الصيانة. للاستفسار، يرجى الاتصال بنا."; break;
+      default: return;
     }
     const message = `📢 *تحديث حالة طلب الصيانة* 📢\n\n🔢 *رقم الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n📝 *الحالة الجديدة:* ${statusMessage}\n\nشكراً لتواصلك معنا. 🌟`;
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-    console.log("📱 فتح واتساب للعميل:", url);
     window.open(url, '_blank');
   };
 
-  // ✅ تحديث حالة الأوردر (محسن)
   const updateOrderStatus = async (id: number, newStatus: string) => {
     const order = orders.find(o => o.id === id);
     if (!order) return;
 
     try {
-      await fetchAPI(`orders?id=eq.${id}`, { 
-        method: 'PATCH', 
-        body: JSON.stringify({ status: newStatus }) 
-      });
-      
+      await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ status: newStatus }) });
       await addNotification('تغيير حالة أوردر', `🔄 تم تغيير حالة أوردر ${order.customer_name} إلى ${newStatus}`);
-      
       const updatedOrder = { ...order, status: newStatus };
-      
       if (newStatus === 'completed' && order.is_paid && !order.profit_added_to_cash) {
         await addCompanyProfitToCash(updatedOrder);
       }
-      
       sendWhatsAppToCustomer(order, newStatus);
       await fetchData();
-    } catch (err) { 
-      console.error("خطأ في تحديث حالة الأوردر:", err); 
-    }
+    } catch (err) { console.error("خطأ في تحديث حالة الأوردر:", err); }
   };
 
-  // ✅ تغيير حالة التحصيل مع إضافة الأرباح للخزنة (محسن)
   const togglePaidStatus = async (id: number, currentStatus: boolean) => {
     const order = orders.find(o => o.id === id);
     if (!order) return;
-
     const newPaidStatus = !currentStatus;
     
     try {
-      await fetchAPI(`orders?id=eq.${id}`, { 
-        method: 'PATCH', 
-        body: JSON.stringify({ is_paid: newPaidStatus }) 
-      });
-      
+      await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ is_paid: newPaidStatus }) });
       await addNotification('تحديث حالة الدفع', `✅ تم تحديث حالة تحصيل أوردر ${order.customer_name} إلى ${newPaidStatus ? 'تم التحصيل' : 'لم يتم التحصيل'}`);
-      
       const updatedOrder = { ...order, is_paid: newPaidStatus };
-      
       if (newPaidStatus && order.status === 'completed' && !order.profit_added_to_cash) {
         await addCompanyProfitToCash(updatedOrder);
       }
-      
       await fetchData();
-    } catch (err) { 
-      console.error("خطأ في تحديث حالة الدفع:", err); 
-    }
+    } catch (err) { console.error("خطأ في تحديث حالة الدفع:", err); }
   };
 
   const deleteOrder = async (id: number) => {
-    if (!canEditDelete()) {
-      alert("⚠️ ليس لديك صلاحية لحذف الأوردرات");
-      return;
-    }
+    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لحذف الأوردرات");
     const order = orders.find(o => o.id === id);
     if (confirm('هل أنت متأكد من حذف هذا الأوردر؟')) {
       try { 
@@ -608,14 +581,11 @@ export default function ProtectedOrders() {
     setIsOtherBrand(false);
   };
 
-  // ✅ حفظ الأوردر مع إرسال واتساب تأكيد للعميل
   const saveOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     const orderNumber = `MG-${Date.now()}`;
     const finalDeviceType = isOtherDevice ? customDevice : formData.device_type;
     const finalBrand = isOtherBrand ? customBrand : formData.brand;
-    
     const orderToSave = { 
       ...formData, 
       device_type: finalDeviceType,
@@ -625,10 +595,7 @@ export default function ProtectedOrders() {
 
     try {
       if (editingOrder) {
-        if (!canEditDelete()) {
-          alert("⚠️ ليس لديك صلاحية لتعديل الأوردرات");
-          return;
-        }
+        if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لتعديل الأوردرات");
         await fetchAPI(`orders?id=eq.${editingOrder.id}`, { method: 'PATCH', body: JSON.stringify(orderToSave) });
         await addNotification('تعديل أوردر', `تم تعديل أوردر ${formData.customer_name}`);
         alert("✅ تم تعديل الأوردر بنجاح");
@@ -636,7 +603,6 @@ export default function ProtectedOrders() {
         await fetchAPI('orders', { method: 'POST', body: JSON.stringify(orderToSave) });
         await addNotification('إضافة أوردر', `تم إضافة أوردر جديد للعميل ${formData.customer_name}`);
         alert("✅ تم إضافة الأوردر بنجاح");
-        
         sendWhatsAppToCustomerOnCreate(orderToSave);
       }
       setShowOrderModal(false);
@@ -651,10 +617,7 @@ export default function ProtectedOrders() {
 
   const savePartner = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canEditDelete()) {
-      alert("⚠️ ليس لديك صلاحية لإدارة الشركاء");
-      return;
-    }
+    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لإدارة الشركاء");
     try {
       if (editingPartner) {
         await fetchAPI(`partners?id=eq.${editingPartner.id}`, { method: 'PATCH', body: JSON.stringify(partnerForm) });
@@ -671,10 +634,7 @@ export default function ProtectedOrders() {
   };
 
   const deletePartner = async (id: number, name: string) => {
-    if (!canEditDelete()) {
-      alert("⚠️ ليس لديك صلاحية لحذف الشركاء");
-      return;
-    }
+    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لحذف الشركاء");
     if (confirm(`حذف الشريك ${name}؟`)) {
       await fetchAPI(`partners?id=eq.${id}`, { method: 'DELETE' });
       await addNotification('حذف شريك', `تم حذف الشريك ${name}`);
@@ -684,10 +644,7 @@ export default function ProtectedOrders() {
 
   const saveTechnician = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canEditDelete()) {
-      alert("⚠️ ليس لديك صلاحية لإدارة الفنيين");
-      return;
-    }
+    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لإدارة الفنيين");
     try {
       if (editingTech) {
         await fetchAPI(`technicians?id=eq.${editingTech.id}`, { method: 'PATCH', body: JSON.stringify(techForm) });
@@ -704,10 +661,7 @@ export default function ProtectedOrders() {
   };
 
   const deleteTechnician = async (id: number, name: string) => {
-    if (!canEditDelete()) {
-      alert("⚠️ ليس لديك صلاحية لحذف الفنيين");
-      return;
-    }
+    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لحذف الفنيين");
     if (confirm('هل أنت متأكد من حذف هذا الفني؟')) {
       try { 
         await fetchAPI(`technicians?id=eq.${id}`, { method: 'DELETE' });
@@ -718,10 +672,7 @@ export default function ProtectedOrders() {
   };
 
   const toggleTechnicianActive = async (tech: any) => {
-    if (!canEditDelete()) {
-      alert("⚠️ ليس لديك صلاحية لتغيير حالة الفنيين");
-      return;
-    }
+    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لتغيير حالة الفنيين");
     await fetchAPI(`technicians?id=eq.${tech.id}`, { method: 'PATCH', body: JSON.stringify({ is_active: !tech.is_active }) });
     await addNotification('تغيير حالة فني', `تم ${!tech.is_active ? 'تفعيل' : 'تعطيل'} الفني ${tech.name}`);
     fetchData();
@@ -735,11 +686,7 @@ export default function ProtectedOrders() {
   };
   
   const copyOrder = async (order: any) => {
-    if (!canEditDelete()) {
-      alert("⚠️ ليس لديك صلاحية لنسخ الأوردرات");
-      return;
-    }
-    
+    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لنسخ الأوردرات");
     try {
       const newOrder = {
         customer_name: order.customer_name,
@@ -760,12 +707,7 @@ export default function ProtectedOrders() {
         date: new Date().toLocaleDateString("ar-EG"),
         order_number: `MG-${Date.now()}`
       };
-      
-      await fetchAPI('orders', {
-        method: 'POST',
-        body: JSON.stringify(newOrder)
-      });
-      
+      await fetchAPI('orders', { method: 'POST', body: JSON.stringify(newOrder) });
       await addNotification('نسخ أوردر', `تم نسخ أوردر ${order.order_number} بنجاح`);
       alert('✅ تم نسخ الأوردر بنجاح');
       fetchData();
@@ -785,10 +727,7 @@ export default function ProtectedOrders() {
     const warranty = prompt("🛡️ فترة الضمان", "6 أشهر");
     const finalWarranty = warranty || "6 أشهر";
     
-    if (!order.phone || !order.customer_name) {
-      alert("❌ بيانات الأوردر غير كاملة");
-      return;
-    }
+    if (!order.phone || !order.customer_name) return alert("❌ بيانات الأوردر غير كاملة");
     
     try {
       await fetchAPI(`orders?id=eq.${order.id}`, {
@@ -802,9 +741,7 @@ export default function ProtectedOrders() {
       });
       await addNotification('اعتماد فاتورة', `تم اعتماد فاتورة ${order.customer_name} مع ضمان ${finalWarranty}`);
       
-      setTimeout(() => {
-        openInvoicePage(order);
-      }, 500);
+      setTimeout(() => openInvoicePage(order), 500);
       
       const phone = formatPhoneForWhatsApp(order.phone);
       const invoiceText = `📄 *فاتورة الصيانة - ضمان* 📄\n\n` +
@@ -822,7 +759,6 @@ export default function ProtectedOrders() {
         `━━━━━━━━━━━━━━━━━━━━━━\n` +
         `📞 للاستفسار: 01278885772\n\n` +
         `شكراً لثقتك بنا 🙏`;
-      
       const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(invoiceText)}`;
       window.open(whatsappUrl, '_blank');
       
@@ -876,7 +812,6 @@ export default function ProtectedOrders() {
       </nav>
 
       <main className="max-w-7xl mx-auto p-4 md:p-6">
-        {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-8">
           <div className="bg-slate-900 p-4 rounded-2xl"><p className="text-2xl font-black text-white">{orders.length}</p><p className="text-[10px] text-slate-500 uppercase">إجمالي الأوردرات</p></div>
           <div className="bg-slate-900 p-4 rounded-2xl"><p className="text-2xl font-black text-yellow-500">{stats.pending}</p><p className="text-[10px] text-slate-500 uppercase">قيد الانتظار</p></div>
@@ -885,7 +820,6 @@ export default function ProtectedOrders() {
           <div className="bg-slate-900 p-4 rounded-2xl"><p className="text-2xl font-black text-purple-500">{technicians.length}</p><p className="text-[10px] text-slate-500 uppercase">فني متاح</p></div>
         </div>
 
-        {/* Tabs */}
         <div className="flex gap-1 bg-slate-900 p-1 rounded-2xl border border-slate-800 mb-6 overflow-x-auto">
           <button onClick={() => setActiveTab('orders')} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeTab === 'orders' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>📋 الأوردرات</button>
           <button onClick={() => setActiveTab('technicians')} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeTab === 'technicians' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>👨‍🔧 الفنيين</button>
@@ -899,7 +833,6 @@ export default function ProtectedOrders() {
           )}
         </div>
 
-        {/* Orders Tab */}
         {activeTab === 'orders' && (
           <div className="space-y-4">
             <div className="flex flex-col md:flex-row gap-4">
@@ -929,7 +862,6 @@ export default function ProtectedOrders() {
                       <button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`p-2 rounded-xl ${order.is_paid ? 'bg-green-500/20 text-green-500' : 'bg-slate-800 text-slate-500'}`}>
                         {order.is_paid ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
                       </button>
-                      
                       {canEditDelete() && (
                         <>
                           <button onClick={() => { setEditingOrder(order); setFormData(order); setShowOrderModal(true); }} className="p-2 text-slate-400 hover:text-white" title="تعديل"><Edit className="w-4 h-4" /></button>
@@ -961,7 +893,6 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* Technicians Tab */}
         {activeTab === 'technicians' && (
           <div>
             <div className="flex justify-between items-center mb-4">
@@ -1001,7 +932,6 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* Reports Tab */}
         {activeTab === 'reports' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-slate-900 p-6 rounded-2xl"><p className="text-slate-400">إجمالي الإيرادات</p><p className="text-3xl font-black text-white">{orders.reduce((a,o)=>a+(o.total_amount||0),0).toLocaleString()} ج.م</p></div>
@@ -1010,7 +940,6 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* Invoices Review Tab */}
         {activeTab === 'invoicesReview' && (
           <div className="space-y-4">
             <h2 className="text-xl font-bold">📄 فواتير بانتظار المراجعة</h2>
@@ -1024,7 +953,6 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* Cash Tab */}
         {activeTab === 'cash' && (
           <div className="space-y-4">
             <div className="flex justify-between items-center flex-wrap gap-3">
@@ -1068,7 +996,6 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* Partners Tab */}
         {activeTab === 'partners' && (
           <div className="space-y-4">
             {canEditDelete() && (
@@ -1092,7 +1019,6 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* Notifications Tab */}
         {activeTab === 'notifications' && (
           <div className="space-y-4">
             <div className="flex justify-between"><h2 className="text-xl font-bold">🔔 سجل الإشعارات</h2>{canEditDelete() && notifications.length > 0 && <button onClick={deleteAllNotifications} className="bg-red-600/20 text-red-400 px-3 py-1 rounded-lg text-sm"><Trash className="w-4 h-4" /> مسح الكل</button>}</div>
@@ -1110,7 +1036,6 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* Permissions Tab */}
         {activeTab === 'permissions' && userRole === 'admin' && (
           <AdminPermissions />
         )}
