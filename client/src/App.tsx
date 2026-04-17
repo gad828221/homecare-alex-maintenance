@@ -56,21 +56,10 @@ function Router() {
 function FloatingButtons() {
   return (
     <div className="fixed bottom-6 left-0 right-0 flex justify-between px-4 pointer-events-none z-50">
-      <a
-        href="tel:01278885772"
-        className="pointer-events-auto bg-blue-600 hover:bg-blue-700 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 ml-auto"
-        style={{ marginRight: '10px' }}
-        aria-label="اتصال"
-      >
+      <a href="tel:01278885772" className="pointer-events-auto bg-blue-600 hover:bg-blue-700 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 ml-auto" style={{ marginRight: '10px' }} aria-label="اتصال">
         <Phone className="w-6 h-6" />
       </a>
-      <a
-        href="https://wa.me/201558625259"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="pointer-events-auto bg-green-600 hover:bg-green-700 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110"
-        aria-label="واتساب"
-      >
+      <a href="https://wa.me/201558625259" target="_blank" rel="noopener noreferrer" className="pointer-events-auto bg-green-600 hover:bg-green-700 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110" aria-label="واتساب">
         <MessageCircle className="w-6 h-6" />
       </a>
     </div>
@@ -91,9 +80,8 @@ function App() {
     const userRole = localStorage.getItem("userRole");
     const currentPath = window.location.pathname;
 
-    // 1. منع الحلقة: إذا كنا في صفحة login لا نعيد التوجيه أبداً
+    // منع الحلقة: إذا كنا في صفحة login لا نعيد التوجيه أبداً
     if (currentPath === "/login") {
-      //但如果用户已登录却手动进入login，则重定向
       if (userRole) {
         let redirectUrl = "/orders";
         if (userRole === "tech") redirectUrl = "/tech-portal";
@@ -103,7 +91,6 @@ function App() {
       return;
     }
 
-    // المسارات العامة (لا تحتاج تسجيل دخول)
     const publicPaths = [
       "/", "/invoice",
       "/samsung-service", "/lg-service", "/sharp-service",
@@ -112,7 +99,6 @@ function App() {
       "/beko-service", "/hoover-service", "/indesit-service"
     ];
 
-    // إذا لم يكن مسجلاً
     if (!userRole) {
       const isPublic = publicPaths.some(p => currentPath === p) || currentPath.startsWith("/invoice");
       if (!isPublic && currentPath !== "/login") {
@@ -122,18 +108,11 @@ function App() {
       return;
     }
 
-    // 2. توجيه المستخدمين المسجلين حسب دورهم
-    const roleRedirects: Record<string, string> = {
-      tech: "/tech-portal",
-      "data-entry": "/data-entry",
-    };
-    const redirectTo = roleRedirects[userRole];
-    if (redirectTo && currentPath !== redirectTo && !publicPaths.includes(currentPath) && currentPath !== "/orders") {
-      window.location.href = redirectTo;
-    }
-    // للمدراء والمشاهدين: يسمح لهم بكل شيء، لكن إذا كانوا في login نعيدهم
-    if (currentPath === "/login") {
-      window.location.href = "/orders";
+    // توجيه الفنيين ومدخلي البيانات
+    if (userRole === "tech" && currentPath !== "/tech-portal" && !publicPaths.includes(currentPath)) {
+      window.location.href = "/tech-portal";
+    } else if (userRole === "data-entry" && currentPath !== "/data-entry" && !publicPaths.includes(currentPath)) {
+      window.location.href = "/data-entry";
     }
   }, []);
 
