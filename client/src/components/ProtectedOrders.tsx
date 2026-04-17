@@ -64,24 +64,22 @@ export default function ProtectedOrders() {
   const [technicians, setTechnicians] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [partners, setPartners] = useState<any[]>([]);
+  const [cashLedger, setCashLedger] = useState<any[]>([]);
+  const [cashBalance, setCashBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'orders' | 'technicians' | 'reports' | 'invoicesReview' | 'cash' | 'partners' | 'notifications'>('orders');
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showTechModal, setShowTechModal] = useState(false);
   const [showPartnerModal, setShowPartnerModal] = useState(false);
+  const [showCashModal, setShowCashModal] = useState(false);
   const [editingOrder, setEditingOrder] = useState<any>(null);
   const [editingTech, setEditingTech] = useState<any>(null);
   const [editingPartner, setEditingPartner] = useState<any>(null);
+  const [editingCash, setEditingCash] = useState<any>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [filterTechStatus, setFilterTechStatus] = useState<'all' | 'active' | 'inactive'>('active');
-  
-  const [cashLedger, setCashLedger] = useState<any[]>([]);
-  const [cashBalance, setCashBalance] = useState(0);
-  const [showCashModal, setShowCashModal] = useState(false);
-  const [editingCash, setEditingCash] = useState<any>(null);
-  const [cashForm, setCashForm] = useState({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] });
   const [cashFilterDate, setCashFilterDate] = useState('');
-  
+  const [cashForm, setCashForm] = useState({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] });
   const [partnerForm, setPartnerForm] = useState({ name: '', share_percentage: 0, phone: '', is_active: true });
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -111,7 +109,6 @@ export default function ProtectedOrders() {
   
   const [stats, setStats] = useState({ pending: 0, inProgress: 0, completed: 0, cancelled: 0, totalIncome: 0 });
 
-  // دالة تسجيل الخروج
   const handleLogout = () => {
     localStorage.clear();
     sessionStorage.clear();
@@ -212,29 +209,17 @@ export default function ProtectedOrders() {
 
   const addCompanyProfitToCash = async (order: any) => {
     const companyShare = order.company_share || 0;
-    const totalAmount = order.total_amount || 0;
-    const partsCost = order.parts_cost || 0;
-    const transportCost = order.transport_cost || 0;
-    
     if (companyShare > 0 && order.is_paid && order.status === 'completed') {
       try {
-        // إضافة حركة خزنة لأرباح الشركة
         await fetchAPI('cash_ledger', {
           method: 'POST',
           body: JSON.stringify({
             type: 'income',
             amount: companyShare,
-            description: `أرباح شركة - الأوردر: ${order.order_number}\nالعميل: ${order.customer_name}\nالمبلغ الإجمالي: ${totalAmount} ج.م\nقطع غيار: ${partsCost} ج.م\nمواصلات: ${transportCost} ج.م`,
+            description: `أرباح شركة من أوردر ${order.customer_name} (رقم ${order.order_number})`,
             date: new Date().toISOString().split('T')[0]
           })
         });
-        
-        // تحديث الأوردر بعلم أن الربح تم إضافته للخزنة
-        await fetchAPI(`orders?id=eq.${order.id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ profit_added_to_cash: true })
-        });
-        
         await addNotification('إضافة أرباح للخزنة', `✅ تم إضافة ${companyShare} ج.م للخزنة من أوردر ${order.customer_name}`);
         fetchCashLedger();
       } catch (err) {
@@ -247,10 +232,9 @@ export default function ProtectedOrders() {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      // التحقق مما إذا كان قد تم التوزيع اليوم بالفعل
       const alreadyDistributed = (cashLedger || []).some(c => c.date === today && c.type === 'profit_distribution');
       if (alreadyDistributed) {
-        if (!confirm("⚠️ تم توزيع أرباح اليوم بالفعل. هل تريد التوزيع مرة أخرى؟ (قد يؤدي ذلك لتكرار الحركات)")) {
+        if (!confirm("⚠️ تم توزيع أرباح اليوم بالفعل. هل تريد التوزيع مرة أخرى؟")) {
           return;
         }
       }
@@ -260,19 +244,17 @@ export default function ProtectedOrders() {
       const netProfit = todayIncome - todayExpenses;
       
       if (netProfit <= 0) {
-        alert(`⚠️ لا توجد أرباح صافية اليوم للتوزيع.\nالإيرادات: ${todayIncome} ج.م\nالمصاريف: ${todayExpenses} ج.م`);
+        alert(`⚠️ لا توجد أرباح صافية اليوم للتوزيع.`);
         return;
       }
       
       const activePartners = (partners || []).filter(p => p.is_active === true);
       if (activePartners.length === 0) {
-        alert("⚠️ لا يوجد شركاء نشطون لتوزيع الأرباح عليهم.");
+        alert("⚠️ لا يوجد شركاء نشطون");
         return;
       }
       
-      const totalShares = activePartners.reduce((sum, p) => sum + Number(p.share_percentage), 0);
-      
-      if (!confirm(`💰 سيتم توزيع صافي أرباح اليوم (${netProfit.toLocaleString()} ج.م) على ${activePartners.length} شريك.\nهل تريد الاستمرار؟`)) {
+      if (!confirm(`💰 سيتم توزيع ${netProfit.toLocaleString()} ج.م على ${activePartners.length} شريك. هل تريد الاستمرار؟`)) {
         return;
       }
 
@@ -284,20 +266,20 @@ export default function ProtectedOrders() {
             body: JSON.stringify({
               type: 'profit_distribution',
               amount: shareAmount,
-              description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%)\nالتاريخ: ${today}\nصافي ربح اليوم: ${netProfit} ج.م`,
+              description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%) - ${today}`,
               date: today
             })
           });
         }
       }
       
-      await addNotification('توزيع أرباح يومية', `✅ تم توزيع ${netProfit.toLocaleString()} ج.م على الشركاء بنجاح.`);
+      await addNotification('توزيع أرباح يومية', `✅ تم توزيع ${netProfit.toLocaleString()} ج.م على الشركاء`);
       await fetchCashLedger();
-      alert(`✅ تم توزيع ${netProfit.toLocaleString()} ج.م على الشركاء بنجاح.`);
+      alert(`✅ تم توزيع ${netProfit.toLocaleString()} ج.م على الشركاء`);
       
     } catch (err) {
       console.error("خطأ في توزيع الأرباح:", err);
-      alert("❌ حدث خطأ أثناء توزيع الأرباح. يرجى مراجعة سجل الخزنة.");
+      alert("❌ حدث خطأ أثناء توزيع الأرباح");
     }
   };
 
@@ -399,7 +381,6 @@ export default function ProtectedOrders() {
       
       await addNotification('تغيير حالة أوردر', `🔄 تم تغيير حالة أوردر ${order.customer_name} إلى ${newStatus}`);
       
-      // إذا أصبح الأوردر مكتمل وهو مدفوع أصلاً ولم يسبق إضافة ربحه للخزنة
       if (newStatus === 'completed' && order.is_paid && !order.profit_added_to_cash) {
         await addCompanyProfitToCash(order);
       }
@@ -416,7 +397,6 @@ export default function ProtectedOrders() {
     if (!order) return;
 
     try {
-      // تحديث حالة الدفع في قاعدة البيانات
       await fetchAPI(`orders?id=eq.${id}`, { 
         method: 'PATCH', 
         body: JSON.stringify({ is_paid: !currentStatus }) 
@@ -424,7 +404,6 @@ export default function ProtectedOrders() {
       
       await addNotification('تحديث حالة الدفع', `✅ تم تحديث حالة تحصيل أوردر ${order.customer_name} إلى ${!currentStatus ? 'تم التحصيل' : 'لم يتم التحصيل'}`);
       
-      // إذا تم التحصيل الآن والأوردر مكتمل ولم يسبق إضافة ربحه للخزنة
       if (!currentStatus && order.status === 'completed' && !order.profit_added_to_cash) {
         await addCompanyProfitToCash(order);
       }
@@ -477,42 +456,32 @@ export default function ProtectedOrders() {
     e.preventDefault();
     
     const orderNumber = `MG-${Date.now()}`;
-    const orderDate = formData.date;
     const finalDeviceType = isOtherDevice ? customDevice : formData.device_type;
     const finalBrand = isOtherBrand ? customBrand : formData.brand;
     
     const orderToSave = { 
       ...formData, 
-      device_type: finalDeviceType, 
-      brand: finalBrand, 
-      order_number: orderNumber, 
-      date: orderDate 
+      device_type: finalDeviceType,
+      brand: finalBrand,
+      order_number: editingOrder ? editingOrder.order_number : orderNumber
     };
-    
+
     try {
       if (editingOrder) {
-        await fetchAPI(`orders?id=eq.${editingOrder.id}`, { 
-          method: 'PATCH', 
-          body: JSON.stringify(orderToSave) 
-        });
+        await fetchAPI(`orders?id=eq.${editingOrder.id}`, { method: 'PATCH', body: JSON.stringify(orderToSave) });
         await addNotification('تعديل أوردر', `تم تعديل أوردر ${formData.customer_name}`);
         alert("✅ تم تعديل الأوردر بنجاح");
       } else {
-        await fetchAPI('orders', { 
-          method: 'POST', 
-          body: JSON.stringify(orderToSave) 
-        });
+        await fetchAPI('orders', { method: 'POST', body: JSON.stringify(orderToSave) });
         await addNotification('إضافة أوردر', `تم إضافة أوردر جديد للعميل ${formData.customer_name}`);
         alert("✅ تم إضافة الأوردر بنجاح");
       }
-      
       setShowOrderModal(false);
       setEditingOrder(null);
       resetForm();
-      await fetchData();
-      
-    } catch (err: any) {
-      console.error("Error saving order:", err);
+      fetchData();
+    } catch (err) { 
+      console.error(err);
       alert("❌ حدث خطأ أثناء حفظ الأوردر: " + (err.message || "خطأ غير معروف"));
     }
   };
@@ -582,27 +551,22 @@ export default function ProtectedOrders() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // دالة طباعة الفاتورة - تفتح صفحة الفاتورة المنفصلة
   const openInvoicePage = (order: any) => {
     window.open(`/invoice?id=${order.id}`, '_blank');
   };
 
-  // دالة اعتماد الفاتورة وإرسال واتساب مع رسالة احترافية
   const printAndSendInvoice = async (order: any) => {
-    // فتح نافذة لإدخال بيانات الفاتورة
-    const parts = prompt("✏️ أدخل قطع الغيار المستخدمة (مثال: كمبريسور، فلتر)", "لا توجد");
+    const parts = prompt("✏️ أدخل قطع الغيار المستخدمة", "لا توجد");
     const partsList = parts || "لا توجد";
-    const warranty = prompt("🛡️ فترة الضمان (مثال: 6 أشهر، سنة واحدة)", "6 أشهر");
+    const warranty = prompt("🛡️ فترة الضمان", "6 أشهر");
     const finalWarranty = warranty || "6 أشهر";
     
-    // التحقق من صحة البيانات
     if (!order.phone || !order.customer_name) {
       alert("❌ بيانات الأوردر غير كاملة");
       return;
     }
     
     try {
-      // حفظ في قاعدة البيانات
       await fetchAPI(`orders?id=eq.${order.id}`, {
         method: 'PATCH',
         body: JSON.stringify({ 
@@ -614,43 +578,35 @@ export default function ProtectedOrders() {
       });
       await addNotification('اعتماد فاتورة', `تم اعتماد فاتورة ${order.customer_name} مع ضمان ${finalWarranty}`);
       
-      // فتح صفحة الفاتورة للطباعة والتحميل كـ PDF
       setTimeout(() => {
         openInvoicePage(order);
       }, 500);
       
-      // إرسال واتساب احترافي للعميل
       const phone = formatPhoneForWhatsApp(order.phone);
       const invoiceText = `📄 *فاتورة الصيانة - ضمان* 📄\n\n` +
-        `شكراً لثقتك بـ Maintenance Guide\n\n` +
-        `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `شكراً لثقتك بنا\n\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━\n` +
         `🔢 *رقم الأوردر:* ${order.order_number}\n` +
-        `👤 *اسم العميل:* ${order.customer_name}\n` +
+        `👤 *العميل:* ${order.customer_name}\n` +
         `📱 *الهاتف:* ${order.phone}\n` +
         `📍 *العنوان:* ${order.address || 'غير محدد'}\n\n` +
-        `🔧 *تفاصيل الخدمة:*\n` +
-        `├ الجهاز: ${order.device_type || order.device}\n` +
-        `├ الماركة: ${order.brand}\n` +
-        `├ المشكلة: ${order.problem_description || order.problem || 'لم يتم تحديدها'}\n` +
-        `└ قطع الغيار: ${partsList}\n\n` +
-        `💰 *المبلغ الإجمالي:* ${order.total_amount} ج.م\n` +
-        `🛡️ *فترة الضمان:* ${finalWarranty}\n\n` +
-        `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-        `✅ تم إكمال الخدمة بنجاح\n` +
-        `📅 التاريخ: ${new Date().toLocaleDateString('ar-EG')}\n\n` +
-        `📞 للاستفسارات والشكاوى:\n` +
-        `☎️ 01278885772\n` +
-        `📲 01558625259\n\n` +
-        `شكراً لاختيارك خدماتنا 🙏`;
+        `🔧 *الجهاز:* ${order.device_type || order.device} - ${order.brand}\n` +
+        `⚠️ *المشكلة:* ${order.problem_description || 'غير محددة'}\n` +
+        `🔧 *قطع الغيار:* ${partsList}\n\n` +
+        `💰 *المبلغ:* ${order.total_amount} ج.م\n` +
+        `🛡️ *الضمان:* ${finalWarranty}\n\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `📞 للاستفسار: 01278885772\n\n` +
+        `شكراً لثقتك بنا 🙏`;
       
       const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(invoiceText)}`;
       window.open(whatsappUrl, '_blank');
       
-      alert("✅ تم اعتماد الفاتورة بنجاح!\n📄 سيتم فتح الفاتورة للطباعة والتحميل\n📱 سيتم فتح واتساب لإرسال الفاتورة للعميل");
+      alert("✅ تم اعتماد الفاتورة بنجاح!");
       fetchData();
     } catch (err) {
       console.error("خطأ في اعتماد الفاتورة:", err);
-      alert("❌ حدث خطأ في اعتماد الفاتورة. يرجى المحاولة مرة أخرى.");
+      alert("❌ حدث خطأ في اعتماد الفاتورة");
     }
   };
 
