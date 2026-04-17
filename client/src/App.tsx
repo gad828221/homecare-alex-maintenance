@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Login from "./pages/LoginPage";
+import Login from "./pages/Login";
 import TechPortal from "./pages/TechnicianPortal";
 import DataEntry from "./pages/DataEntryPage";
 import NotFound from "@/pages/NotFound";
@@ -58,7 +58,6 @@ function FloatingButtons() {
     <div className="fixed bottom-6 left-0 right-0 flex justify-between px-4 pointer-events-none z-50">
       <a
         href="tel:01278885772"
-        onClick={() => gtag('event', 'conversion', {'send_to': 'AW-16866300615/Hg5gCNz5nvkbEMelveo-'})}
         className="pointer-events-auto bg-blue-600 hover:bg-blue-700 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 ml-auto"
         style={{ marginRight: '10px' }}
         aria-label="اتصال"
@@ -69,7 +68,6 @@ function FloatingButtons() {
         href="https://wa.me/201558625259"
         target="_blank"
         rel="noopener noreferrer"
-        onClick={() => gtag('event', 'conversion', {'send_to': 'AW-16866300615/Hg5gCNz5nvkbEMelveo-'})}
         className="pointer-events-auto bg-green-600 hover:bg-green-700 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110"
         aria-label="واتساب"
       >
@@ -89,15 +87,35 @@ function AppContent() {
 }
 
 function App() {
-  // منع الفني من رؤية الموقع العام
+  // التحقق من صلاحيات المستخدمين
   useEffect(() => {
     const userRole = localStorage.getItem("userRole");
     const currentPath = window.location.pathname;
-    const allowedPaths = ["/login", "/tech-portal", "/invoice"];
-    const isAllowed = allowedPaths.some(path => currentPath.startsWith(path));
     
-    if (userRole === "tech" && !isAllowed) {
-      window.location.href = "/tech-portal";
+    // المسارات المسموحة بدون تسجيل دخول
+    const publicPaths = ["/login", "/", "/samsung-service", "/lg-service", "/sharp-service", "/toshiba-service", "/zanussi-service", "/unionaire-service", "/fresh-service", "/white-whale-service", "/ariston-service", "/beko-service", "/hoover-service", "/indesit-service", "/invoice"];
+    
+    // إذا كان المستخدم فنيًا
+    if (userRole === "tech") {
+      const techAllowedPaths = ["/login", "/tech-portal", "/invoice"];
+      if (!techAllowedPaths.some(path => currentPath.startsWith(path))) {
+        window.location.href = "/tech-portal";
+      }
+      return;
+    }
+    
+    // إذا كان المستخدم مديرًا أو مستخدم عادي
+    if (userRole === "admin" || userRole === "user") {
+      // مسموح له بكل شيء ما عدا login إذا كان مسجلاً
+      if (currentPath === "/login") {
+        window.location.href = "/orders";
+      }
+      return;
+    }
+    
+    // إذا لم يكن مسجلاً، يسمح له بالصفحات العامة فقط
+    if (!userRole && !publicPaths.some(path => currentPath === path || currentPath.startsWith("/invoice"))) {
+      window.location.href = "/login";
     }
   }, []);
 
