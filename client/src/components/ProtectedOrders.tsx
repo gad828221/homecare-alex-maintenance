@@ -246,67 +246,88 @@ export default function ProtectedOrders() {
     }
   };
 
-  // ✅ دالة إضافة أرباح الشركة إلى الخزنة (معدلة ومضمونة)
-  const addCompanyProfitToCash = async (order: any) => {
-    const companyShare = order.company_share || 0;
+  // ✅ دالة إضافة أرباح الشركة إلى الخزنة (مباشرة بدون fetchAPI)
+const addCompanyProfitToCash = async (order: any) => {
+  const companyShare = order.company_share || 0;
+  
+  console.log("🔍 محاولة إضافة أرباح للخزنة:", {
+    companyShare,
+    is_paid: order.is_paid,
+    status: order.status,
+    customer: order.customer_name,
+    order_id: order.id,
+    order_number: order.order_number
+  });
+  
+  if (companyShare <= 0) {
+    console.log("❌ لا توجد أرباح للشركة");
+    alert("❌ لا توجد أرباح للشركة (company_share = 0)");
+    return false;
+  }
+  
+  if (!order.is_paid) {
+    console.log("❌ الأوردر لم يتم تحصيله بعد");
+    alert("❌ الأوردر لم يتم تحصيله بعد. قم بتفعيل التحصيل أولاً.");
+    return false;
+  }
+  
+  if (order.status !== 'completed') {
+    console.log("❌ الأوردر لم يكتمل بعد");
+    alert("❌ الأوردر لم يكتمل بعد. غير الحالة إلى مكتمل أولاً.");
+    return false;
+  }
+  
+  try {
+    const today = new Date().toISOString().split('T')[0];
     
-    console.log("🔍 محاولة إضافة أرباح للخزنة:", {
-      companyShare,
-      is_paid: order.is_paid,
-      status: order.status,
-      customer: order.customer_name,
-      order_id: order.id
+    // استخدام fetch مباشرة بدلاً من fetchAPI
+    const response = await fetch(`${supabaseUrl}/rest/v1/cash_ledger`, {
+      method: 'POST',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        type: 'income',
+        amount: companyShare,
+        description: `أرباح شركة من أوردر ${order.customer_name} (رقم ${order.order_number})`,
+        date: today
+      })
     });
     
-    if (companyShare <= 0) {
-      console.log("❌ لا توجد أرباح للشركة (company_share = 0)");
-      return false;
-    }
-    
-    if (!order.is_paid) {
-      console.log("❌ الأوردر لم يتم تحصيله بعد (is_paid = false)");
-      return false;
-    }
-    
-    if (order.status !== 'completed') {
-      console.log("❌ الأوردر لم يكتمل بعد (status =", order.status, ")");
-      return false;
-    }
-    
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const result = await fetch(`${supabaseUrl}/rest/v1/cash_ledger`, {
-        method: 'POST',
+    if (response.ok) {
+      const result = await response.json();
+      console.log(`✅ تم إضافة ${companyShare} ج.م للخزنة`, result);
+      
+      // تحديث الأوردر بعلم أن الربح تم إضافته
+      await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${order.id}`, {
+        method: 'PATCH',
         headers: {
           'apikey': supabaseKey,
           'Authorization': `Bearer ${supabaseKey}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          type: 'income',
-          amount: companyShare,
-          description: `أرباح شركة من أوردر ${order.customer_name} (رقم ${order.order_number})`,
-          date: today
-        })
+        body: JSON.stringify({ profit_added_to_cash: true })
       });
       
-      if (result.ok) {
-        console.log(`✅ تم إضافة ${companyShare} ج.م للخزنة من أوردر ${order.customer_name}`);
-        await addNotification('إضافة أرباح للخزنة', `✅ تم إضافة ${companyShare} ج.م للخزنة من أوردر ${order.customer_name}`);
-        await fetchCashLedger();
-        return true;
-      } else {
-        const error = await result.text();
-        console.error("❌ خطأ في إضافة الخزنة:", error);
-        alert(`❌ فشل إضافة ${companyShare} ج.م إلى الخزنة: ${error}`);
-        return false;
-      }
-    } catch (err) {
-      console.error("❌ خطأ في إضافة الأرباح للخزنة:", err);
-      alert(`❌ حدث خطأ أثناء إضافة الأرباح: ${err.message}`);
+      await addNotification('إضافة أرباح للخزنة', `✅ تم إضافة ${companyShare} ج.م للخزنة من أوردر ${order.customer_name}`);
+      await fetchCashLedger();
+      alert(`✅ تم إضافة ${companyShare} ج.م إلى الخزنة بنجاح`);
+      return true;
+    } else {
+      const error = await response.text();
+      console.error("❌ خطأ من Supabase:", error);
+      alert(`❌ فشل إضافة الأرباح: ${error}`);
       return false;
     }
-  };
+  } catch (err) {
+    console.error("❌ خطأ في الشبكة:", err);
+    alert(`❌ حدث خطأ في الاتصال: ${err.message}`);
+    return false;
+  }
+};
+  
 
   const distributeDailyProfit = async () => {
     try {
