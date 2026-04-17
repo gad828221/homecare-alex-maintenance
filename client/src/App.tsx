@@ -87,36 +87,70 @@ function AppContent() {
 }
 
 function App() {
-  // التحقق من صلاحيات المستخدمين
+  // التحقق من صلاحيات المستخدمين وتوجيههم تلقائياً
   useEffect(() => {
     const userRole = localStorage.getItem("userRole");
     const currentPath = window.location.pathname;
     
-    // المسارات المسموحة بدون تسجيل دخول
-    const publicPaths = ["/login", "/", "/samsung-service", "/lg-service", "/sharp-service", "/toshiba-service", "/zanussi-service", "/unionaire-service", "/fresh-service", "/white-whale-service", "/ariston-service", "/beko-service", "/hoover-service", "/indesit-service", "/invoice"];
+    // المسارات المسموحة بدون تسجيل دخول (عامة)
+    const publicPaths = [
+      "/", "/login", "/invoice",
+      "/samsung-service", "/lg-service", "/sharp-service", 
+      "/toshiba-service", "/zanussi-service", "/unionaire-service", 
+      "/fresh-service", "/white-whale-service", "/ariston-service", 
+      "/beko-service", "/hoover-service", "/indesit-service"
+    ];
     
-    // إذا كان المستخدم فنيًا
+    // إذا لم يكن مسجلاً دخول
+    if (!userRole) {
+      const isPublicPath = publicPaths.some(path => currentPath === path) || currentPath.startsWith("/invoice");
+      if (!isPublicPath && currentPath !== "/login") {
+        localStorage.setItem("redirectAfterLogin", currentPath);
+        window.location.href = "/login";
+      }
+      return;
+    }
+    
+    // ========== توجيه المستخدمين حسب دورهم ==========
+    
+    // 1. الفني (tech)
     if (userRole === "tech") {
-      const techAllowedPaths = ["/login", "/tech-portal", "/invoice"];
-      if (!techAllowedPaths.some(path => currentPath.startsWith(path))) {
+      const allowedPaths = ["/login", "/tech-portal", "/invoice"];
+      const isAllowed = allowedPaths.some(path => currentPath === path) || publicPaths.includes(currentPath);
+      if (!isAllowed && currentPath !== "/tech-portal") {
+        window.location.href = "/tech-portal";
+      }
+      if (currentPath === "/login") {
         window.location.href = "/tech-portal";
       }
       return;
     }
     
-    // إذا كان المستخدم مديرًا أو مستخدم عادي
-    if (userRole === "admin" || userRole === "user") {
-      // مسموح له بكل شيء ما عدا login إذا كان مسجلاً
+    // 2. موظف إدخال البيانات (data-entry)
+    if (userRole === "data-entry") {
+      const allowedPaths = ["/login", "/data-entry", "/orders", "/invoice"];
+      const isAllowed = allowedPaths.some(path => currentPath === path) || publicPaths.includes(currentPath);
+      if (!isAllowed) {
+        window.location.href = "/data-entry";
+      }
+      if (currentPath === "/login") {
+        window.location.href = "/data-entry";
+      }
+      return;
+    }
+    
+    // 3. مدير أو مدير عمليات أو مشاهد (admin, manager, viewer)
+    if (userRole === "admin" || userRole === "manager" || userRole === "viewer") {
       if (currentPath === "/login") {
         window.location.href = "/orders";
       }
       return;
     }
     
-    // إذا لم يكن مسجلاً، يسمح له بالصفحات العامة فقط
-    if (!userRole && !publicPaths.some(path => currentPath === path || currentPath.startsWith("/invoice"))) {
-      window.location.href = "/login";
-    }
+    // 4. أي دور غير معروف - تسجيل خروج
+    localStorage.clear();
+    window.location.href = "/login";
+    
   }, []);
 
   return (
