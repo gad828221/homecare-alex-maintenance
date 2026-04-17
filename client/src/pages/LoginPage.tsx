@@ -4,13 +4,6 @@ import { LogIn, User, Lock, AlertCircle } from 'lucide-react';
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
 
-// بيانات ثابتة للطوارئ (في حال فشل الاتصال بقاعدة البيانات)
-const FALLBACK_CREDENTIALS: Record<string, { password: string; role: string; name: string }> = {
-  admin: { password: '19882@retal', role: 'admin', name: 'مدير النظام' },
-  dataentry: { password: 'dataentry123', role: 'data-entry', name: 'موظف إدخال بيانات' },
-  tech: { password: 'tech123', role: 'tech', name: 'الفني' },
-};
-
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -23,48 +16,35 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // محاولة تسجيل الدخول عبر قاعدة البيانات أولاً
-      const res = await fetch(`${supabaseUrl}/rest/v1/users?select=*&username=eq.${username}&is_active=eq.true`, {
-        headers: {
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`
-        }
+      // 1. البحث في جدول users (للمدراء، مدخلي البيانات، المشاهدين)
+      const resUsers = await fetch(`${supabaseUrl}/rest/v1/users?select=*&username=eq.${username}&is_active=eq.true`, {
+        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
       });
-
-      if (res.ok) {
-        const users = await res.json();
-        if (users && users.length > 0 && users[0].password === password) {
-          const user = users[0];
-          localStorage.setItem('currentUser', JSON.stringify({
-            id: user.id,
-            username: user.username,
-            name: user.name,
-            role: user.role,
-          }));
-          localStorage.setItem('userRole', user.role);
-
-          // تحديث آخر دخول (غير ضروري للدخول)
-          fetch(`${supabaseUrl}/rest/v1/users?id=eq.${user.id}`, {
-            method: 'PATCH',
-            headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ last_login: new Date().toISOString() })
-          }).catch(() => {});
-
-          redirectUser(user.role);
-          return;
-        }
+      const users = await resUsers.json();
+      
+      if (users && users.length > 0 && users[0].password === password) {
+        const user = users[0];
+        localStorage.setItem('currentUser', JSON.stringify({
+          id: user.id, username: user.username, name: user.name, role: user.role
+        }));
+        localStorage.setItem('userRole', user.role);
+        redirectUser(user.role);
+        return;
       }
 
-      // إذا فشل Supabase، نستخدم البيانات الثابتة
-      const fallback = FALLBACK_CREDENTIALS[username];
-      if (fallback && fallback.password === password) {
+      // 2. إذا لم يجد في users، نبحث في جدول technicians (للفنيين)
+      const resTechs = await fetch(`${supabaseUrl}/rest/v1/technicians?select=*&username=eq.${username}&is_active=eq.true`, {
+        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
+      });
+      const techs = await resTechs.json();
+
+      if (techs && techs.length > 0 && techs[0].password === password) {
+        const tech = techs[0];
         localStorage.setItem('currentUser', JSON.stringify({
-          username: username,
-          name: fallback.name,
-          role: fallback.role,
+          id: tech.id, username: tech.username, name: tech.name, role: 'tech', techName: tech.name
         }));
-        localStorage.setItem('userRole', fallback.role);
-        redirectUser(fallback.role);
+        localStorage.setItem('userRole', 'tech');
+        redirectUser('tech');
         return;
       }
 
@@ -78,15 +58,14 @@ export default function LoginPage() {
   };
 
   const redirectUser = (role: string) => {
-    const redirectMap: Record<string, string> = {
+    const map: Record<string, string> = {
       'admin': '/orders',
       'manager': '/orders',
       'data-entry': '/data-entry',
       'tech': '/tech-portal',
       'viewer': '/orders',
     };
-    const path = redirectMap[role] || '/orders';
-    window.location.href = path;
+    window.location.href = map[role] || '/orders';
   };
 
   return (
