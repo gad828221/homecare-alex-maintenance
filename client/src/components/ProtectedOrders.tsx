@@ -235,7 +235,8 @@ export default function ProtectedOrders() {
       setCashLedger(data || []);
       const balance = (data || []).reduce((acc: number, entry: any) => {
         if (entry.type === 'income') return acc + entry.amount;
-        return acc - entry.amount;
+        if (entry.type === 'expense') return acc - entry.amount;
+        return acc;
       }, 0);
       setCashBalance(balance);
     } catch (err) { console.error(err); }
@@ -368,75 +369,119 @@ export default function ProtectedOrders() {
     }
   };
 
-  // ✅ دالة توزيع أرباح الشركاء (بدون تاريخ - توزع كل الأرباح غير الموزعة)
+  // ✅ دالة توزيع أرباح الشركاء (تلقائية - حسب مجموع نسب الشركاء)
   const distributePartnersProfit = async () => {
     try {
-      // 1. حساب جميع الأرباح غير الموزعة من الأوردرات المكتملة والمدفوعة
-      const undistributedOrders = orders.filter(order => {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // 1. حساب أرباح اليوم من الأوردرات المكتملة والمدفوعة
+      const todayOrders = orders.filter(order => {
+        const orderDate = order.date;
         const isCompleted = order.status === 'completed';
         const isPaid = order.is_paid === true;
         const hasProfit = (order.company_share || 0) > 0;
         const notDistributed = !order.profit_distributed_to_partners;
-        return isCompleted && isPaid && hasProfit && notDistributed;
+        return isCompleted && isPaid && hasProfit && notDistributed && orderDate === today;
       });
       
-      const totalUndistributedProfit = undistributedOrders.reduce((sum, order) => sum + (order.company_share || 0), 0);
+      const todayProfit = todayOrders.reduce((sum, order) => sum + (order.company_share || 0), 0);
       
-      if (totalUndistributedProfit <= 0) {
-        alert("⚠️ لا توجد أرباح غير موزعة من الأوردرات المكتملة والمدفوعة.");
+      if (todayProfit <= 0) {
+        alert(`⚠️ لا توجد أرباح للأوردرات المكتملة والمدفوعة اليوم (${today}).`);
         return;
       }
       
-      // 2. التحقق من وجود شركاء نشطين
+      // 2. جلب الشركاء النشطين
       const activePartners = (partners || []).filter(p => p.is_active === true);
       if (activePartners.length === 0) {
         alert("⚠️ لا يوجد شركاء نشطون لتوزيع الأرباح.");
         return;
       }
       
-      // 3. حساب إجمالي النسب المئوية
-      const totalShares = activePartners.reduce((sum, p) => sum + (Number(p.share_percentage) || 0), 0);
-      if (totalShares !== 100) {
-        if (!confirm(`⚠️ إجمالي نسب الشركاء (${totalShares}%) لا يساوي 100%. هل تريد الاستمرار؟`)) {
-          return;
-        }
-      }
+      // 3. حساب إجمالي نسب الشركاء (نسبة التصفية التلقائية)
+      const totalPartnerShares = activePartners.reduce((sum, p) => sum + (Number(p.share_percentage) || 0), 0);
       
-      // 4. تأكيد التوزيع
-      if (!confirm(`💰 سيتم توزيع ${totalUndistributedProfit.toLocaleString()} ج.م (إجمالي الأرباح غير الموزعة) على ${activePartners.length} شريك.\nهل تريد الاستمرار؟`)) {
+      if (totalPartnerShares <= 0) {
+        alert("⚠️ إجمالي نسب الشركاء لا يساوي قيمة موجبة.");
         return;
       }
       
-      // 5. توزيع الأرباح على الشركاء
-      for (const partner of activePartners) {
-        const shareAmount = Math.floor((totalUndistributedProfit * Number(partner.share_percentage)) / 100);
+      if (totalPartnerShares > 100) {
+        alert(`⚠️ إجمالي نسب الشركاء (${totalPartnerShares}%) يتجاوز 100%. الرجاء تعديل نسب الشركاء.`);
+        return;
+      }
+      
+      // 4. حساب المبلغ الموزع والباقي
+      const amountToDistribute = Math.floor((todayProfit * totalPartnerShares) / 100);
+      const remainingToSave = todayProfit - amountToDistribute;
+      
+      if (amountToDistribute <= 0) {
+        alert(`⚠️ لا يوجد مبلغ كافٍ للتوزيع (${totalPartnerShares}% من أرباح اليوم ${todayProfit} ج.م = ${amountToDistribute} ج.م).`);
+        return;
+      }
+      
+      // 5. تأكيد التوزيع
+      if (!confirm(`💰 أرباح اليوم (${today}): ${todayProfit.toLocaleString()} ج.م\n\n` +
+                    `📤 نسبة التصفية التلقائية: ${totalPartnerShares}% (مجموع نسب الشركاء النشطين)\n` +
+                    `💰 سيتم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء\n` +
+                    `🏦 سيتم إضافة ${remainingToSave.toLocaleString()} ج.م إلى رصيد الخزنة الاحتياطي (لصالح الشركة)\n\n` +
+                    `هل تريد الاستمرار؟`)) {
+        return;
+      }
+      
+      // 6. توزيع المبلغ على الشركاء
+      let distributedSum = 0;
+      for (let i = 0; i < activePartners.length; i++) {
+        const partner = activePartners[i];
+        let shareAmount;
+        
+        if (i === activePartners.length - 1) {
+          shareAmount = amountToDistribute - distributedSum;
+        } else {
+          shareAmount = Math.floor((amountToDistribute * Number(partner.share_percentage)) / totalPartnerShares);
+          distributedSum += shareAmount;
+        }
+        
         if (shareAmount > 0) {
           await fetchAPI('cash_ledger', {
             method: 'POST',
             body: JSON.stringify({
               type: 'profit_distribution',
               amount: shareAmount,
-              description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%) - أرباح أوردرات مكتملة ومدفوعة`,
-              date: new Date().toISOString().split('T')[0]
+              description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%) - أرباح يوم ${today}`,
+              date: today
             })
           });
           console.log(`✅ تم توزيع ${shareAmount} ج.م للشريك ${partner.name}`);
         }
       }
       
-      // 6. تحديث الأوردرات بعلم أنه تم توزيع أرباحها (منع التكرار)
-      for (const order of undistributedOrders) {
+      // 7. إضافة الباقي كرصيد احتياطي للشركة
+      if (remainingToSave > 0) {
+        await fetchAPI('cash_ledger', {
+          method: 'POST',
+          body: JSON.stringify({
+            type: 'reserve',
+            amount: remainingToSave,
+            description: `🏦 رصيد احتياطي للشركة (غير موزع) - أرباح يوم ${today} - نسبة التصفية: ${totalPartnerShares}%`,
+            date: today
+          })
+        });
+        console.log(`🏦 تم إضافة ${remainingToSave} ج.م إلى الرصيد الاحتياطي للشركة`);
+      }
+      
+      // 8. تحديث الأوردرات
+      for (const order of todayOrders) {
         await fetchAPI(`orders?id=eq.${order.id}`, {
           method: 'PATCH',
           body: JSON.stringify({ profit_distributed_to_partners: true })
         });
       }
       
-      // 7. تسجيل إشعار وتحديث الواجهة
-      await addNotification('توزيع أرباح الشركاء', `✅ تم توزيع ${totalUndistributedProfit.toLocaleString()} ج.م على الشركاء (${activePartners.length} شريك) بنجاح.`);
+      await addNotification('توزيع أرباح الشركاء', `✅ تم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء (${totalPartnerShares}% من أرباح يوم ${today}). تم احتساب ${remainingToSave.toLocaleString()} ج.م كرصيد احتياطي للشركة.`);
       await fetchCashLedger();
       await fetchData();
-      alert(`✅ تم توزيع ${totalUndistributedProfit.toLocaleString()} ج.م على الشركاء بنجاح.`);
+      alert(`✅ تم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء.\n\n🏦 تم إضافة ${remainingToSave.toLocaleString()} ج.م إلى رصيد الخزنة الاحتياطي (لصالح الشركة).`);
       
     } catch (err) {
       console.error("❌ خطأ في توزيع أرباح الشركاء:", err);
@@ -968,18 +1013,32 @@ export default function ProtectedOrders() {
         {activeTab === 'cash' && (
           <div className="space-y-4">
             <div className="flex justify-between items-center flex-wrap gap-3">
-              <div className="bg-emerald-500/20 p-4 rounded-2xl"><p className="text-slate-400">رصيد الخزنة</p><p className="text-3xl font-bold text-emerald-400">{cashBalance.toLocaleString()} ج.م</p></div>
-              <div className="flex gap-2">
+              <div className="bg-emerald-500/20 p-4 rounded-2xl">
+                <p className="text-slate-400">رصيد الخزنة</p>
+                <p className="text-3xl font-bold text-emerald-400">{cashBalance.toLocaleString()} ج.م</p>
+              </div>
+              <div className="flex gap-2 items-center flex-wrap">
                 <input type="date" value={cashFilterDate} onChange={e => setCashFilterDate(e.target.value)} className="bg-slate-800 p-2 rounded" />
                 <button onClick={() => setCashFilterDate('')} className="bg-slate-700 px-3 py-1 rounded text-sm">إلغاء الفلتر</button>
                 {canEditDelete() && (
                   <button onClick={() => { setEditingCash(null); setCashForm({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] }); setShowCashModal(true); }} className="bg-orange-600 px-4 py-2 rounded-xl text-sm">+ إضافة حركة</button>
                 )}
-                {canEditDelete() && (
-                  <button onClick={distributePartnersProfit} className="bg-purple-600 px-4 py-2 rounded-xl text-sm">📤 توزيع أرباح الشركاء</button>
-                )}
               </div>
             </div>
+            
+            {/* زر توزيع أرباح الشركاء - تلقائي */}
+            <div className="bg-purple-600/10 rounded-2xl p-4 flex justify-between items-center flex-wrap gap-3 border border-purple-500/30">
+              <div>
+                <p className="text-sm text-slate-400">توزيع أرباح الشركاء</p>
+                <p className="text-xs text-slate-500">يتم التوزيع تلقائياً حسب نسب الشركاء النشطين</p>
+              </div>
+              {canEditDelete() && (
+                <button onClick={distributePartnersProfit} className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-purple-600/20">
+                  📤 توزيع أرباح الشركاء (تلقائي)
+                </button>
+              )}
+            </div>
+            
             <div className="bg-slate-900 rounded-2xl overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-slate-800">
@@ -989,11 +1048,16 @@ export default function ProtectedOrders() {
                   {cashLedger.map(entry => (
                     <tr key={entry.id} className="border-b border-slate-800">
                       <td className="p-3">{entry.date}</td>
-                      <td>{entry.type === 'income' ? '💰 دخل' : entry.type === 'expense' ? '💸 مصروف' : '📤 توزيع أرباح'}</td>
-                      <td className={entry.type === 'income' ? 'text-green-400' : 'text-red-400'}>{entry.amount} ج.م</td>
+                      <td>
+                        {entry.type === 'income' ? '💰 دخل' : 
+                         entry.type === 'expense' ? '💸 مصروف' : 
+                         entry.type === 'profit_distribution' ? '📤 توزيع أرباح' :
+                         entry.type === 'reserve' ? '🏦 رصيد احتياطي' : '📤 توزيع أرباح'}
+                      </td>
+                      <td className={entry.type === 'income' || entry.type === 'reserve' ? 'text-green-400' : 'text-red-400'}>{entry.amount} ج.م</td>
                       <td className="max-w-xs break-words">{entry.description}</td>
                       <td className="flex gap-2">
-                        {canEditDelete() && (
+                        {canEditDelete() && entry.type !== 'profit_distribution' && entry.type !== 'reserve' && (
                           <>
                             <button onClick={() => { setEditingCash(entry); setCashForm(entry); setShowCashModal(true); }} className="text-blue-400"><Edit className="w-4 h-4" /></button>
                             <button onClick={() => deleteCashEntry(entry.id)} className="text-red-400"><Trash2 className="w-4 h-4" /></button>
