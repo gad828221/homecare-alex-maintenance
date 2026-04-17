@@ -323,7 +323,6 @@ export default function ProtectedOrders() {
       });
       
       if (response.ok) {
-        // ✅ تجنب خطأ "Unexpected end of JSON input"
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('application/json')) {
           try {
@@ -369,32 +368,33 @@ export default function ProtectedOrders() {
     }
   };
 
-  // ✅ دالة توزيع أرباح الشركاء المحسنة (تعتمد على أرباح الأوردرات الفعلية)
-  const distributeDailyProfit = async () => {
+  // ✅ دالة توزيع أرباح الشركاء (بدون تاريخ - توزع كل الأرباح غير الموزعة)
+  const distributePartnersProfit = async () => {
     try {
-      const today = new Date().toISOString().split('T')[0];
-      
-      const completedOrdersToday = orders.filter(order => {
-        const orderDate = order.date;
+      // 1. حساب جميع الأرباح غير الموزعة من الأوردرات المكتملة والمدفوعة
+      const undistributedOrders = orders.filter(order => {
         const isCompleted = order.status === 'completed';
         const isPaid = order.is_paid === true;
         const hasProfit = (order.company_share || 0) > 0;
-        return isCompleted && isPaid && hasProfit && orderDate === today;
+        const notDistributed = !order.profit_distributed_to_partners;
+        return isCompleted && isPaid && hasProfit && notDistributed;
       });
       
-      const totalTodayProfit = completedOrdersToday.reduce((sum, order) => sum + (order.company_share || 0), 0);
+      const totalUndistributedProfit = undistributedOrders.reduce((sum, order) => sum + (order.company_share || 0), 0);
       
-      if (totalTodayProfit <= 0) {
-        alert(`⚠️ لا توجد أرباح صافية للأوردرات المكتملة اليوم (${today}) للتوزيع.`);
+      if (totalUndistributedProfit <= 0) {
+        alert("⚠️ لا توجد أرباح غير موزعة من الأوردرات المكتملة والمدفوعة.");
         return;
       }
       
+      // 2. التحقق من وجود شركاء نشطين
       const activePartners = (partners || []).filter(p => p.is_active === true);
       if (activePartners.length === 0) {
         alert("⚠️ لا يوجد شركاء نشطون لتوزيع الأرباح.");
         return;
       }
       
+      // 3. حساب إجمالي النسب المئوية
       const totalShares = activePartners.reduce((sum, p) => sum + (Number(p.share_percentage) || 0), 0);
       if (totalShares !== 100) {
         if (!confirm(`⚠️ إجمالي نسب الشركاء (${totalShares}%) لا يساوي 100%. هل تريد الاستمرار؟`)) {
@@ -402,32 +402,44 @@ export default function ProtectedOrders() {
         }
       }
       
-      if (!confirm(`💰 سيتم توزيع ${totalTodayProfit.toLocaleString()} ج.م (أرباح اليوم من الأوردرات المكتملة) على ${activePartners.length} شريك.\nهل تريد الاستمرار؟`)) {
+      // 4. تأكيد التوزيع
+      if (!confirm(`💰 سيتم توزيع ${totalUndistributedProfit.toLocaleString()} ج.م (إجمالي الأرباح غير الموزعة) على ${activePartners.length} شريك.\nهل تريد الاستمرار؟`)) {
         return;
       }
       
+      // 5. توزيع الأرباح على الشركاء
       for (const partner of activePartners) {
-        const shareAmount = Math.floor((totalTodayProfit * Number(partner.share_percentage)) / 100);
+        const shareAmount = Math.floor((totalUndistributedProfit * Number(partner.share_percentage)) / 100);
         if (shareAmount > 0) {
           await fetchAPI('cash_ledger', {
             method: 'POST',
             body: JSON.stringify({
               type: 'profit_distribution',
               amount: shareAmount,
-              description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%) - تاريخ الأرباح: ${today}`,
-              date: today
+              description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%) - أرباح أوردرات مكتملة ومدفوعة`,
+              date: new Date().toISOString().split('T')[0]
             })
           });
           console.log(`✅ تم توزيع ${shareAmount} ج.م للشريك ${partner.name}`);
         }
       }
       
-      await addNotification('توزيع أرباح يومية', `✅ تم توزيع ${totalTodayProfit.toLocaleString()} ج.م على الشركاء (${activePartners.length} شريك) بنجاح.`);
+      // 6. تحديث الأوردرات بعلم أنه تم توزيع أرباحها (منع التكرار)
+      for (const order of undistributedOrders) {
+        await fetchAPI(`orders?id=eq.${order.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ profit_distributed_to_partners: true })
+        });
+      }
+      
+      // 7. تسجيل إشعار وتحديث الواجهة
+      await addNotification('توزيع أرباح الشركاء', `✅ تم توزيع ${totalUndistributedProfit.toLocaleString()} ج.م على الشركاء (${activePartners.length} شريك) بنجاح.`);
       await fetchCashLedger();
-      alert(`✅ تم توزيع ${totalTodayProfit.toLocaleString()} ج.م على الشركاء بنجاح.`);
+      await fetchData();
+      alert(`✅ تم توزيع ${totalUndistributedProfit.toLocaleString()} ج.م على الشركاء بنجاح.`);
       
     } catch (err) {
-      console.error("❌ خطأ في توزيع الأرباح:", err);
+      console.error("❌ خطأ في توزيع أرباح الشركاء:", err);
       alert("❌ حدث خطأ أثناء توزيع الأرباح. راجع Console.");
     }
   };
@@ -964,7 +976,7 @@ export default function ProtectedOrders() {
                   <button onClick={() => { setEditingCash(null); setCashForm({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] }); setShowCashModal(true); }} className="bg-orange-600 px-4 py-2 rounded-xl text-sm">+ إضافة حركة</button>
                 )}
                 {canEditDelete() && (
-                  <button onClick={distributeDailyProfit} className="bg-purple-600 px-4 py-2 rounded-xl text-sm">📤 توزيع أرباح اليوم</button>
+                  <button onClick={distributePartnersProfit} className="bg-purple-600 px-4 py-2 rounded-xl text-sm">📤 توزيع أرباح الشركاء</button>
                 )}
               </div>
             </div>
