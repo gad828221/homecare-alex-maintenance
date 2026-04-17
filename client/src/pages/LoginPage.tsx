@@ -18,6 +18,7 @@ export default function Login() {
 
     try {
       if (role === 'admin') {
+        // تسجيل دخول المدير أو المستخدم العادي
         const res = await fetch(`${supabaseUrl}/rest/v1/users?select=*&username=eq.${encodeURIComponent(username)}`, {
           headers: {
             'apikey': supabaseKey,
@@ -29,8 +30,22 @@ export default function Login() {
         const data = await res.json();
         
         if (data && data.length > 0 && data[0].password === password) {
-          localStorage.setItem('currentUser', JSON.stringify(data[0]));
-          localStorage.setItem('userRole', data[0].role);
+          const user = data[0];
+          if (user.is_active === false) {
+            setError('❌ الحساب غير نشط. يرجى التواصل مع الإدارة.');
+            setLoading(false);
+            return;
+          }
+          
+          localStorage.setItem('currentUser', JSON.stringify({
+            id: user.id,
+            username: user.username,
+            name: user.name,
+            role: user.role
+          }));
+          localStorage.setItem('userRole', user.role);
+          
+          console.log("✅ تم تسجيل دخول المدير:", user.name);
           window.location.href = '/orders';
         } else {
           setError('❌ اسم المستخدم أو كلمة المرور غير صحيحة');
@@ -49,14 +64,26 @@ export default function Login() {
         
         if (data && data.length > 0 && data[0].password === password) {
           const tech = data[0];
+          if (tech.is_active === false) {
+            setError('❌ الحساب غير نشط. يرجى التواصل مع الإدارة.');
+            setLoading(false);
+            return;
+          }
+          
           localStorage.setItem('currentUser', JSON.stringify({
             id: tech.id,
             username: tech.username,
             name: tech.name,
-            role: 'tech'
+            role: 'tech',
+            techName: tech.name
           }));
           localStorage.setItem('userRole', 'tech');
+          localStorage.setItem('techName', tech.name);
+          
           console.log("✅ تم تسجيل دخول الفني:", tech.name);
+          console.log("📦 localStorage - userRole:", localStorage.getItem('userRole'));
+          console.log("📦 localStorage - currentUser:", localStorage.getItem('currentUser'));
+          
           window.location.href = '/tech-portal';
         } else {
           setError('❌ اسم المستخدم أو كلمة المرور غير صحيحة');
@@ -81,6 +108,7 @@ export default function Login() {
           <p className="text-slate-400 text-sm mt-1">نظام إدارة الصيانة</p>
         </div>
 
+        {/* اختيار الدور */}
         <div className="flex gap-3 mb-6">
           <button
             type="button"
