@@ -328,6 +328,38 @@ const addCompanyProfitToCash = async (order: any) => {
   }
 };
   
+  const togglePaidStatus = async (id: number, currentStatus: boolean) => {
+  const order = orders.find(o => o.id === id);
+  if (!order) return;
+
+  try {
+    // تحديث حالة الدفع في قاعدة البيانات
+    await fetchAPI(`orders?id=eq.${id}`, { 
+      method: 'PATCH', 
+      body: JSON.stringify({ is_paid: !currentStatus }) 
+    });
+    
+    await addNotification('تحديث حالة الدفع', `✅ تم تحديث حالة تحصيل أوردر ${order.customer_name} إلى ${!currentStatus ? 'تم التحصيل' : 'لم يتم التحصيل'}`);
+    
+    // تحديث البيانات محلياً
+    const updatedOrder = { ...order, is_paid: !currentStatus };
+    
+    // إذا تم التحصيل الآن والأوردر مكتمل
+    if (!currentStatus && order.status === 'completed') {
+      console.log("💰 محاولة إضافة أرباح للخزنة...");
+      const added = await addCompanyProfitToCash(updatedOrder);
+      if (!added) {
+        console.log("⚠️ فشل إضافة الأرباح، تحقق من console أعلاه");
+      }
+    } else {
+      console.log("ℹ️ لم تتم إضافة أرباح: is_paid devient", !currentStatus, "status:", order.status);
+    }
+    
+    fetchData();
+  } catch (err) { 
+    console.error("خطأ في تحديث حالة الدفع:", err); 
+  }
+};
 
   const distributeDailyProfit = async () => {
     try {
