@@ -6,9 +6,15 @@ import {
   Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut
 } from "lucide-react";
 import AdminPermissions from './AdminPermissions';
+import { supabase } from '../lib/supabaseClient'; // تأكد من مسار الاستيراد الصحيح
 
+// const supabaseUrl و supabaseKey يمكن استيرادهما من supabaseClient أو تعريفهما هنا
+// لكن الأفضل استخدام supabase من العميل الجاهز
+// إذا لم يكن لديك supabaseClient، استخدم التعريفات التالية:
+/*
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
+*/
 
 const DEVICE_TYPES = ['غسالة', 'ثلاجة', 'بوتاجاز', 'سخان', 'تكييف', 'ميكروويف', 'غسالة أطباق'];
 const BRANDS = ['سامسونج', 'LG', 'شارب', 'توشيبا', 'زانوسي', 'يونيون إير', 'فريش', 'وايت ويل', 'أريستون', 'بيكو', 'هوفر', 'إنديست'];
@@ -123,6 +129,24 @@ export default function ProtectedOrders() {
     }
     setCurrentUser(JSON.parse(storedUser));
     setUserRole(role || 'user');
+  }, []);
+
+  // ✅ مستمع تغييرات حالة المصادقة (لحل مشكلة بقاء المستخدم القديم)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = '/login';
+      }
+      if (event === 'SIGNED_IN' && session) {
+        // تحديث localStorage إذا لزم الأمر
+        localStorage.setItem('currentUser', JSON.stringify(session.user));
+        // إعادة تحميل الصفحة لضمان تحديث كل شيء
+        window.location.reload();
+      }
+    });
+    return () => subscription?.unsubscribe();
   }, []);
 
   const canEditDelete = () => {
@@ -247,96 +271,100 @@ export default function ProtectedOrders() {
     }
   };
 
-  // ✅ دالة إضافة أرباح الشركة إلى الخزنة (مباشرة بدون fetchAPI)
-const addCompanyProfitToCash = async (order: any) => {
-  const companyShare = order.company_share || 0;
-  
-  console.log("🔍 محاولة إضافة أرباح للخزنة:", {
-    companyShare,
-    is_paid: order.is_paid,
-    status: order.status,
-    customer: order.customer_name,
-    order_id: order.id,
-    order_number: order.order_number
-  });
-  
-  // التحقق من عدم إضافة الأرباح مسبقاً
-  if (order.profit_added_to_cash) {
-    console.log("⚠️ تم إضافة أرباح هذا الأوردر مسبقاً");
-    alert("⚠️ تم إضافة أرباح هذا الأوردر للخزنة مسبقاً");
-    return false;
-  }
-  
-  if (companyShare <= 0) {
-    console.log("❌ لا توجد أرباح للشركة");
-    alert("❌ لا توجد أرباح للشركة (company_share = 0)");
-    return false;
-  }
-  
-  if (!order.is_paid) {
-    console.log("❌ الأوردر لم يتم تحصيله بعد");
-    alert("❌ الأوردر لم يتم تحصيله بعد. قم بتفعيل التحصيل أولاً.");
-    return false;
-  }
-  
-  if (order.status !== 'completed') {
-    console.log("❌ الأوردر لم يكتمل بعد");
-    alert("❌ الأوردر لم يكتمل بعد. غير الحالة إلى مكتمل أولاً.");
-    return false;
-  }
-  
-  try {
-    const today = new Date().toISOString().split('T')[0];
+  // ✅ دالة إضافة أرباح الشركة إلى الخزنة (محسنة)
+  const addCompanyProfitToCash = async (order: any) => {
+    const companyShare = order.company_share || 0;
     
-    // استخدام fetch مباشرة بدلاً من fetchAPI
-    const response = await fetch(`${supabaseUrl}/rest/v1/cash_ledger`, {
-      method: 'POST',
-      headers: {
-        'apikey': supabaseKey,
-        'Authorization': `Bearer ${supabaseKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        type: 'income',
-        amount: companyShare,
-        description: `أرباح شركة من أوردر ${order.customer_name} (رقم ${order.order_number})`,
-        date: today
-      })
+    console.log("🔍 محاولة إضافة أرباح للخزنة:", {
+      companyShare,
+      is_paid: order.is_paid,
+      status: order.status,
+      customer: order.customer_name,
+      order_id: order.id,
+      order_number: order.order_number,
+      profit_added_to_cash: order.profit_added_to_cash
     });
     
-    if (response.ok) {
-      const result = await response.json();
-      console.log(`✅ تم إضافة ${companyShare} ج.م للخزنة`, result);
+    // التحقق من عدم إضافة الأرباح مسبقاً
+    if (order.profit_added_to_cash) {
+      console.log("⚠️ تم إضافة أرباح هذا الأوردر مسبقاً");
+      alert("⚠️ تم إضافة أرباح هذا الأوردر للخزنة مسبقاً");
+      return false;
+    }
+    
+    if (companyShare <= 0) {
+      console.log("❌ لا توجد أرباح للشركة");
+      alert("❌ لا توجد أرباح للشركة (company_share = 0)");
+      return false;
+    }
+    
+    if (!order.is_paid) {
+      console.log("❌ الأوردر لم يتم تحصيله بعد");
+      alert("❌ الأوردر لم يتم تحصيله بعد. قم بتفعيل التحصيل أولاً.");
+      return false;
+    }
+    
+    if (order.status !== 'completed') {
+      console.log("❌ الأوردر لم يكتمل بعد");
+      alert("❌ الأوردر لم يكتمل بعد. غير الحالة إلى مكتمل أولاً.");
+      return false;
+    }
+    
+    try {
+      const today = new Date().toISOString().split('T')[0];
       
-      // تحديث الأوردر بعلم أن الربح تم إضافته
-      await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${order.id}`, {
-        method: 'PATCH',
+      // إضافة سجل في cash_ledger
+      const response = await fetch(`${supabaseUrl}/rest/v1/cash_ledger`, {
+        method: 'POST',
         headers: {
           'apikey': supabaseKey,
           'Authorization': `Bearer ${supabaseKey}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ profit_added_to_cash: true })
+        body: JSON.stringify({
+          type: 'income',
+          amount: companyShare,
+          description: `أرباح شركة من أوردر ${order.customer_name} (رقم ${order.order_number})`,
+          date: today
+        })
       });
       
-      await addNotification('إضافة أرباح للخزنة', `✅ تم إضافة ${companyShare} ج.م للخزنة من أوردر ${order.order_number} (${order.customer_name})`);
-      await fetchCashLedger();
-      await fetchData();
-      console.log(`✅ تم تحديث الخزنة والأوردرات بنجاح`);
-      return true;
-    } else {
-      const error = await response.text();
-      console.error("❌ خطأ من Supabase:", error);
-      alert(`❌ فشل إضافة الأرباح: ${error}`);
+      if (response.ok) {
+        const result = await response.json();
+        console.log(`✅ تم إضافة ${companyShare} ج.م للخزنة`, result);
+        
+        // تحديث الأوردر بعلم أن الربح تم إضافته
+        const updateRes = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${order.id}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ profit_added_to_cash: true })
+        });
+        
+        if (!updateRes.ok) {
+          console.warn("⚠️ تمت إضافة الربح ولكن فشل تحديث profit_added_to_cash");
+        }
+        
+        await addNotification('إضافة أرباح للخزنة', `✅ تم إضافة ${companyShare} ج.م للخزنة من أوردر ${order.order_number} (${order.customer_name})`);
+        await fetchCashLedger();
+        await fetchData();
+        console.log(`✅ تم تحديث الخزنة والأوردرات بنجاح`);
+        return true;
+      } else {
+        const error = await response.text();
+        console.error("❌ خطأ من Supabase:", error);
+        alert(`❌ فشل إضافة الأرباح: ${error}`);
+        return false;
+      }
+    } catch (err) {
+      console.error("❌ خطأ في الشبكة:", err);
+      alert(`❌ حدث خطأ في الاتصال: ${err.message}`);
       return false;
     }
-  } catch (err) {
-    console.error("❌ خطأ في الشبكة:", err);
-    alert(`❌ حدث خطأ في الاتصال: ${err.message}`);
-    return false;
-  }
-};
-  
+  };
 
   const distributeDailyProfit = async () => {
     try {
@@ -485,6 +513,7 @@ const addCompanyProfitToCash = async (order: any) => {
     window.open(url, '_blank');
   };
 
+  // ✅ تحديث حالة الأوردر (محسن)
   const updateOrderStatus = async (id: number, newStatus: string) => {
     const order = orders.find(o => o.id === id);
     if (!order) return;
@@ -497,46 +526,43 @@ const addCompanyProfitToCash = async (order: any) => {
       
       await addNotification('تغيير حالة أوردر', `🔄 تم تغيير حالة أوردر ${order.customer_name} إلى ${newStatus}`);
       
-      if (newStatus === 'completed' && order.is_paid) {
-        await addCompanyProfitToCash(order);
+      // إنشاء نسخة محدثة من order
+      const updatedOrder = { ...order, status: newStatus };
+      
+      if (newStatus === 'completed' && order.is_paid && !order.profit_added_to_cash) {
+        await addCompanyProfitToCash(updatedOrder);
       }
       
       sendWhatsAppToCustomer(order, newStatus);
-      fetchData();
+      await fetchData();
     } catch (err) { 
       console.error("خطأ في تحديث حالة الأوردر:", err); 
     }
   };
 
-  // ✅ تغيير حالة التحصيل مع إضافة الأرباح للخزنة
+  // ✅ تغيير حالة التحصيل مع إضافة الأرباح للخزنة (محسن)
   const togglePaidStatus = async (id: number, currentStatus: boolean) => {
     const order = orders.find(o => o.id === id);
     if (!order) return;
 
+    const newPaidStatus = !currentStatus;
+    
     try {
-      // إذا كان الأوردر مكتمل وهناك أرباح ولم تضف بعد
-      if (!currentStatus && order.status === 'completed' && order.company_share > 0 && !order.profit_added_to_cash) {
-        const shouldAddProfit = confirm(`هل تريد إضافة أرباح هذا الأوردر (${order.company_share} ج.م) للخزنة بالفور?`);
-        if (!shouldAddProfit) {
-          return;
-        }
-      }
-      
       await fetchAPI(`orders?id=eq.${id}`, { 
         method: 'PATCH', 
-        body: JSON.stringify({ is_paid: !currentStatus }) 
+        body: JSON.stringify({ is_paid: newPaidStatus }) 
       });
       
-      await addNotification('تحديث حالة الدفع', `✅ تم تحديث حالة تحصيل أوردر ${order.customer_name} إلى ${!currentStatus ? 'تم التحصيل' : 'لم يتم التحصيل'}`);
+      await addNotification('تحديث حالة الدفع', `✅ تم تحديث حالة تحصيل أوردر ${order.customer_name} إلى ${newPaidStatus ? 'تم التحصيل' : 'لم يتم التحصيل'}`);
       
-      if (!currentStatus && order.status === 'completed') {
-        const added = await addCompanyProfitToCash(order);
-        if (!added) {
-          console.warn('تحذير: لم يتم إضافة الأرباح للخزنة');
-        }
+      // إنشاء نسخة محدثة من order
+      const updatedOrder = { ...order, is_paid: newPaidStatus };
+      
+      if (newPaidStatus && order.status === 'completed' && !order.profit_added_to_cash) {
+        await addCompanyProfitToCash(updatedOrder);
       }
       
-      fetchData();
+      await fetchData();
     } catch (err) { 
       console.error("خطأ في تحديث حالة الدفع:", err); 
     }
@@ -709,6 +735,7 @@ const addCompanyProfitToCash = async (order: any) => {
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
+  
   const copyOrder = async (order: any) => {
     if (!canEditDelete()) {
       alert("⚠️ ليس لديك صلاحية لنسخ الأوردرات");
