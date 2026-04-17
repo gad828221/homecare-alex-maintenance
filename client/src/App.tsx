@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Login from "./pages/Login";
+import Login from "./pages/LoginPage";
 import TechPortal from "./pages/TechnicianPortal";
 import DataEntry from "./pages/DataEntryPage";
 import NotFound from "@/pages/NotFound";
