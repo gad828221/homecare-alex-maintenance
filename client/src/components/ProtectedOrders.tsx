@@ -134,7 +134,7 @@ export default function ProtectedOrders() {
     window.location.href = "/login";
   };
 
-  // ✅ دالة تنسيق رقم الهاتف لواتساب (معدلة)
+  // ✅ دالة تنسيق رقم الهاتف لواتساب
   const formatPhoneForWhatsApp = (phone: string) => {
     if (!phone) return '';
     let cleaned = phone.toString().replace(/[^\d]/g, '');
@@ -143,7 +143,7 @@ export default function ProtectedOrders() {
     return cleaned;
   };
 
-  // ✅ إرسال واتساب للعميل عند إضافة أوردر جديد (تأكيد الحجز)
+  // ✅ إرسال واتساب للعميل عند إضافة أوردر جديد
   const sendWhatsAppToCustomerOnCreate = (order: any) => {
     const phone = formatPhoneForWhatsApp(order.phone);
     if (!phone) {
@@ -249,18 +249,27 @@ export default function ProtectedOrders() {
   // ✅ دالة إضافة أرباح الشركة إلى الخزنة (معدلة ومضمونة)
   const addCompanyProfitToCash = async (order: any) => {
     const companyShare = order.company_share || 0;
+    
+    console.log("🔍 محاولة إضافة أرباح للخزنة:", {
+      companyShare,
+      is_paid: order.is_paid,
+      status: order.status,
+      customer: order.customer_name,
+      order_id: order.id
+    });
+    
     if (companyShare <= 0) {
-      console.log("لا توجد أرباح للشركة");
+      console.log("❌ لا توجد أرباح للشركة (company_share = 0)");
       return false;
     }
     
     if (!order.is_paid) {
-      console.log("الأوردر لم يتم تحصيله بعد");
+      console.log("❌ الأوردر لم يتم تحصيله بعد (is_paid = false)");
       return false;
     }
     
     if (order.status !== 'completed') {
-      console.log("الأوردر لم يكتمل بعد");
+      console.log("❌ الأوردر لم يكتمل بعد (status =", order.status, ")");
       return false;
     }
     
@@ -288,11 +297,13 @@ export default function ProtectedOrders() {
         return true;
       } else {
         const error = await result.text();
-        console.error("خطأ في إضافة الخزنة:", error);
+        console.error("❌ خطأ في إضافة الخزنة:", error);
+        alert(`❌ فشل إضافة ${companyShare} ج.م إلى الخزنة: ${error}`);
         return false;
       }
     } catch (err) {
-      console.error("خطأ في إضافة الأرباح للخزنة:", err);
+      console.error("❌ خطأ في إضافة الأرباح للخزنة:", err);
+      alert(`❌ حدث خطأ أثناء إضافة الأرباح: ${err.message}`);
       return false;
     }
   };
@@ -456,7 +467,6 @@ export default function ProtectedOrders() {
       
       await addNotification('تغيير حالة أوردر', `🔄 تم تغيير حالة أوردر ${order.customer_name} إلى ${newStatus}`);
       
-      // إذا أصبح الأوردر مكتمل وهو مدفوع أصلاً
       if (newStatus === 'completed' && order.is_paid) {
         await addCompanyProfitToCash(order);
       }
@@ -468,7 +478,7 @@ export default function ProtectedOrders() {
     }
   };
 
-  // ✅ تغيير حالة التحصيل مع إضافة الأرباح للخزنة (معدلة)
+  // ✅ تغيير حالة التحصيل مع إضافة الأرباح للخزنة
   const togglePaidStatus = async (id: number, currentStatus: boolean) => {
     const order = orders.find(o => o.id === id);
     if (!order) return;
@@ -481,13 +491,10 @@ export default function ProtectedOrders() {
       
       await addNotification('تحديث حالة الدفع', `✅ تم تحديث حالة تحصيل أوردر ${order.customer_name} إلى ${!currentStatus ? 'تم التحصيل' : 'لم يتم التحصيل'}`);
       
-      // إذا تم التحصيل الآن والأوردر مكتمل
       if (!currentStatus && order.status === 'completed') {
         const added = await addCompanyProfitToCash(order);
         if (added) {
           alert(`✅ تم إضافة ${order.company_share} ج.م إلى الخزنة`);
-        } else {
-          alert(`⚠️ فشل إضافة ${order.company_share} ج.م إلى الخزنة. تحقق من وحدة التحكم.`);
         }
       }
       
@@ -568,7 +575,6 @@ export default function ProtectedOrders() {
         await addNotification('إضافة أوردر', `تم إضافة أوردر جديد للعميل ${formData.customer_name}`);
         alert("✅ تم إضافة الأوردر بنجاح");
         
-        // ✅ إرسال واتساب تأكيد للعميل عند إضافة أوردر جديد
         sendWhatsAppToCustomerOnCreate(orderToSave);
       }
       setShowOrderModal(false);
