@@ -6,15 +6,9 @@ import {
   Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut
 } from "lucide-react";
 import AdminPermissions from './AdminPermissions';
-import { createClient } from '@supabase/supabase-js';
 
-// ============================================================
-// تعريف عميل Supabase مباشرة
-// ============================================================
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
-const supabase = createClient(supabaseUrl, supabaseKey);
-// ============================================================
 
 const DEVICE_TYPES = ['غسالة', 'ثلاجة', 'بوتاجاز', 'سخان', 'تكييف', 'ميكروويف', 'غسالة أطباق'];
 const BRANDS = ['سامسونج', 'LG', 'شارب', 'توشيبا', 'زانوسي', 'يونيون إير', 'فريش', 'وايت ويل', 'أريستون', 'بيكو', 'هوفر', 'إنديست'];
@@ -63,6 +57,52 @@ const addNotification = async (action: string, details: string) => {
     });
   } catch (err) {
     console.error("خطأ في تسجيل الإشعار:", err);
+  }
+};
+
+// دالة لمزامنة الفنيين من technicians إلى users (تلقائياً)
+const syncTechniciansToUsers = async () => {
+  try {
+    const techs = await fetchAPI('technicians?select=*');
+    if (!techs || techs.length === 0) return;
+
+    for (const tech of techs) {
+      const userData = {
+        username: tech.username,
+        password: tech.password,
+        name: tech.name,
+        phone: tech.phone || '',
+        role: 'tech',
+        is_active: tech.is_active
+      };
+      
+      // محاولة تحديث إذا كان موجوداً
+      const updateRes = await fetch(`${supabaseUrl}/rest/v1/users?username=eq.${tech.username}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(userData)
+      });
+      
+      // إذا لم يكن موجوداً (404) نقوم بالإضافة
+      if (updateRes.status === 404) {
+        await fetch(`${supabaseUrl}/rest/v1/users`, {
+          method: 'POST',
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(userData)
+        });
+      }
+    }
+    console.log("✅ تمت مزامنة الفنيين مع جدول users");
+  } catch (err) {
+    console.error("❌ فشل مزامنة الفنيين:", err);
   }
 };
 
@@ -128,25 +168,6 @@ export default function ProtectedOrders() {
     }
     setCurrentUser(JSON.parse(storedUser));
     setUserRole(role || 'user');
-  }, []);
-
-  useEffect(() => {
-    if (!supabase || !supabase.auth) {
-      console.error("⚠️ supabase.auth غير متاح!");
-      return;
-    }
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT') {
-        localStorage.clear();
-        sessionStorage.clear();
-        window.location.href = '/login';
-      }
-      if (event === 'SIGNED_IN' && session) {
-        localStorage.setItem('currentUser', JSON.stringify(session.user));
-        window.location.reload();
-      }
-    });
-    return () => subscription?.unsubscribe();
   }, []);
 
   const canEditDelete = () => userRole === 'admin';
@@ -267,7 +288,6 @@ export default function ProtectedOrders() {
     }
   };
 
-  // ✅ دالة إضافة أرباح الشركة إلى الخزنة (محسنة - تتعامل مع الاستجابات الفارغة)
   const addCompanyProfitToCash = async (order: any) => {
     const companyShare = order.company_share || 0;
     
@@ -324,19 +344,7 @@ export default function ProtectedOrders() {
       });
       
       if (response.ok) {
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          try {
-            const result = await response.json();
-            console.log(`✅ تم إضافة ${companyShare} ج.م للخزنة`, result);
-          } catch (e) {
-            console.log("⚠️ استجابة JSON فارغة (ولكن العملية نجحت)");
-          }
-        } else {
-          console.log("⚠️ استجابة بدون JSON (ولكن العملية نجحت)");
-        }
-        
-        const updateRes = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${order.id}`, {
+        await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${order.id}`, {
           method: 'PATCH',
           headers: {
             'apikey': supabaseKey,
@@ -345,12 +353,6 @@ export default function ProtectedOrders() {
           },
           body: JSON.stringify({ profit_added_to_cash: true })
         });
-        
-        if (!updateRes.ok) {
-          console.warn("⚠️ تمت إضافة الربح ولكن فشل تحديث profit_added_to_cash");
-        } else {
-          console.log("✅ تم تحديث profit_added_to_cash بنجاح");
-        }
         
         await addNotification('إضافة أرباح للخزنة', `✅ تم إضافة ${companyShare} ج.م للخزنة من أوردر ${order.order_number} (${order.customer_name})`);
         await fetchCashLedger();
@@ -369,123 +371,58 @@ export default function ProtectedOrders() {
     }
   };
 
-  // ✅ دالة توزيع أرباح الشركاء (تلقائية - حسب مجموع نسب الشركاء)
-  const distributePartnersProfit = async () => {
+  const distributeDailyProfit = async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      // 1. حساب أرباح اليوم من الأوردرات المكتملة والمدفوعة
-      const todayOrders = orders.filter(order => {
-        const orderDate = order.date;
-        const isCompleted = order.status === 'completed';
-        const isPaid = order.is_paid === true;
-        const hasProfit = (order.company_share || 0) > 0;
-        const notDistributed = !order.profit_distributed_to_partners;
-        return isCompleted && isPaid && hasProfit && notDistributed && orderDate === today;
-      });
+      const alreadyDistributed = (cashLedger || []).some(c => c.date === today && c.type === 'profit_distribution');
+      if (alreadyDistributed) {
+        if (!confirm("⚠️ تم توزيع أرباح اليوم بالفعل. هل تريد التوزيع مرة أخرى؟")) {
+          return;
+        }
+      }
+
+      const todayIncome = (cashLedger || []).filter(c => c.date === today && c.type === 'income').reduce((sum, c) => sum + Number(c.amount), 0);
+      const todayExpenses = (cashLedger || []).filter(c => c.date === today && c.type === 'expense').reduce((sum, c) => sum + Number(c.amount), 0);
+      const netProfit = todayIncome - todayExpenses;
       
-      const todayProfit = todayOrders.reduce((sum, order) => sum + (order.company_share || 0), 0);
-      
-      if (todayProfit <= 0) {
-        alert(`⚠️ لا توجد أرباح للأوردرات المكتملة والمدفوعة اليوم (${today}).`);
+      if (netProfit <= 0) {
+        alert(`⚠️ لا توجد أرباح صافية اليوم للتوزيع.`);
         return;
       }
       
-      // 2. جلب الشركاء النشطين
       const activePartners = (partners || []).filter(p => p.is_active === true);
       if (activePartners.length === 0) {
-        alert("⚠️ لا يوجد شركاء نشطون لتوزيع الأرباح.");
+        alert("⚠️ لا يوجد شركاء نشطون");
         return;
       }
       
-      // 3. حساب إجمالي نسب الشركاء (نسبة التصفية التلقائية)
-      const totalPartnerShares = activePartners.reduce((sum, p) => sum + (Number(p.share_percentage) || 0), 0);
-      
-      if (totalPartnerShares <= 0) {
-        alert("⚠️ إجمالي نسب الشركاء لا يساوي قيمة موجبة.");
+      if (!confirm(`💰 سيتم توزيع ${netProfit.toLocaleString()} ج.م على ${activePartners.length} شريك. هل تريد الاستمرار؟`)) {
         return;
       }
-      
-      if (totalPartnerShares > 100) {
-        alert(`⚠️ إجمالي نسب الشركاء (${totalPartnerShares}%) يتجاوز 100%. الرجاء تعديل نسب الشركاء.`);
-        return;
-      }
-      
-      // 4. حساب المبلغ الموزع والباقي
-      const amountToDistribute = Math.floor((todayProfit * totalPartnerShares) / 100);
-      const remainingToSave = todayProfit - amountToDistribute;
-      
-      if (amountToDistribute <= 0) {
-        alert(`⚠️ لا يوجد مبلغ كافٍ للتوزيع (${totalPartnerShares}% من أرباح اليوم ${todayProfit} ج.م = ${amountToDistribute} ج.م).`);
-        return;
-      }
-      
-      // 5. تأكيد التوزيع
-      if (!confirm(`💰 أرباح اليوم (${today}): ${todayProfit.toLocaleString()} ج.م\n\n` +
-                    `📤 نسبة التصفية التلقائية: ${totalPartnerShares}% (مجموع نسب الشركاء النشطين)\n` +
-                    `💰 سيتم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء\n` +
-                    `🏦 سيتم إضافة ${remainingToSave.toLocaleString()} ج.م إلى رصيد الخزنة الاحتياطي (لصالح الشركة)\n\n` +
-                    `هل تريد الاستمرار؟`)) {
-        return;
-      }
-      
-      // 6. توزيع المبلغ على الشركاء
-      let distributedSum = 0;
-      for (let i = 0; i < activePartners.length; i++) {
-        const partner = activePartners[i];
-        let shareAmount;
-        
-        if (i === activePartners.length - 1) {
-          shareAmount = amountToDistribute - distributedSum;
-        } else {
-          shareAmount = Math.floor((amountToDistribute * Number(partner.share_percentage)) / totalPartnerShares);
-          distributedSum += shareAmount;
-        }
-        
+
+      for (const partner of activePartners) {
+        const shareAmount = Math.floor((netProfit * Number(partner.share_percentage)) / 100);
         if (shareAmount > 0) {
           await fetchAPI('cash_ledger', {
             method: 'POST',
             body: JSON.stringify({
               type: 'profit_distribution',
               amount: shareAmount,
-              description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%) - أرباح يوم ${today}`,
+              description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%) - ${today}`,
               date: today
             })
           });
-          console.log(`✅ تم توزيع ${shareAmount} ج.م للشريك ${partner.name}`);
         }
       }
       
-      // 7. إضافة الباقي كرصيد احتياطي للشركة
-      if (remainingToSave > 0) {
-        await fetchAPI('cash_ledger', {
-          method: 'POST',
-          body: JSON.stringify({
-            type: 'reserve',
-            amount: remainingToSave,
-            description: `🏦 رصيد احتياطي للشركة (غير موزع) - أرباح يوم ${today} - نسبة التصفية: ${totalPartnerShares}%`,
-            date: today
-          })
-        });
-        console.log(`🏦 تم إضافة ${remainingToSave} ج.م إلى الرصيد الاحتياطي للشركة`);
-      }
-      
-      // 8. تحديث الأوردرات
-      for (const order of todayOrders) {
-        await fetchAPI(`orders?id=eq.${order.id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ profit_distributed_to_partners: true })
-        });
-      }
-      
-      await addNotification('توزيع أرباح الشركاء', `✅ تم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء (${totalPartnerShares}% من أرباح يوم ${today}). تم احتساب ${remainingToSave.toLocaleString()} ج.م كرصيد احتياطي للشركة.`);
+      await addNotification('توزيع أرباح يومية', `✅ تم توزيع ${netProfit.toLocaleString()} ج.م على الشركاء`);
       await fetchCashLedger();
-      await fetchData();
-      alert(`✅ تم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء.\n\n🏦 تم إضافة ${remainingToSave.toLocaleString()} ج.م إلى رصيد الخزنة الاحتياطي (لصالح الشركة).`);
+      alert(`✅ تم توزيع ${netProfit.toLocaleString()} ج.م على الشركاء`);
       
     } catch (err) {
-      console.error("❌ خطأ في توزيع أرباح الشركاء:", err);
-      alert("❌ حدث خطأ أثناء توزيع الأرباح. راجع Console.");
+      console.error("خطأ في توزيع الأرباح:", err);
+      alert("❌ حدث خطأ أثناء توزيع الأرباح");
     }
   };
 
@@ -553,14 +490,26 @@ export default function ProtectedOrders() {
 
   const sendWhatsAppToCustomer = (order: any, newStatus: string) => {
     const phone = formatPhoneForWhatsApp(order.phone);
-    if (!phone) return;
+    if (!phone) {
+      console.error("رقم الهاتف غير صالح:", order.phone);
+      return;
+    }
     let statusMessage = "";
     switch (newStatus) {
-      case 'in-progress': statusMessage = "🔧 تم بدء العمل على طلبك بواسطة الفني."; break;
-      case 'inspected': statusMessage = "🔍 تم الكشف على جهازك. سيتم إبلاغك بالخطوات التالية."; break;
-      case 'completed': statusMessage = "✅ تم إكمال طلب الصيانة بنجاح. شكراً لثقتك بنا!"; break;
-      case 'cancelled': statusMessage = "❌ تم إلغاء طلب الصيانة. للاستفسار، يرجى الاتصال بنا."; break;
-      default: return;
+      case 'in-progress':
+        statusMessage = "🔧 تم بدء العمل على طلبك بواسطة الفني.";
+        break;
+      case 'inspected':
+        statusMessage = "🔍 تم الكشف على جهازك. سيتم إبلاغك بالخطوات التالية.";
+        break;
+      case 'completed':
+        statusMessage = "✅ تم إكمال طلب الصيانة بنجاح. شكراً لثقتك بنا!";
+        break;
+      case 'cancelled':
+        statusMessage = "❌ تم إلغاء طلب الصيانة. للاستفسار، يرجى الاتصال بنا.";
+        break;
+      default:
+        return;
     }
     const message = `📢 *تحديث حالة طلب الصيانة* 📢\n\n🔢 *رقم الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n📝 *الحالة الجديدة:* ${statusMessage}\n\nشكراً لتواصلك معنا. 🌟`;
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
@@ -572,109 +521,117 @@ export default function ProtectedOrders() {
     if (!order) return;
 
     try {
-      await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ status: newStatus }) });
+      await fetchAPI(`orders?id=eq.${id}`, { 
+        method: 'PATCH', 
+        body: JSON.stringify({ status: newStatus }) 
+      });
+      
       await addNotification('تغيير حالة أوردر', `🔄 تم تغيير حالة أوردر ${order.customer_name} إلى ${newStatus}`);
-      const updatedOrder = { ...order, status: newStatus };
-      if (newStatus === 'completed' && order.is_paid && !order.profit_added_to_cash) {
-        await addCompanyProfitToCash(updatedOrder);
+      
+      if (newStatus === 'completed' && order.is_paid) {
+        await addCompanyProfitToCash(order);
       }
+      
       sendWhatsAppToCustomer(order, newStatus);
-      await fetchData();
-    } catch (err) { console.error("خطأ في تحديث حالة الأوردر:", err); }
+      fetchData();
+    } catch (err) { 
+      console.error("خطأ في تحديث حالة الأوردر:", err); 
+    }
   };
 
   const togglePaidStatus = async (id: number, currentStatus: boolean) => {
     const order = orders.find(o => o.id === id);
     if (!order) return;
-    const newPaidStatus = !currentStatus;
-    
+
     try {
-      await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ is_paid: newPaidStatus }) });
-      await addNotification('تحديث حالة الدفع', `✅ تم تحديث حالة تحصيل أوردر ${order.customer_name} إلى ${newPaidStatus ? 'تم التحصيل' : 'لم يتم التحصيل'}`);
-      const updatedOrder = { ...order, is_paid: newPaidStatus };
-      if (newPaidStatus && order.status === 'completed' && !order.profit_added_to_cash) {
+      await fetchAPI(`orders?id=eq.${id}`, { 
+        method: 'PATCH', 
+        body: JSON.stringify({ is_paid: !currentStatus }) 
+      });
+      
+      await addNotification('تحديث حالة الدفع', `✅ تم تحديث حالة تحصيل أوردر ${order.customer_name} إلى ${!currentStatus ? 'تم التحصيل' : 'لم يتم التحصيل'}`);
+      
+      const updatedOrder = { ...order, is_paid: !currentStatus };
+      
+      if (!currentStatus && order.status === 'completed') {
         await addCompanyProfitToCash(updatedOrder);
       }
-      await fetchData();
-    } catch (err) { console.error("خطأ في تحديث حالة الدفع:", err); }
+      
+      fetchData();
+      fetchCashLedger();
+    } catch (err) { 
+      console.error("خطأ في تحديث حالة الدفع:", err); 
+    }
   };
 
   const deleteOrder = async (id: number) => {
-    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لحذف الأوردرات");
-    const order = orders.find(o => o.id === id);
-    if (confirm('هل أنت متأكد من حذف هذا الأوردر؟')) {
-      try { 
-        await fetchAPI(`orders?id=eq.${id}`, { method: 'DELETE' });
-        await addNotification('حذف أوردر', `تم حذف أوردر ${order?.customer_name}`);
-        fetchData(); 
-      } catch (err) { console.error(err); }
+    if (!canEditDelete()) return alert("ليس لديك صلاحية");
+    if (confirm('هل أنت متأكد من الحذف؟')) {
+      await fetchAPI(`orders?id=eq.${id}`, { method: 'DELETE' });
+      await addNotification('حذف أوردر', `تم حذف أوردر`);
+      fetchData();
     }
   };
 
-  const deleteNotification = async (id: number) => {
-    await fetchAPI(`notifications?id=eq.${id}`, { method: 'DELETE' });
-    fetchNotifications();
-  };
-
-  const deleteAllNotifications = async () => {
-    if (confirm('حذف كل الإشعارات؟')) {
-      for (const n of notifications) {
-        await fetchAPI(`notifications?id=eq.${n.id}`, { method: 'DELETE' });
-      }
-      fetchNotifications();
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '',
-      status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, 
-      net_amount: 0, company_share: 0, technician_share: 0, is_paid: false,
-      date: new Date().toLocaleDateString("ar-EG")
-    });
-    setCustomDevice('');
-    setCustomBrand('');
-    setIsOtherDevice(false);
-    setIsOtherBrand(false);
-  };
-
-  const saveOrder = async (e: React.FormEvent) => {
+  const submitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    const orderNumber = `MG-${Date.now()}`;
-    const finalDeviceType = isOtherDevice ? customDevice : formData.device_type;
-    const finalBrand = isOtherBrand ? customBrand : formData.brand;
-    const orderToSave = { 
-      ...formData, 
-      device_type: finalDeviceType,
-      brand: finalBrand,
-      order_number: editingOrder ? editingOrder.order_number : orderNumber
-    };
-
+    let finalDevice = formData.device_type;
+    let finalBrand = formData.brand;
+    if (isOtherDevice && customDevice.trim()) finalDevice = customDevice.trim();
+    if (isOtherBrand && customBrand.trim()) finalBrand = customBrand.trim();
+    
+    const orderToSubmit = { ...formData, device_type: finalDevice, brand: finalBrand, date: new Date().toLocaleDateString("ar-EG") };
+    
     try {
       if (editingOrder) {
-        if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لتعديل الأوردرات");
-        await fetchAPI(`orders?id=eq.${editingOrder.id}`, { method: 'PATCH', body: JSON.stringify(orderToSave) });
-        await addNotification('تعديل أوردر', `تم تعديل أوردر ${formData.customer_name}`);
-        alert("✅ تم تعديل الأوردر بنجاح");
+        await fetchAPI(`orders?id=eq.${editingOrder.id}`, { method: 'PATCH', body: JSON.stringify(orderToSubmit) });
+        await addNotification('تعديل أوردر', `تم تعديل أوردر ${orderToSubmit.customer_name}`);
       } else {
-        await fetchAPI('orders', { method: 'POST', body: JSON.stringify(orderToSave) });
-        await addNotification('إضافة أوردر', `تم إضافة أوردر جديد للعميل ${formData.customer_name}`);
-        alert("✅ تم إضافة الأوردر بنجاح");
-        sendWhatsAppToCustomerOnCreate(orderToSave);
+        const newOrder = await fetchAPI('orders', { method: 'POST', body: JSON.stringify(orderToSubmit) });
+        await addNotification('إضافة أوردر', `تم إضافة أوردر للعميل ${orderToSubmit.customer_name}`);
+        if (newOrder && newOrder[0]) sendWhatsAppToCustomerOnCreate(newOrder[0]);
       }
       setShowOrderModal(false);
       setEditingOrder(null);
-      resetForm();
+      setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") });
+      setIsOtherDevice(false); setIsOtherBrand(false); setCustomDevice(''); setCustomBrand('');
       fetchData();
-    } catch (err) { 
-      console.error(err);
-      alert("❌ حدث خطأ أثناء حفظ الأوردر: " + (err.message || "خطأ غير معروف"));
+    } catch (err) { console.error(err); }
+  };
+
+  const submitTechnician = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingTech) {
+        await fetchAPI(`technicians?id=eq.${editingTech.id}`, { method: 'PATCH', body: JSON.stringify(techForm) });
+        await addNotification('تعديل فني', `تم تعديل بيانات الفني ${techForm.name}`);
+      } else {
+        await fetchAPI('technicians', { method: 'POST', body: JSON.stringify(techForm) });
+        await addNotification('إضافة فني', `تم إضافة فني جديد: ${techForm.name}`);
+      }
+      // مزامنة تلقائية مع جدول users
+      await syncTechniciansToUsers();
+      
+      setShowTechModal(false);
+      setEditingTech(null);
+      setTechForm({ name: '', phone: '', specialization: '', is_active: true, username: '', password: '' });
+      fetchData();
+    } catch (err) { console.error(err); }
+  };
+
+  const deleteTechnician = async (id: number) => {
+    if (!canEditDelete()) return alert("ليس لديك صلاحية");
+    if (confirm('هل أنت متأكد من الحذف؟')) {
+      await fetchAPI(`technicians?id=eq.${id}`, { method: 'DELETE' });
+      await addNotification('حذف فني', `تم حذف فني`);
+      // مزامنة تلقائية مع جدول users
+      await syncTechniciansToUsers();
+      await fetchData();
     }
   };
 
-  const savePartner = async (e: React.FormEvent) => {
+  const submitPartner = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لإدارة الشركاء");
     try {
       if (editingPartner) {
         await fetchAPI(`partners?id=eq.${editingPartner.id}`, { method: 'PATCH', body: JSON.stringify(partnerForm) });
@@ -690,198 +647,49 @@ export default function ProtectedOrders() {
     } catch (err) { console.error(err); }
   };
 
-  const deletePartner = async (id: number, name: string) => {
-    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لحذف الشركاء");
-    if (confirm(`حذف الشريك ${name}؟`)) {
+  const deletePartner = async (id: number) => {
+    if (!canEditDelete()) return alert("ليس لديك صلاحية");
+    if (confirm('هل أنت متأكد من الحذف؟')) {
       await fetchAPI(`partners?id=eq.${id}`, { method: 'DELETE' });
-      await addNotification('حذف شريك', `تم حذف الشريك ${name}`);
+      await addNotification('حذف شريك', `تم حذف شريك`);
       fetchPartners();
     }
   };
 
-  const saveTechnician = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لإدارة الفنيين");
-    try {
-      if (editingTech) {
-        await fetchAPI(`technicians?id=eq.${editingTech.id}`, { method: 'PATCH', body: JSON.stringify(techForm) });
-        await addNotification('تعديل فني', `تم تعديل بيانات الفني ${techForm.name}`);
-      } else {
-        await fetchAPI('technicians', { method: 'POST', body: JSON.stringify(techForm) });
-        await addNotification('إضافة فني', `تم إضافة فني جديد: ${techForm.name}`);
-      }
-      setShowTechModal(false);
-      setEditingTech(null);
-      setTechForm({ name: '', phone: '', specialization: '', is_active: true, username: '', password: '' });
-      fetchData();
-    } catch (err) { console.error(err); }
-  };
-
-  const deleteTechnician = async (id: number, name: string) => {
-    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لحذف الفنيين");
-    if (confirm('هل أنت متأكد من حذف هذا الفني؟')) {
-      try { 
-        await fetchAPI(`technicians?id=eq.${id}`, { method: 'DELETE' });
-        await addNotification('حذف فني', `تم حذف الفني ${name}`);
-        fetchData(); 
-      } catch (err) { console.error(err); }
-    }
-  };
-
-  const toggleTechnicianActive = async (tech: any) => {
-    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لتغيير حالة الفنيين");
-    await fetchAPI(`technicians?id=eq.${tech.id}`, { method: 'PATCH', body: JSON.stringify({ is_active: !tech.is_active }) });
-    await addNotification('تغيير حالة فني', `تم ${!tech.is_active ? 'تفعيل' : 'تعطيل'} الفني ${tech.name}`);
-    fetchData();
-  };
-
-  const copyTechLink = (name: string, id: number) => {
-    const link = `${window.location.origin}/tech-portal?name=${encodeURIComponent(name)}`;
-    navigator.clipboard.writeText(link);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-  
-  const copyOrder = async (order: any) => {
-    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لنسخ الأوردرات");
-    try {
-      const newOrder = {
-        customer_name: order.customer_name,
-        phone: order.phone,
-        device_type: order.device_type,
-        address: order.address,
-        brand: order.brand,
-        problem_description: order.problem_description,
-        technician: order.technician,
-        status: 'pending',
-        total_amount: order.total_amount,
-        parts_cost: order.parts_cost,
-        transport_cost: order.transport_cost,
-        net_amount: order.net_amount,
-        company_share: 0,
-        technician_share: 0,
-        is_paid: false,
-        date: new Date().toLocaleDateString("ar-EG"),
-        order_number: `MG-${Date.now()}`
-      };
-      await fetchAPI('orders', { method: 'POST', body: JSON.stringify(newOrder) });
-      await addNotification('نسخ أوردر', `تم نسخ أوردر ${order.order_number} بنجاح`);
-      alert('✅ تم نسخ الأوردر بنجاح');
-      fetchData();
-    } catch (err) {
-      console.error('خطأ في نسخ الأوردر:', err);
-      alert('❌ حدث خطأ في نسخ الأوردر');
-    }
-  };
-
-  const openInvoicePage = (order: any) => {
-    window.open(`/invoice?id=${order.id}`, '_blank');
-  };
-
-  const printAndSendInvoice = async (order: any) => {
-    const parts = prompt("✏️ أدخل قطع الغيار المستخدمة", "لا توجد");
-    const partsList = parts || "لا توجد";
-    const warranty = prompt("🛡️ فترة الضمان", "6 أشهر");
-    const finalWarranty = warranty || "6 أشهر";
-    
-    if (!order.phone || !order.customer_name) return alert("❌ بيانات الأوردر غير كاملة");
-    
-    try {
-      await fetchAPI(`orders?id=eq.${order.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ 
-          invoice_approved: true, 
-          warranty_period: finalWarranty, 
-          parts_used: partsList,
-          invoice_date: new Date().toISOString().split('T')[0]
-        })
-      });
-      await addNotification('اعتماد فاتورة', `تم اعتماد فاتورة ${order.customer_name} مع ضمان ${finalWarranty}`);
-      
-      setTimeout(() => openInvoicePage(order), 500);
-      
-      const phone = formatPhoneForWhatsApp(order.phone);
-      const invoiceText = `📄 *فاتورة الصيانة - ضمان* 📄\n\n` +
-        `شكراً لثقتك بنا\n\n` +
-        `━━━━━━━━━━━━━━━━━━━━━━\n` +
-        `🔢 *رقم الأوردر:* ${order.order_number}\n` +
-        `👤 *العميل:* ${order.customer_name}\n` +
-        `📱 *الهاتف:* ${order.phone}\n` +
-        `📍 *العنوان:* ${order.address || 'غير محدد'}\n\n` +
-        `🔧 *الجهاز:* ${order.device_type || order.device} - ${order.brand}\n` +
-        `⚠️ *المشكلة:* ${order.problem_description || 'غير محددة'}\n` +
-        `🔧 *قطع الغيار:* ${partsList}\n\n` +
-        `💰 *المبلغ:* ${order.total_amount} ج.م\n` +
-        `🛡️ *الضمان:* ${finalWarranty}\n\n` +
-        `━━━━━━━━━━━━━━━━━━━━━━\n` +
-        `📞 للاستفسار: 01278885772\n\n` +
-        `شكراً لثقتك بنا 🙏`;
-      const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(invoiceText)}`;
-      window.open(whatsappUrl, '_blank');
-      
-      alert("✅ تم اعتماد الفاتورة بنجاح!");
-      fetchData();
-    } catch (err) {
-      console.error("خطأ في اعتماد الفاتورة:", err);
-      alert("❌ حدث خطأ في اعتماد الفاتورة");
-    }
-  };
-
-  const filteredOrders = (orders || []).filter(o => {
-    const matchesSearch = o.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) || o.phone?.includes(searchTerm) || o.technician?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || o.status === filterStatus;
-    const matchesTechnician = !filterTechnician || o.technician === filterTechnician;
-    const matchesDeviceType = !filterDeviceType || o.device_type === filterDeviceType;
-    const matchesDateFrom = !filterDateFrom || (o.date && o.date >= filterDateFrom);
-    const matchesDateTo = !filterDateTo || (o.date && o.date <= filterDateTo);
-    const matchesDelay = filterDelay === 'all' || (filterDelay === 'delayed' && isDelayed(o));
-    return matchesSearch && matchesStatus && matchesTechnician && matchesDeviceType && matchesDateFrom && matchesDateTo && matchesDelay;
-  });
-
-  const filteredTechnicians = (technicians || []).filter(tech => {
-    if (filterTechStatus === 'active') return tech.is_active !== false;
-    if (filterTechStatus === 'inactive') return tech.is_active === false;
-    return true;
-  });
-
-  const clearAllFilters = () => {
-    setSearchTerm(''); setFilterStatus('all'); setFilterTechnician(''); setFilterDeviceType('');
-    setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all');
-  };
-
-  if (loading && orders.length === 0) return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><RefreshCw className="w-12 h-12 text-orange-500 animate-spin" /></div>;
+  if (loading) return <div className="text-center py-8">جاري التحميل...</div>;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 pb-20">
-      <nav className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 px-4 py-3">
+    <div className="min-h-screen bg-slate-900 text-slate-200" dir="rtl">
+      {/* Header */}
+      <div className="bg-slate-800/80 border-b border-slate-700 sticky top-0 z-40 px-4 py-3">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center"><LayoutDashboard className="w-6 h-6 text-white" /></div>
-            <h1 className="text-lg font-bold text-white">لوحة تحكم المدير</h1>
+            <LayoutDashboard className="w-6 h-6 text-orange-400" />
+            <div>
+              <h1 className="text-lg font-bold text-white">لوحة تحكم المدير</h1>
+              <p className="text-xs text-orange-400">{currentUser?.name || 'مدير النظام'}</p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => { fetchData(); fetchNotifications(); fetchCashLedger(); }} className="p-2 text-slate-400 hover:text-white transition-all"><RefreshCw className="w-5 h-5" /></button>
-            <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-white hover:bg-red-500/20 rounded-lg transition-all" title="تسجيل الخروج">
-              <LogOut className="w-5 h-5" />
-            </button>
-          </div>
+          <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg">
+            <LogOut className="w-5 h-5" />
+          </button>
         </div>
-      </nav>
+      </div>
 
-      <main className="max-w-7xl mx-auto p-4 md:p-6">
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-8">
-          <div className="bg-slate-900 p-4 rounded-2xl"><p className="text-2xl font-black text-white">{orders.length}</p><p className="text-[10px] text-slate-500 uppercase">إجمالي الأوردرات</p></div>
-          <div className="bg-slate-900 p-4 rounded-2xl"><p className="text-2xl font-black text-yellow-500">{stats.pending}</p><p className="text-[10px] text-slate-500 uppercase">قيد الانتظار</p></div>
-          <div className="bg-slate-900 p-4 rounded-2xl"><p className="text-2xl font-black text-green-500">{stats.completed}</p><p className="text-[10px] text-slate-500 uppercase">مكتمل</p></div>
-          <div className="bg-slate-900 p-4 rounded-2xl"><p className="text-2xl font-black text-orange-500">{stats.totalIncome.toLocaleString()} ج.م</p><p className="text-[10px] text-slate-500 uppercase">أرباح الشركة</p></div>
-          <div className="bg-slate-900 p-4 rounded-2xl"><p className="text-2xl font-black text-purple-500">{technicians.length}</p><p className="text-[10px] text-slate-500 uppercase">فني متاح</p></div>
+      <main className="max-w-7xl mx-auto p-4 space-y-5">
+        {/* Stats */}
+        <div className="grid grid-cols-5 gap-3">
+          <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-2xl font-bold text-orange-400">{orders.length}</div><div className="text-xs text-slate-400">إجمالي الأوردرات</div></div>
+          <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-2xl font-bold text-yellow-400">{stats.pending}</div><div className="text-xs text-slate-400">قيد الانتظار</div></div>
+          <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-2xl font-bold text-green-400">{stats.completed}</div><div className="text-xs text-slate-400">مكتمل</div></div>
+          <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-xl font-bold text-purple-400">{stats.totalIncome.toLocaleString()} ج.م</div><div className="text-xs text-slate-400">أرباح الشركة</div></div>
+          <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-2xl font-bold text-blue-400">{technicians.filter(t => t.is_active).length}</div><div className="text-xs text-slate-400">فني متاح</div></div>
         </div>
 
-        <div className="flex gap-1 bg-slate-900 p-1 rounded-2xl border border-slate-800 mb-6 overflow-x-auto">
+        {/* Tabs */}
+        <div className="flex flex-wrap gap-2 border-b border-slate-700 pb-2">
           <button onClick={() => setActiveTab('orders')} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeTab === 'orders' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>📋 الأوردرات</button>
           <button onClick={() => setActiveTab('technicians')} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeTab === 'technicians' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>👨‍🔧 الفنيين</button>
-          <button onClick={() => setActiveTab('reports')} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeTab === 'reports' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>📊 التقارير</button>
-          <button onClick={() => setActiveTab('invoicesReview')} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeTab === 'invoicesReview' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>📄 الفواتير</button>
           <button onClick={() => setActiveTab('cash')} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeTab === 'cash' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>💰 الخزنة</button>
           <button onClick={() => setActiveTab('partners')} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeTab === 'partners' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>🤝 الشركاء</button>
           <button onClick={() => setActiveTab('notifications')} className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1 ${activeTab === 'notifications' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}><Bell className="w-4 h-4" /> الإشعارات ({notifications.length})</button>
@@ -890,98 +698,54 @@ export default function ProtectedOrders() {
           )}
         </div>
 
+        {/* Orders Tab */}
         {activeTab === 'orders' && (
           <div className="space-y-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1"><Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" /><input type="text" placeholder="ابحث..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-2xl py-3 pr-12 pl-4 text-sm" /></div>
-              <button onClick={() => { setEditingOrder(null); resetForm(); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-2xl text-sm font-bold flex items-center gap-2"><Plus className="w-5 h-5" /> أوردر جديد</button>
+            <div className="flex flex-wrap gap-2 bg-slate-800/50 p-3 rounded-xl">
+              <input type="text" placeholder="بحث..." className="bg-slate-700 text-white px-3 py-2 rounded-lg text-sm flex-1" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+              <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-slate-700 text-white px-3 py-2 rounded-lg text-sm"><option value="all">جميع الحالات</option><option value="pending">قيد الانتظار</option><option value="in-progress">قيد التنفيذ</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option></select>
+              {canEditDelete() && <button onClick={() => { setEditingOrder(null); setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") }); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 px-3 py-2 rounded-lg text-sm flex items-center gap-1"><Plus className="w-4 h-4" /> أوردر جديد</button>}
+              <button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded-lg text-sm"><RefreshCw className="w-4 h-4" /></button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm">
-                <option value="all">الكل</option><option value="pending">قيد الانتظار</option><option value="in-progress">قيد التنفيذ</option><option value="inspected">تم الكشف</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option>
-              </select>
-              <select value={filterTechnician} onChange={(e) => setFilterTechnician(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm"><option value="">جميع الفنيين</option>{technicians.filter(t => t.is_active !== false).map(tech => <option key={tech.id} value={tech.name}>{tech.name}</option>)}</select>
-              <select value={filterDeviceType} onChange={(e) => setFilterDeviceType(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm"><option value="">جميع الأجهزة</option>{DEVICE_TYPES.map(d => <option key={d}>{d}</option>)}</select>
-              <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm" />
-              <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm" />
-            </div>
-            <div className="flex justify-between items-center"><button onClick={() => setFilterDelay(filterDelay === 'delayed' ? 'all' : 'delayed')} className={`px-3 py-1 rounded-full text-xs ${filterDelay === 'delayed' ? 'bg-red-600' : 'bg-slate-800'}`}>⚠️ المتأخرة فقط</button><button onClick={clearAllFilters} className="bg-slate-800 px-4 py-1 rounded-full text-xs">مسح الكل</button></div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredOrders.map(order => (
-                <div key={order.id} className="bg-slate-900 rounded-3xl p-5 border border-slate-800 relative">
-                  {isDelayed(order) && <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">⚠️ تأخير</div>}
-                  <div className="flex justify-between items-start mb-4">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black ${order.status === 'completed' ? 'bg-green-500/10 text-green-500' : order.status === 'in-progress' ? 'bg-blue-500/10 text-blue-500' : order.status === 'inspected' ? 'bg-yellow-500/10 text-yellow-500' : order.status === 'cancelled' ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
-                      {order.status === 'completed' ? 'مكتمل' : order.status === 'in-progress' ? 'قيد التنفيذ' : order.status === 'inspected' ? 'تم الكشف' : order.status === 'cancelled' ? 'ملغي' : 'قيد الانتظار'}
-                    </span>
-                    <div className="flex gap-1">
-                      <button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`p-2 rounded-xl ${order.is_paid ? 'bg-green-500/20 text-green-500' : 'bg-slate-800 text-slate-500'}`}>
-                        {order.is_paid ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-                      </button>
-                      {canEditDelete() && (
-                        <>
-                          <button onClick={() => { setEditingOrder(order); setFormData(order); setShowOrderModal(true); }} className="p-2 text-slate-400 hover:text-white" title="تعديل"><Edit className="w-4 h-4" /></button>
-                          <button onClick={() => copyOrder(order)} className="p-2 text-slate-400 hover:text-blue-500" title="نسخ الأوردر"><Copy className="w-4 h-4" /></button>
-                          <button onClick={() => deleteOrder(order.id)} className="p-2 text-slate-400 hover:text-red-500" title="حذف"><Trash2 className="w-4 h-4" /></button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <h3 className="text-white font-black text-lg truncate">{order.customer_name}</h3>
-                  <div className="text-xs text-slate-400 mt-1">📞 {order.phone}</div>
-                  <div className="text-xs text-slate-400">🔧 {order.device_type} - {order.brand}</div>
-                  <div className="grid grid-cols-2 gap-2 mt-2 py-2 border-y border-slate-800">
-                    <div><p className="text-[10px] text-slate-500">الإجمالي</p><p className="text-xs font-bold">{order.total_amount || 0} ج.م</p></div>
-                    <div><p className="text-[10px] text-slate-500">الصافي</p><p className="text-xs text-green-500 font-bold">{order.net_amount || 0} ج.م</p></div>
-                  </div>
-                  <div className="flex justify-between items-center mt-2">
-                    <div><p className="text-[10px] text-slate-500">الفني</p><p className="text-sm font-black text-orange-400">{order.technician || '-'}</p></div>
-                    <select value={order.status} onChange={(e) => updateOrderStatus(order.id, e.target.value)} className="bg-slate-700 text-xs rounded px-2 py-1">
-                      <option value="pending">قيد الانتظار</option><option value="in-progress">قيد التنفيذ</option><option value="inspected">تم الكشف</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option>
-                    </select>
-                  </div>
-                  <div className={`text-[10px] font-black px-2 py-1 rounded mt-2 text-center ${order.is_paid ? 'text-green-500 bg-green-500/10' : 'text-red-500 bg-red-500/10'}`}>
-                    {order.is_paid ? '✅ تم التحصيل' : '⏳ لم يتحصل'}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'technicians' && (
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex gap-2">
-                <button onClick={() => setFilterTechStatus('active')} className={`px-3 py-1 rounded-full text-xs ${filterTechStatus === 'active' ? 'bg-orange-600' : 'bg-slate-800'}`}>النشطون</button>
-                <button onClick={() => setFilterTechStatus('inactive')} className={`px-3 py-1 rounded-full text-xs ${filterTechStatus === 'inactive' ? 'bg-orange-600' : 'bg-slate-800'}`}>غير النشطون</button>
-                <button onClick={() => setFilterTechStatus('all')} className={`px-3 py-1 rounded-full text-xs ${filterTechStatus === 'all' ? 'bg-orange-600' : 'bg-slate-800'}`}>الجميع</button>
-              </div>
-              {canEditDelete() && (
-                <button onClick={() => { setEditingTech(null); setTechForm({ name: '', phone: '', specialization: '', is_active: true, username: '', password: '' }); setShowTechModal(true); }} className="bg-orange-600 px-4 py-2 rounded-xl text-sm font-bold"><Plus className="w-4 h-4" /> إضافة فني</button>
-              )}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {filteredTechnicians.map(tech => (
-                <div key={tech.id} className="bg-slate-900 rounded-3xl p-6 border border-slate-800 text-center">
-                  <div className="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4"><Users className="w-8 h-8 text-orange-500" /></div>
-                  <h3 className="text-white font-black text-lg">{tech.name}</h3>
-                  <p className="text-slate-500 text-xs mb-4">{tech.specialization}</p>
-                  <div className="flex flex-col gap-2">
-                    <button onClick={() => copyTechLink(tech.name, tech.id)} className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2">
-                      {copiedId === tech.id ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />} نسخ الرابط
-                    </button>
+            <div className="space-y-2">
+              {orders.filter(order => {
+                if (searchTerm && !order.customer_name.includes(searchTerm) && !order.phone.includes(searchTerm) && !String(order.order_number).includes(searchTerm)) return false;
+                if (filterStatus !== 'all' && order.status !== filterStatus) return false;
+                return true;
+              }).map(order => (
+                <div key={order.id} className="bg-slate-800 rounded-xl p-4">
+                  <div className="flex justify-between items-start">
+                    <div><div className="font-bold text-white">{order.customer_name}</div><div className="text-xs text-slate-400">رقم: {order.order_number}</div></div>
                     <div className="flex gap-2">
-                      <a href={`tel:${tech.phone}`} className="flex-1 p-2 bg-blue-500/10 text-blue-500 rounded-xl"><Phone className="w-4 h-4 mx-auto" /></a>
-                      {canEditDelete() && (
-                        <>
-                          <button onClick={() => { setEditingTech(tech); setTechForm(tech); setShowTechModal(true); }} className="flex-1 p-2 bg-slate-800 text-slate-400 rounded-xl"><Edit className="w-4 h-4 mx-auto" /></button>
-                          <button onClick={() => deleteTechnician(tech.id, tech.name)} className="flex-1 p-2 bg-red-500/10 text-red-500 rounded-xl"><Trash2 className="w-4 h-4 mx-auto" /></button>
-                          <button onClick={() => toggleTechnicianActive(tech)} className={`flex-1 p-2 rounded-xl ${tech.is_active !== false ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>{tech.is_active !== false ? 'نشط' : 'تعطيل'}</button>
-                        </>
-                      )}
+                      <button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`px-2 py-1 rounded-full text-xs font-bold ${order.is_paid ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{order.is_paid ? 'تم التحصيل' : 'لم يتم التحصيل'}</button>
+                      <select value={order.status} onChange={e => updateOrderStatus(order.id, e.target.value)} className={`text-xs rounded-lg px-2 py-1 ${order.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : order.status === 'in-progress' ? 'bg-blue-500/20 text-blue-400' : order.status === 'completed' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>
+                        <option value="pending">قيد الانتظار</option><option value="in-progress">قيد التنفيذ</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option>
+                      </select>
+                      {canEditDelete() && <button onClick={() => deleteOrder(order.id)} className="text-red-400 hover:text-red-300"><Trash2 className="w-4 h-4" /></button>}
                     </div>
+                  </div>
+                  <div className="text-xs text-slate-400 mt-2">📞 {order.phone} | 🔧 {order.device_type} - {order.brand}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Technicians Tab */}
+        {activeTab === 'technicians' && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <div className="flex gap-2"><select value={filterTechStatus} onChange={e => setFilterTechStatus(e.target.value as any)} className="bg-slate-700 text-white px-3 py-2 rounded-lg text-sm"><option value="active">النشطون</option><option value="inactive">غير النشطون</option><option value="all">الجميع</option></select></div>
+              {canEditDelete() && <button onClick={() => { setEditingTech(null); setTechForm({ name: '', phone: '', specialization: '', is_active: true, username: '', password: '' }); setShowTechModal(true); }} className="bg-orange-600 hover:bg-orange-700 px-3 py-2 rounded-lg text-sm flex items-center gap-1"><Plus className="w-4 h-4" /> إضافة فني</button>}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {technicians.filter(tech => filterTechStatus === 'all' ? true : filterTechStatus === 'active' ? tech.is_active : !tech.is_active).map(tech => (
+                <div key={tech.id} className="bg-slate-800 rounded-xl p-3">
+                  <div className="flex justify-between"><div><div className="font-bold text-white">{tech.name}</div><div className="text-xs text-slate-400">{tech.specialization || 'عام'}</div></div><span className={`text-xs px-2 py-0.5 rounded-full ${tech.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{tech.is_active ? 'نشط' : 'غير نشط'}</span></div>
+                  <div className="flex justify-between mt-3">
+                    <button onClick={() => { navigator.clipboard.writeText(tech.username || ''); setCopiedId(tech.id); setTimeout(() => setCopiedId(null), 2000); }} className="text-slate-400 hover:text-white text-xs">نسخ الرابط</button>
+                    {canEditDelete() && <button onClick={() => { setEditingTech(tech); setTechForm(tech); setShowTechModal(true); }} className="text-blue-400 hover:text-blue-300"><Edit className="w-4 h-4" /></button>}
+                    {canEditDelete() && <button onClick={() => deleteTechnician(tech.id)} className="text-red-400 hover:text-red-300"><Trash2 className="w-4 h-4" /></button>}
                   </div>
                 </div>
               ))}
@@ -989,156 +753,80 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {activeTab === 'reports' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-slate-900 p-6 rounded-2xl"><p className="text-slate-400">إجمالي الإيرادات</p><p className="text-3xl font-black text-white">{orders.reduce((a,o)=>a+(o.total_amount||0),0).toLocaleString()} ج.م</p></div>
-            <div className="bg-slate-900 p-6 rounded-2xl"><p className="text-slate-400">إجمالي المصاريف</p><p className="text-3xl font-black text-white">{orders.reduce((a,o)=>a+(o.parts_cost+o.transport_cost||0),0).toLocaleString()} ج.م</p></div>
-            <div className="bg-slate-900 p-6 rounded-2xl"><p className="text-slate-400">صافي أرباح الشركة</p><p className="text-3xl font-black text-orange-500">{stats.totalIncome.toLocaleString()} ج.م</p></div>
-          </div>
-        )}
-
-        {activeTab === 'invoicesReview' && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold">📄 فواتير بانتظار المراجعة</h2>
-            {orders.filter(o => o.status === 'completed' && !o.invoice_approved).map(order => (
-              <div key={order.id} className="bg-slate-800 p-4 rounded-2xl flex justify-between items-center flex-wrap gap-3">
-                <div><p className="font-bold">{order.customer_name}</p><p className="text-sm text-slate-400">{order.device_type} - {order.brand}</p><p className="text-green-400">المبلغ: {order.total_amount} ج.م</p></div>
-                <button onClick={() => printAndSendInvoice(order)} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-1"><Printer className="w-4 h-4" /> طباعة الفاتورة</button>
-              </div>
-            ))}
-            {orders.filter(o => o.status === 'completed' && !o.invoice_approved).length === 0 && <div className="text-center py-8 text-slate-400">لا توجد فواتير بانتظار المراجعة</div>}
-          </div>
-        )}
-
+        {/* Cash Tab */}
         {activeTab === 'cash' && (
           <div className="space-y-4">
-            <div className="flex justify-between items-center flex-wrap gap-3">
-              <div className="bg-emerald-500/20 p-4 rounded-2xl">
-                <p className="text-slate-400">رصيد الخزنة</p>
-                <p className="text-3xl font-bold text-emerald-400">{cashBalance.toLocaleString()} ج.م</p>
-              </div>
-              <div className="flex gap-2 items-center flex-wrap">
-                <input type="date" value={cashFilterDate} onChange={e => setCashFilterDate(e.target.value)} className="bg-slate-800 p-2 rounded" />
-                <button onClick={() => setCashFilterDate('')} className="bg-slate-700 px-3 py-1 rounded text-sm">إلغاء الفلتر</button>
-                {canEditDelete() && (
-                  <button onClick={() => { setEditingCash(null); setCashForm({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] }); setShowCashModal(true); }} className="bg-orange-600 px-4 py-2 rounded-xl text-sm">+ إضافة حركة</button>
-                )}
+            <div className="flex justify-between items-center flex-wrap gap-2">
+              <div className="text-lg font-bold text-white">الرصيد الحالي: <span className="text-green-400">{cashBalance.toLocaleString()} ج.م</span></div>
+              <div className="flex gap-2">
+                <input type="date" value={cashFilterDate} onChange={e => setCashFilterDate(e.target.value)} className="bg-slate-700 text-white px-3 py-2 rounded-lg text-sm" />
+                <button onClick={() => setCashFilterDate('')} className="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded-lg text-sm">إلغاء الفلتر</button>
+                {canEditDelete() && <button onClick={() => { setEditingCash(null); setCashForm({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] }); setShowCashModal(true); }} className="bg-orange-600 hover:bg-orange-700 px-3 py-2 rounded-lg text-sm flex items-center gap-1"><Plus className="w-4 h-4" /> حركة جديدة</button>}
+                <button onClick={distributeDailyProfit} className="bg-purple-600 hover:bg-purple-700 px-3 py-2 rounded-lg text-sm flex items-center gap-1"><DollarSign className="w-4 h-4" /> توزيع أرباح اليوم</button>
               </div>
             </div>
-            
-            {/* زر توزيع أرباح الشركاء - تلقائي */}
-            <div className="bg-purple-600/10 rounded-2xl p-4 flex justify-between items-center flex-wrap gap-3 border border-purple-500/30">
-              <div>
-                <p className="text-sm text-slate-400">توزيع أرباح الشركاء</p>
-                <p className="text-xs text-slate-500">يتم التوزيع تلقائياً حسب نسب الشركاء النشطين</p>
-              </div>
-              {canEditDelete() && (
-                <button onClick={distributePartnersProfit} className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-purple-600/20">
-                  📤 توزيع أرباح الشركاء (تلقائي)
-                </button>
-              )}
-            </div>
-            
-            <div className="bg-slate-900 rounded-2xl overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-800">
-                  <tr><th className="p-3">التاريخ</th><th>النوع</th><th>المبلغ</th><th>الوصف</th><th>إجراءات</th></tr>
-                </thead>
-                <tbody>
-                  {cashLedger.map(entry => (
-                    <tr key={entry.id} className="border-b border-slate-800">
-                      <td className="p-3">{entry.date}</td>
-                      <td>
-                        {entry.type === 'income' ? '💰 دخل' : 
-                         entry.type === 'expense' ? '💸 مصروف' : 
-                         entry.type === 'profit_distribution' ? '📤 توزيع أرباح' :
-                         entry.type === 'reserve' ? '🏦 رصيد احتياطي' : '📤 توزيع أرباح'}
-                      </td>
-                      <td className={entry.type === 'income' || entry.type === 'reserve' ? 'text-green-400' : 'text-red-400'}>{entry.amount} ج.م</td>
-                      <td className="max-w-xs break-words">{entry.description}</td>
-                      <td className="flex gap-2">
-                        {canEditDelete() && entry.type !== 'profit_distribution' && entry.type !== 'reserve' && (
-                          <>
-                            <button onClick={() => { setEditingCash(entry); setCashForm(entry); setShowCashModal(true); }} className="text-blue-400"><Edit className="w-4 h-4" /></button>
-                            <button onClick={() => deleteCashEntry(entry.id)} className="text-red-400"><Trash2 className="w-4 h-4" /></button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="space-y-2">
+              {cashLedger.map(entry => (
+                <div key={entry.id} className={`bg-slate-800 rounded-xl p-3 ${entry.type === 'income' ? 'border-r-4 border-green-500' : entry.type === 'expense' ? 'border-r-4 border-red-500' : 'border-r-4 border-blue-500'}`}>
+                  <div className="flex justify-between"><span>{entry.date}</span><span className={entry.type === 'income' ? 'text-green-400' : 'text-red-400'}>{entry.type === 'income' ? '💰 إيراد' : entry.type === 'expense' ? '💸 مصروف' : '📤 توزيع أرباح'}</span><span>{entry.amount.toLocaleString()} ج.م</span>{canEditDelete() && <button onClick={() => deleteCashEntry(entry.id)} className="text-red-400"><Trash2 className="w-4 h-4" /></button>}</div>
+                  <div className="text-xs text-slate-400 mt-1">{entry.description}</div>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
+        {/* Partners Tab */}
         {activeTab === 'partners' && (
           <div className="space-y-4">
-            {canEditDelete() && (
-              <div className="flex justify-end"><button onClick={() => { setEditingPartner(null); setPartnerForm({ name: '', share_percentage: 0, phone: '', is_active: true }); setShowPartnerModal(true); }} className="bg-orange-600 px-4 py-2 rounded-xl text-sm"><UserPlus className="w-4 h-4" /> إضافة شريك</button></div>
-            )}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="flex justify-end">{canEditDelete() && <button onClick={() => { setEditingPartner(null); setPartnerForm({ name: '', share_percentage: 0, phone: '', is_active: true }); setShowPartnerModal(true); }} className="bg-orange-600 hover:bg-orange-700 px-3 py-2 rounded-lg text-sm flex items-center gap-1"><Plus className="w-4 h-4" /> شريك جديد</button>}</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {partners.map(partner => (
-                <div key={partner.id} className="bg-slate-900 p-4 rounded-2xl border border-slate-800">
-                  <div className="flex justify-between"><h3 className="font-bold text-lg">{partner.name}</h3><span className={`text-xs px-2 py-1 rounded-full ${partner.is_active ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>{partner.is_active ? 'نشط' : 'غير نشط'}</span></div>
-                  <p className="text-orange-400 text-2xl font-bold mt-2">{partner.share_percentage}%</p>
-                  <p className="text-slate-400 text-sm">📞 {partner.phone || 'لا يوجد'}</p>
-                  {canEditDelete() && (
-                    <div className="flex gap-2 mt-3">
-                      <button onClick={() => { setEditingPartner(partner); setPartnerForm(partner); setShowPartnerModal(true); }} className="text-blue-400 text-sm"><Edit className="w-4 h-4 inline" /> تعديل</button>
-                      <button onClick={() => deletePartner(partner.id, partner.name)} className="text-red-400 text-sm"><UserMinus className="w-4 h-4 inline" /> حذف</button>
-                    </div>
-                  )}
+                <div key={partner.id} className="bg-slate-800 rounded-xl p-3">
+                  <div className="flex justify-between"><div><div className="font-bold text-white">{partner.name}</div><div className="text-xs text-slate-400">نسبة: {partner.share_percentage}%</div></div><span className={`text-xs px-2 py-0.5 rounded-full ${partner.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{partner.is_active ? 'نشط' : 'غير نشط'}</span></div>
+                  {canEditDelete() && <div className="flex gap-2 mt-3"><button onClick={() => { setEditingPartner(partner); setPartnerForm(partner); setShowPartnerModal(true); }} className="text-blue-400"><Edit className="w-4 h-4" /></button><button onClick={() => deletePartner(partner.id)} className="text-red-400"><Trash2 className="w-4 h-4" /></button></div>}
                 </div>
               ))}
             </div>
           </div>
         )}
 
+        {/* Notifications Tab */}
         {activeTab === 'notifications' && (
-          <div className="space-y-4">
-            <div className="flex justify-between"><h2 className="text-xl font-bold">🔔 سجل الإشعارات</h2>{canEditDelete() && notifications.length > 0 && <button onClick={deleteAllNotifications} className="bg-red-600/20 text-red-400 px-3 py-1 rounded-lg text-sm"><Trash className="w-4 h-4" /> مسح الكل</button>}</div>
-            <div className="space-y-3">
-              {notifications.map(notif => (
-                <div key={notif.id} className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between">
-                  <div><span className="text-orange-400">{notif.action}</span><span className="text-slate-400 mx-2">|</span><span>{notif.details}</span><div className="text-xs text-slate-500 mt-1">{new Date(notif.created_at).toLocaleString('ar-EG')}</div></div>
-                  {canEditDelete() && (
-                    <button onClick={() => deleteNotification(notif.id)} className="text-red-400"><Trash className="w-4 h-4" /></button>
-                  )}
-                </div>
-              ))}
-              {notifications.length === 0 && <div className="text-center py-8 text-slate-400">لا توجد إشعارات</div>}
-            </div>
+          <div className="space-y-2">
+            {notifications.map(notif => (
+              <div key={notif.id} className="bg-slate-800 rounded-xl p-3">
+                <div className="flex justify-between text-xs text-slate-400"><span>{new Date(notif.created_at).toLocaleString('ar-EG')}</span><span>{notif.user_name}</span></div>
+                <div className="mt-1"><span className="font-bold">{notif.action}:</span> {notif.details}</div>
+              </div>
+            ))}
           </div>
         )}
 
-        {activeTab === 'permissions' && userRole === 'admin' && (
-          <AdminPermissions />
-        )}
-
+        {/* Permissions Tab */}
+        {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions />}
       </main>
 
       {/* Order Modal */}
       {showOrderModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl">
-            <div className="flex justify-between mb-4"><h3 className="text-xl font-bold">{editingOrder ? 'تعديل أوردر' : 'أوردر جديد'}</h3><button onClick={() => setShowOrderModal(false)} className="text-slate-400"><X className="w-5 h-5" /></button></div>
-            <form onSubmit={saveOrder} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="text-sm text-slate-400">اسم العميل</label><input type="text" value={formData.customer_name} onChange={e => handleFormChange('customer_name', e.target.value)} className="w-full bg-slate-800 p-3 rounded-xl" required /></div>
-                <div><label className="text-sm text-slate-400">رقم الهاتف</label><input type="text" value={formData.phone} onChange={e => handleFormChange('phone', e.target.value)} className="w-full bg-slate-800 p-3 rounded-xl" required /></div>
-                <div><label className="text-sm text-slate-400">نوع الجهاز</label><select value={formData.device_type} onChange={e => handleFormChange('device_type', e.target.value)} className="w-full bg-slate-800 p-3 rounded-xl"><option value="">اختر</option>{DEVICE_TYPES.map(d=><option key={d}>{d}</option>)}<option value="other">أخرى</option></select></div>
-                {isOtherDevice && <div><input type="text" placeholder="جهاز مخصص" value={customDevice} onChange={e=>setCustomDevice(e.target.value)} className="w-full bg-slate-800 p-3 rounded-xl" required /></div>}
-                <div><label className="text-sm text-slate-400">الماركة</label><select value={formData.brand} onChange={e => handleFormChange('brand', e.target.value)} className="w-full bg-slate-800 p-3 rounded-xl"><option value="">اختر</option>{BRANDS.map(b=><option key={b}>{b}</option>)}<option value="other">أخرى</option></select></div>
-                {isOtherBrand && <div><input type="text" placeholder="ماركة مخصصة" value={customBrand} onChange={e=>setCustomBrand(e.target.value)} className="w-full bg-slate-800 p-3 rounded-xl" required /></div>}
-                <div className="col-span-2"><label className="text-sm text-slate-400">العنوان</label><input type="text" value={formData.address} onChange={e=>handleFormChange('address', e.target.value)} className="w-full bg-slate-800 p-3 rounded-xl" /></div>
-                <div className="col-span-2"><label className="text-sm text-slate-400">وصف المشكلة</label><textarea rows={3} value={formData.problem_description} onChange={e=>handleFormChange('problem_description', e.target.value)} className="w-full bg-slate-800 p-3 rounded-xl" /></div>
-                <div><label className="text-sm text-slate-400">الفني</label><select value={formData.technician} onChange={e=>handleFormChange('technician', e.target.value)} className="w-full bg-slate-800 p-3 rounded-xl"><option value="">اختر فني</option>{technicians.map(t=><option key={t.id}>{t.name}</option>)}</select></div>
-                <div><label className="text-sm text-slate-400">إجمالي المبلغ</label><input type="number" value={formData.total_amount} onChange={e=>handleFormChange('total_amount', e.target.value)} className="w-full bg-slate-800 p-3 rounded-xl" /></div>
-                <div><label className="text-sm text-slate-400">قطع غيار</label><input type="number" value={formData.parts_cost} onChange={e=>handleFormChange('parts_cost', e.target.value)} className="w-full bg-slate-800 p-3 rounded-xl" /></div>
-                <div><label className="text-sm text-slate-400">مواصلات</label><input type="number" value={formData.transport_cost} onChange={e=>handleFormChange('transport_cost', e.target.value)} className="w-full bg-slate-800 p-3 rounded-xl" /></div>
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-bold">{editingOrder ? 'تعديل أوردر' : 'إضافة أوردر جديد'}</h3><button onClick={() => setShowOrderModal(false)}><X className="w-5 h-5" /></button></div>
+            <form onSubmit={submitOrder} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="text" placeholder="اسم العميل" className="bg-slate-700 text-white p-2 rounded" value={formData.customer_name} onChange={e => handleFormChange('customer_name', e.target.value)} required />
+                <input type="tel" placeholder="رقم الهاتف" className="bg-slate-700 text-white p-2 rounded" value={formData.phone} onChange={e => handleFormChange('phone', e.target.value)} required />
+                <input type="text" placeholder="نوع الجهاز" className="bg-slate-700 text-white p-2 rounded" value={formData.device_type} onChange={e => handleFormChange('device_type', e.target.value)} />
+                <input type="text" placeholder="الماركة" className="bg-slate-700 text-white p-2 rounded" value={formData.brand} onChange={e => handleFormChange('brand', e.target.value)} />
+                <textarea placeholder="العنوان" className="bg-slate-700 text-white p-2 rounded" value={formData.address} onChange={e => handleFormChange('address', e.target.value)} />
+                <textarea placeholder="وصف المشكلة" className="bg-slate-700 text-white p-2 rounded" value={formData.problem_description} onChange={e => handleFormChange('problem_description', e.target.value)} />
+                <select value={formData.technician} onChange={e => handleFormChange('technician', e.target.value)} className="bg-slate-700 text-white p-2 rounded"><option value="">اختر الفني</option>{technicians.filter(t => t.is_active).map(tech => <option key={tech.id} value={tech.name}>{tech.name}</option>)}</select>
+                <input type="number" placeholder="المبلغ الإجمالي" className="bg-slate-700 text-white p-2 rounded" value={formData.total_amount} onChange={e => handleFormChange('total_amount', parseFloat(e.target.value))} />
+                <input type="number" placeholder="قطع الغيار" className="bg-slate-700 text-white p-2 rounded" value={formData.parts_cost} onChange={e => handleFormChange('parts_cost', parseFloat(e.target.value))} />
+                <input type="number" placeholder="مصاريف النقل" className="bg-slate-700 text-white p-2 rounded" value={formData.transport_cost} onChange={e => handleFormChange('transport_cost', parseFloat(e.target.value))} />
               </div>
-              <div className="flex gap-3 pt-4"><button type="submit" className="flex-1 bg-orange-600 py-3 rounded-xl font-bold">حفظ</button><button type="button" onClick={() => setShowOrderModal(false)} className="flex-1 bg-slate-700 py-3 rounded-xl font-bold">إلغاء</button></div>
+              <div className="flex gap-2"><label className="flex items-center gap-2"><input type="checkbox" checked={formData.is_paid} onChange={e => handleFormChange('is_paid', e.target.checked)} /> تم التحصيل</label></div>
+              <div className="flex justify-end gap-2"><button type="button" onClick={() => setShowOrderModal(false)} className="bg-slate-700 px-4 py-2 rounded">إلغاء</button><button type="submit" className="bg-orange-600 px-4 py-2 rounded">حفظ</button></div>
             </form>
           </div>
         </div>
@@ -1147,16 +835,16 @@ export default function ProtectedOrders() {
       {/* Technician Modal */}
       {showTechModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
-            <div className="flex justify-between mb-4"><h3 className="text-xl font-bold">{editingTech ? 'تعديل فني' : 'فني جديد'}</h3><button onClick={() => setShowTechModal(false)} className="text-slate-400"><X className="w-5 h-5" /></button></div>
-            <form onSubmit={saveTechnician} className="space-y-4">
-              <input type="text" placeholder="الاسم" value={techForm.name} onChange={e => setTechForm({...techForm, name: e.target.value})} className="w-full bg-slate-800 p-3 rounded-xl" required />
-              <input type="text" placeholder="رقم الهاتف" value={techForm.phone} onChange={e => setTechForm({...techForm, phone: e.target.value})} className="w-full bg-slate-800 p-3 rounded-xl" required />
-              <input type="text" placeholder="التخصص" value={techForm.specialization} onChange={e => setTechForm({...techForm, specialization: e.target.value})} className="w-full bg-slate-800 p-3 rounded-xl" />
-              <input type="text" placeholder="اسم المستخدم" value={techForm.username} onChange={e => setTechForm({...techForm, username: e.target.value})} className="w-full bg-slate-800 p-3 rounded-xl" />
-              <input type="password" placeholder="كلمة المرور" value={techForm.password} onChange={e => setTechForm({...techForm, password: e.target.value})} className="w-full bg-slate-800 p-3 rounded-xl" />
-              <div className="flex items-center gap-2"><input type="checkbox" checked={techForm.is_active} onChange={e => setTechForm({...techForm, is_active: e.target.checked})} /><label>نشط</label></div>
-              <button type="submit" className="w-full bg-orange-600 py-3 rounded-xl font-bold">حفظ</button>
+          <div className="bg-slate-800 rounded-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-bold">{editingTech ? 'تعديل فني' : 'إضافة فني'}</h3><button onClick={() => setShowTechModal(false)}><X className="w-5 h-5" /></button></div>
+            <form onSubmit={submitTechnician} className="space-y-4">
+              <input type="text" placeholder="الاسم" className="bg-slate-700 text-white p-2 rounded w-full" value={techForm.name} onChange={e => setTechForm({...techForm, name: e.target.value})} required />
+              <input type="tel" placeholder="رقم الهاتف" className="bg-slate-700 text-white p-2 rounded w-full" value={techForm.phone} onChange={e => setTechForm({...techForm, phone: e.target.value})} />
+              <input type="text" placeholder="التخصص" className="bg-slate-700 text-white p-2 rounded w-full" value={techForm.specialization} onChange={e => setTechForm({...techForm, specialization: e.target.value})} />
+              <input type="text" placeholder="اسم المستخدم" className="bg-slate-700 text-white p-2 rounded w-full" value={techForm.username} onChange={e => setTechForm({...techForm, username: e.target.value})} required />
+              <input type="password" placeholder="كلمة المرور" className="bg-slate-700 text-white p-2 rounded w-full" value={techForm.password} onChange={e => setTechForm({...techForm, password: e.target.value})} required />
+              <label className="flex items-center gap-2"><input type="checkbox" checked={techForm.is_active} onChange={e => setTechForm({...techForm, is_active: e.target.checked})} /> نشط</label>
+              <div className="flex justify-end gap-2"><button type="button" onClick={() => setShowTechModal(false)} className="bg-slate-700 px-4 py-2 rounded">إلغاء</button><button type="submit" className="bg-orange-600 px-4 py-2 rounded">حفظ</button></div>
             </form>
           </div>
         </div>
@@ -1165,14 +853,14 @@ export default function ProtectedOrders() {
       {/* Partner Modal */}
       {showPartnerModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">{editingPartner ? 'تعديل شريك' : 'إضافة شريك'}</h3>
-            <form onSubmit={savePartner} className="space-y-4">
-              <input type="text" placeholder="اسم الشريك" value={partnerForm.name} onChange={e => setPartnerForm({...partnerForm, name: e.target.value})} className="w-full bg-slate-800 p-3 rounded-xl" required />
-              <input type="number" placeholder="نسبة الربح (%)" value={partnerForm.share_percentage} onChange={e => setPartnerForm({...partnerForm, share_percentage: parseFloat(e.target.value)})} className="w-full bg-slate-800 p-3 rounded-xl" required />
-              <input type="text" placeholder="رقم الهاتف" value={partnerForm.phone} onChange={e => setPartnerForm({...partnerForm, phone: e.target.value})} className="w-full bg-slate-800 p-3 rounded-xl" />
-              <div className="flex items-center gap-2"><input type="checkbox" checked={partnerForm.is_active} onChange={e => setPartnerForm({...partnerForm, is_active: e.target.checked})} /><label>نشط</label></div>
-              <button type="submit" className="w-full bg-orange-600 py-3 rounded-xl font-bold">حفظ</button>
+          <div className="bg-slate-800 rounded-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-bold">{editingPartner ? 'تعديل شريك' : 'إضافة شريك'}</h3><button onClick={() => setShowPartnerModal(false)}><X className="w-5 h-5" /></button></div>
+            <form onSubmit={submitPartner} className="space-y-4">
+              <input type="text" placeholder="الاسم" className="bg-slate-700 text-white p-2 rounded w-full" value={partnerForm.name} onChange={e => setPartnerForm({...partnerForm, name: e.target.value})} required />
+              <input type="tel" placeholder="رقم الهاتف" className="bg-slate-700 text-white p-2 rounded w-full" value={partnerForm.phone} onChange={e => setPartnerForm({...partnerForm, phone: e.target.value})} />
+              <input type="number" placeholder="نسبة الربح %" className="bg-slate-700 text-white p-2 rounded w-full" value={partnerForm.share_percentage} onChange={e => setPartnerForm({...partnerForm, share_percentage: parseFloat(e.target.value)})} step="0.01" />
+              <label className="flex items-center gap-2"><input type="checkbox" checked={partnerForm.is_active} onChange={e => setPartnerForm({...partnerForm, is_active: e.target.checked})} /> نشط</label>
+              <div className="flex justify-end gap-2"><button type="button" onClick={() => setShowPartnerModal(false)} className="bg-slate-700 px-4 py-2 rounded">إلغاء</button><button type="submit" className="bg-orange-600 px-4 py-2 rounded">حفظ</button></div>
             </form>
           </div>
         </div>
@@ -1181,19 +869,18 @@ export default function ProtectedOrders() {
       {/* Cash Modal */}
       {showCashModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">{editingCash ? 'تعديل حركة' : 'إضافة حركة'}</h3>
+          <div className="bg-slate-800 rounded-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-bold">{editingCash ? 'تعديل حركة' : 'إضافة حركة'}</h3><button onClick={() => setShowCashModal(false)}><X className="w-5 h-5" /></button></div>
             <form onSubmit={addCashEntry} className="space-y-4">
-              <select value={cashForm.type} onChange={e => setCashForm({...cashForm, type: e.target.value})} className="w-full bg-slate-800 p-3 rounded-xl"><option value="income">💰 دخل</option><option value="expense">💸 مصروف</option></select>
-              <input type="number" placeholder="المبلغ" value={cashForm.amount} onChange={e => setCashForm({...cashForm, amount: parseFloat(e.target.value)})} className="w-full bg-slate-800 p-3 rounded-xl" required />
-              <input type="text" placeholder="الوصف" value={cashForm.description} onChange={e => setCashForm({...cashForm, description: e.target.value})} className="w-full bg-slate-800 p-3 rounded-xl" required />
-              <input type="date" value={cashForm.date} onChange={e => setCashForm({...cashForm, date: e.target.value})} className="w-full bg-slate-800 p-3 rounded-xl" required />
-              <button type="submit" className="w-full bg-orange-600 py-3 rounded-xl font-bold">حفظ</button>
+              <select className="bg-slate-700 text-white p-2 rounded w-full" value={cashForm.type} onChange={e => setCashForm({...cashForm, type: e.target.value})}><option value="income">💰 إيراد</option><option value="expense">💸 مصروف</option></select>
+              <input type="number" placeholder="المبلغ" className="bg-slate-700 text-white p-2 rounded w-full" value={cashForm.amount} onChange={e => setCashForm({...cashForm, amount: parseFloat(e.target.value)})} required />
+              <textarea placeholder="الوصف" className="bg-slate-700 text-white p-2 rounded w-full" value={cashForm.description} onChange={e => setCashForm({...cashForm, description: e.target.value})} required />
+              <input type="date" className="bg-slate-700 text-white p-2 rounded w-full" value={cashForm.date} onChange={e => setCashForm({...cashForm, date: e.target.value})} />
+              <div className="flex justify-end gap-2"><button type="button" onClick={() => setShowCashModal(false)} className="bg-slate-700 px-4 py-2 rounded">إلغاء</button><button type="submit" className="bg-orange-600 px-4 py-2 rounded">حفظ</button></div>
             </form>
           </div>
         </div>
       )}
-
     </div>
   );
 }
