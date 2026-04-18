@@ -77,42 +77,35 @@ function AppContent() {
 
 function App() {
   useEffect(() => {
-    const userRole = localStorage.getItem("userRole");
-    const currentPath = window.location.pathname;
-
-    // 1. إذا كان في login ومسجل، وجهه للصفحة المناسبة (يمنع الرجوع للوجين)
-    if (currentPath === "/login" && userRole) {
-      if (userRole === "tech") window.location.href = "/tech-portal";
-      else if (userRole === "data-entry") window.location.href = "/data-entry";
-      else window.location.href = "/orders";
-      return;
-    }
-
-    // 2. الصفحات العامة (لا تحتاج تسجيل)
+    // الصفحات التي لا تحتاج تسجيل دخول (عامة)
     const publicPaths = [
-      "/", 
+      "/", "/login", "/invoice",
       "/samsung-service", "/lg-service", "/sharp-service",
       "/toshiba-service", "/zanussi-service", "/unionaire-service",
       "/fresh-service", "/white-whale-service", "/ariston-service",
-      "/beko-service", "/hoover-service", "/indesit-service",
-      "/invoice"
+      "/beko-service", "/hoover-service", "/indesit-service"
     ];
+
+    const currentPath = window.location.pathname;
+    const userRole = localStorage.getItem("userRole");
+
+    // إذا كان المسار عام، لا تتدخل (اترك الصفحة تفتح)
     if (publicPaths.includes(currentPath)) {
       return;
     }
 
-    // 3. إذا لم يكن مسجلاً وغير موجود في publicPaths، اذهب للوجين
+    // إذا لم يكن مسجلاً دخول، اذهب لتسجيل الدخول
     if (!userRole) {
       window.location.href = "/login";
       return;
     }
 
-    // 4. للمستخدمين المسجلين: تأكد أنهم في الصفحة الصحيحة حسب دورهم
+    // إذا كان مسجلاً، لكنه يحاول الوصول لصفحة لا تناسب دوره، وجهه للصفحة الصحيحة
     if (userRole === "tech" && currentPath !== "/tech-portal") {
       window.location.href = "/tech-portal";
     } else if (userRole === "data-entry" && currentPath !== "/data-entry") {
       window.location.href = "/data-entry";
-    } else if (currentPath === "/") {
+    } else if ((userRole === "admin" || userRole === "manager" || userRole === "viewer") && currentPath !== "/orders") {
       window.location.href = "/orders";
     }
   }, []);
