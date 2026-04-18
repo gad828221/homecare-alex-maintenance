@@ -133,24 +133,38 @@ export default function ProtectedOrders() {
     return getDaysDifference(order.date, order.status) > 2;
   };
 
+  // ==================== دوال جلب البيانات المفقودة ====================
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const data = await fetchAPI('notifications?select=*&order=created_at.desc');
+      setNotifications(data || []);
+    } catch (err) { console.error(err); }
+  }, []);
+
+  const fetchPartners = useCallback(async () => {
+    try {
+      const data = await fetchAPI('partners?select=*&order=created_at.desc');
+      setPartners(data || []);
+    } catch (err) { console.error(err); }
+  }, []);
+
   const fetchCashLedger = useCallback(async () => {
-  try {
-    let endpoint = 'cash_ledger?select=*&order=date.desc';
-    if (cashFilterDate) endpoint = `cash_ledger?select=*&date=eq.${cashFilterDate}&order=date.desc`;
-    const data = await fetchAPI(endpoint);
-    setCashLedger(data || []);
-    const balance = (data || []).reduce((acc: number, entry: any) => {
-      if (entry.type === 'income' || entry.type === 'reserve') {
-        return acc + entry.amount;
-      } else if (entry.type === 'expense') {
-        return acc - entry.amount;
-      }
-      // profit_distribution لا يؤثر على الرصيد
-      return acc;
-    }, 0);
-    setCashBalance(balance);
-  } catch (err) { console.error(err); }
-}, [cashFilterDate]);
+    try {
+      let endpoint = 'cash_ledger?select=*&order=date.desc';
+      if (cashFilterDate) endpoint = `cash_ledger?select=*&date=eq.${cashFilterDate}&order=date.desc`;
+      const data = await fetchAPI(endpoint);
+      setCashLedger(data || []);
+      const balance = (data || []).reduce((acc: number, entry: any) => {
+        if (entry.type === 'income' || entry.type === 'reserve') {
+          return acc + entry.amount;
+        } else if (entry.type === 'expense') {
+          return acc - entry.amount;
+        }
+        return acc;
+      }, 0);
+      setCashBalance(balance);
+    } catch (err) { console.error(err); }
+  }, [cashFilterDate]);
 
   const addCashEntry = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -194,99 +208,40 @@ export default function ProtectedOrders() {
     } catch (err) { alert(`❌ حدث خطأ في الاتصال: ${err.message}`); return false; }
   };
 
-  // ✅ دالة توزيع أرباح الشركاء (محسنة - تعمل على أي أوردر مكتمل ومدفوع ولم يوزع)
   const distributePartnersProfit = async () => {
     try {
-      // جلب جميع الأوردرات المكتملة والمدفوعة التي لم يوزع ربحها على الشركاء بعد
       const eligibleOrders = orders.filter(o => 
-        o.status === 'completed' && 
-        o.is_paid === true && 
-        (o.company_share || 0) > 0 && 
-        !o.profit_distributed_to_partners
+        o.status === 'completed' && o.is_paid === true && (o.company_share || 0) > 0 && !o.profit_distributed_to_partners
       );
-      
       const totalProfit = eligibleOrders.reduce((sum, o) => sum + (o.company_share || 0), 0);
-      
-      if (totalProfit <= 0) {
-        alert("⚠️ لا توجد أوردرات مكتملة ومدفوعة (لم يسبق توزيع أرباحها).");
-        return;
-      }
-      
+      if (totalProfit <= 0) { alert("⚠️ لا توجد أوردرات مكتملة ومدفوعة (لم يسبق توزيع أرباحها)."); return; }
       const activePartners = partners.filter(p => p.is_active);
-      if (activePartners.length === 0) {
-        alert("⚠️ لا يوجد شركاء نشطون لتوزيع الأرباح.");
-        return;
-      }
-      
+      if (activePartners.length === 0) { alert("⚠️ لا يوجد شركاء نشطون لتوزيع الأرباح."); return; }
       const totalShares = activePartners.reduce((s, p) => s + (Number(p.share_percentage) || 0), 0);
-      if (totalShares <= 0 || totalShares > 100) {
-        alert("⚠️ إجمالي نسب الشركاء غير صالح (يجب أن يكون بين 1 و 100).");
-        return;
-      }
-      
+      if (totalShares <= 0 || totalShares > 100) { alert("⚠️ إجمالي نسب الشركاء غير صالح (يجب أن يكون بين 1 و 100)."); return; }
       const amountToDistribute = Math.floor((totalProfit * totalShares) / 100);
       const remaining = totalProfit - amountToDistribute;
-      
-      if (amountToDistribute <= 0) {
-        alert(`⚠️ لا يوجد مبلغ كافٍ للتوزيع (${totalShares}% من ${totalProfit} ج.م = ${amountToDistribute} ج.م).`);
-        return;
-      }
-      
-      if (!confirm(`💰 إجمالي أرباح غير موزعة: ${totalProfit.toLocaleString()} ج.م\n` +
-                    `📤 نسبة التصفية: ${totalShares}% (مجموع نسب الشركاء النشطين)\n` +
-                    `💰 سيتم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء\n` +
-                    `🏦 سيتم إضافة ${remaining.toLocaleString()} ج.م إلى رصيد الخزنة الاحتياطي (لصالح الشركة)\n\n` +
-                    `هل تريد الاستمرار؟`)) return;
-      
+      if (amountToDistribute <= 0) { alert(`⚠️ لا يوجد مبلغ كافٍ للتوزيع (${totalShares}% من ${totalProfit} ج.م = ${amountToDistribute} ج.م).`); return; }
+      if (!confirm(`💰 إجمالي أرباح غير موزعة: ${totalProfit.toLocaleString()} ج.م\n📤 نسبة التصفية: ${totalShares}% (مجموع نسب الشركاء النشطين)\n💰 سيتم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء\n🏦 سيتم إضافة ${remaining.toLocaleString()} ج.م إلى رصيد الخزنة الاحتياطي (لصالح الشركة)\n\nهل تريد الاستمرار؟`)) return;
       let distributedSum = 0;
       for (let i = 0; i < activePartners.length; i++) {
         const partner = activePartners[i];
-        let share = i === activePartners.length - 1 
-          ? amountToDistribute - distributedSum 
-          : Math.floor((amountToDistribute * partner.share_percentage) / totalShares);
+        let share = i === activePartners.length - 1 ? amountToDistribute - distributedSum : Math.floor((amountToDistribute * partner.share_percentage) / totalShares);
         distributedSum += share;
         if (share > 0) {
-          await fetchAPI('cash_ledger', {
-            method: 'POST',
-            body: JSON.stringify({
-              type: 'profit_distribution',
-              amount: share,
-              description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%) - أرباح من ${eligibleOrders.length} أوردر`,
-              date: new Date().toISOString().split('T')[0]
-            })
-          });
+          await fetchAPI('cash_ledger', { method: 'POST', body: JSON.stringify({ type: 'profit_distribution', amount: share, description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%) - أرباح من ${eligibleOrders.length} أوردر`, date: new Date().toISOString().split('T')[0] }) });
         }
       }
-      
       if (remaining > 0) {
-        await fetchAPI('cash_ledger', {
-          method: 'POST',
-          body: JSON.stringify({
-            type: 'reserve',
-            amount: remaining,
-            description: `🏦 رصيد احتياطي للشركة (غير موزع) من أرباح ${eligibleOrders.length} أوردر`,
-            date: new Date().toISOString().split('T')[0]
-          })
-        });
+        await fetchAPI('cash_ledger', { method: 'POST', body: JSON.stringify({ type: 'reserve', amount: remaining, description: `🏦 رصيد احتياطي للشركة (غير موزع) من أرباح ${eligibleOrders.length} أوردر`, date: new Date().toISOString().split('T')[0] }) });
       }
-      
-      // تحديث حالة التوزيع لكل أوردر
       for (const order of eligibleOrders) {
-        await fetchAPI(`orders?id=eq.${order.id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ profit_distributed_to_partners: true })
-        });
+        await fetchAPI(`orders?id=eq.${order.id}`, { method: 'PATCH', body: JSON.stringify({ profit_distributed_to_partners: true }) });
       }
-      
       await addNotification('توزيع أرباح الشركاء', `✅ تم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء (${totalShares}% من أرباح ${eligibleOrders.length} أوردر).`);
-      await fetchCashLedger();
-      await fetchData();
+      await fetchCashLedger(); await fetchData();
       alert(`✅ تم التوزيع بنجاح.\n💰 تم توزيع ${amountToDistribute.toLocaleString()} ج.م\n🏦 تم إضافة ${remaining.toLocaleString()} ج.م للخزنة الاحتياطية`);
-      
-    } catch (err) {
-      console.error("❌ خطأ في توزيع أرباح الشركاء:", err);
-      alert("❌ حدث خطأ أثناء توزيع الأرباح. راجع Console.");
-    }
+    } catch (err) { console.error(err); alert("❌ حدث خطأ أثناء توزيع الأرباح"); }
   };
 
   const fetchData = useCallback(async () => {
@@ -466,19 +421,14 @@ export default function ProtectedOrders() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200" dir="rtl">
-      {/* Header داكن */}
       <div className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 px-4 py-3">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <LayoutDashboard className="w-6 h-6 text-orange-500" />
-            <div><h1 className="text-lg font-bold text-white">لوحة تحكم المدير</h1><p className="text-xs text-slate-400">{currentUser?.name || 'مدير النظام'}</p></div>
-          </div>
+          <div className="flex items-center gap-3"><LayoutDashboard className="w-6 h-6 text-orange-500" /><div><h1 className="text-lg font-bold text-white">لوحة تحكم المدير</h1><p className="text-xs text-slate-400">{currentUser?.name || 'مدير النظام'}</p></div></div>
           <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"><LogOut className="w-5 h-5" /></button>
         </div>
       </div>
 
       <main className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
-        {/* Stats Cards داكنة */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div className="bg-slate-900 rounded-xl p-4 text-center border border-slate-800"><p className="text-2xl font-bold text-white">{orders.length}</p><p className="text-xs text-slate-400">إجمالي الأوردرات</p></div>
           <div className="bg-slate-900 rounded-xl p-4 text-center border border-slate-800"><p className="text-2xl font-bold text-yellow-500">{stats.pending}</p><p className="text-xs text-slate-400">قيد الانتظار</p></div>
@@ -487,7 +437,6 @@ export default function ProtectedOrders() {
           <div className="bg-slate-900 rounded-xl p-4 text-center border border-slate-800"><p className="text-2xl font-bold text-blue-500">{technicians.filter(t=>t.is_active!==false).length}</p><p className="text-xs text-slate-400">فني متاح</p></div>
         </div>
 
-        {/* Tabs داكنة */}
         <div className="flex flex-wrap gap-2 border-b border-slate-800 pb-2">
           <button onClick={() => setActiveTab('orders')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'orders' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>📋 الأوردرات</button>
           <button onClick={() => setActiveTab('technicians')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'technicians' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>👨‍🔧 الفنيين</button>
@@ -499,7 +448,6 @@ export default function ProtectedOrders() {
           {userRole === 'admin' && <button onClick={() => setActiveTab('permissions')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'permissions' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>🔐 الصلاحيات</button>}
         </div>
 
-        {/* Orders Tab - داكن */}
         {activeTab === 'orders' && (
           <div className="space-y-4">
             <div className="bg-slate-900 rounded-xl p-4 flex flex-wrap gap-3 items-center">
@@ -514,7 +462,6 @@ export default function ProtectedOrders() {
               <button onClick={()=>{setEditingOrder(null); setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") }); setShowOrderModal(true);}} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={18} /> أوردر جديد</button>
               <button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg"><RefreshCw size={18} /></button>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredOrders.map(order => (
                 <div key={order.id} className={`bg-slate-900 rounded-xl border-r-4 p-4 ${isDelayed(order) ? 'border-red-500' : order.status === 'completed' ? 'border-green-500' : order.status === 'in-progress' ? 'border-blue-500' : 'border-yellow-500'}`}>
@@ -527,19 +474,11 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* Technicians Tab - داكن */}
         {activeTab === 'technicians' && (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center"><div className="flex gap-2"><button onClick={()=>setFilterTechStatus('active')} className={`px-3 py-1 rounded-full text-sm ${filterTechStatus==='active'?'bg-orange-600 text-white':'bg-slate-800 text-slate-300'}`}>النشطون</button><button onClick={()=>setFilterTechStatus('inactive')} className={`px-3 py-1 rounded-full text-sm ${filterTechStatus==='inactive'?'bg-orange-600 text-white':'bg-slate-800 text-slate-300'}`}>غير النشطون</button><button onClick={()=>setFilterTechStatus('all')} className={`px-3 py-1 rounded-full text-sm ${filterTechStatus==='all'?'bg-orange-600 text-white':'bg-slate-800 text-slate-300'}`}>الجميع</button></div>{canEditDelete() && <button onClick={()=>{setEditingTech(null); setTechForm({ name: '', phone: '', specialization: '', is_active: true, username: '', password: '' }); setShowTechModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={18}/> إضافة فني</button>}</div>
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredTechnicians.map(tech => (
-                <div key={tech.id} className="bg-slate-900 rounded-xl p-4 text-center border border-slate-800"><div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3"><Users className="w-8 h-8 text-orange-500" /></div><h3 className="font-bold text-white">{tech.name}</h3><p className="text-xs text-slate-400">{tech.specialization}</p><div className="flex gap-2 mt-3"><button onClick={()=>copyTechLink(tech.name, tech.id)} className="flex-1 bg-slate-800 text-slate-300 py-1 rounded text-xs flex items-center justify-center gap-1">{copiedId===tech.id ? <Check size={14}/> : <Copy size={14}/>} نسخ</button>{canEditDelete() && <><button onClick={()=>{setEditingTech(tech); setTechForm(tech); setShowTechModal(true);}} className="p-1 text-blue-500"><Edit size={16}/></button><button onClick={()=>deleteTechnician(tech.id, tech.name)} className="p-1 text-red-500"><Trash2 size={16}/></button><button onClick={()=>toggleTechnicianActive(tech)} className={`p-1 ${tech.is_active!==false ? 'text-green-500' : 'text-red-500'}`}>{tech.is_active!==false ? 'نشط' : 'تعطيل'}</button></>}</div></div>
-              ))}
-            </div>
-          </div>
+          <div className="space-y-4"><div className="flex justify-between items-center"><div className="flex gap-2"><button onClick={()=>setFilterTechStatus('active')} className={`px-3 py-1 rounded-full text-sm ${filterTechStatus==='active'?'bg-orange-600 text-white':'bg-slate-800 text-slate-300'}`}>النشطون</button><button onClick={()=>setFilterTechStatus('inactive')} className={`px-3 py-1 rounded-full text-sm ${filterTechStatus==='inactive'?'bg-orange-600 text-white':'bg-slate-800 text-slate-300'}`}>غير النشطون</button><button onClick={()=>setFilterTechStatus('all')} className={`px-3 py-1 rounded-full text-sm ${filterTechStatus==='all'?'bg-orange-600 text-white':'bg-slate-800 text-slate-300'}`}>الجميع</button></div>{canEditDelete() && <button onClick={()=>{setEditingTech(null); setTechForm({ name: '', phone: '', specialization: '', is_active: true, username: '', password: '' }); setShowTechModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={18}/> إضافة فني</button>}</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">{filteredTechnicians.map(tech => (<div key={tech.id} className="bg-slate-900 rounded-xl p-4 text-center border border-slate-800"><div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3"><Users className="w-8 h-8 text-orange-500" /></div><h3 className="font-bold text-white">{tech.name}</h3><p className="text-xs text-slate-400">{tech.specialization}</p><div className="flex gap-2 mt-3"><button onClick={()=>copyTechLink(tech.name, tech.id)} className="flex-1 bg-slate-800 text-slate-300 py-1 rounded text-xs flex items-center justify-center gap-1">{copiedId===tech.id ? <Check size={14}/> : <Copy size={14}/>} نسخ</button>{canEditDelete() && <><button onClick={()=>{setEditingTech(tech); setTechForm(tech); setShowTechModal(true);}} className="p-1 text-blue-500"><Edit size={16}/></button><button onClick={()=>deleteTechnician(tech.id, tech.name)} className="p-1 text-red-500"><Trash2 size={16}/></button><button onClick={()=>toggleTechnicianActive(tech)} className={`p-1 ${tech.is_active!==false ? 'text-green-500' : 'text-red-500'}`}>{tech.is_active!==false ? 'نشط' : 'تعطيل'}</button></>}</div></div>))}</div></div>
         )}
 
-        {/* Reports Tab - داكن */}
         {activeTab === 'reports' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-slate-900 rounded-xl p-6 text-center"><p className="text-slate-400">إجمالي الإيرادات</p><p className="text-3xl font-bold text-white">{orders.reduce((a,o)=>a+(o.total_amount||0),0).toLocaleString()} ج.م</p></div>
@@ -548,17 +487,11 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* Invoices Review Tab - داكن */}
         {activeTab === 'invoicesReview' && (
-          <div className="space-y-3">
-            {orders.filter(o=>o.status==='completed' && !o.invoice_approved).map(order => (
-              <div key={order.id} className="bg-slate-900 rounded-xl p-4 flex justify-between items-center flex-wrap gap-3 border border-slate-800"><div><p className="font-bold text-white">{order.customer_name}</p><p className="text-sm text-slate-400">{order.device_type} - {order.brand}</p><p className="text-orange-400">المبلغ: {order.total_amount} ج.م</p></div><button onClick={()=>printAndSendInvoice(order)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2"><Printer size={16}/> طباعة الفاتورة</button></div>
-            ))}
-            {orders.filter(o=>o.status==='completed' && !o.invoice_approved).length===0 && <div className="text-center py-8 text-slate-400">لا توجد فواتير بانتظار المراجعة</div>}
-          </div>
+          <div className="space-y-3">{orders.filter(o=>o.status==='completed' && !o.invoice_approved).map(order => (<div key={order.id} className="bg-slate-900 rounded-xl p-4 flex justify-between items-center flex-wrap gap-3 border border-slate-800"><div><p className="font-bold text-white">{order.customer_name}</p><p className="text-sm text-slate-400">{order.device_type} - {order.brand}</p><p className="text-orange-400">المبلغ: {order.total_amount} ج.م</p></div><button onClick={()=>printAndSendInvoice(order)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2"><Printer size={16}/> طباعة الفاتورة</button></div>))}
+          {orders.filter(o=>o.status==='completed' && !o.invoice_approved).length===0 && <div className="text-center py-8 text-slate-400">لا توجد فواتير بانتظار المراجعة</div>}</div>
         )}
 
-        {/* Cash Tab - داكن */}
         {activeTab === 'cash' && (
           <div className="space-y-4">
             <div className="flex justify-between items-center flex-wrap gap-3"><div className="bg-emerald-500/20 p-4 rounded-xl"><p className="text-slate-400">رصيد الخزنة</p><p className="text-3xl font-bold text-emerald-400">{cashBalance.toLocaleString()} ج.م</p></div><div className="flex gap-2"><input type="date" value={cashFilterDate} onChange={e=>setCashFilterDate(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"/><button onClick={()=>setCashFilterDate('')} className="bg-slate-700 text-white px-3 py-2 rounded-lg text-sm">إلغاء الفلتر</button>{canEditDelete() && <button onClick={()=>{setEditingCash(null); setCashForm({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] }); setShowCashModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={16}/> حركة جديدة</button>}</div></div>
@@ -567,19 +500,11 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* Partners Tab - داكن */}
         {activeTab === 'partners' && (
-          <div className="space-y-4">
-            {canEditDelete() && <div className="flex justify-end"><button onClick={()=>{setEditingPartner(null); setPartnerForm({ name: '', share_percentage: 0, phone: '', is_active: true }); setShowPartnerModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><UserPlus size={16}/> إضافة شريك</button></div>}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {partners.map(partner => (
-                <div key={partner.id} className="bg-slate-900 rounded-xl p-4 border border-slate-800"><div className="flex justify-between"><h3 className="font-bold text-white">{partner.name}</h3><span className={`text-xs px-2 py-1 rounded-full ${partner.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{partner.is_active ? 'نشط' : 'غير نشط'}</span></div><p className="text-2xl font-bold text-orange-500 mt-2">{partner.share_percentage}%</p><p className="text-sm text-slate-400">📞 {partner.phone || 'لا يوجد'}</p>{canEditDelete() && <div className="flex gap-2 mt-3"><button onClick={()=>{setEditingPartner(partner); setPartnerForm(partner); setShowPartnerModal(true);}} className="text-blue-500"><Edit size={16}/></button><button onClick={()=>deletePartner(partner.id, partner.name)} className="text-red-500"><Trash2 size={16}/></button></div>}</div>
-              ))}
-            </div>
-          </div>
+          <div className="space-y-4"><div className="flex justify-end">{canEditDelete() && <button onClick={()=>{setEditingPartner(null); setPartnerForm({ name: '', share_percentage: 0, phone: '', is_active: true }); setShowPartnerModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><UserPlus size={16}/> إضافة شريك</button>}</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{partners.map(partner => (<div key={partner.id} className="bg-slate-900 rounded-xl p-4 border border-slate-800"><div className="flex justify-between"><h3 className="font-bold text-white">{partner.name}</h3><span className={`text-xs px-2 py-1 rounded-full ${partner.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{partner.is_active ? 'نشط' : 'غير نشط'}</span></div><p className="text-2xl font-bold text-orange-500 mt-2">{partner.share_percentage}%</p><p className="text-sm text-slate-400">📞 {partner.phone || 'لا يوجد'}</p>{canEditDelete() && <div className="flex gap-2 mt-3"><button onClick={()=>{setEditingPartner(partner); setPartnerForm(partner); setShowPartnerModal(true);}} className="text-blue-500"><Edit size={16}/></button><button onClick={()=>deletePartner(partner.id, partner.name)} className="text-red-500"><Trash2 size={16}/></button></div>}</div>))}</div></div>
         )}
 
-        {/* Notifications Tab - داكن */}
         {activeTab === 'notifications' && (
           <div className="space-y-3"><div className="flex justify-between"><h2 className="text-xl font-bold">🔔 سجل الإشعارات</h2>{canEditDelete() && notifications.length>0 && <button onClick={deleteAllNotifications} className="bg-red-500/20 text-red-400 px-3 py-1 rounded-lg text-sm flex items-center gap-1"><Trash size={14}/> مسح الكل</button>}</div>
           {notifications.map(notif=><div key={notif.id} className="bg-slate-900 rounded-xl p-4 flex justify-between items-center"><div><span className="text-orange-400 font-semibold">{notif.action}</span><span className="mx-2 text-slate-600">|</span><span className="text-slate-300">{notif.details}</span><div className="text-xs text-slate-500 mt-1">{new Date(notif.created_at).toLocaleString('ar-EG')}</div></div>{canEditDelete() && <button onClick={()=>deleteNotification(notif.id)} className="text-red-400"><Trash size={16}/></button>}</div>)}
@@ -589,7 +514,7 @@ export default function ProtectedOrders() {
         {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions />}
       </main>
 
-      {/* Order Modal - داكن */}
+      {/* Order Modal */}
       {showOrderModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl shadow-xl"><div className="flex justify-between mb-4"><h3 className="text-xl font-bold text-white">{editingOrder ? 'تعديل أوردر' : 'أوردر جديد'}</h3><button onClick={()=>setShowOrderModal(false)} className="text-slate-400"><X size={20}/></button></div>
@@ -608,17 +533,17 @@ export default function ProtectedOrders() {
         </div>
       )}
 
-      {/* Technician Modal - داكن */}
+      {/* Technician Modal */}
       {showTechModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"><div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md"><h3 className="text-xl font-bold text-white mb-4">{editingTech ? 'تعديل فني' : 'فني جديد'}</h3><form onSubmit={saveTechnician} className="space-y-4"><input type="text" placeholder="الاسم" value={techForm.name} onChange={e=>setTechForm({...techForm, name: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><input type="text" placeholder="رقم الهاتف" value={techForm.phone} onChange={e=>setTechForm({...techForm, phone: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/><input type="text" placeholder="التخصص" value={techForm.specialization} onChange={e=>setTechForm({...techForm, specialization: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/><input type="text" placeholder="اسم المستخدم" value={techForm.username} onChange={e=>setTechForm({...techForm, username: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><input type="password" placeholder="كلمة المرور" value={techForm.password} onChange={e=>setTechForm({...techForm, password: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><label className="flex items-center gap-2 text-slate-300"><input type="checkbox" checked={techForm.is_active} onChange={e=>setTechForm({...techForm, is_active: e.target.checked})} /> نشط</label><button type="submit" className="w-full bg-orange-600 text-white py-2 rounded-lg font-bold">حفظ</button></form></div></div>
       )}
 
-      {/* Partner Modal - داكن */}
+      {/* Partner Modal */}
       {showPartnerModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"><div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md"><h3 className="text-xl font-bold text-white mb-4">{editingPartner ? 'تعديل شريك' : 'إضافة شريك'}</h3><form onSubmit={savePartner} className="space-y-4"><input type="text" placeholder="اسم الشريك" value={partnerForm.name} onChange={e=>setPartnerForm({...partnerForm, name: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><input type="number" placeholder="نسبة الربح (%)" value={partnerForm.share_percentage} onChange={e=>setPartnerForm({...partnerForm, share_percentage: parseFloat(e.target.value)})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><input type="text" placeholder="رقم الهاتف" value={partnerForm.phone} onChange={e=>setPartnerForm({...partnerForm, phone: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/><label className="flex items-center gap-2 text-slate-300"><input type="checkbox" checked={partnerForm.is_active} onChange={e=>setPartnerForm({...partnerForm, is_active: e.target.checked})} /> نشط</label><button type="submit" className="w-full bg-orange-600 text-white py-2 rounded-lg font-bold">حفظ</button></form></div></div>
       )}
 
-      {/* Cash Modal - داكن */}
+      {/* Cash Modal */}
       {showCashModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"><div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md"><h3 className="text-xl font-bold text-white mb-4">{editingCash ? 'تعديل حركة' : 'إضافة حركة'}</h3><form onSubmit={addCashEntry} className="space-y-4"><select value={cashForm.type} onChange={e=>setCashForm({...cashForm, type: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="income">💰 دخل</option><option value="expense">💸 مصروف</option></select><input type="number" placeholder="المبلغ" value={cashForm.amount} onChange={e=>setCashForm({...cashForm, amount: parseFloat(e.target.value)})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><input type="text" placeholder="الوصف" value={cashForm.description} onChange={e=>setCashForm({...cashForm, description: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><input type="date" value={cashForm.date} onChange={e=>setCashForm({...cashForm, date: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><button type="submit" className="w-full bg-orange-600 text-white py-2 rounded-lg font-bold">حفظ</button></form></div></div>
       )}
