@@ -1,115 +1,184 @@
 import React, { useState } from 'react';
+import { LogIn, User, Lock, AlertCircle, Wrench, LayoutDashboard } from 'lucide-react';
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
 
-export default function LoginPage() {
+export default function Login() {
+  const [role, setRole] = useState<'admin' | 'tech'>('admin');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
-    console.log("🔍 محاولة دخول:", username);
 
     try {
-      // 1. البحث في جدول users
-      const urlUsers = `${supabaseUrl}/rest/v1/users?select=*&username=eq.${encodeURIComponent(username)}&is_active=eq.true`;
-      console.log("📡 جلب users من:", urlUsers);
-      const resUsers = await fetch(urlUsers, {
-        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
-      });
-      const users = await resUsers.json();
-      console.log("✅ نتيجة users:", users);
-
-      if (users && users.length > 0 && users[0].password === password) {
-        const user = users[0];
-        localStorage.setItem('userRole', user.role);
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        console.log("🚀 توجيه إلى:", user.role === 'data-entry' ? '/data-entry' : '/orders');
-        window.location.href = user.role === 'data-entry' ? '/data-entry' : '/orders';
-        return;
+      if (role === 'admin') {
+        // تسجيل دخول المدير أو المستخدم العادي
+        const res = await fetch(`${supabaseUrl}/rest/v1/users?select=*&username=eq.${encodeURIComponent(username)}`, {
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const data = await res.json();
+        
+        if (data && data.length > 0 && data[0].password === password) {
+          const user = data[0];
+          if (user.is_active === false) {
+            setError('❌ الحساب غير نشط. يرجى التواصل مع الإدارة.');
+            setLoading(false);
+            return;
+          }
+          
+          localStorage.setItem('currentUser', JSON.stringify({
+            id: user.id,
+            username: user.username,
+            name: user.name,
+            role: user.role
+          }));
+          localStorage.setItem('userRole', user.role);
+          
+          window.location.href = user.role === 'data-entry' ? '/data-entry' : '/orders';
+        } else {
+          setError('❌ اسم المستخدم أو كلمة المرور غير صحيحة');
+        }
+      } else {
+        // تسجيل دخول الفني
+        const res = await fetch(`${supabaseUrl}/rest/v1/technicians?select=*&username=eq.${encodeURIComponent(username)}`, {
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const data = await res.json();
+        
+        if (data && data.length > 0 && data[0].password === password) {
+          const tech = data[0];
+          if (tech.is_active === false) {
+            setError('❌ الحساب غير نشط. يرجى التواصل مع الإدارة.');
+            setLoading(false);
+            return;
+          }
+          
+          localStorage.setItem('currentUser', JSON.stringify({
+            id: tech.id,
+            username: tech.username,
+            name: tech.name,
+            role: 'tech',
+            techName: tech.name
+          }));
+          localStorage.setItem('userRole', 'tech');
+          localStorage.setItem('techName', tech.name);
+          
+          window.location.href = '/tech-portal';
+        } else {
+          setError('❌ اسم المستخدم أو كلمة المرور غير صحيحة');
+        }
       }
-
-      // 2. البحث في جدول technicians
-      const urlTechs = `${supabaseUrl}/rest/v1/technicians?select=*&username=eq.${encodeURIComponent(username)}&is_active=eq.true`;
-      console.log("📡 جلب technicians من:", urlTechs);
-      const resTechs = await fetch(urlTechs, {
-        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
-      });
-      const techs = await resTechs.json();
-      console.log("✅ نتيجة technicians:", techs);
-
-      if (techs && techs.length > 0 && techs[0].password === password) {
-        const tech = techs[0];
-        localStorage.setItem('userRole', 'tech');
-        localStorage.setItem('currentUser', JSON.stringify({ ...tech, role: 'tech' }));
-        console.log("🚀 توجيه إلى: /tech-portal");
-        window.location.href = '/tech-portal';
-        return;
-      }
-
-      console.log("❌ لا يوجد مستخدم مطابق");
-      setError('اسم المستخدم أو كلمة المرور غير صحيحة');
     } catch (err) {
-      console.error("❌ خطأ في الاتصال:", err);
-      setError('حدث خطأ في الاتصال بالخادم');
+      console.error(err);
+      setError('❌ حدث خطأ في الاتصال بقاعدة البيانات');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4" dir="rtl">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-center">
-          <h1 className="text-2xl font-bold text-white">نظام إدارة الصيانة</h1>
-          <p className="text-blue-100 mt-1">تسجيل الدخول</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-4">
+      <div className="bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md p-8 border border-slate-700">
+        <div className="text-center mb-8">
+          <div className="w-20 h-20 bg-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-orange-900/20">
+            <LogIn className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-white">🔧 Maintenance Guide</h1>
+          <p className="text-slate-400 text-sm mt-1">نظام إدارة الصيانة</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        {/* اختيار الدور */}
+        <div className="flex gap-3 mb-6">
+          <button
+            type="button"
+            onClick={() => setRole('admin')}
+            className={`flex-1 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
+              role === 'admin' 
+                ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/20' 
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            <LayoutDashboard className="w-4 h-4" />
+            مدير / مستخدم
+          </button>
+          <button
+            type="button"
+            onClick={() => setRole('tech')}
+            className={`flex-1 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
+              role === 'tech' 
+                ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/20' 
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            <Wrench className="w-4 h-4" />
+            فني
+          </button>
+        </div>
+
+        <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">اسم المستخدم</label>
+            <label className="block text-sm text-slate-400 mb-2 flex items-center gap-2">
+              <User className="w-4 h-4" /> اسم المستخدم
+            </label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="أدخل اسم المستخدم"
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-orange-500 transition-all"
+              placeholder={role === 'admin' ? 'أدخل اسم المستخدم' : 'أدخل اسم المستخدم (مثال: fahmy_8)'}
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">كلمة المرور</label>
+            <label className="block text-sm text-slate-400 mb-2 flex items-center gap-2">
+              <Lock className="w-4 h-4" /> كلمة المرور
+            </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-orange-500 transition-all"
               placeholder="أدخل كلمة المرور"
               required
             />
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
-              {error}
+            <div className="bg-red-500/20 border border-red-500 rounded-xl p-3 flex items-center gap-2 text-red-400 text-sm">
+              <AlertCircle className="w-5 h-5" />
+              <span>{error}</span>
             </div>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-3 rounded-lg transition disabled:opacity-50"
+            className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-bold py-3 rounded-xl transition-all active:scale-95 shadow-lg shadow-orange-900/20 disabled:opacity-50"
           >
-            {loading ? 'جاري التسجيل...' : 'دخول'}
+            {loading ? 'جاري الدخول...' : 'تسجيل الدخول'}
           </button>
         </form>
+
+        <div className="mt-6 text-center text-xs text-slate-500">
+          <p>للتواصل: 01278885772</p>
+        </div>
       </div>
     </div>
   );
