@@ -13,43 +13,50 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    
+    console.log("🔍 محاولة دخول:", username);
 
     try {
-      // 1. البحث في جدول users (للمدراء ومدخلي البيانات)
-      const resUsers = await fetch(`${supabaseUrl}/rest/v1/users?select=*&username=eq.${username}&is_active=eq.true`, {
+      // 1. البحث في جدول users
+      const urlUsers = `${supabaseUrl}/rest/v1/users?select=*&username=eq.${encodeURIComponent(username)}&is_active=eq.true`;
+      console.log("📡 جلب users من:", urlUsers);
+      const resUsers = await fetch(urlUsers, {
         headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
       });
       const users = await resUsers.json();
+      console.log("✅ نتيجة users:", users);
 
       if (users && users.length > 0 && users[0].password === password) {
         const user = users[0];
         localStorage.setItem('userRole', user.role);
         localStorage.setItem('currentUser', JSON.stringify(user));
-        if (user.role === 'data-entry') {
-          window.location.href = '/data-entry';
-        } else {
-          window.location.href = '/orders';
-        }
+        console.log("🚀 توجيه إلى:", user.role === 'data-entry' ? '/data-entry' : '/orders');
+        window.location.href = user.role === 'data-entry' ? '/data-entry' : '/orders';
         return;
       }
 
-      // 2. البحث في جدول technicians (للفنيين)
-      const resTechs = await fetch(`${supabaseUrl}/rest/v1/technicians?select=*&username=eq.${username}&is_active=eq.true`, {
+      // 2. البحث في جدول technicians
+      const urlTechs = `${supabaseUrl}/rest/v1/technicians?select=*&username=eq.${encodeURIComponent(username)}&is_active=eq.true`;
+      console.log("📡 جلب technicians من:", urlTechs);
+      const resTechs = await fetch(urlTechs, {
         headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
       });
       const techs = await resTechs.json();
+      console.log("✅ نتيجة technicians:", techs);
 
       if (techs && techs.length > 0 && techs[0].password === password) {
         const tech = techs[0];
         localStorage.setItem('userRole', 'tech');
         localStorage.setItem('currentUser', JSON.stringify({ ...tech, role: 'tech' }));
+        console.log("🚀 توجيه إلى: /tech-portal");
         window.location.href = '/tech-portal';
         return;
       }
 
+      console.log("❌ لا يوجد مستخدم مطابق");
       setError('اسم المستخدم أو كلمة المرور غير صحيحة');
     } catch (err) {
-      console.error(err);
+      console.error("❌ خطأ في الاتصال:", err);
       setError('حدث خطأ في الاتصال بالخادم');
     } finally {
       setLoading(false);
