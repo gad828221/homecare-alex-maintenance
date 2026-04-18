@@ -133,7 +133,7 @@ export default function ProtectedOrders() {
     return getDaysDifference(order.date, order.status) > 2;
   };
 
-  // ==================== دوال جلب البيانات المفقودة ====================
+  // ==================== دوال جلب البيانات ====================
   const fetchNotifications = useCallback(async () => {
     try {
       const data = await fetchAPI('notifications?select=*&order=created_at.desc');
@@ -176,12 +176,29 @@ export default function ProtectedOrders() {
       fetchCashLedger();
     } catch (err) { console.error(err); }
   };
+
+  // ✅ دالة حذف أي قيد من الخزنة (بما فيها profit_distribution و reserve)
   const deleteCashEntry = async (id: number) => {
-    if (confirm('حذف هذه الحركة؟')) {
+    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية");
+    if (confirm('هل تريد حذف هذا القيد نهائياً؟')) {
       await fetchAPI(`cash_ledger?id=eq.${id}`, { method: 'DELETE' });
-      await addNotification('حذف حركة خزنة', `تم حذف حركة من سجل الخزنة`);
+      await addNotification('حذف قيد خزنة', `تم حذف قيد من سجل الخزنة`);
       fetchCashLedger();
     }
+  };
+
+  // ✅ حذف أرباح أوردر من الخزنة (عند تعديل/حذف الأوردر)
+  const deleteOrderProfitFromCash = async (order: any) => {
+    try {
+      const { data: entries } = await fetchAPI(`cash_ledger?description=like=*${order.order_number}*&type=eq.income&select=id`);
+      if (entries && entries.length > 0) {
+        for (const entry of entries) {
+          await fetchAPI(`cash_ledger?id=eq.${entry.id}`, { method: 'DELETE' });
+          await addNotification('حذف أرباح أوردر من الخزنة', `تم حذف أرباح الأوردر رقم ${order.order_number} (${order.customer_name}) من الخزنة`);
+        }
+        await fetchCashLedger();
+      }
+    } catch (err) { console.error("فشل حذف أرباح الأوردر من الخزنة:", err); }
   };
 
   const addCompanyProfitToCash = async (order: any) => {
@@ -292,10 +309,17 @@ export default function ProtectedOrders() {
   const updateOrderStatus = async (id: number, newStatus: string) => {
     const order = orders.find(o => o.id === id);
     if (!order) return;
+    const oldStatus = order.status;
     try {
+      // إذا كنا نغير من مكتمل إلى غير مكتمل، نحذف الأرباح
+      if (oldStatus === 'completed' && newStatus !== 'completed' && order.profit_added_to_cash) {
+        await deleteOrderProfitFromCash(order);
+      }
       await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ status: newStatus }) });
       await addNotification('تغيير حالة أوردر', `🔄 تم تغيير حالة أوردر ${order.customer_name} إلى ${newStatus}`);
-      if (newStatus === 'completed' && order.is_paid && !order.profit_added_to_cash) await addCompanyProfitToCash({ ...order, status: newStatus });
+      if (newStatus === 'completed' && order.is_paid && !order.profit_added_to_cash) {
+        await addCompanyProfitToCash({ ...order, status: newStatus });
+      }
       sendWhatsAppToCustomer(order, newStatus);
       fetchData();
     } catch (err) { console.error(err); }
@@ -305,16 +329,30 @@ export default function ProtectedOrders() {
     if (!order) return;
     const newPaidStatus = !currentStatus;
     try {
+      // إذا كنا نلغي التحصيل وكان الأوردر مكتملاً وأضيفت أرباحه، نحذفها
+      if (!newPaidStatus && order.status === 'completed' && order.profit_added_to_cash) {
+        await deleteOrderProfitFromCash(order);
+      }
       await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ is_paid: newPaidStatus }) });
       await addNotification('تحديث حالة الدفع', `✅ تم تحديث حالة تحصيل أوردر ${order.customer_name} إلى ${newPaidStatus ? 'تم التحصيل' : 'لم يتم التحصيل'}`);
-      if (newPaidStatus && order.status === 'completed' && !order.profit_added_to_cash) await addCompanyProfitToCash({ ...order, is_paid: true });
+      if (newPaidStatus && order.status === 'completed' && !order.profit_added_to_cash) {
+        await addCompanyProfitToCash({ ...order, is_paid: true });
+      }
       fetchData(); fetchCashLedger();
     } catch (err) { console.error(err); }
   };
   const deleteOrder = async (id: number) => {
     if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لحذف الأوردرات");
     const order = orders.find(o => o.id === id);
-    if (confirm(`حذف أوردر ${order?.customer_name}؟`)) { await fetchAPI(`orders?id=eq.${id}`, { method: 'DELETE' }); await addNotification('حذف أوردر', `تم حذف أوردر ${order?.customer_name}`); fetchData(); }
+    if (!order) return;
+    if (confirm(`حذف أوردر ${order.customer_name}؟`)) {
+      if (order.profit_added_to_cash) {
+        await deleteOrderProfitFromCash(order);
+      }
+      await fetchAPI(`orders?id=eq.${id}`, { method: 'DELETE' });
+      await addNotification('حذف أوردر', `تم حذف أوردر ${order.customer_name}`);
+      fetchData();
+    }
   };
   const copyOrder = async (order: any) => {
     if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لنسخ الأوردرات");
@@ -331,8 +369,15 @@ export default function ProtectedOrders() {
     const orderToSave = { ...formData, device_type: finalDevice, brand: finalBrand, order_number: editingOrder ? editingOrder.order_number : `MG-${Date.now()}` };
     try {
       if (editingOrder) {
+        const oldOrder = orders.find(o => o.id === editingOrder.id);
+        if (oldOrder?.status === 'completed' && oldOrder?.is_paid && oldOrder?.profit_added_to_cash) {
+          await deleteOrderProfitFromCash(oldOrder);
+        }
         await fetchAPI(`orders?id=eq.${editingOrder.id}`, { method: 'PATCH', body: JSON.stringify(orderToSave) });
         await addNotification('تعديل أوردر', `تم تعديل أوردر ${formData.customer_name}`);
+        if (orderToSave.status === 'completed' && orderToSave.is_paid && !orderToSave.profit_added_to_cash) {
+          await addCompanyProfitToCash({ ...orderToSave, id: editingOrder.id });
+        }
         alert("✅ تم تعديل الأوردر بنجاح");
       } else {
         await fetchAPI('orders', { method: 'POST', body: JSON.stringify(orderToSave) });
@@ -429,6 +474,7 @@ export default function ProtectedOrders() {
       </div>
 
       <main className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+        {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div className="bg-slate-900 rounded-xl p-4 text-center border border-slate-800"><p className="text-2xl font-bold text-white">{orders.length}</p><p className="text-xs text-slate-400">إجمالي الأوردرات</p></div>
           <div className="bg-slate-900 rounded-xl p-4 text-center border border-slate-800"><p className="text-2xl font-bold text-yellow-500">{stats.pending}</p><p className="text-xs text-slate-400">قيد الانتظار</p></div>
@@ -437,6 +483,7 @@ export default function ProtectedOrders() {
           <div className="bg-slate-900 rounded-xl p-4 text-center border border-slate-800"><p className="text-2xl font-bold text-blue-500">{technicians.filter(t=>t.is_active!==false).length}</p><p className="text-xs text-slate-400">فني متاح</p></div>
         </div>
 
+        {/* Tabs */}
         <div className="flex flex-wrap gap-2 border-b border-slate-800 pb-2">
           <button onClick={() => setActiveTab('orders')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'orders' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>📋 الأوردرات</button>
           <button onClick={() => setActiveTab('technicians')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'technicians' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>👨‍🔧 الفنيين</button>
@@ -448,6 +495,7 @@ export default function ProtectedOrders() {
           {userRole === 'admin' && <button onClick={() => setActiveTab('permissions')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'permissions' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>🔐 الصلاحيات</button>}
         </div>
 
+        {/* Orders Tab */}
         {activeTab === 'orders' && (
           <div className="space-y-4">
             <div className="bg-slate-900 rounded-xl p-4 flex flex-wrap gap-3 items-center">
@@ -474,11 +522,13 @@ export default function ProtectedOrders() {
           </div>
         )}
 
+        {/* Technicians Tab */}
         {activeTab === 'technicians' && (
           <div className="space-y-4"><div className="flex justify-between items-center"><div className="flex gap-2"><button onClick={()=>setFilterTechStatus('active')} className={`px-3 py-1 rounded-full text-sm ${filterTechStatus==='active'?'bg-orange-600 text-white':'bg-slate-800 text-slate-300'}`}>النشطون</button><button onClick={()=>setFilterTechStatus('inactive')} className={`px-3 py-1 rounded-full text-sm ${filterTechStatus==='inactive'?'bg-orange-600 text-white':'bg-slate-800 text-slate-300'}`}>غير النشطون</button><button onClick={()=>setFilterTechStatus('all')} className={`px-3 py-1 rounded-full text-sm ${filterTechStatus==='all'?'bg-orange-600 text-white':'bg-slate-800 text-slate-300'}`}>الجميع</button></div>{canEditDelete() && <button onClick={()=>{setEditingTech(null); setTechForm({ name: '', phone: '', specialization: '', is_active: true, username: '', password: '' }); setShowTechModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={18}/> إضافة فني</button>}</div>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">{filteredTechnicians.map(tech => (<div key={tech.id} className="bg-slate-900 rounded-xl p-4 text-center border border-slate-800"><div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3"><Users className="w-8 h-8 text-orange-500" /></div><h3 className="font-bold text-white">{tech.name}</h3><p className="text-xs text-slate-400">{tech.specialization}</p><div className="flex gap-2 mt-3"><button onClick={()=>copyTechLink(tech.name, tech.id)} className="flex-1 bg-slate-800 text-slate-300 py-1 rounded text-xs flex items-center justify-center gap-1">{copiedId===tech.id ? <Check size={14}/> : <Copy size={14}/>} نسخ</button>{canEditDelete() && <><button onClick={()=>{setEditingTech(tech); setTechForm(tech); setShowTechModal(true);}} className="p-1 text-blue-500"><Edit size={16}/></button><button onClick={()=>deleteTechnician(tech.id, tech.name)} className="p-1 text-red-500"><Trash2 size={16}/></button><button onClick={()=>toggleTechnicianActive(tech)} className={`p-1 ${tech.is_active!==false ? 'text-green-500' : 'text-red-500'}`}>{tech.is_active!==false ? 'نشط' : 'تعطيل'}</button></>}</div></div>))}</div></div>
         )}
 
+        {/* Reports Tab */}
         {activeTab === 'reports' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-slate-900 rounded-xl p-6 text-center"><p className="text-slate-400">إجمالي الإيرادات</p><p className="text-3xl font-bold text-white">{orders.reduce((a,o)=>a+(o.total_amount||0),0).toLocaleString()} ج.م</p></div>
@@ -487,24 +537,42 @@ export default function ProtectedOrders() {
           </div>
         )}
 
+        {/* Invoices Review Tab */}
         {activeTab === 'invoicesReview' && (
           <div className="space-y-3">{orders.filter(o=>o.status==='completed' && !o.invoice_approved).map(order => (<div key={order.id} className="bg-slate-900 rounded-xl p-4 flex justify-between items-center flex-wrap gap-3 border border-slate-800"><div><p className="font-bold text-white">{order.customer_name}</p><p className="text-sm text-slate-400">{order.device_type} - {order.brand}</p><p className="text-orange-400">المبلغ: {order.total_amount} ج.م</p></div><button onClick={()=>printAndSendInvoice(order)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2"><Printer size={16}/> طباعة الفاتورة</button></div>))}
           {orders.filter(o=>o.status==='completed' && !o.invoice_approved).length===0 && <div className="text-center py-8 text-slate-400">لا توجد فواتير بانتظار المراجعة</div>}</div>
         )}
 
+        {/* Cash Tab - مع زر حذف لكل أنواع القيود */}
         {activeTab === 'cash' && (
           <div className="space-y-4">
             <div className="flex justify-between items-center flex-wrap gap-3"><div className="bg-emerald-500/20 p-4 rounded-xl"><p className="text-slate-400">رصيد الخزنة</p><p className="text-3xl font-bold text-emerald-400">{cashBalance.toLocaleString()} ج.م</p></div><div className="flex gap-2"><input type="date" value={cashFilterDate} onChange={e=>setCashFilterDate(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"/><button onClick={()=>setCashFilterDate('')} className="bg-slate-700 text-white px-3 py-2 rounded-lg text-sm">إلغاء الفلتر</button>{canEditDelete() && <button onClick={()=>{setEditingCash(null); setCashForm({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] }); setShowCashModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={16}/> حركة جديدة</button>}</div></div>
             <div className="bg-purple-600/10 rounded-xl p-4 flex justify-between items-center flex-wrap gap-3 border border-purple-500/30"><div><p className="text-sm font-semibold text-purple-300">توزيع أرباح الشركاء</p><p className="text-xs text-slate-400">يتم التوزيع تلقائياً حسب نسب الشركاء النشطين</p></div>{canEditDelete() && <button onClick={distributePartnersProfit} className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg text-sm font-bold flex items-center gap-2"><DollarSign size={16}/> توزيع أرباح الشركاء (تلقائي)</button>}</div>
-            <div className="bg-slate-900 rounded-xl overflow-x-auto"><table className="w-full text-sm"><thead className="bg-slate-800"><tr><th className="p-3">التاريخ</th><th>النوع</th><th>المبلغ</th><th>الوصف</th><th>إجراءات</th></tr></thead><tbody>{cashLedger.map(entry=>(<tr key={entry.id} className="border-b border-slate-800"><td className="p-3 text-slate-300">{entry.date}</td><td className="text-slate-300">{entry.type==='income'?'💰 دخل':entry.type==='expense'?'💸 مصروف':entry.type==='profit_distribution'?'📤 توزيع أرباح':'🏦 رصيد احتياطي'}</td><td className={entry.type==='income'||entry.type==='reserve'?'text-green-400':'text-red-400'}>{entry.amount} ج.م</td><td className="max-w-xs break-words text-slate-300">{entry.description}</td><td>{canEditDelete() && entry.type!=='profit_distribution' && entry.type!=='reserve' && <button onClick={()=>deleteCashEntry(entry.id)} className="text-red-400"><Trash2 size={16}/></button>}</td></tr>))}</tbody></table></div>
+            <div className="bg-slate-900 rounded-xl overflow-x-auto"><table className="w-full text-sm"><thead className="bg-slate-800"><tr><th className="p-3">التاريخ</th><th>النوع</th><th>المبلغ</th><th>الوصف</th><th>إجراءات</th></tr></thead><tbody>{cashLedger.map(entry=>(
+              <tr key={entry.id} className="border-b border-slate-800">
+                <td className="p-3 text-slate-300">{entry.date}</td>
+                <td className="text-slate-300">{entry.type==='income'?'💰 دخل':entry.type==='expense'?'💸 مصروف':entry.type==='profit_distribution'?'📤 توزيع أرباح':'🏦 رصيد احتياطي'}</td>
+                <td className={entry.type==='income'||entry.type==='reserve'?'text-green-400':'text-red-400'}>{entry.amount} ج.م</td>
+                <td className="max-w-xs break-words text-slate-300">{entry.description}</td>
+                <td>
+                  {canEditDelete() && (
+                    <button onClick={() => deleteCashEntry(entry.id)} className="text-red-400 hover:text-red-300">
+                      <Trash2 size={16}/>
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}</tbody></table></div>
           </div>
         )}
 
+        {/* Partners Tab */}
         {activeTab === 'partners' && (
           <div className="space-y-4"><div className="flex justify-end">{canEditDelete() && <button onClick={()=>{setEditingPartner(null); setPartnerForm({ name: '', share_percentage: 0, phone: '', is_active: true }); setShowPartnerModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><UserPlus size={16}/> إضافة شريك</button>}</div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{partners.map(partner => (<div key={partner.id} className="bg-slate-900 rounded-xl p-4 border border-slate-800"><div className="flex justify-between"><h3 className="font-bold text-white">{partner.name}</h3><span className={`text-xs px-2 py-1 rounded-full ${partner.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{partner.is_active ? 'نشط' : 'غير نشط'}</span></div><p className="text-2xl font-bold text-orange-500 mt-2">{partner.share_percentage}%</p><p className="text-sm text-slate-400">📞 {partner.phone || 'لا يوجد'}</p>{canEditDelete() && <div className="flex gap-2 mt-3"><button onClick={()=>{setEditingPartner(partner); setPartnerForm(partner); setShowPartnerModal(true);}} className="text-blue-500"><Edit size={16}/></button><button onClick={()=>deletePartner(partner.id, partner.name)} className="text-red-500"><Trash2 size={16}/></button></div>}</div>))}</div></div>
         )}
 
+        {/* Notifications Tab */}
         {activeTab === 'notifications' && (
           <div className="space-y-3"><div className="flex justify-between"><h2 className="text-xl font-bold">🔔 سجل الإشعارات</h2>{canEditDelete() && notifications.length>0 && <button onClick={deleteAllNotifications} className="bg-red-500/20 text-red-400 px-3 py-1 rounded-lg text-sm flex items-center gap-1"><Trash size={14}/> مسح الكل</button>}</div>
           {notifications.map(notif=><div key={notif.id} className="bg-slate-900 rounded-xl p-4 flex justify-between items-center"><div><span className="text-orange-400 font-semibold">{notif.action}</span><span className="mx-2 text-slate-600">|</span><span className="text-slate-300">{notif.details}</span><div className="text-xs text-slate-500 mt-1">{new Date(notif.created_at).toLocaleString('ar-EG')}</div></div>{canEditDelete() && <button onClick={()=>deleteNotification(notif.id)} className="text-red-400"><Trash size={16}/></button>}</div>)}
@@ -514,7 +582,7 @@ export default function ProtectedOrders() {
         {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions />}
       </main>
 
-      {/* Order Modal */}
+      {/* باقي المودالات (Order, Technician, Partner, Cash) - نفس الكود السابق */}
       {showOrderModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl shadow-xl"><div className="flex justify-between mb-4"><h3 className="text-xl font-bold text-white">{editingOrder ? 'تعديل أوردر' : 'أوردر جديد'}</h3><button onClick={()=>setShowOrderModal(false)} className="text-slate-400"><X size={20}/></button></div>
@@ -533,17 +601,14 @@ export default function ProtectedOrders() {
         </div>
       )}
 
-      {/* Technician Modal */}
       {showTechModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"><div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md"><h3 className="text-xl font-bold text-white mb-4">{editingTech ? 'تعديل فني' : 'فني جديد'}</h3><form onSubmit={saveTechnician} className="space-y-4"><input type="text" placeholder="الاسم" value={techForm.name} onChange={e=>setTechForm({...techForm, name: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><input type="text" placeholder="رقم الهاتف" value={techForm.phone} onChange={e=>setTechForm({...techForm, phone: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/><input type="text" placeholder="التخصص" value={techForm.specialization} onChange={e=>setTechForm({...techForm, specialization: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/><input type="text" placeholder="اسم المستخدم" value={techForm.username} onChange={e=>setTechForm({...techForm, username: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><input type="password" placeholder="كلمة المرور" value={techForm.password} onChange={e=>setTechForm({...techForm, password: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><label className="flex items-center gap-2 text-slate-300"><input type="checkbox" checked={techForm.is_active} onChange={e=>setTechForm({...techForm, is_active: e.target.checked})} /> نشط</label><button type="submit" className="w-full bg-orange-600 text-white py-2 rounded-lg font-bold">حفظ</button></form></div></div>
       )}
 
-      {/* Partner Modal */}
       {showPartnerModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"><div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md"><h3 className="text-xl font-bold text-white mb-4">{editingPartner ? 'تعديل شريك' : 'إضافة شريك'}</h3><form onSubmit={savePartner} className="space-y-4"><input type="text" placeholder="اسم الشريك" value={partnerForm.name} onChange={e=>setPartnerForm({...partnerForm, name: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><input type="number" placeholder="نسبة الربح (%)" value={partnerForm.share_percentage} onChange={e=>setPartnerForm({...partnerForm, share_percentage: parseFloat(e.target.value)})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><input type="text" placeholder="رقم الهاتف" value={partnerForm.phone} onChange={e=>setPartnerForm({...partnerForm, phone: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/><label className="flex items-center gap-2 text-slate-300"><input type="checkbox" checked={partnerForm.is_active} onChange={e=>setPartnerForm({...partnerForm, is_active: e.target.checked})} /> نشط</label><button type="submit" className="w-full bg-orange-600 text-white py-2 rounded-lg font-bold">حفظ</button></form></div></div>
       )}
 
-      {/* Cash Modal */}
       {showCashModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"><div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md"><h3 className="text-xl font-bold text-white mb-4">{editingCash ? 'تعديل حركة' : 'إضافة حركة'}</h3><form onSubmit={addCashEntry} className="space-y-4"><select value={cashForm.type} onChange={e=>setCashForm({...cashForm, type: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="income">💰 دخل</option><option value="expense">💸 مصروف</option></select><input type="number" placeholder="المبلغ" value={cashForm.amount} onChange={e=>setCashForm({...cashForm, amount: parseFloat(e.target.value)})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><input type="text" placeholder="الوصف" value={cashForm.description} onChange={e=>setCashForm({...cashForm, description: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><input type="date" value={cashForm.date} onChange={e=>setCashForm({...cashForm, date: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><button type="submit" className="w-full bg-orange-600 text-white py-2 rounded-lg font-bold">حفظ</button></form></div></div>
       )}
