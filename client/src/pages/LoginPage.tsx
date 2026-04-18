@@ -71,7 +71,7 @@ export default function LoginPage() {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="أدخل اسم المستخدم"
               required
             />
@@ -83,14 +83,14 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="أدخل كلمة المرور"
               required
             />
           </div>
 
           {error && (
-            <div className="bg-red-50 p-3 rounded-lg text-red-700 text-sm">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
               {error}
             </div>
           )}
@@ -98,9 +98,9 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg"
+            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-3 rounded-lg transition disabled:opacity-50"
           >
-            {loading ? 'جاري...' : 'دخول'}
+            {loading ? 'جاري التسجيل...' : 'دخول'}
           </button>
         </form>
       </div>
