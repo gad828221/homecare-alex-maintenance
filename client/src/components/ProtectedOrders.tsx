@@ -133,22 +133,24 @@ export default function ProtectedOrders() {
     return getDaysDifference(order.date, order.status) > 2;
   };
 
-  const fetchNotifications = useCallback(async () => {
-    try { const data = await fetchAPI('notifications?select=*&order=created_at.desc'); setNotifications(data || []); } catch (err) { console.error(err); }
-  }, []);
-  const fetchPartners = useCallback(async () => {
-    try { const data = await fetchAPI('partners?select=*&order=created_at.desc'); setPartners(data || []); } catch (err) { console.error(err); }
-  }, []);
   const fetchCashLedger = useCallback(async () => {
-    try {
-      let endpoint = 'cash_ledger?select=*&order=date.desc';
-      if (cashFilterDate) endpoint = `cash_ledger?select=*&date=eq.${cashFilterDate}&order=date.desc`;
-      const data = await fetchAPI(endpoint);
-      setCashLedger(data || []);
-      const balance = (data || []).reduce((acc: number, entry: any) => entry.type === 'income' ? acc + entry.amount : entry.type === 'expense' ? acc - entry.amount : acc, 0);
-      setCashBalance(balance);
-    } catch (err) { console.error(err); }
-  }, [cashFilterDate]);
+  try {
+    let endpoint = 'cash_ledger?select=*&order=date.desc';
+    if (cashFilterDate) endpoint = `cash_ledger?select=*&date=eq.${cashFilterDate}&order=date.desc`;
+    const data = await fetchAPI(endpoint);
+    setCashLedger(data || []);
+    const balance = (data || []).reduce((acc: number, entry: any) => {
+      if (entry.type === 'income' || entry.type === 'reserve') {
+        return acc + entry.amount;
+      } else if (entry.type === 'expense') {
+        return acc - entry.amount;
+      }
+      // profit_distribution لا يؤثر على الرصيد
+      return acc;
+    }, 0);
+    setCashBalance(balance);
+  } catch (err) { console.error(err); }
+}, [cashFilterDate]);
 
   const addCashEntry = async (e: React.FormEvent) => {
     e.preventDefault();
