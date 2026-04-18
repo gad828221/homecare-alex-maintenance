@@ -56,10 +56,21 @@ function Router() {
 function FloatingButtons() {
   return (
     <div className="fixed bottom-6 left-0 right-0 flex justify-between px-4 pointer-events-none z-50">
-      <a href="tel:01278885772" className="pointer-events-auto bg-blue-600 hover:bg-blue-700 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 ml-auto" style={{ marginRight: '10px' }} aria-label="اتصال">
+      <a
+        href="tel:01278885772"
+        className="pointer-events-auto bg-blue-600 hover:bg-blue-700 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 ml-auto"
+        style={{ marginRight: '10px' }}
+        aria-label="اتصال"
+      >
         <Phone className="w-6 h-6" />
       </a>
-      <a href="https://wa.me/201558625259" target="_blank" rel="noopener noreferrer" className="pointer-events-auto bg-green-600 hover:bg-green-700 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110" aria-label="واتساب">
+      <a
+        href="https://wa.me/201558625259"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="pointer-events-auto bg-green-600 hover:bg-green-700 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110"
+        aria-label="واتساب"
+      >
         <MessageCircle className="w-6 h-6" />
       </a>
     </div>
@@ -77,42 +88,31 @@ function AppContent() {
 
 function App() {
   useEffect(() => {
+    // 🚨 الأهم: لا تفعل أي شيء إذا كنا في صفحة تسجيل الدخول
+    if (window.location.pathname === "/login") {
+      return;
+    }
+
     const userRole = localStorage.getItem("userRole");
     const currentPath = window.location.pathname;
 
-    // منع الحلقة: إذا كنا في صفحة login لا نعيد التوجيه أبداً
-    if (currentPath === "/login") {
-      if (userRole) {
-        let redirectUrl = "/orders";
-        if (userRole === "tech") redirectUrl = "/tech-portal";
-        else if (userRole === "data-entry") redirectUrl = "/data-entry";
-        window.location.href = redirectUrl;
-      }
-      return;
-    }
-
-    const publicPaths = [
-      "/", "/invoice",
-      "/samsung-service", "/lg-service", "/sharp-service",
-      "/toshiba-service", "/zanussi-service", "/unionaire-service",
-      "/fresh-service", "/white-whale-service", "/ariston-service",
-      "/beko-service", "/hoover-service", "/indesit-service"
-    ];
-
+    // إذا لم يكن هناك دور، اذهب لتسجيل الدخول
     if (!userRole) {
-      const isPublic = publicPaths.some(p => currentPath === p) || currentPath.startsWith("/invoice");
-      if (!isPublic && currentPath !== "/login") {
-        localStorage.setItem("redirectAfterLogin", currentPath);
-        window.location.href = "/login";
-      }
+      window.location.href = "/login";
       return;
     }
 
-    // توجيه الفنيين ومدخلي البيانات
-    if (userRole === "tech" && currentPath !== "/tech-portal" && !publicPaths.includes(currentPath)) {
+    // توجيه المستخدم حسب دوره
+    if (userRole === "tech" && currentPath !== "/tech-portal") {
       window.location.href = "/tech-portal";
-    } else if (userRole === "data-entry" && currentPath !== "/data-entry" && !publicPaths.includes(currentPath)) {
+    } else if (userRole === "data-entry" && currentPath !== "/data-entry") {
       window.location.href = "/data-entry";
+    } else if (userRole === "admin" && currentPath === "/") {
+      window.location.href = "/orders";
+    } else if (userRole === "manager" && currentPath === "/") {
+      window.location.href = "/orders";
+    } else if (userRole === "viewer" && currentPath === "/") {
+      window.location.href = "/orders";
     }
   }, []);
 
