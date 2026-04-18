@@ -88,7 +88,7 @@ function AppContent() {
 
 function App() {
   useEffect(() => {
-    // 🚨 الأهم: لا تفعل أي شيء إذا كنا في صفحة تسجيل الدخول (لحل مشكلة الرعشة)
+    // 🚨 الأهم: لا تفعل أي شيء إذا كنا في صفحة تسجيل الدخول
     if (window.location.pathname === "/login") {
       return;
     }
@@ -96,29 +96,33 @@ function App() {
     const userRole = localStorage.getItem("userRole");
     const currentPath = window.location.pathname;
 
+    // الصفحات العامة (تفتح بدون تسجيل دخول)
     const publicPaths = [
-      "/", "/invoice",
+      "/", 
       "/samsung-service", "/lg-service", "/sharp-service",
       "/toshiba-service", "/zanussi-service", "/unionaire-service",
       "/fresh-service", "/white-whale-service", "/ariston-service",
-      "/beko-service", "/hoover-service", "/indesit-service"
+      "/beko-service", "/hoover-service", "/indesit-service",
+      "/invoice"
     ];
 
-    if (!userRole) {
-      const isPublic = publicPaths.includes(currentPath);
-      if (!isPublic) {
-        window.location.href = "/login";
-      }
+    // ✅ إذا كان المسار عام، يسمح بالدخول بدون توجيه
+    if (publicPaths.includes(currentPath)) {
       return;
     }
 
+    // إذا لم يكن مسجلاً، اذهب لتسجيل الدخول
+    if (!userRole) {
+      window.location.href = "/login";
+      return;
+    }
+
+    // توجيه المستخدمين المسجلين حسب دورهم
     if (userRole === "tech" && currentPath !== "/tech-portal") {
       window.location.href = "/tech-portal";
     } else if (userRole === "data-entry" && currentPath !== "/data-entry") {
       window.location.href = "/data-entry";
-    } else if ((userRole === "admin" || userRole === "manager" || userRole === "viewer") && currentPath === "/") {
-      window.location.href = "/orders";
-    } else if (currentPath === "/login") {
+    } else if (currentPath === "/") {
       window.location.href = "/orders";
     }
   }, []);
