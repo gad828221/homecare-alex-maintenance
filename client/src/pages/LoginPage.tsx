@@ -18,7 +18,6 @@ export default function Login() {
 
     try {
       if (role === 'admin') {
-        // تسجيل دخول المدير أو المستخدم العادي
         const res = await fetch(`${supabaseUrl}/rest/v1/users?select=*&username=eq.${encodeURIComponent(username)}`, {
           headers: {
             'apikey': supabaseKey,
@@ -26,9 +25,7 @@ export default function Login() {
             'Content-Type': 'application/json'
           }
         });
-        
         const data = await res.json();
-        
         if (data && data.length > 0 && data[0].password === password) {
           const user = data[0];
           if (user.is_active === false) {
@@ -36,7 +33,6 @@ export default function Login() {
             setLoading(false);
             return;
           }
-          
           localStorage.setItem('currentUser', JSON.stringify({
             id: user.id,
             username: user.username,
@@ -44,13 +40,11 @@ export default function Login() {
             role: user.role
           }));
           localStorage.setItem('userRole', user.role);
-          
           window.location.href = user.role === 'data-entry' ? '/data-entry' : '/orders';
         } else {
           setError('❌ اسم المستخدم أو كلمة المرور غير صحيحة');
         }
       } else {
-        // تسجيل دخول الفني
         const res = await fetch(`${supabaseUrl}/rest/v1/technicians?select=*&username=eq.${encodeURIComponent(username)}`, {
           headers: {
             'apikey': supabaseKey,
@@ -58,9 +52,7 @@ export default function Login() {
             'Content-Type': 'application/json'
           }
         });
-        
         const data = await res.json();
-        
         if (data && data.length > 0 && data[0].password === password) {
           const tech = data[0];
           if (tech.is_active === false) {
@@ -68,7 +60,6 @@ export default function Login() {
             setLoading(false);
             return;
           }
-          
           localStorage.setItem('currentUser', JSON.stringify({
             id: tech.id,
             username: tech.username,
@@ -78,7 +69,6 @@ export default function Login() {
           }));
           localStorage.setItem('userRole', 'tech');
           localStorage.setItem('techName', tech.name);
-          
           window.location.href = '/tech-portal';
         } else {
           setError('❌ اسم المستخدم أو كلمة المرور غير صحيحة');
@@ -103,7 +93,6 @@ export default function Login() {
           <p className="text-slate-400 text-sm mt-1">نظام إدارة الصيانة</p>
         </div>
 
-        {/* اختيار الدور */}
         <div className="flex gap-3 mb-6">
           <button
             type="button"
@@ -141,7 +130,7 @@ export default function Login() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-orange-500 transition-all"
-              placeholder={role === 'admin' ? 'أدخل اسم المستخدم' : 'أدخل اسم المستخدم (مثال: fahmy_8)'}
+              placeholder="أدخل اسم المستخدم"
               required
             />
           </div>
