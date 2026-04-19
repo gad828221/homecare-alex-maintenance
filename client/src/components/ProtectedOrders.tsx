@@ -687,26 +687,7 @@ const sendDailyReportToPartners = async () => {
 };
 // ==================== نهاية دالة التقرير ====================
     
-    if (!userChoice) return;
-    
-    // فتح واتساب لكل شريك
-    for (const partner of activePartners) {
-      let phone = partner.phone.toString().replace(/[^\d]/g, '');
-      if (phone.startsWith('0')) phone = phone.substring(1);
-      if (phone.length === 10) phone = '20' + phone;
-      if (!phone.startsWith('20')) phone = '20' + phone;
-      
-      const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(reportText)}`;
-      window.open(whatsappUrl, '_blank');
-      
-      // انتظر قليلاً بين الفتحات
-      await new Promise(resolve => setTimeout(resolve, 800));
-    }
-    
-    alert(`✅ تم فتح واتساب لـ ${activePartners.length} شريك. قم بإرسال التقرير لكل منهم.`);
-  };
-  // ==================== نهاية دالة التقرير ====================
-
+  
   // فلترة الأوردرات مع دعم showAllOrders
   const filteredOrders = orders.filter(o => {
     if (searchTerm && !o.customer_name?.includes(searchTerm) && !o.phone?.includes(searchTerm) && !String(o.order_number).includes(searchTerm)) return false;
