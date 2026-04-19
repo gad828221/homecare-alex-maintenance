@@ -3,7 +3,7 @@ import {
   Plus, Search, LayoutDashboard, Users, 
   CheckCircle2, AlertCircle, 
   Edit, Trash2, RefreshCw, Phone,
-  Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut
+  Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut, Send
 } from "lucide-react";
 import AdminPermissions from './AdminPermissions';
 import { createClient } from '@supabase/supabase-js';
@@ -34,6 +34,39 @@ const addNotification = async (action: string, details: string) => {
       body: JSON.stringify({ action, details, user_name: 'المدير', created_at: new Date().toISOString() })
     });
   } catch (err) { console.error(err); }
+};
+
+// مزامنة الفنيين مع جدول users (لضمان تسجيل الدخول)
+const syncTechniciansToUsers = async () => {
+  try {
+    const techs = await fetchAPI('technicians?select=*');
+    if (!techs || techs.length === 0) return;
+    for (const tech of techs) {
+      const userData = {
+        username: tech.username?.trim(),
+        password: tech.password,
+        name: tech.name,
+        phone: tech.phone || '',
+        role: 'tech',
+        is_active: tech.is_active
+      };
+      if (!userData.username) continue;
+      
+      const updateRes = await fetch(`${supabaseUrl}/rest/v1/users?username=eq.${userData.username}`, {
+        method: 'PATCH',
+        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData)
+      });
+      if (updateRes.status === 404) {
+        await fetch(`${supabaseUrl}/rest/v1/users`, {
+          method: 'POST',
+          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(userData)
+        });
+      }
+    }
+    console.log("✅ تمت مزامنة الفنيين مع users");
+  } catch (err) { console.error("❌ فشل مزامنة الفنيين:", err); }
 };
 
 export default function ProtectedOrders() {
@@ -319,12 +352,11 @@ export default function ProtectedOrders() {
     const parts = parseFloat(data.parts_cost) || 0;
     const transport = parseFloat(data.transport_cost) || 0;
     const net = total - parts - transport;
-    // بحث مرن: بالاسم أو اسم المستخدم، غير حساس لحالة الأحرف
     const selectedTech = technicians.find(t => 
       t.name === technicianName || 
       t.username === technicianName ||
-      t.name.toLowerCase() === technicianName.toLowerCase() ||
-      t.username.toLowerCase() === technicianName.toLowerCase()
+      t.name?.toLowerCase() === technicianName?.toLowerCase() ||
+      t.username?.toLowerCase() === technicianName?.toLowerCase()
     );
     const technicianPercent = selectedTech?.profit_percentage ?? 50;
     const technicianShare = Math.round((net * technicianPercent) / 100);
@@ -509,6 +541,9 @@ export default function ProtectedOrders() {
         await fetchAPI('technicians', { method: 'POST', body: JSON.stringify({ ...techForm, profit_percentage: techForm.profit_percentage }) });
         await addNotification('إضافة فني', `تم إضافة فني جديد: ${techForm.name}`);
       }
+      // مزامنة الفني مع جدول users
+      await syncTechniciansToUsers();
+      
       setShowTechModal(false); setEditingTech(null);
       setTechForm({ name: '', phone: '', specialization: '', is_active: true, username: '', password: '', profit_percentage: 50 });
       fetchData();
@@ -517,13 +552,19 @@ export default function ProtectedOrders() {
 
   const deleteTechnician = async (id: number, name: string) => {
     if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية");
-    if (confirm(`حذف الفني ${name}؟`)) { await fetchAPI(`technicians?id=eq.${id}`, { method: 'DELETE' }); await addNotification('حذف فني', `تم حذف الفني ${name}`); fetchData(); }
+    if (confirm(`حذف الفني ${name}؟`)) { 
+      await fetchAPI(`technicians?id=eq.${id}`, { method: 'DELETE' });
+      await addNotification('حذف فني', `تم حذف الفني ${name}`);
+      await syncTechniciansToUsers();
+      await fetchData();
+    }
   };
 
   const toggleTechnicianActive = async (tech: any) => {
     if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية");
     await fetchAPI(`technicians?id=eq.${tech.id}`, { method: 'PATCH', body: JSON.stringify({ is_active: !tech.is_active }) });
     await addNotification('تغيير حالة فني', `تم ${!tech.is_active ? 'تفعيل' : 'تعطيل'} الفني ${tech.name}`);
+    await syncTechniciansToUsers();
     fetchData();
   };
 
@@ -568,6 +609,82 @@ export default function ProtectedOrders() {
     if (confirm('حذف كل الإشعارات؟')) { for (const n of notifications) await fetchAPI(`notifications?id=eq.${n.id}`, { method: 'DELETE' }); fetchNotifications(); }
   };
   const clearFilters = () => { setSearchTerm(''); setFilterStatus('all'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); };
+
+  // ==================== دالة إرسال التقرير اليومي للشركاء عبر واتساب ====================
+  const sendDailyReportToPartners = async () => {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // جلب حركات الخزنة لليوم
+    const entries = await fetchAPI(`cash_ledger?select=*&date=eq.${today}&order=created_at.desc`);
+    if (!entries || entries.length === 0) {
+      alert("⚠️ لا توجد حركات خزنة لهذا اليوم");
+      return;
+    }
+    
+    // حساب الإحصائيات
+    let totalIncome = 0, totalExpense = 0, totalProfitDist = 0, totalReserve = 0;
+    const profitDetails: string[] = [];
+    
+    entries.forEach((entry: any) => {
+      if (entry.type === 'income') totalIncome += entry.amount;
+      else if (entry.type === 'expense') totalExpense += entry.amount;
+      else if (entry.type === 'profit_distribution') {
+        totalProfitDist += entry.amount;
+        profitDetails.push(`• ${entry.description} : ${entry.amount} ج.م`);
+      }
+      else if (entry.type === 'reserve') totalReserve += entry.amount;
+    });
+    
+    const netBalance = totalIncome + totalReserve - totalExpense;
+    
+    // بناء نص التقرير
+    const reportText = 
+      `📊 *تقرير الخزنة اليومي* 📊\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `📅 *التاريخ:* ${today}\n\n` +
+      `💰 *الإيرادات:* ${totalIncome.toLocaleString()} ج.م\n` +
+      `💸 *المصروفات:* ${totalExpense.toLocaleString()} ج.م\n` +
+      `📤 *توزيع أرباح الشركاء:* ${totalProfitDist.toLocaleString()} ج.م\n` +
+      `🏦 *الرصيد الاحتياطي:* ${totalReserve.toLocaleString()} ج.م\n` +
+      `✅ *صافي الرصيد:* ${netBalance.toLocaleString()} ج.م\n\n` +
+      `👥 *تفاصيل توزيع الأرباح:*\n${profitDetails.length ? profitDetails.join('\n') : 'لا توجد توزيعات'}\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `📞 للاستفسار: 01278885772\n` +
+      `✨ نظام إدارة الصيانة - تقرير يومي`;
+    
+    // جلب قائمة الشركاء النشطين
+    const activePartners = partners.filter(p => p.is_active && p.phone);
+    if (activePartners.length === 0) {
+      alert("⚠️ لا يوجد شركاء نشطون بأرقام هواتف");
+      return;
+    }
+    
+    const userChoice = confirm(
+      `📋 التقرير جاهز للإرسال.\n\n` +
+      `${reportText}\n\n` +
+      `هل تريد فتح واتساب لإرسال التقرير لكل شريك على حدة؟\n` +
+      `(سيتم فتح نافذة واتساب لكل شريك، أرسل التقرير يدوياً)`
+    );
+    
+    if (!userChoice) return;
+    
+    // فتح واتساب لكل شريك
+    for (const partner of activePartners) {
+      let phone = partner.phone.toString().replace(/[^\d]/g, '');
+      if (phone.startsWith('0')) phone = phone.substring(1);
+      if (phone.length === 10) phone = '20' + phone;
+      if (!phone.startsWith('20')) phone = '20' + phone;
+      
+      const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(reportText)}`;
+      window.open(whatsappUrl, '_blank');
+      
+      // انتظر قليلاً بين الفتحات
+      await new Promise(resolve => setTimeout(resolve, 800));
+    }
+    
+    alert(`✅ تم فتح واتساب لـ ${activePartners.length} شريك. قم بإرسال التقرير لكل منهم.`);
+  };
+  // ==================== نهاية دالة التقرير ====================
 
   // فلترة الأوردرات مع دعم showAllOrders
   const filteredOrders = orders.filter(o => {
@@ -705,8 +822,28 @@ export default function ProtectedOrders() {
         {/* Cash Tab */}
         {activeTab === 'cash' && (
           <div className="space-y-4">
-            <div className="flex justify-between items-center flex-wrap gap-3"><div className="bg-emerald-500/20 p-4 rounded-xl"><p className="text-slate-400">رصيد الخزنة</p><p className="text-3xl font-bold text-emerald-400">{cashBalance.toLocaleString()} ج.م</p></div><div className="flex gap-2"><input type="date" value={cashFilterDate} onChange={e=>setCashFilterDate(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"/><button onClick={()=>setCashFilterDate('')} className="bg-slate-700 text-white px-3 py-2 rounded-lg text-sm">إلغاء الفلتر</button>{canEditDelete() && <button onClick={()=>{setEditingCash(null); setCashForm({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] }); setShowCashModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={16}/> حركة جديدة</button>}</div></div>
-            <div className="bg-purple-600/10 rounded-xl p-4 flex justify-between items-center flex-wrap gap-3 border border-purple-500/30"><div><p className="text-sm font-semibold text-purple-300">توزيع أرباح الشركاء</p><p className="text-xs text-slate-400">يتم التوزيع تلقائياً حسب نسب الشركاء النشطين</p></div>{canEditDelete() && <button onClick={distributePartnersProfit} className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg text-sm font-bold flex items-center gap-2"><DollarSign size={16}/> توزيع أرباح الشركاء (تلقائي)</button>}</div>
+            <div className="flex justify-between items-center flex-wrap gap-3">
+              <div className="bg-emerald-500/20 p-4 rounded-xl"><p className="text-slate-400">رصيد الخزنة</p><p className="text-3xl font-bold text-emerald-400">{cashBalance.toLocaleString()} ج.م</p></div>
+              <div className="flex gap-2">
+                <input type="date" value={cashFilterDate} onChange={e=>setCashFilterDate(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"/>
+                <button onClick={()=>setCashFilterDate('')} className="bg-slate-700 text-white px-3 py-2 rounded-lg text-sm">إلغاء الفلتر</button>
+                {canEditDelete() && <button onClick={()=>{setEditingCash(null); setCashForm({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] }); setShowCashModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={16}/> حركة جديدة</button>}
+              </div>
+            </div>
+            <div className="bg-purple-600/10 rounded-xl p-4 flex justify-between items-center flex-wrap gap-3 border border-purple-500/30">
+              <div><p className="text-sm font-semibold text-purple-300">توزيع أرباح الشركاء</p><p className="text-xs text-slate-400">يتم التوزيع تلقائياً حسب نسب الشركاء النشطين</p></div>
+              <div className="flex gap-2">
+                {canEditDelete() && <button onClick={distributePartnersProfit} className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg text-sm font-bold flex items-center gap-2"><DollarSign size={16}/> توزيع أرباح الشركاء (تلقائي)</button>}
+                {canEditDelete() && (
+                  <button
+                    onClick={sendDailyReportToPartners}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2"
+                  >
+                    <Send className="w-4 h-4" /> إرسال تقرير اليوم للشركاء
+                  </button>
+                )}
+              </div>
+            </div>
             <div className="bg-slate-900 rounded-xl overflow-x-auto">
               <table className="w-full text-sm"><thead className="bg-slate-800"><tr><th className="p-3">التاريخ</th><th>النوع</th><th>المبلغ</th><th>الوصف</th><th>إجراءات</th></tr></thead><tbody>{cashLedger.map(entry=>(
                 <tr key={entry.id} className="border-b border-slate-800"><td className="p-3 text-slate-300">{entry.date}</td><td className="text-slate-300">{entry.type==='income'?'💰 دخل':entry.type==='expense'?'💸 مصروف':entry.type==='profit_distribution'?'📤 توزيع أرباح':'🏦 رصيد احتياطي'}</td><td className={entry.type==='income'||entry.type==='reserve'?'text-green-400':'text-red-400'}>{entry.amount} ج.م</td><td className="max-w-xs break-words text-slate-300">{entry.description}</td><td>{canEditDelete() && <button onClick={()=>deleteCashEntry(entry.id)} className="text-red-400"><Trash2 size={16}/></button>}</td></tr>
