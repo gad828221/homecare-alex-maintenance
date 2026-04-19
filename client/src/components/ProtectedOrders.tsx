@@ -611,60 +611,81 @@ export default function ProtectedOrders() {
   const clearFilters = () => { setSearchTerm(''); setFilterStatus('all'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); };
 
   // ==================== دالة إرسال التقرير اليومي للشركاء عبر واتساب ====================
-  const sendDailyReportToPartners = async () => {
-    const today = new Date().toISOString().split('T')[0];
-    
-    // جلب حركات الخزنة لليوم
-    const entries = await fetchAPI(`cash_ledger?select=*&date=eq.${today}&order=created_at.desc`);
-    if (!entries || entries.length === 0) {
-      alert("⚠️ لا توجد حركات خزنة لهذا اليوم");
-      return;
+const sendDailyReportToPartners = async () => {
+  const today = new Date().toISOString().split('T')[0];
+  
+  // جلب حركات الخزنة لليوم
+  const entries = await fetchAPI(`cash_ledger?select=*&date=eq.${today}&order=created_at.desc`);
+  if (!entries || entries.length === 0) {
+    alert("⚠️ لا توجد حركات خزنة لهذا اليوم");
+    return;
+  }
+  
+  // حساب الإحصائيات
+  let totalIncome = 0, totalExpense = 0, totalProfitDist = 0, totalReserve = 0;
+  const profitDetails: string[] = [];
+  
+  entries.forEach((entry: any) => {
+    if (entry.type === 'income') totalIncome += entry.amount;
+    else if (entry.type === 'expense') totalExpense += entry.amount;
+    else if (entry.type === 'profit_distribution') {
+      totalProfitDist += entry.amount;
+      profitDetails.push(`• ${entry.description} : ${entry.amount} ج.م`);
     }
+    else if (entry.type === 'reserve') totalReserve += entry.amount;
+  });
+  
+  const netBalance = totalIncome + totalReserve - totalExpense;
+  
+  // بناء نص التقرير مع إضافة الرصيد الحالي للخزنة
+  const reportText = 
+    `📊 *تقرير الخزنة اليومي* 📊\n` +
+    `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+    `📅 *التاريخ:* ${today}\n\n` +
+    `💰 *الإيرادات:* ${totalIncome.toLocaleString()} ج.م\n` +
+    `💸 *المصروفات:* ${totalExpense.toLocaleString()} ج.م\n` +
+    `📤 *توزيع أرباح الشركاء:* ${totalProfitDist.toLocaleString()} ج.م\n` +
+    `🏦 *الرصيد الاحتياطي:* ${totalReserve.toLocaleString()} ج.م\n` +
+    `✅ *صافي ربح اليوم:* ${netBalance.toLocaleString()} ج.م\n` +
+    `💰 *الرصيد الحالي للخزنة:* ${cashBalance.toLocaleString()} ج.م\n\n` +
+    `👥 *تفاصيل توزيع الأرباح:*\n${profitDetails.length ? profitDetails.join('\n') : 'لا توجد توزيعات'}\n\n` +
+    `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+    `📞 للاستفسار: 01278885772\n` +
+    `✨ نظام إدارة الصيانة - تقرير يومي`;
+  
+  // جلب قائمة الشركاء النشطين
+  const activePartners = partners.filter(p => p.is_active && p.phone);
+  if (activePartners.length === 0) {
+    alert("⚠️ لا يوجد شركاء نشطون بأرقام هواتف");
+    return;
+  }
+  
+  const userChoice = confirm(
+    `📋 التقرير جاهز للإرسال.\n\n` +
+    `${reportText}\n\n` +
+    `هل تريد فتح واتساب لإرسال التقرير لكل شريك على حدة؟\n` +
+    `(سيتم فتح نافذة واتساب لكل شريك، أرسل التقرير يدوياً)`
+  );
+  
+  if (!userChoice) return;
+  
+  // فتح واتساب لكل شريك
+  for (const partner of activePartners) {
+    let phone = partner.phone.toString().replace(/[^\d]/g, '');
+    if (phone.startsWith('0')) phone = phone.substring(1);
+    if (phone.length === 10) phone = '20' + phone;
+    if (!phone.startsWith('20')) phone = '20' + phone;
     
-    // حساب الإحصائيات
-    let totalIncome = 0, totalExpense = 0, totalProfitDist = 0, totalReserve = 0;
-    const profitDetails: string[] = [];
+    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(reportText)}`;
+    window.open(whatsappUrl, '_blank');
     
-    entries.forEach((entry: any) => {
-      if (entry.type === 'income') totalIncome += entry.amount;
-      else if (entry.type === 'expense') totalExpense += entry.amount;
-      else if (entry.type === 'profit_distribution') {
-        totalProfitDist += entry.amount;
-        profitDetails.push(`• ${entry.description} : ${entry.amount} ج.م`);
-      }
-      else if (entry.type === 'reserve') totalReserve += entry.amount;
-    });
-    
-    const netBalance = totalIncome + totalReserve - totalExpense;
-    
-    // بناء نص التقرير
-    const reportText = 
-      `📊 *تقرير الخزنة اليومي* 📊\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `📅 *التاريخ:* ${today}\n\n` +
-      `💰 *الإيرادات:* ${totalIncome.toLocaleString()} ج.م\n` +
-      `💸 *المصروفات:* ${totalExpense.toLocaleString()} ج.م\n` +
-      `📤 *توزيع أرباح الشركاء:* ${totalProfitDist.toLocaleString()} ج.م\n` +
-      `🏦 *الرصيد الاحتياطي:* ${totalReserve.toLocaleString()} ج.م\n` +
-      `✅ *صافي الرصيد:* ${netBalance.toLocaleString()} ج.م\n\n` +
-      `👥 *تفاصيل توزيع الأرباح:*\n${profitDetails.length ? profitDetails.join('\n') : 'لا توجد توزيعات'}\n\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `📞 للاستفسار: 01278885772\n` +
-      `✨ نظام إدارة الصيانة - تقرير يومي`;
-    
-    // جلب قائمة الشركاء النشطين
-    const activePartners = partners.filter(p => p.is_active && p.phone);
-    if (activePartners.length === 0) {
-      alert("⚠️ لا يوجد شركاء نشطون بأرقام هواتف");
-      return;
-    }
-    
-    const userChoice = confirm(
-      `📋 التقرير جاهز للإرسال.\n\n` +
-      `${reportText}\n\n` +
-      `هل تريد فتح واتساب لإرسال التقرير لكل شريك على حدة؟\n` +
-      `(سيتم فتح نافذة واتساب لكل شريك، أرسل التقرير يدوياً)`
-    );
+    // انتظر قليلاً بين الفتحات
+    await new Promise(resolve => setTimeout(resolve, 800));
+  }
+  
+  alert(`✅ تم فتح واتساب لـ ${activePartners.length} شريك. قم بإرسال التقرير لكل منهم.`);
+};
+// ==================== نهاية دالة التقرير ====================
     
     if (!userChoice) return;
     
