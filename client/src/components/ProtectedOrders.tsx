@@ -6,6 +6,7 @@ import {
   Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut, Send
 } from "lucide-react";
 import AdminPermissions from './AdminPermissions';
+import TechnicianPerformance from './TechnicianPerformance';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -77,7 +78,7 @@ export default function ProtectedOrders() {
   const [cashLedger, setCashLedger] = useState<any[]>([]);
   const [cashBalance, setCashBalance] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'orders' | 'technicians' | 'reports' | 'invoicesReview' | 'cash' | 'partners' | 'notifications' | 'permissions'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'technicians' | 'reports' | 'invoicesReview' | 'cash' | 'partners' | 'notifications' | 'permissions' | 'performance'>('orders');
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showTechModal, setShowTechModal] = useState(false);
   const [showPartnerModal, setShowPartnerModal] = useState(false);
@@ -614,14 +615,12 @@ export default function ProtectedOrders() {
 const sendDailyReportToPartners = async () => {
   const today = new Date().toISOString().split('T')[0];
   
-  // جلب حركات الخزنة لليوم
   const entries = await fetchAPI(`cash_ledger?select=*&date=eq.${today}&order=created_at.desc`);
   if (!entries || entries.length === 0) {
     alert("⚠️ لا توجد حركات خزنة لهذا اليوم");
     return;
   }
   
-  // حساب الإحصائيات
   let totalIncome = 0, totalExpense = 0, totalProfitDist = 0, totalReserve = 0;
   const profitDetails: string[] = [];
   
@@ -637,7 +636,6 @@ const sendDailyReportToPartners = async () => {
   
   const netBalance = totalIncome + totalReserve - totalExpense;
   
-  // بناء نص التقرير مع إضافة الرصيد الحالي للخزنة
   const reportText = 
     `📊 *تقرير الخزنة اليومي* 📊\n` +
     `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -653,7 +651,6 @@ const sendDailyReportToPartners = async () => {
     `📞 للاستفسار: 01278885772\n` +
     `✨ نظام إدارة الصيانة - تقرير يومي`;
   
-  // جلب قائمة الشركاء النشطين
   const activePartners = partners.filter(p => p.is_active && p.phone);
   if (activePartners.length === 0) {
     alert("⚠️ لا يوجد شركاء نشطون بأرقام هواتف");
@@ -669,7 +666,6 @@ const sendDailyReportToPartners = async () => {
   
   if (!userChoice) return;
   
-  // فتح واتساب لكل شريك
   for (const partner of activePartners) {
     let phone = partner.phone.toString().replace(/[^\d]/g, '');
     if (phone.startsWith('0')) phone = phone.substring(1);
@@ -678,8 +674,6 @@ const sendDailyReportToPartners = async () => {
     
     const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(reportText)}`;
     window.open(whatsappUrl, '_blank');
-    
-    // انتظر قليلاً بين الفتحات
     await new Promise(resolve => setTimeout(resolve, 800));
   }
   
@@ -687,7 +681,6 @@ const sendDailyReportToPartners = async () => {
 };
 // ==================== نهاية دالة التقرير ====================
     
-  
   // فلترة الأوردرات مع دعم showAllOrders
   const filteredOrders = orders.filter(o => {
     if (searchTerm && !o.customer_name?.includes(searchTerm) && !o.phone?.includes(searchTerm) && !String(o.order_number).includes(searchTerm)) return false;
@@ -735,6 +728,7 @@ const sendDailyReportToPartners = async () => {
           <button onClick={() => setActiveTab('partners')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'partners' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>🤝 الشركاء</button>
           <button onClick={() => setActiveTab('notifications')} className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1 transition ${activeTab === 'notifications' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}><Bell className="w-4 h-4" /> الإشعارات ({notifications.length})</button>
           {userRole === 'admin' && <button onClick={() => setActiveTab('permissions')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'permissions' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>🔐 الصلاحيات</button>}
+          <button onClick={() => setActiveTab('performance')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'performance' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>📊 أداء الفنيين</button>
         </div>
 
         {/* Orders Tab */}
@@ -869,6 +863,11 @@ const sendDailyReportToPartners = async () => {
             <div key={notif.id} className="bg-slate-900 rounded-xl p-4 flex justify-between items-center"><div><span className="text-orange-400 font-semibold">{notif.action}</span><span className="mx-2 text-slate-600">|</span><span className="text-slate-300">{notif.details}</span><div className="text-xs text-slate-500 mt-1">{new Date(notif.created_at).toLocaleString('ar-EG')}</div></div>{canEditDelete() && <button onClick={()=>deleteNotification(notif.id)} className="text-red-400"><Trash size={16}/></button>}</div>
           ))}
           {notifications.length===0 && <div className="text-center py-8 text-slate-400">لا توجد إشعارات</div>}</div>
+        )}
+
+        {/* Performance Tab */}
+        {activeTab === 'performance' && (
+          <TechnicianPerformance orders={orders} technicians={technicians} />
         )}
 
         {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions />}
