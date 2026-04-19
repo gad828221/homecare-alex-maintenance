@@ -294,6 +294,13 @@ export default function ProtectedOrders() {
     return { ...data, net_amount: net, company_share: companyShare, technician_share: technicianShare };
   };
 
+  // إعادة حساب المبالغ إذا تغيرت نسبة الفني أو تم اختيار فني مختلف
+  useEffect(() => {
+    if (formData.technician) {
+      setFormData(prev => calculateAmounts(prev));
+    }
+  }, [technicians, formData.technician]);
+
   const handleFormChange = (field: string, value: any) => {
     if (field === 'device_type') { if (value === 'other') { setIsOtherDevice(true); setFormData({ ...formData, device_type: '' }); return; } else setIsOtherDevice(false); }
     if (field === 'brand') { if (value === 'other') { setIsOtherBrand(true); setFormData({ ...formData, brand: '' }); return; } else setIsOtherBrand(false); }
@@ -404,13 +411,55 @@ export default function ProtectedOrders() {
     } catch (err) { console.error(err); alert("❌ حدث خطأ أثناء حفظ الأوردر"); }
   };
 
+  const updateAllPendingOrdersProfit = async (technicianName: string, newPercentage: number) => {
+    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية");
+    if (!confirm(`هل تريد تحديث نسب الأرباح لجميع الأوردرات غير المكتملة للفني "${technicianName}" إلى ${newPercentage}%؟`)) return;
+    
+    const pendingOrders = orders.filter(o => o.technician === technicianName && o.status !== 'completed');
+    if (pendingOrders.length === 0) {
+      alert("لا توجد أوردرات غير مكتملة لهذا الفني.");
+      return;
+    }
+    
+    let updatedCount = 0;
+    for (const order of pendingOrders) {
+      const net = order.net_amount;
+      const newTechnicianShare = Math.round((net * newPercentage) / 100);
+      const newCompanyShare = net - newTechnicianShare;
+      
+      await fetchAPI(`orders?id=eq.${order.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          technician_share: newTechnicianShare,
+          company_share: newCompanyShare
+        })
+      });
+      updatedCount++;
+    }
+    
+    await addNotification('تحديث نسب أرباح الفني', `تم تحديث نسب أرباح ${updatedCount} أوردر للفني ${technicianName} إلى ${newPercentage}%`);
+    await fetchData();
+    alert(`✅ تم تحديث ${updatedCount} أوردر بنجاح.`);
+  };
+
   const saveTechnician = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية");
+    
+    const oldTech = editingTech ? technicians.find(t => t.id === editingTech.id) : null;
+    const percentageChanged = oldTech && oldTech.profit_percentage !== techForm.profit_percentage;
+    
     try {
       if (editingTech) {
-        await fetchAPI(`technicians?id=eq.${editingTech.id}`, { method: 'PATCH', body: JSON.stringify({ ...techForm, profit_percentage: techForm.profit_percentage }) });
+        await fetchAPI(`technicians?id=eq.${editingTech.id}`, { 
+          method: 'PATCH', 
+          body: JSON.stringify({ ...techForm, profit_percentage: techForm.profit_percentage }) 
+        });
         await addNotification('تعديل فني', `تم تعديل بيانات الفني ${techForm.name}`);
+        
+        if (percentageChanged && confirm(`هل تريد تحديث الأوردرات غير المكتملة للفني "${techForm.name}" لتطبيق النسبة الجديدة (${techForm.profit_percentage}%)؟`)) {
+          await updateAllPendingOrdersProfit(techForm.name, techForm.profit_percentage);
+        }
       } else {
         await fetchAPI('technicians', { method: 'POST', body: JSON.stringify({ ...techForm, profit_percentage: techForm.profit_percentage }) });
         await addNotification('إضافة فني', `تم إضافة فني جديد: ${techForm.name}`);
@@ -475,7 +524,7 @@ export default function ProtectedOrders() {
   };
   const clearFilters = () => { setSearchTerm(''); setFilterStatus('all'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); };
 
-  // ✅ فلترة الأوردرات مع دعم showAllOrders
+  // فلترة الأوردرات مع دعم showAllOrders
   const filteredOrders = orders.filter(o => {
     if (searchTerm && !o.customer_name?.includes(searchTerm) && !o.phone?.includes(searchTerm) && !String(o.order_number).includes(searchTerm)) return false;
     if (filterStatus !== 'all' && o.status !== filterStatus) return false;
@@ -574,6 +623,7 @@ export default function ProtectedOrders() {
                       <button onClick={()=>{setEditingTech(tech); setTechForm(tech); setShowTechModal(true);}} className="p-1 text-blue-500"><Edit size={16}/></button>
                       <button onClick={()=>deleteTechnician(tech.id, tech.name)} className="p-1 text-red-500"><Trash2 size={16}/></button>
                       <button onClick={()=>toggleTechnicianActive(tech)} className={`p-1 ${tech.is_active!==false ? 'text-green-500' : 'text-red-500'}`}>{tech.is_active!==false ? 'نشط' : 'تعطيل'}</button>
+                      <button onClick={() => updateAllPendingOrdersProfit(tech.name, tech.profit_percentage ?? 50)} className="p-1 text-purple-500 hover:text-purple-400" title="تحديث نسب الأوردرات غير المكتملة لهذا الفني"><RefreshCw size={16}/></button>
                     </>}
                   </div>
                 </div>
