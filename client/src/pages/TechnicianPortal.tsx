@@ -1,15 +1,18 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { 
   Wrench, LogOut, Clock, CheckCircle2, AlertCircle, 
   RefreshCw, Phone, MapPin, ClipboardList,
   Calendar, X, Trash2, Eye, ClockArrowUp, StickyNote,
-  Play, FileCheck, DollarSign, CalendarX, Ban, MessageSquare
+  Play, FileCheck, DollarSign, CalendarX, Ban, MessageSquare,
+  TrendingUp, Award, Filter, ChevronDown, ChevronUp, Star
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useNotification } from "../components/NotificationSystem";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   const res = await fetch(`${supabaseUrl}/rest/v1/${endpoint}`, {
@@ -42,8 +45,16 @@ export default function TechnicianPortal() {
   const [actionValue, setActionValue] = useState("");
   const [currentOrder, setCurrentOrder] = useState<any>(null);
   
-  // ✅ جديد: تخزين نسبة الفني المستفادة من قاعدة البيانات
+  // نسبة الفني من قاعدة البيانات
   const [technicianPercentage, setTechnicianPercentage] = useState(50);
+  
+  // متغيرات الفلترة والترتيب
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterDate, setFilterDate] = useState<string>('all');
+  const [filterDevice, setFilterDevice] = useState<string>('all');
+  const [filterPriority, setFilterPriority] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('latest');
+  const [showFilters, setShowFilters] = useState(false);
   
   const [settleForm, setSettleForm] = useState({
     total_amount: 0,
@@ -54,35 +65,26 @@ export default function TechnicianPortal() {
     company_share: 0
   });
 
-// التحقق من صلاحية الجلسة (معدل للتعامل مع الرابط المباشر)
-useEffect(() => {
-  const userRole = localStorage.getItem("userRole");
-  const currentUser = localStorage.getItem("currentUser");
-  
-  console.log("🔍 TechnicianPortal - userRole:", userRole);
-  console.log("🔍 TechnicianPortal - currentUser:", currentUser);
-  
-  // إذا كان المستخدم فنيًا، دعه يدخل
-  if (userRole === "tech" && currentUser) {
-    console.log("✅ فني مصرح له بالدخول");
-    return;
-  }
-  
-  // إذا كان هناك اسم في رابط URL (للتوافق مع الروابط القديمة)
-  const params = new URLSearchParams(window.location.search);
-  const nameFromUrl = params.get("name");
-  if (nameFromUrl) {
-    console.log("✅ دخول عبر الرابط المباشر باسم:", nameFromUrl);
-    setTechName(decodeURIComponent(nameFromUrl));
-    return;
-  }
-  
-  // غير ذلك، اذهب لتسجيل الدخول
-  console.log("❌ غير مصرح، التوجيه إلى login");
-  window.location.href = "/login";
-}, []);
+  // دالة إنشاء عميل Supabase (لـ Realtime)
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // إخفاء رقم الهاتف فوراً للمكتمل أو الملغي أو تم الكشف
+  // التحقق من صلاحية الجلسة (معدل للتعامل مع الرابط المباشر)
+  useEffect(() => {
+    const userRole = localStorage.getItem("userRole");
+    const currentUser = localStorage.getItem("currentUser");
+    
+    if (userRole === "tech" && currentUser) {
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    const nameFromUrl = params.get("name");
+    if (nameFromUrl) {
+      setTechName(decodeURIComponent(nameFromUrl));
+      return;
+    }
+    window.location.href = "/login";
+  }, []);
+
   const isPhoneHidden = (order: any) => {
     if (order.status === 'completed' || order.status === 'cancelled' || order.status === 'inspected') {
       return true;
@@ -99,47 +101,26 @@ useEffect(() => {
     return cleaned;
   };
 
-// إرسال إشعار للمدير (يحفظ في قاعدة البيانات ويفتح واتساب)
-const notifyAdmin = async (action: string, order: any, details: string = "") => {
-  try {
-    // حفظ الإشعار في قاعدة البيانات
-    await fetch(`${supabaseUrl}/rest/v1/notifications`, {
-      method: 'POST',
-      headers: {
-        'apikey': supabaseKey,
-        'Authorization': `Bearer ${supabaseKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        action: action,
-        details: `الفني: ${techName}\nالأوردر: ${order.order_number}\nالعميل: ${order.customer_name}\n${details}`,
-        user_name: 'نظام',
-        created_at: new Date().toISOString()
-      })
-    });
-  } catch (err) {
-    console.error("خطأ في تسجيل الإشعار:", err);
-  }
-  
-  // إرسال واتساب للمدير
-  const message = `🔔 *تنبيه إداري* 🔔\n` +
-    `━━━━━━━━━━━━━━━━━━━━━━\n` +
-    `👤 *الفني:* ${techName}\n` +
-    `🔢 *كود الأوردر:* ${order.order_number}\n` +
-    `👤 *العميل:* ${order.customer_name}\n` +
-    `📋 *الإجراء:* ${action}\n` +
-    `${details ? `📝 *التفاصيل:* ${details}\n` : ''}` +
-    `━━━━━━━━━━━━━━━━━━━━━━\n` +
-    `⏰ *الوقت:* ${new Date().toLocaleString("ar-EG")}\n\n` +
-    `يرجى المراجعة من لوحة التحكم.`;
-  
-  const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(message)}`;
-  window.open(whatsappUrl, '_blank');
-};
-
-  // تم حذف إرسال واتساب للعميل بناءً على طلب المدير ليكون التواصل للمدير فقط
-  const notifyCustomerStatusChange = (order: any, newStatus: string) => {
-    console.log(`Status changed to ${newStatus} for order ${order.order_number}. Customer notification disabled by Admin.`);
+  const notifyAdmin = async (action: string, order: any, details: string = "") => {
+    try {
+      await fetch(`${supabaseUrl}/rest/v1/notifications`, {
+        method: 'POST',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: action,
+          details: `الفني: ${techName}\nالأوردر: ${order.order_number}\nالعميل: ${order.customer_name}\n${details}`,
+          user_name: 'نظام',
+          created_at: new Date().toISOString()
+        })
+      });
+    } catch (err) { console.error(err); }
+    
+    const message = `🔔 *تنبيه إداري* 🔔\n━━━━━━━━━━━━━━━━━━━━━━\n👤 *الفني:* ${techName}\n🔢 *كود الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n📋 *الإجراء:* ${action}\n${details ? `📝 *التفاصيل:* ${details}\n` : ''}\n⏰ *الوقت:* ${new Date().toLocaleString("ar-EG")}\n\nيرجى المراجعة من لوحة التحكم.`;
+    window.open(`https://wa.me/201558625259?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   useEffect(() => {
@@ -164,28 +145,23 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
     const checkActiveStatus = async () => {
       if (!techName) return;
       try {
-        const { data } = await fetchAPI(`technicians?select=is_active&name=eq.${encodeURIComponent(techName)}`);
+        const data = await fetchAPI(`technicians?select=is_active&name=eq.${encodeURIComponent(techName)}`);
         if (data && data[0]) setIsActive(data[0].is_active !== false);
       } catch (err) { console.error(err); }
     };
     checkActiveStatus();
   }, [techName]);
 
-  // ✅ دالة جلب نسبة الفني من قاعدة البيانات
   const fetchTechnicianPercentage = useCallback(async () => {
     if (!techName) return;
     try {
       const data = await fetchAPI(`technicians?select=profit_percentage&name=eq.${encodeURIComponent(techName)}`);
       if (data && data[0] && typeof data[0].profit_percentage === 'number') {
         setTechnicianPercentage(data[0].profit_percentage);
-        console.log(`✅ تم جلب نسبة الفني: ${data[0].profit_percentage}%`);
       } else {
-        setTechnicianPercentage(50); // افتراضي
+        setTechnicianPercentage(50);
       }
-    } catch (err) {
-      console.error("خطأ في جلب نسبة الفني:", err);
-      setTechnicianPercentage(50);
-    }
+    } catch (err) { console.error(err); }
   }, [techName]);
 
   const fetchData = useCallback(async () => {
@@ -203,12 +179,129 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
   useEffect(() => {
     if (isActive) {
       fetchData();
-      fetchTechnicianPercentage(); // ✅ جلب النسبة عند تحميل الصفحة
+      fetchTechnicianPercentage();
     }
     const interval = setInterval(() => { if (isActive) { fetchData(); fetchTechnicianPercentage(); } }, 30000);
     return () => clearInterval(interval);
   }, [fetchData, fetchTechnicianPercentage, isActive]);
 
+  // ==================== ميزة الإشعارات الفورية (Supabase Realtime) ====================
+  useEffect(() => {
+    if (!techName) return;
+    // الاشتراك في تغييرات جدول orders التي تخص هذا الفني
+    const subscription = supabase
+      .channel('orders-channel')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `technician=eq.${techName}` },
+        (payload) => {
+          console.log('تغيير في الأوردرات:', payload);
+          fetchData(); // إعادة تحميل البيانات فوراً
+          if (payload.eventType === 'INSERT') {
+            addNotification({
+              type: 'info',
+              title: '📢 أوردر جديد',
+              message: `تم إضافة أوردر جديد للعميل ${payload.new.customer_name}`,
+              duration: 5000
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            addNotification({
+              type: 'warning',
+              title: '🔄 تحديث أوردر',
+              message: `تم تحديث بيانات الأوردر رقم ${payload.new.order_number}`,
+              duration: 4000
+            });
+          }
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, [techName, supabase, addNotification, fetchData]);
+
+  // ==================== إحصائيات متقدمة ====================
+  const advancedStats = useMemo(() => {
+    const completedOrders = orders.filter(o => o.status === 'completed');
+    const totalEarnings = completedOrders.reduce((sum, o) => sum + (o.technician_share || 0), 0);
+    
+    // أرباح آخر 7 أيام
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      const dayOrders = completedOrders.filter(o => o.completed_at?.startsWith(dateStr));
+      const earnings = dayOrders.reduce((sum, o) => sum + (o.technician_share || 0), 0);
+      return { date: dateStr, earnings };
+    }).reverse();
+    
+    // ترتيب الفني بين جميع الفنيين (يتم جلبه من قاعدة البيانات)
+    // هنا نقوم بجلب ترتيب الفني بناءً على إجمالي أرباحه
+    const fetchRanking = async () => {
+      try {
+        const allTechs = await fetchAPI('technicians?select=name');
+        const allOrders = await fetchAPI('orders?select=technician,technician_share,status');
+        const techEarnings = allTechs.map(tech => ({
+          name: tech.name,
+          earnings: allOrders.filter(o => o.technician === tech.name && o.status === 'completed').reduce((s, o) => s + (o.technician_share || 0), 0)
+        }));
+        techEarnings.sort((a, b) => b.earnings - a.earnings);
+        const rank = techEarnings.findIndex(t => t.name === techName) + 1;
+        const total = techEarnings.length;
+        return { rank, total };
+      } catch (err) {
+        return { rank: 0, total: 0 };
+      }
+    };
+    
+    fetchRanking().then(({ rank, total }) => {
+      setRanking({ rank, total });
+    });
+    
+    return { last7Days, totalEarnings };
+  }, [orders, techName]);
+
+  const [ranking, setRanking] = useState({ rank: 0, total: 0 });
+
+  // ==================== فلترة وترتيب الأوردرات ====================
+  const filteredAndSortedOrders = useMemo(() => {
+    let filtered = [...orders];
+    
+    // فلتر حسب الحالة
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter(o => o.status === filterStatus);
+    }
+    
+    // فلتر حسب التاريخ
+    if (filterDate !== 'all') {
+      const now = new Date();
+      const today = now.toISOString().split('T')[0];
+      const weekAgo = new Date(now.setDate(now.getDate() - 7)).toISOString().split('T')[0];
+      const monthAgo = new Date(now.setMonth(now.getMonth() - 1)).toISOString().split('T')[0];
+      if (filterDate === 'today') filtered = filtered.filter(o => o.date === today);
+      else if (filterDate === 'week') filtered = filtered.filter(o => o.date >= weekAgo);
+      else if (filterDate === 'month') filtered = filtered.filter(o => o.date >= monthAgo);
+    }
+    
+    // فلتر حسب نوع الجهاز
+    if (filterDevice !== 'all') {
+      filtered = filtered.filter(o => o.device_type === filterDevice);
+    }
+    
+    // فلتر حسب الأولوية (يجب أن يكون هناك حقل priority في الأوردر، إذا لم يكن موجوداً يمكن تجاهله)
+    if (filterPriority !== 'all' && filtered.some(o => o.priority)) {
+      filtered = filtered.filter(o => o.priority === filterPriority);
+    }
+    
+    // ترتيب
+    if (sortBy === 'latest') filtered.sort((a, b) => new Date(b.created_at || b.date).getTime() - new Date(a.created_at || a.date).getTime());
+    else if (sortBy === 'oldest') filtered.sort((a, b) => new Date(a.created_at || a.date).getTime() - new Date(b.created_at || b.date).getTime());
+    else if (sortBy === 'most_delayed') filtered.sort((a, b) => (b.delay_days || 0) - (a.delay_days || 0));
+    
+    return filtered;
+  }, [orders, filterStatus, filterDate, filterDevice, filterPriority, sortBy]);
+
+  // تحديث الحالة (دون تغيير)
   const updateStatus = async (id: number, newStatus: string, extraData = {}) => {
     try {
       const oldOrder = orders.find(o => o.id === id);
@@ -228,7 +321,6 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
       });
       fetchData();
       if (oldOrder && oldOrder.status !== newStatus) {
-        // يتم إخطار المدير فقط بأي تغيير في الحالة
         let statusAr = newStatus;
         if(newStatus === 'completed') statusAr = "تم التنفيذ ✅";
         if(newStatus === 'cancelled') statusAr = "ملغي ❌";
@@ -241,7 +333,6 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
 
   const handleInspection = (order: any, amount: number) => {
     const total = amount;
-    // ✅ استخدام نسبة الفني الصحيحة في الكشف
     const companyShare = Math.round(total * (100 - technicianPercentage) / 100);
     const techShare = total - companyShare;
     const now = new Date().toLocaleString("ar-EG");
@@ -260,12 +351,12 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
   };
 
   const handleCancel = (order: any, reason: string) => {
-    updateStatus(order.id, 'cancelled', { technician_note: `إلغاء: ${reason}`, action_date: new Date().toLocaleString("ar-EG") });
+    updateStatus(order.id, 'cancelled', { technician_note: `إلغاء: ${reason}`, action_date: new Date().toISOString() });
     notifyAdmin("✖️ إلغاء الطلب", order, `السبب: ${reason}`);
   };
 
   const handleDefer = (order: any, reason: string) => {
-    updateStatus(order.id, 'deferred', { technician_note: `تأجيل: ${reason}`, action_date: new Date().toLocaleString("ar-EG") });
+    updateStatus(order.id, 'deferred', { technician_note: `تأجيل: ${reason}`, action_date: new Date().toISOString() });
     notifyAdmin("⏰ تأجيل الطلب", order, `السبب: ${reason}`);
   };
 
@@ -276,7 +367,6 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
     notifyAdmin("📝 ملاحظة فنية", order, `المحتوى: ${note}`);
   };
 
-  // ✅ تصحيح دالة التصفية لاستخدام نسبة الفني الفعلية
   const handleSettleChange = (field: string, value: string) => {
     const numValue = parseFloat(value) || 0;
     const updated = { ...settleForm, [field]: numValue };
@@ -286,9 +376,8 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
     setSettleForm({ ...updated, net_amount: net, technician_share: techShare, company_share: companyShare });
   };
 
-  // ✅ دالة لفتح مودال التصفية وتحديث النسبة أولاً
   const openSettleModal = async (order: any) => {
-    await fetchTechnicianPercentage(); // تحديث النسبة من قاعدة البيانات
+    await fetchTechnicianPercentage();
     setSelectedOrder(order);
     setSettleForm({
       total_amount: order.total_amount || 0,
@@ -350,6 +439,11 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
     </div>
   );
 
+  // قائمة أنواع الأجهزة الفريدة للفلتر
+  const deviceTypes = ['all', ...new Set(orders.map(o => o.device_type).filter(Boolean))];
+  // قائمة الأولويات (إذا كانت موجودة)
+  const priorities = ['all', 'high', 'medium', 'low'];
+
   return (
     <div className="min-h-screen bg-slate-900 text-slate-200">
       <div className="bg-slate-800/80 border-b border-slate-700 sticky top-0 z-40 px-4 py-3">
@@ -360,15 +454,92 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
       </div>
 
       <main className="max-w-4xl mx-auto p-4 space-y-5">
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-2xl font-bold text-orange-400">{stats.active}</div><div className="text-xs text-slate-400">نشط</div></div>
-          <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-2xl font-bold text-green-400">{stats.completed}</div><div className="text-xs text-slate-400">مكتمل</div></div>
-          <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-xl font-bold text-emerald-400">{stats.earnings.toLocaleString()} ج.م</div><div className="text-xs text-slate-400">أرباحي</div></div>
+        {/* ==================== لوحة التحكم الشخصية (Dashboard) ==================== */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {/* بطاقات الإحصائيات السريعة */}
+          <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-4 text-white shadow-lg">
+            <div className="flex justify-between items-start">
+              <div><p className="text-blue-100 text-sm">الأوردرات النشطة</p><p className="text-3xl font-bold">{stats.active}</p></div>
+              <Clock className="w-8 h-8 opacity-50" />
+            </div>
+          </div>
+          <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-xl p-4 text-white shadow-lg">
+            <div className="flex justify-between items-start">
+              <div><p className="text-green-100 text-sm">الأوردرات المكتملة</p><p className="text-3xl font-bold">{stats.completed}</p></div>
+              <CheckCircle2 className="w-8 h-8 opacity-50" />
+            </div>
+          </div>
+          <div className="bg-gradient-to-br from-orange-600 to-orange-700 rounded-xl p-4 text-white shadow-lg">
+            <div className="flex justify-between items-start">
+              <div><p className="text-orange-100 text-sm">إجمالي أرباحي</p><p className="text-2xl font-bold">{stats.earnings.toLocaleString()} ج.م</p></div>
+              <DollarSign className="w-8 h-8 opacity-50" />
+            </div>
+          </div>
+          <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl p-4 text-white shadow-lg">
+            <div className="flex justify-between items-start">
+              <div><p className="text-purple-100 text-sm">ترتيبي بين الفنيين</p><p className="text-2xl font-bold">{ranking.rank ? `#${ranking.rank}` : 'جاري...'}</p><p className="text-xs text-purple-200">من أصل {ranking.total} فني</p></div>
+              <Award className="w-8 h-8 opacity-50" />
+            </div>
+          </div>
+        </div>
+
+        {/* رسم بياني لأرباح آخر 7 أيام */}
+        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+          <h3 className="text-white font-bold mb-3 flex items-center gap-2"><TrendingUp className="w-5 h-5 text-orange-400" /> أرباح آخر 7 أيام</h3>
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={advancedStats.last7Days}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+              <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} />
+              <YAxis stroke="#94a3b8" />
+              <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#475569' }} formatter={(value) => [`${value} ج.م`, 'الأرباح']} />
+              <Line type="monotone" dataKey="earnings" stroke="#f97316" strokeWidth={2} dot={{ fill: '#f97316' }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* ==================== فلترة وترتيب متقدم ==================== */}
+        <div className="bg-slate-800 rounded-xl p-3 border border-slate-700">
+          <button onClick={() => setShowFilters(!showFilters)} className="w-full flex justify-between items-center text-white font-semibold">
+            <span className="flex items-center gap-2"><Filter className="w-4 h-4" /> خيارات الفلترة والترتيب</span>
+            {showFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+          {showFilters && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
+              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm">
+                <option value="all">جميع الحالات</option>
+                <option value="pending">قيد الانتظار</option>
+                <option value="in-progress">قيد التنفيذ</option>
+                <option value="inspected">تم الكشف</option>
+                <option value="completed">مكتمل</option>
+                <option value="cancelled">ملغي</option>
+              </select>
+              <select value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm">
+                <option value="all">جميع التواريخ</option>
+                <option value="today">اليوم</option>
+                <option value="week">آخر 7 أيام</option>
+                <option value="month">آخر 30 يوم</option>
+              </select>
+              <select value={filterDevice} onChange={(e) => setFilterDevice(e.target.value)} className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm">
+                {deviceTypes.map(device => <option key={device} value={device}>{device === 'all' ? 'جميع الأجهزة' : device}</option>)}
+              </select>
+              <select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)} className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm">
+                <option value="all">جميع الأولويات</option>
+                <option value="high">عالية</option>
+                <option value="medium">متوسطة</option>
+                <option value="low">منخفضة</option>
+              </select>
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm">
+                <option value="latest">الأحدث أولاً</option>
+                <option value="oldest">الأقدم أولاً</option>
+                <option value="most_delayed">الأكثر تأخيراً</option>
+              </select>
+            </div>
+          )}
         </div>
 
         <div className="space-y-3">
-          <h2 className="text-md font-semibold text-white flex items-center gap-2"><ClipboardList className="w-4 h-4 text-orange-400" /> أوردراتي</h2>
-          {orders.map(order => (
+          <h2 className="text-md font-semibold text-white flex items-center gap-2"><ClipboardList className="w-4 h-4 text-orange-400" /> أوردراتي ({filteredAndSortedOrders.length})</h2>
+          {filteredAndSortedOrders.map(order => (
             <div key={order.id} className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
               <div className={`h-1 ${order.status === 'completed' ? 'bg-green-500' : order.status === 'in-progress' ? 'bg-blue-500' : order.status === 'cancelled' ? 'bg-red-500' : order.status === 'deferred' ? 'bg-purple-500' : order.status === 'inspected' ? 'bg-yellow-500' : 'bg-yellow-500'}`}></div>
               <div className="p-4 space-y-2">
@@ -411,11 +582,11 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
               </div>
             </div>
           ))}
-          {orders.length === 0 && <div className="text-center py-8 text-slate-400">لا توجد أوردرات</div>}
+          {filteredAndSortedOrders.length === 0 && <div className="text-center py-8 text-slate-400">لا توجد أوردرات تطابق الفلترة</div>}
         </div>
       </main>
 
-      {/* مودال إجراءات الفني */}
+      {/* باقي المودالات (إجراءات الفني، الكشف، الإلغاء، التأجيل، التعليق، التصفية) */}
       {showActionsModal && selectedOrderForActions && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowActionsModal(false)}>
           <div className="bg-slate-800 rounded-2xl max-w-md w-full p-6 border border-slate-700 shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -424,10 +595,7 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
               <button onClick={() => setShowActionsModal(false)} className="p-1 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-3">
-              <button 
-                onClick={() => { openSettleModal(selectedOrderForActions); setShowActionsModal(false); }} 
-                className="w-full text-right px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl flex items-center gap-3 transition-all"
-              >
+              <button onClick={() => { openSettleModal(selectedOrderForActions); setShowActionsModal(false); }} className="w-full text-right px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl flex items-center gap-3 transition-all">
                 <FileCheck className="w-5 h-5 text-green-400" /> تصفية الأوردر
               </button>
               <button onClick={() => { openActionModal(selectedOrderForActions, 'inspect'); setShowActionsModal(false); }} className="w-full text-right px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl flex items-center gap-3 transition-all">
@@ -447,7 +615,6 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
         </div>
       )}
 
-      {/* Modal for actions (إلغاء، كشف، تأجيل، تعليق) */}
       {showActionModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowActionModal(false)}>
           <div className="bg-slate-800 rounded-2xl max-w-md w-full p-6 border border-slate-700 shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -482,7 +649,6 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
         </div>
       )}
 
-      {/* Settlement Modal - معدل لاستخدام نسبة الفني الحقيقية */}
       {showSettleModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowSettleModal(false)}>
           <div className="bg-slate-800 rounded-2xl max-w-md w-full p-6 border border-slate-700 shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -506,18 +672,9 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
                 </div>
               </div>
               <div className="bg-slate-700/50 p-4 rounded-xl space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">الصافي:</span>
-                  <span className="text-green-400 font-bold">{settleForm.net_amount} ج.م</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">نصيبك ({technicianPercentage}%):</span>
-                  <span className="text-purple-400 font-bold">{settleForm.technician_share} ج.م</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">نصيب الشركة:</span>
-                  <span className="text-blue-400 font-bold">{settleForm.company_share} ج.م</span>
-                </div>
+                <div className="flex justify-between"><span className="text-slate-400">الصافي:</span><span className="text-green-400 font-bold">{settleForm.net_amount} ج.م</span></div>
+                <div className="flex justify-between"><span className="text-slate-400">نصيبك ({technicianPercentage}%):</span><span className="text-purple-400 font-bold">{settleForm.technician_share} ج.م</span></div>
+                <div className="flex justify-between"><span className="text-slate-400">نصيب الشركة:</span><span className="text-blue-400 font-bold">{settleForm.company_share} ج.م</span></div>
               </div>
               <button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-xl transition-all">تأكيد التصفية</button>
             </form>
