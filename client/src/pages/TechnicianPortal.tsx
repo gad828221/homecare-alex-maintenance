@@ -42,6 +42,9 @@ export default function TechnicianPortal() {
   const [actionValue, setActionValue] = useState("");
   const [currentOrder, setCurrentOrder] = useState<any>(null);
   
+  // ✅ جديد: تخزين نسبة الفني المستفادة من قاعدة البيانات
+  const [technicianPercentage, setTechnicianPercentage] = useState(50);
+  
   const [settleForm, setSettleForm] = useState({
     total_amount: 0,
     parts_cost: 0,
@@ -94,7 +97,9 @@ useEffect(() => {
     else if (cleaned.startsWith('1') && cleaned.length === 10) cleaned = '+20' + cleaned;
     else if (!cleaned.startsWith('+')) cleaned = '+20' + cleaned;
     return cleaned;
-  };// إرسال إشعار للمدير (يحفظ في قاعدة البيانات ويفتح واتساب)
+  };
+
+// إرسال إشعار للمدير (يحفظ في قاعدة البيانات ويفتح واتساب)
 const notifyAdmin = async (action: string, order: any, details: string = "") => {
   try {
     // حفظ الإشعار في قاعدة البيانات
@@ -166,6 +171,23 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
     checkActiveStatus();
   }, [techName]);
 
+  // ✅ دالة جلب نسبة الفني من قاعدة البيانات
+  const fetchTechnicianPercentage = useCallback(async () => {
+    if (!techName) return;
+    try {
+      const data = await fetchAPI(`technicians?select=profit_percentage&name=eq.${encodeURIComponent(techName)}`);
+      if (data && data[0] && typeof data[0].profit_percentage === 'number') {
+        setTechnicianPercentage(data[0].profit_percentage);
+        console.log(`✅ تم جلب نسبة الفني: ${data[0].profit_percentage}%`);
+      } else {
+        setTechnicianPercentage(50); // افتراضي
+      }
+    } catch (err) {
+      console.error("خطأ في جلب نسبة الفني:", err);
+      setTechnicianPercentage(50);
+    }
+  }, [techName]);
+
   const fetchData = useCallback(async () => {
     if (!techName || !isActive) return;
     try {
@@ -179,10 +201,13 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
   }, [techName, isActive]);
 
   useEffect(() => {
-    if (isActive) fetchData();
-    const interval = setInterval(() => { if (isActive) fetchData(); }, 30000);
+    if (isActive) {
+      fetchData();
+      fetchTechnicianPercentage(); // ✅ جلب النسبة عند تحميل الصفحة
+    }
+    const interval = setInterval(() => { if (isActive) { fetchData(); fetchTechnicianPercentage(); } }, 30000);
     return () => clearInterval(interval);
-  }, [fetchData, isActive]);
+  }, [fetchData, fetchTechnicianPercentage, isActive]);
 
   const updateStatus = async (id: number, newStatus: string, extraData = {}) => {
     try {
@@ -216,8 +241,9 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
 
   const handleInspection = (order: any, amount: number) => {
     const total = amount;
-    const companyShare = total / 2;
-    const techShare = total / 2;
+    // ✅ استخدام نسبة الفني الصحيحة في الكشف
+    const companyShare = Math.round(total * (100 - technicianPercentage) / 100);
+    const techShare = total - companyShare;
     const now = new Date().toLocaleString("ar-EG");
     updateStatus(order.id, 'inspected', {
       total_amount: total,
@@ -250,12 +276,29 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
     notifyAdmin("📝 ملاحظة فنية", order, `المحتوى: ${note}`);
   };
 
+  // ✅ تصحيح دالة التصفية لاستخدام نسبة الفني الفعلية
   const handleSettleChange = (field: string, value: string) => {
     const numValue = parseFloat(value) || 0;
     const updated = { ...settleForm, [field]: numValue };
     const net = updated.total_amount - updated.parts_cost - updated.transport_cost;
-    const share = Math.round(net * 0.5);
-    setSettleForm({ ...updated, net_amount: net, technician_share: share, company_share: net - share });
+    const techShare = Math.round(net * (technicianPercentage / 100));
+    const companyShare = net - techShare;
+    setSettleForm({ ...updated, net_amount: net, technician_share: techShare, company_share: companyShare });
+  };
+
+  // ✅ دالة لفتح مودال التصفية وتحديث النسبة أولاً
+  const openSettleModal = async (order: any) => {
+    await fetchTechnicianPercentage(); // تحديث النسبة من قاعدة البيانات
+    setSelectedOrder(order);
+    setSettleForm({
+      total_amount: order.total_amount || 0,
+      parts_cost: order.parts_cost || 0,
+      transport_cost: order.transport_cost || 0,
+      net_amount: order.net_amount || 0,
+      technician_share: order.technician_share || 0,
+      company_share: order.company_share || 0
+    });
+    setShowSettleModal(true);
   };
 
   const submitSettlement = async (e: React.FormEvent) => {
@@ -382,12 +425,7 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
             </div>
             <div className="space-y-3">
               <button 
-                onClick={() => { 
-                  setSelectedOrder(selectedOrderForActions); 
-                  setSettleForm({ total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, technician_share: 0, company_share: 0 }); 
-                  setShowSettleModal(true); 
-                  setShowActionsModal(false);
-                }} 
+                onClick={() => { openSettleModal(selectedOrderForActions); setShowActionsModal(false); }} 
                 className="w-full text-right px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl flex items-center gap-3 transition-all"
               >
                 <FileCheck className="w-5 h-5 text-green-400" /> تصفية الأوردر
@@ -444,7 +482,7 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
         </div>
       )}
 
-      {/* Settlement Modal */}
+      {/* Settlement Modal - معدل لاستخدام نسبة الفني الحقيقية */}
       {showSettleModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowSettleModal(false)}>
           <div className="bg-slate-800 rounded-2xl max-w-md w-full p-6 border border-slate-700 shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -452,16 +490,37 @@ const notifyAdmin = async (action: string, order: any, details: string = "") => 
               <h2 className="text-xl font-bold text-white">تصفية الأوردر</h2>
               <button onClick={() => setShowSettleModal(false)} className="p-1 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
             </div>
-            <div className="space-y-4">
-              <div><label className="text-sm text-slate-400 mb-1 block">💰 المبلغ الإجمالي</label><input type="number" value={settleForm.total_amount} onChange={e => handleSettleChange('total_amount', e.target.value)} className="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white outline-none focus:border-orange-500" /></div>
-              <div className="grid grid-cols-2 gap-3"><div><label className="text-sm text-slate-400 mb-1 block">🛠️ قطع غيار</label><input type="number" value={settleForm.parts_cost} onChange={e => handleSettleChange('parts_cost', e.target.value)} className="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white" /></div><div><label className="text-sm text-slate-400 mb-1 block">🚗 مواصلات</label><input type="number" value={settleForm.transport_cost} onChange={e => handleSettleChange('transport_cost', e.target.value)} className="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white" /></div></div>
-              <div className="bg-slate-700/50 p-4 rounded-xl space-y-2">
-                <div className="flex justify-between"><span className="text-slate-400">الصافي:</span><span className="text-green-400 font-bold">{settleForm.net_amount} ج.م</span></div>
-                <div className="flex justify-between"><span className="text-slate-400">نصيبك (50%):</span><span className="text-purple-400 font-bold">{settleForm.technician_share} ج.م</span></div>
-                <div className="flex justify-between"><span className="text-slate-400">نصيب الشركة:</span><span className="text-blue-400 font-bold">{settleForm.company_share} ج.م</span></div>
+            <form onSubmit={submitSettlement} className="space-y-4">
+              <div>
+                <label className="text-sm text-slate-400 mb-1 block">💰 المبلغ الإجمالي</label>
+                <input type="number" value={settleForm.total_amount} onChange={e => handleSettleChange('total_amount', e.target.value)} className="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white outline-none focus:border-orange-500" />
               </div>
-              <button onClick={submitSettlement} className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-xl transition-all">تأكيد التصفية</button>
-            </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm text-slate-400 mb-1 block">🛠️ قطع غيار</label>
+                  <input type="number" value={settleForm.parts_cost} onChange={e => handleSettleChange('parts_cost', e.target.value)} className="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white" />
+                </div>
+                <div>
+                  <label className="text-sm text-slate-400 mb-1 block">🚗 مواصلات</label>
+                  <input type="number" value={settleForm.transport_cost} onChange={e => handleSettleChange('transport_cost', e.target.value)} className="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white" />
+                </div>
+              </div>
+              <div className="bg-slate-700/50 p-4 rounded-xl space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">الصافي:</span>
+                  <span className="text-green-400 font-bold">{settleForm.net_amount} ج.م</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">نصيبك ({technicianPercentage}%):</span>
+                  <span className="text-purple-400 font-bold">{settleForm.technician_share} ج.م</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">نصيب الشركة:</span>
+                  <span className="text-blue-400 font-bold">{settleForm.company_share} ج.م</span>
+                </div>
+              </div>
+              <button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-xl transition-all">تأكيد التصفية</button>
+            </form>
           </div>
         </div>
       )}
