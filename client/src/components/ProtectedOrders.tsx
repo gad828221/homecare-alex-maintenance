@@ -659,26 +659,33 @@ export default function ProtectedOrders() {
     fetchData();
   };
 
-  const copyTechLink = (name: string, id: number) => {
-    navigator.clipboard.writeText(`${window.location.origin}/tech-portal?name=${encodeURIComponent(name)}`);
-    setCopiedId(id); setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const savePartner = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية");
-    try {
-      if (editingPartner) await fetchAPI(`partners?id=eq.${editingPartner.id}`, { method: 'PATCH', body: JSON.stringify(partnerForm) });
-      else await fetchAPI('partners', { method: 'POST', body: JSON.stringify(partnerForm) });
-      await addNotification(editingPartner ? 'تعديل شريك' : 'إضافة شريك', `${editingPartner ? 'تم تعديل' : 'تم إضافة'} الشريك ${partnerForm.name}`);
-      setShowPartnerModal(false); setEditingPartner(null); setPartnerForm({ name: '', share_percentage: 0, phone: '', is_active: true });
-      fetchPartners();
-    } catch (err) { console.error(err); }
-  };
-
-  const deletePartner = async (id: number, name: string) => {
-    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية");
-    if (confirm(`حذف الشريك ${name}؟`)) { await fetchAPI(`partners?id=eq.${id}`, { method: 'DELETE' }); await addNotification('حذف شريك', `تم حذف الشريك ${name}`); fetchPartners(); }
+  // ✅ دالة نسخ بيانات الفني (مع رسالة كاملة)
+  const copyTechLink = async (tech: any) => {
+    const loginUrl = `${window.location.origin}/login`;
+    const message = 
+      `🔧 *بيانات دخول بوابة الفنيين* 🔧\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `👤 *الفني:* ${tech.name}\n` +
+      `🔗 *رابط الدخول:* ${loginUrl}\n` +
+      `👤 *اسم المستخدم:* ${tech.username || tech.name}\n` +
+      `🔑 *كلمة المرور:* ${tech.password}\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+      `📝 *شرح الاستخدام:*\n` +
+      `1️⃣ اضغط على رابط الدخول أعلاه.\n` +
+      `2️⃣ اختر دور "🔧 الفني (Technician)".\n` +
+      `3️⃣ أدخل اسم المستخدم وكلمة المرور الخاصة بك.\n` +
+      `4️⃣ ستظهر لك الأوردرات الموكلة إليك.\n` +
+      `5️⃣ يمكنك:\n` +
+      `   • الاتصال بالعميل\n` +
+      `   • بدء العمل\n` +
+      `   • تصفية الأوردر بعد الإكمال\n` +
+      `   • كشف بقيمة، تأجيل، إلغاء، أو إضافة تعليق\n\n` +
+      `شكراً لتعاونك. 🌟`;
+    
+    await navigator.clipboard.writeText(message);
+    setCopiedId(tech.id);
+    setTimeout(() => setCopiedId(null), 3000);
+    alert("✅ تم نسخ بيانات الدخول والشرح بنجاح!");
   };
 
   const printAndSendInvoice = async (order: any) => {
@@ -750,7 +757,7 @@ export default function ProtectedOrders() {
           <button onClick={() => setActiveTab('performance')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'performance' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>📊 أداء الفنيين</button>
         </div>
 
-        {/* Orders Tab */}
+        {/* Orders Tab (مختصر) */}
         {activeTab === 'orders' && (
           <div className="space-y-4">
             <div className="bg-slate-900 rounded-xl p-4 flex flex-wrap gap-3 items-center">
@@ -785,7 +792,14 @@ export default function ProtectedOrders() {
         {/* Technicians Tab */}
         {activeTab === 'technicians' && (
           <div className="space-y-4">
-            <div className="flex justify-between items-center"><div className="flex gap-2"><button onClick={()=>setFilterTechStatus('active')} className={`px-3 py-1 rounded-full text-sm ${filterTechStatus==='active'?'bg-orange-600 text-white':'bg-slate-800 text-slate-300'}`}>النشطون</button><button onClick={()=>setFilterTechStatus('inactive')} className={`px-3 py-1 rounded-full text-sm ${filterTechStatus==='inactive'?'bg-orange-600 text-white':'bg-slate-800 text-slate-300'}`}>غير النشطون</button><button onClick={()=>setFilterTechStatus('all')} className={`px-3 py-1 rounded-full text-sm ${filterTechStatus==='all'?'bg-orange-600 text-white':'bg-slate-800 text-slate-300'}`}>الجميع</button></div>{canEditDelete() && <button onClick={()=>{setEditingTech(null); setTechForm({ name: '', phone: '', specialization: '', is_active: true, username: '', password: '', profit_percentage: 50 }); setShowTechModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={18}/> إضافة فني</button>}</div>
+            <div className="flex justify-between items-center">
+              <div className="flex gap-2">
+                <button onClick={()=>setFilterTechStatus('active')} className={`px-3 py-1 rounded-full text-sm ${filterTechStatus==='active'?'bg-orange-600 text-white':'bg-slate-800 text-slate-300'}`}>النشطون</button>
+                <button onClick={()=>setFilterTechStatus('inactive')} className={`px-3 py-1 rounded-full text-sm ${filterTechStatus==='inactive'?'bg-orange-600 text-white':'bg-slate-800 text-slate-300'}`}>غير النشطون</button>
+                <button onClick={()=>setFilterTechStatus('all')} className={`px-3 py-1 rounded-full text-sm ${filterTechStatus==='all'?'bg-orange-600 text-white':'bg-slate-800 text-slate-300'}`}>الجميع</button>
+              </div>
+              {canEditDelete() && <button onClick={()=>{setEditingTech(null); setTechForm({ name: '', phone: '', specialization: '', is_active: true, username: '', password: '', profit_percentage: 50 }); setShowTechModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={18}/> إضافة فني</button>}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {filteredTechnicians.map(tech => (
                 <div key={tech.id} className="bg-slate-900 rounded-xl p-4 text-center border border-slate-800">
@@ -794,7 +808,9 @@ export default function ProtectedOrders() {
                   <p className="text-xs text-slate-400">{tech.specialization}</p>
                   <p className="text-xs text-slate-400 mt-1">نسبة الأرباح: {tech.profit_percentage ?? 50}%</p>
                   <div className="flex gap-2 mt-3">
-                    <button onClick={()=>copyTechLink(tech.name, tech.id)} className="flex-1 bg-slate-800 text-slate-300 py-1 rounded text-xs flex items-center justify-center gap-1">{copiedId===tech.id ? <Check size={14}/> : <Copy size={14}/>} نسخ</button>
+                    <button onClick={() => copyTechLink(tech)} className="flex-1 bg-slate-800 text-slate-300 py-1 rounded text-xs flex items-center justify-center gap-1">
+                      {copiedId === tech.id ? <Check size={14}/> : <Copy size={14}/>} نسخ
+                    </button>
                     {canEditDelete() && <>
                       <button onClick={()=>{setEditingTech(tech); setTechForm(tech); setShowTechModal(true);}} className="p-1 text-blue-500"><Edit size={16}/></button>
                       <button onClick={()=>deleteTechnician(tech.id, tech.name)} className="p-1 text-red-500"><Trash2 size={16}/></button>
@@ -964,7 +980,7 @@ export default function ProtectedOrders() {
         {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions />}
       </main>
 
-      {/* باقي المودالات (Order, Technician, Partner, Cash, Settlement) */}
+      {/* باقي المودالات (Order, Technician, Partner, Cash, Settlement) - كما هي */}
       {showOrderModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl shadow-xl">
