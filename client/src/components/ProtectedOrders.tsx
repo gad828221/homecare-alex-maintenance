@@ -37,7 +37,7 @@ const addNotification = async (action: string, details: string) => {
   } catch (err) { console.error(err); }
 };
 
-// مزامنة الفنيين مع جدول users (لضمان تسجيل الدخول)
+// مزامنة الفنيين مع جدول users
 const syncTechniciansToUsers = async () => {
   try {
     const techs = await fetchAPI('technicians?select=*');
@@ -117,7 +117,6 @@ export default function ProtectedOrders() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<string>('');
   
-  // States for settlement modal
   const [showSettleModal, setShowSettleModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [settleForm, setSettleForm] = useState({
@@ -129,7 +128,6 @@ export default function ProtectedOrders() {
     company_share: 0
   });
 
-  // Date pickers for profit distribution and report
   const [selectedProfitDate, setSelectedProfitDate] = useState(() => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
@@ -284,7 +282,7 @@ export default function ProtectedOrders() {
     } catch (err) { alert(`❌ حدث خطأ في الاتصال: ${err.message}`); return false; }
   };
 
-  // ========== دالة توزيع أرباح تاريخ محدد ==========
+  // دالة توزيع أرباح تاريخ محدد (مع منع تكرار reserve)
   const distributeProfitForDate = async (targetDate: string) => {
     try {
       const incomeEntries = await fetchAPI(`cash_ledger?select=amount&date=eq.${targetDate}&type=eq.income`);
@@ -312,7 +310,8 @@ export default function ProtectedOrders() {
         alert(`⚠️ لا يوجد مبلغ كافٍ للتوزيع.`);
         return;
       }
-      if (!confirm(`💰 أرباح يوم ${targetDate}: ${netProfit.toLocaleString()} ج.م\n📤 نسبة التوزيع: ${totalPartnerShares}%\n💰 سيتم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء\n🏦 سيتم إضافة ${remaining.toLocaleString()} ج.م للخزنة\nهل تريد الاستمرار؟`)) return;
+      if (!confirm(`💰 أرباح يوم ${targetDate}: ${netProfit.toLocaleString()} ج.م\n📤 نسبة التوزيع: ${totalPartnerShares}%\n💰 سيتم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء\n🏦 سيتم إضافة ${remaining.toLocaleString()} ج.م للخزنة كرصيد احتياطي\nهل تريد الاستمرار؟`)) return;
+      
       let distributedSum = 0;
       for (let i = 0; i < activePartners.length; i++) {
         const partner = activePartners[i];
@@ -330,21 +329,29 @@ export default function ProtectedOrders() {
           });
         }
       }
+      
+      // التحقق من وجود reserve مسبقاً (لمنع التكرار)
       if (remaining > 0) {
-        await fetchAPI('cash_ledger', {
-          method: 'POST',
-          body: JSON.stringify({
-            type: 'reserve',
-            amount: remaining,
-            description: `🏦 رصيد احتياطي للشركة - أرباح يوم ${targetDate}`,
-            date: targetDate
-          })
-        });
+        const existingReserve = await fetchAPI(`cash_ledger?select=id&date=eq.${targetDate}&type=eq.reserve`);
+        if (!existingReserve || existingReserve.length === 0) {
+          await fetchAPI('cash_ledger', {
+            method: 'POST',
+            body: JSON.stringify({
+              type: 'reserve',
+              amount: remaining,
+              description: `🏦 رصيد احتياطي للشركة - أرباح يوم ${targetDate}`,
+              date: targetDate
+            })
+          });
+        } else {
+          console.log(`⚠️ reserve موجود مسبقاً ليوم ${targetDate}، تم تخطي الإضافة.`);
+        }
       }
+      
       await addNotification('توزيع أرباح الشركاء', `✅ تم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء (أرباح يوم ${targetDate}).`);
       await fetchCashLedger();
       await fetchData();
-      alert(`✅ تم التوزيع بنجاح.\n💰 تم توزيع ${amountToDistribute.toLocaleString()} ج.م\n🏦 تم إضافة ${remaining.toLocaleString()} ج.م للخزنة`);
+      alert(`✅ تم التوزيع بنجاح.\n💰 تم توزيع ${amountToDistribute.toLocaleString()} ج.م\n🏦 تم إضافة ${remaining.toLocaleString()} ج.م للخزنة كرصيد احتياطي`);
     } catch (err) {
       console.error(err);
       alert("❌ حدث خطأ أثناء توزيع الأرباح");
@@ -359,7 +366,7 @@ export default function ProtectedOrders() {
     await distributeProfitForDate(selectedProfitDate);
   };
 
-  // ========== دالة إرسال التقرير ليوم محدد ==========
+  // دالة إرسال التقرير ليوم محدد
   const sendDailyReportToPartners = async (targetDate: string) => {
     const entries = await fetchAPI(`cash_ledger?select=*&date=eq.${targetDate}&order=created_at.desc`);
     if (!entries || entries.length === 0) {
@@ -406,7 +413,6 @@ export default function ProtectedOrders() {
     await sendDailyReportToPartners(reportDate);
   };
 
-  // ========== باقي الدوال (fetchData, calculateAmounts, etc.) ==========
   const fetchData = useCallback(async () => {
     try {
       const [ordersData, techsData] = await Promise.all([ fetchAPI('orders?select=*&order=created_at.desc'), fetchAPI('technicians?select=*') ]);
@@ -695,7 +701,6 @@ export default function ProtectedOrders() {
   };
   const clearFilters = () => { setSearchTerm(''); setFilterStatus('all'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); };
 
-  // فلترة الأوردرات
   const filteredOrders = orders.filter(o => {
     if (searchTerm && !o.customer_name?.includes(searchTerm) && !o.phone?.includes(searchTerm) && !String(o.order_number).includes(searchTerm)) return false;
     if (filterStatus !== 'all' && o.status !== filterStatus) return false;
@@ -745,7 +750,7 @@ export default function ProtectedOrders() {
           <button onClick={() => setActiveTab('performance')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'performance' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>📊 أداء الفنيين</button>
         </div>
 
-        {/* Orders Tab */}
+        {/* Orders Tab (مختصر لتوفير المساحة) */}
         {activeTab === 'orders' && (
           <div className="space-y-4">
             <div className="bg-slate-900 rounded-xl p-4 flex flex-wrap gap-3 items-center">
@@ -898,7 +903,7 @@ export default function ProtectedOrders() {
                       <td className={entry.type==='income'||entry.type==='reserve'?'text-green-400':'text-red-400'}>{entry.amount} ج.م</td>
                       <td className="max-w-xs break-words text-slate-300">{entry.description}</td>
                       <td>{canEditDelete() && <button onClick={()=>deleteCashEntry(entry.id)} className="text-red-400"><Trash2 size={16}/></button>}</td>
-                    </tr>
+                    <tr>
                   ))}
                 </tbody>
               </table>
@@ -937,7 +942,7 @@ export default function ProtectedOrders() {
         {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions />}
       </main>
 
-      {/* باقي المودالات (Order, Technician, Partner, Cash, Settlement) - كما هي في الكود السابق */}
+      {/* باقي المودالات (Order, Technician, Partner, Cash, Settlement) - نفس الكود السابق */}
       {showOrderModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl shadow-xl">
