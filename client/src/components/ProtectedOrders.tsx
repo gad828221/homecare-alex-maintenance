@@ -139,6 +139,9 @@ export default function ProtectedOrders() {
     return yesterday.toISOString().split('T')[0];
   });
 
+  // ✅ منع تكرار الحفظ (مشكلة 2)
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     const storedUser = localStorage.getItem('currentUser');
     const role = localStorage.getItem('userRole');
@@ -413,10 +416,15 @@ export default function ProtectedOrders() {
     await sendDailyReportToPartners(reportDate);
   };
 
+  // ✅ تعديل fetchData لاستبعاد الأوردرات المحذوفة (deleted_at IS NOT NULL)
   const fetchData = useCallback(async () => {
     try {
-      const [ordersData, techsData] = await Promise.all([ fetchAPI('orders?select=*&order=created_at.desc'), fetchAPI('technicians?select=*') ]);
-      setOrders(ordersData || []); setTechnicians(techsData || []);
+      const [ordersData, techsData] = await Promise.all([
+        fetchAPI('orders?select=*&deleted_at=is.null&order=created_at.desc'),
+        fetchAPI('technicians?select=*')
+      ]);
+      setOrders(ordersData || []);
+      setTechnicians(techsData || []);
       const pending = (ordersData || []).filter((o: any) => o.status === 'pending').length;
       const inProgress = (ordersData || []).filter((o: any) => o.status === 'in-progress').length;
       const completed = (ordersData || []).filter((o: any) => o.status === 'completed').length;
@@ -538,34 +546,65 @@ export default function ProtectedOrders() {
     } catch (err) { console.error(err); }
   };
 
+  // ✅ دالة الحذف الناعم (بدلاً من الحذف الدائم)
   const deleteOrder = async (id: number) => {
     if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لحذف الأوردرات");
     const order = orders.find(o => o.id === id);
     if (!order) return;
     if (confirm(`حذف أوردر ${order.customer_name}؟`)) {
-      if (order.profit_added_to_cash) {
-        await deleteOrderProfitFromCash(order);
-      }
-      await fetchAPI(`orders?id=eq.${id}`, { method: 'DELETE' });
-      await addNotification('حذف أوردر', `تم حذف أوردر ${order.customer_name}`);
-      fetchData();
+      try {
+        await fetchAPI(`orders?id=eq.${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ deleted_at: new Date().toISOString() })
+        });
+        await addNotification('حذف أوردر (ناعم)', `تم حذف أوردر ${order.customer_name} (رقم ${order.order_number})`);
+        await fetchData();
+      } catch (err) { console.error(err); }
     }
   };
 
-  const copyOrder = async (order: any) => {
-    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لنسخ الأوردرات");
-    const newOrder = { ...order, id: undefined, order_number: `MG-${Date.now()}`, status: 'pending', is_paid: false, profit_added_to_cash: false };
-    await fetchAPI('orders', { method: 'POST', body: JSON.stringify(newOrder) });
-    await addNotification('نسخ أوردر', `تم نسخ أوردر ${order.order_number} بنجاح`);
-    alert('✅ تم نسخ الأوردر بنجاح');
-    fetchData();
+  // ✅ استعادة أوردر محذوف (اختياري)
+  const restoreOrder = async (id: number) => {
+    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية");
+    await fetchAPI(`orders?id=eq.${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ deleted_at: null })
+    });
+    await addNotification('استعادة أوردر', `تم استعادة الأوردر`);
+    await fetchData();
   };
 
+  // ✅ نسخ بيانات الأوردر إلى الحافظة (بدون إنشاء أوردر جديد)
+  const copyOrderDetails = (order: any) => {
+    const text = 
+      `📋 *بيانات الأوردر* 📋\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `🔢 *رقم الأوردر:* ${order.order_number}\n` +
+      `👤 *العميل:* ${order.customer_name}\n` +
+      `📞 *الهاتف:* ${order.phone}\n` +
+      `🔧 *الجهاز:* ${order.device_type} - ${order.brand}\n` +
+      `📍 *العنوان:* ${order.address || 'غير محدد'}\n` +
+      `📝 *المشكلة:* ${order.problem_description || 'لا توجد'}\n` +
+      `💰 *المبلغ:* ${order.total_amount} ج.م\n` +
+      `👨‍🔧 *الفني:* ${order.technician || 'غير معين'}\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━`;
+    
+    navigator.clipboard.writeText(text);
+    setCopiedId(order.id);
+    setTimeout(() => setCopiedId(null), 2000);
+    alert("✅ تم نسخ بيانات الأوردر إلى الحافظة");
+  };
+
+  // ✅ دالة حفظ الأوردر مع منع التكرار
   const saveOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return; // منع التكرار
+    setIsSubmitting(true);
+    
     const finalDevice = isOtherDevice ? customDevice : formData.device_type;
     const finalBrand = isOtherBrand ? customBrand : formData.brand;
     const orderToSave = { ...formData, device_type: finalDevice, brand: finalBrand, order_number: editingOrder ? editingOrder.order_number : `MG-${Date.now()}` };
+    
     try {
       if (editingOrder) {
         const oldOrder = orders.find(o => o.id === editingOrder.id);
@@ -588,7 +627,12 @@ export default function ProtectedOrders() {
       setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") });
       setIsOtherDevice(false); setIsOtherBrand(false); setCustomDevice(''); setCustomBrand('');
       fetchData();
-    } catch (err) { console.error(err); alert("❌ حدث خطأ أثناء حفظ الأوردر"); }
+    } catch (err) {
+      console.error(err);
+      alert("❌ حدث خطأ أثناء حفظ الأوردر");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const updateAllPendingOrdersProfit = async (technicianName: string, newPercentage: number) => {
@@ -659,7 +703,6 @@ export default function ProtectedOrders() {
     fetchData();
   };
 
-  // ✅ دالة نسخ بيانات الفني (مع رسالة كاملة)
   const copyTechLink = async (tech: any) => {
     const loginUrl = `${window.location.origin}/login`;
     const message = 
@@ -777,7 +820,7 @@ export default function ProtectedOrders() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredOrders.map(order => (
                 <div key={order.id} className={`bg-slate-900 rounded-xl border-r-4 p-4 ${isDelayed(order) ? 'border-red-500' : order.status === 'completed' ? 'border-green-500' : order.status === 'in-progress' ? 'border-blue-500' : 'border-yellow-500'}`}>
-                  <div className="flex justify-between items-start"><div><h3 className="font-bold text-white">{order.customer_name}</h3><p className="text-xs text-slate-400">رقم: {order.order_number}</p></div><div className="flex gap-1"><button onClick={()=>togglePaidStatus(order.id, order.is_paid)} className={`p-1 rounded ${order.is_paid ? 'text-green-500 bg-green-500/10' : 'text-red-500 bg-red-500/10'}`}>{order.is_paid ? <CheckCircle2 size={16}/> : <AlertCircle size={16}/>}</button>{canEditDelete() && <><button onClick={()=>{setEditingOrder(order); setFormData(order); setShowOrderModal(true);}} className="p-1 text-blue-500"><Edit size={16}/></button><button onClick={()=>copyOrder(order)} className="p-1 text-slate-400"><Copy size={16}/></button><button onClick={()=>deleteOrder(order.id)} className="p-1 text-red-500"><Trash2 size={16}/></button></>}</div></div>
+                  <div className="flex justify-between items-start"><div><h3 className="font-bold text-white">{order.customer_name}</h3><p className="text-xs text-slate-400">رقم: {order.order_number}</p></div><div className="flex gap-1"><button onClick={()=>togglePaidStatus(order.id, order.is_paid)} className={`p-1 rounded ${order.is_paid ? 'text-green-500 bg-green-500/10' : 'text-red-500 bg-red-500/10'}`}>{order.is_paid ? <CheckCircle2 size={16}/> : <AlertCircle size={16}/>}</button>{canEditDelete() && <><button onClick={()=>{setEditingOrder(order); setFormData(order); setShowOrderModal(true);}} className="p-1 text-blue-500"><Edit size={16}/></button><button onClick={() => copyOrderDetails(order)} className="p-1 text-slate-400" title="نسخ البيانات"><Copy size={16}/></button><button onClick={() => deleteOrder(order.id)} className="p-1 text-red-500"><Trash2 size={16}/></button></>}</div></div>
                   <div className="grid grid-cols-2 gap-1 mt-2 text-sm"><div className="text-slate-300">📞 {order.phone}</div><div className="text-slate-300">🔧 {order.device_type} - {order.brand}</div><div className="col-span-2 text-slate-300">📍 {order.address}</div><div className="col-span-2 text-slate-300">📝 {order.problem_description}</div><div className="text-slate-300">💰 {order.total_amount} ج.م</div><div className="text-slate-300">👨‍🔧 {order.technician || '-'}</div></div>
                   <div className="flex justify-between items-center mt-3"><select value={order.status} onChange={e=>updateOrderStatus(order.id, e.target.value)} className="text-xs bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white"><option value="pending">قيد الانتظار</option><option value="in-progress">قيد التنفيذ</option><option value="inspected">تم الكشف</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option></select><span className={`text-xs px-2 py-1 rounded ${order.is_paid ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{order.is_paid ? 'تم التحصيل' : 'لم يتحصل'}</span></div>
                   {order.status === 'in-progress' && canEditDelete() && (
@@ -858,7 +901,6 @@ export default function ProtectedOrders() {
               </div>
             </div>
 
-            {/* قسم توزيع أرباح الشركاء مع اختيار التاريخ */}
             <div className="bg-purple-600/10 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 border border-purple-500/30">
               <div className="flex flex-col gap-1">
                 <p className="text-sm font-semibold text-purple-300">📅 توزيع أرباح الشركاء</p>
@@ -882,7 +924,6 @@ export default function ProtectedOrders() {
               </div>
             </div>
 
-            {/* قسم إرسال تقرير الخزنة اليومي مع اختيار التاريخ */}
             <div className="bg-blue-600/10 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 border border-blue-500/30">
               <div className="flex flex-col gap-1">
                 <p className="text-sm font-semibold text-blue-300">📊 إرسال تقرير الخزنة للشركاء</p>
@@ -941,7 +982,7 @@ export default function ProtectedOrders() {
                           </button>
                         )}
                       </td>
-                    </tr>
+                    </table>
                   ))}
                 </tbody>
               </table>
@@ -999,7 +1040,7 @@ export default function ProtectedOrders() {
                 <div><label className="text-sm text-slate-400">مواصلات</label><input type="number" value={formData.transport_cost} onChange={e=>handleFormChange('transport_cost',parseFloat(e.target.value))} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/></div>
                 <div className="col-span-2"><label className="flex items-center gap-2 text-slate-300"><input type="checkbox" checked={formData.is_paid} onChange={e=>handleFormChange('is_paid',e.target.checked)} /> تم التحصيل</label></div>
               </div>
-              <div className="flex gap-3 pt-4"><button type="submit" className="flex-1 bg-orange-600 text-white py-2 rounded-lg font-bold">حفظ</button><button type="button" onClick={()=>setShowOrderModal(false)} className="flex-1 bg-slate-800 text-slate-300 py-2 rounded-lg font-bold">إلغاء</button></div>
+              <div className="flex gap-3 pt-4"><button type="submit" disabled={isSubmitting} className="flex-1 bg-orange-600 text-white py-2 rounded-lg font-bold">{isSubmitting ? 'جاري الحفظ...' : 'حفظ'}</button><button type="button" onClick={()=>setShowOrderModal(false)} className="flex-1 bg-slate-800 text-slate-300 py-2 rounded-lg font-bold">إلغاء</button></div>
             </form>
           </div>
         </div>
