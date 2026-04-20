@@ -892,25 +892,45 @@ const fetchCashLedger = useCallback(async () => {
             </div>
 
             <div className="bg-slate-900 rounded-xl overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-800">
-                  <tr><th className="p-3">التاريخ</th><th>النوع</th><th>المبلغ</th><th>الوصف</th><th>إجراءات</th></tr>
-                </thead>
-                <tbody>
-                  {cashLedger.map(entry=>(
-                    <tr key={entry.id} className="border-b border-slate-800">
-                      <td className="p-3 text-slate-300">{entry.date}</td>
-                      <td className="text-slate-300">{entry.type==='income'?'💰 دخل':entry.type==='expense'?'💸 مصروف':entry.type==='profit_distribution'?'📤 توزيع أرباح':'🏦 رصيد احتياطي'}</td>
-                      <td className={entry.type==='income'||entry.type==='reserve'?'text-green-400':'text-red-400'}>{entry.amount} ج.م</td>
-                      <td className="max-w-xs break-words text-slate-300">{entry.description}</td>
-                      <td>{canEditDelete() && <button onClick={()=>deleteCashEntry(entry.id)} className="text-red-400"><Trash2 size={16}/></button>}</td>
-                    <tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+  <table className="w-full text-sm">
+    <thead className="bg-slate-800">
+      <tr>
+        <th className="p-3">التاريخ</th>
+        <th>النوع</th>
+        <th>المبلغ</th>
+        <th>الوصف</th>
+        <th>إجراءات</th>
+      </tr>
+    </thead>
+    <tbody>
+      {cashLedger.map((entry) => (
+        <tr key={entry.id} className="border-b border-slate-800">
+          <td className="p-3 text-slate-300">{entry.date}</td>
+          <td className="text-slate-300">
+            {entry.type === 'income'
+              ? '💰 دخل'
+              : entry.type === 'expense'
+              ? '💸 مصروف'
+              : entry.type === 'profit_distribution'
+              ? '📤 توزيع أرباح'
+              : '🏦 رصيد احتياطي'}
+          </td>
+          <td className={entry.type === 'income' || entry.type === 'reserve' ? 'text-green-400' : 'text-red-400'}>
+            {entry.amount} ج.م
+          </td>
+          <td className="max-w-xs break-words text-slate-300">{entry.description}</td>
+          <td>
+            {canEditDelete() && (
+              <button onClick={() => deleteCashEntry(entry.id)} className="text-red-400">
+                <Trash2 size={16} />
+              </button>
+            )}
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
 
         {/* Partners Tab */}
         {activeTab === 'partners' && (
