@@ -206,24 +206,25 @@ export default function ProtectedOrders() {
       setPartners(data || []);
     } catch (err) { console.error(err); }
   }, []);
-
-  const fetchCashLedger = useCallback(async () => {
-    try {
-      let endpoint = 'cash_ledger?select=*&order=date.desc';
-      if (cashFilterDate) endpoint = `cash_ledger?select=*&date=eq.${cashFilterDate}&order=date.desc`;
-      const data = await fetchAPI(endpoint);
-      setCashLedger(data || []);
-      const balance = (data || []).reduce((acc: number, entry: any) => {
-        if (entry.type === 'income' || entry.type === 'reserve') {
-          return acc + entry.amount;
-        } else if (entry.type === 'expense' || entry.type === 'profit_distribution') {
-          return acc - entry.amount;
-        }
-        return acc;
-      }, 0);
-      setCashBalance(balance);
-    } catch (err) { console.error(err); }
-  }, [cashFilterDate]);
+const fetchCashLedger = useCallback(async () => {
+  try {
+    let endpoint = 'cash_ledger?select=*&order=date.desc';
+    if (cashFilterDate) endpoint = `cash_ledger?select=*&date=eq.${cashFilterDate}&order=date.desc`;
+    const data = await fetchAPI(endpoint);
+    setCashLedger(data || []);
+    const balance = (data || []).reduce((acc: number, entry: any) => {
+      if (entry.type === 'income') {
+        return acc + entry.amount;
+      } else if (entry.type === 'expense' || entry.type === 'profit_distribution') {
+        return acc - entry.amount;
+      }
+      // reserve لا يؤثر على الرصيد (يُعرض فقط للتوثيق)
+      return acc;
+    }, 0);
+    setCashBalance(balance);
+  } catch (err) { console.error(err); }
+}, [cashFilterDate]);
+  
 
   const addCashEntry = async (e: React.FormEvent) => {
     e.preventDefault();
