@@ -129,6 +129,13 @@ export default function ProtectedOrders() {
     company_share: 0
   });
 
+  // State for profit distribution date picker
+  const [selectedProfitDate, setSelectedProfitDate] = useState(() => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    return yesterday.toISOString().split('T')[0];
+  });
+
   useEffect(() => {
     const storedUser = localStorage.getItem('currentUser');
     const role = localStorage.getItem('userRole');
@@ -272,42 +279,82 @@ export default function ProtectedOrders() {
     } catch (err) { alert(`❌ حدث خطأ في الاتصال: ${err.message}`); return false; }
   };
 
-  const distributePartnersProfit = async () => {
+  // ========== دالة توزيع أرباح تاريخ محدد ==========
+  const distributeProfitForDate = async (targetDate: string) => {
     try {
-      const eligibleOrders = orders.filter(o => 
-        o.status === 'completed' && o.is_paid === true && (o.company_share || 0) > 0 && !o.profit_distributed_to_partners
-      );
-      const totalProfit = eligibleOrders.reduce((sum, o) => sum + (o.company_share || 0), 0);
-      if (totalProfit <= 0) { alert("⚠️ لا توجد أوردرات مكتملة ومدفوعة (لم يسبق توزيع أرباحها)."); return; }
-      const activePartners = partners.filter(p => p.is_active);
-      if (activePartners.length === 0) { alert("⚠️ لا يوجد شركاء نشطون لتوزيع الأرباح."); return; }
-      const totalShares = activePartners.reduce((s, p) => s + (Number(p.share_percentage) || 0), 0);
-      if (totalShares <= 0 || totalShares > 100) { alert("⚠️ إجمالي نسب الشركاء غير صالح (يجب أن يكون بين 1 و 100)."); return; }
-      const amountToDistribute = Math.floor((totalProfit * totalShares) / 100);
-      const remaining = totalProfit - amountToDistribute;
-      if (amountToDistribute <= 0) { alert(`⚠️ لا يوجد مبلغ كافٍ للتوزيع (${totalShares}% من ${totalProfit} ج.م = ${amountToDistribute} ج.م).`); return; }
-      if (!confirm(`💰 إجمالي أرباح غير موزعة: ${totalProfit.toLocaleString()} ج.م\n📤 نسبة التصفية: ${totalShares}% (مجموع نسب الشركاء النشطين)\n💰 سيتم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء\n🏦 سيتم إضافة ${remaining.toLocaleString()} ج.م إلى رصيد الخزنة الاحتياطي (لصالح الشركة)\n\nهل تريد الاستمرار؟`)) return;
+      const incomeEntries = await fetchAPI(`cash_ledger?select=amount&date=eq.${targetDate}&type=eq.income`);
+      const totalIncome = (incomeEntries || []).reduce((sum: number, entry: any) => sum + (entry.amount || 0), 0);
+      const expenseEntries = await fetchAPI(`cash_ledger?select=amount&date=eq.${targetDate}&type=eq.expense`);
+      const totalExpense = (expenseEntries || []).reduce((sum: number, entry: any) => sum + (entry.amount || 0), 0);
+      const netProfit = totalIncome - totalExpense;
+      if (netProfit <= 0) {
+        alert(`⚠️ لا توجد أرباح صافية ليوم ${targetDate}.`);
+        return;
+      }
+      const activePartners = partners.filter(p => p.is_active === true);
+      if (activePartners.length === 0) {
+        alert("⚠️ لا يوجد شركاء نشطون لتوزيع الأرباح.");
+        return;
+      }
+      const totalPartnerShares = activePartners.reduce((sum, p) => sum + (Number(p.share_percentage) || 0), 0);
+      if (totalPartnerShares <= 0) {
+        alert("⚠️ إجمالي نسب الشركاء غير صالح.");
+        return;
+      }
+      const amountToDistribute = Math.floor((netProfit * totalPartnerShares) / 100);
+      const remaining = netProfit - amountToDistribute;
+      if (amountToDistribute <= 0) {
+        alert(`⚠️ لا يوجد مبلغ كافٍ للتوزيع.`);
+        return;
+      }
+      if (!confirm(`💰 أرباح يوم ${targetDate}: ${netProfit.toLocaleString()} ج.م\n📤 نسبة التوزيع: ${totalPartnerShares}%\n💰 سيتم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء\n🏦 سيتم إضافة ${remaining.toLocaleString()} ج.م للخزنة\nهل تريد الاستمرار؟`)) return;
       let distributedSum = 0;
       for (let i = 0; i < activePartners.length; i++) {
         const partner = activePartners[i];
-        let share = i === activePartners.length - 1 ? amountToDistribute - distributedSum : Math.floor((amountToDistribute * partner.share_percentage) / totalShares);
+        let share = i === activePartners.length - 1 ? amountToDistribute - distributedSum : Math.floor((amountToDistribute * Number(partner.share_percentage)) / totalPartnerShares);
         distributedSum += share;
         if (share > 0) {
-          await fetchAPI('cash_ledger', { method: 'POST', body: JSON.stringify({ type: 'profit_distribution', amount: share, description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%) - أرباح من ${eligibleOrders.length} أوردر`, date: new Date().toISOString().split('T')[0] }) });
+          await fetchAPI('cash_ledger', {
+            method: 'POST',
+            body: JSON.stringify({
+              type: 'profit_distribution',
+              amount: share,
+              description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%) - أرباح يوم ${targetDate}`,
+              date: targetDate
+            })
+          });
         }
       }
       if (remaining > 0) {
-        await fetchAPI('cash_ledger', { method: 'POST', body: JSON.stringify({ type: 'reserve', amount: remaining, description: `🏦 رصيد احتياطي للشركة (غير موزع) من أرباح ${eligibleOrders.length} أوردر`, date: new Date().toISOString().split('T')[0] }) });
+        await fetchAPI('cash_ledger', {
+          method: 'POST',
+          body: JSON.stringify({
+            type: 'reserve',
+            amount: remaining,
+            description: `🏦 رصيد احتياطي للشركة - أرباح يوم ${targetDate}`,
+            date: targetDate
+          })
+        });
       }
-      for (const order of eligibleOrders) {
-        await fetchAPI(`orders?id=eq.${order.id}`, { method: 'PATCH', body: JSON.stringify({ profit_distributed_to_partners: true }) });
-      }
-      await addNotification('توزيع أرباح الشركاء', `✅ تم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء (${totalShares}% من أرباح ${eligibleOrders.length} أوردر).`);
-      await fetchCashLedger(); await fetchData();
-      alert(`✅ تم التوزيع بنجاح.\n💰 تم توزيع ${amountToDistribute.toLocaleString()} ج.م\n🏦 تم إضافة ${remaining.toLocaleString()} ج.م للخزنة الاحتياطية`);
-    } catch (err) { console.error(err); alert("❌ حدث خطأ أثناء توزيع الأرباح"); }
+      await addNotification('توزيع أرباح الشركاء', `✅ تم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء (أرباح يوم ${targetDate}).`);
+      await fetchCashLedger();
+      await fetchData();
+      alert(`✅ تم التوزيع بنجاح.\n💰 تم توزيع ${amountToDistribute.toLocaleString()} ج.م\n🏦 تم إضافة ${remaining.toLocaleString()} ج.م للخزنة`);
+    } catch (err) {
+      console.error(err);
+      alert("❌ حدث خطأ أثناء توزيع الأرباح");
+    }
   };
 
+  const handleDistributeSelectedProfit = async () => {
+    if (!selectedProfitDate) {
+      alert("⚠️ يرجى اختيار التاريخ أولاً.");
+      return;
+    }
+    await distributeProfitForDate(selectedProfitDate);
+  };
+
+  // ========== باقي الدوال (fetchData, calculateAmounts, etc.) ==========
   const fetchData = useCallback(async () => {
     try {
       const [ordersData, techsData] = await Promise.all([ fetchAPI('orders?select=*&order=created_at.desc'), fetchAPI('technicians?select=*') ]);
@@ -328,7 +375,6 @@ export default function ProtectedOrders() {
     return () => clearInterval(interval);
   }, []);
 
-  // حساب المبالغ لنموذج إضافة/تعديل الأوردر (يستخدم نسبة الفني)
   const calculateAmounts = (data: any) => {
     const total = parseFloat(data.total_amount) || 0;
     const parts = parseFloat(data.parts_cost) || 0;
@@ -347,15 +393,13 @@ export default function ProtectedOrders() {
     }
   }, [technicians, formData.technician]);
 
-  // حساب المبالغ لمودال التصفية (باستخدام البحث المرن)
   const calculateSettlementAmounts = (data: any, technicianName: string) => {
     const total = parseFloat(data.total_amount) || 0;
     const parts = parseFloat(data.parts_cost) || 0;
     const transport = parseFloat(data.transport_cost) || 0;
     const net = total - parts - transport;
     const selectedTech = technicians.find(t => 
-      t.name === technicianName || 
-      t.username === technicianName ||
+      t.name === technicianName || t.username === technicianName ||
       t.name?.toLowerCase() === technicianName?.toLowerCase() ||
       t.username?.toLowerCase() === technicianName?.toLowerCase()
     );
@@ -492,29 +536,22 @@ export default function ProtectedOrders() {
   const updateAllPendingOrdersProfit = async (technicianName: string, newPercentage: number) => {
     if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية");
     if (!confirm(`هل تريد تحديث نسب الأرباح لجميع الأوردرات غير المكتملة للفني "${technicianName}" إلى ${newPercentage}%؟`)) return;
-    
     const pendingOrders = orders.filter(o => o.technician === technicianName && o.status !== 'completed');
     if (pendingOrders.length === 0) {
       alert("لا توجد أوردرات غير مكتملة لهذا الفني.");
       return;
     }
-    
     let updatedCount = 0;
     for (const order of pendingOrders) {
       const net = order.net_amount;
       const newTechnicianShare = Math.round((net * newPercentage) / 100);
       const newCompanyShare = net - newTechnicianShare;
-      
       await fetchAPI(`orders?id=eq.${order.id}`, {
         method: 'PATCH',
-        body: JSON.stringify({
-          technician_share: newTechnicianShare,
-          company_share: newCompanyShare
-        })
+        body: JSON.stringify({ technician_share: newTechnicianShare, company_share: newCompanyShare })
       });
       updatedCount++;
     }
-    
     await addNotification('تحديث نسب أرباح الفني', `تم تحديث نسب أرباح ${updatedCount} أوردر للفني ${technicianName} إلى ${newPercentage}%`);
     await fetchData();
     alert(`✅ تم تحديث ${updatedCount} أوردر بنجاح.`);
@@ -523,10 +560,8 @@ export default function ProtectedOrders() {
   const saveTechnician = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية");
-    
     const oldTech = editingTech ? technicians.find(t => t.id === editingTech.id) : null;
     const percentageChanged = oldTech && oldTech.profit_percentage !== techForm.profit_percentage;
-    
     try {
       if (editingTech) {
         await fetchAPI(`technicians?id=eq.${editingTech.id}`, { 
@@ -534,7 +569,6 @@ export default function ProtectedOrders() {
           body: JSON.stringify({ ...techForm, profit_percentage: techForm.profit_percentage }) 
         });
         await addNotification('تعديل فني', `تم تعديل بيانات الفني ${techForm.name}`);
-        
         if (percentageChanged && confirm(`هل تريد تحديث الأوردرات غير المكتملة للفني "${techForm.name}" لتطبيق النسبة الجديدة (${techForm.profit_percentage}%)؟`)) {
           await updateAllPendingOrdersProfit(techForm.name, techForm.profit_percentage);
         }
@@ -542,9 +576,7 @@ export default function ProtectedOrders() {
         await fetchAPI('technicians', { method: 'POST', body: JSON.stringify({ ...techForm, profit_percentage: techForm.profit_percentage }) });
         await addNotification('إضافة فني', `تم إضافة فني جديد: ${techForm.name}`);
       }
-      // مزامنة الفني مع جدول users
       await syncTechniciansToUsers();
-      
       setShowTechModal(false); setEditingTech(null);
       setTechForm({ name: '', phone: '', specialization: '', is_active: true, username: '', password: '', profit_percentage: 50 });
       fetchData();
@@ -611,77 +643,47 @@ export default function ProtectedOrders() {
   };
   const clearFilters = () => { setSearchTerm(''); setFilterStatus('all'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); };
 
-  // ==================== دالة إرسال التقرير اليومي للشركاء عبر واتساب ====================
-const sendDailyReportToPartners = async () => {
-  const today = new Date().toISOString().split('T')[0];
-  
-  const entries = await fetchAPI(`cash_ledger?select=*&date=eq.${today}&order=created_at.desc`);
-  if (!entries || entries.length === 0) {
-    alert("⚠️ لا توجد حركات خزنة لهذا اليوم");
-    return;
-  }
-  
-  let totalIncome = 0, totalExpense = 0, totalProfitDist = 0, totalReserve = 0;
-  const profitDetails: string[] = [];
-  
-  entries.forEach((entry: any) => {
-    if (entry.type === 'income') totalIncome += entry.amount;
-    else if (entry.type === 'expense') totalExpense += entry.amount;
-    else if (entry.type === 'profit_distribution') {
-      totalProfitDist += entry.amount;
-      profitDetails.push(`• ${entry.description} : ${entry.amount} ج.م`);
+  // دالة إرسال التقرير اليومي للشركاء عبر واتساب
+  const sendDailyReportToPartners = async () => {
+    const today = new Date().toISOString().split('T')[0];
+    const entries = await fetchAPI(`cash_ledger?select=*&date=eq.${today}&order=created_at.desc`);
+    if (!entries || entries.length === 0) {
+      alert("⚠️ لا توجد حركات خزنة لهذا اليوم");
+      return;
     }
-    else if (entry.type === 'reserve') totalReserve += entry.amount;
-  });
-  
-  const netBalance = totalIncome + totalReserve - totalExpense;
-  
-  const reportText = 
-    `📊 *تقرير الخزنة اليومي* 📊\n` +
-    `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-    `📅 *التاريخ:* ${today}\n\n` +
-    `💰 *الإيرادات:* ${totalIncome.toLocaleString()} ج.م\n` +
-    `💸 *المصروفات:* ${totalExpense.toLocaleString()} ج.م\n` +
-    `📤 *توزيع أرباح الشركاء:* ${totalProfitDist.toLocaleString()} ج.م\n` +
-    `🏦 *الرصيد الاحتياطي:* ${totalReserve.toLocaleString()} ج.م\n` +
-    `✅ *صافي ربح اليوم:* ${netBalance.toLocaleString()} ج.م\n` +
-    `💰 *الرصيد الحالي للخزنة:* ${cashBalance.toLocaleString()} ج.م\n\n` +
-    `👥 *تفاصيل توزيع الأرباح:*\n${profitDetails.length ? profitDetails.join('\n') : 'لا توجد توزيعات'}\n\n` +
-    `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-    `📞 للاستفسار: 01278885772\n` +
-    `✨ نظام إدارة الصيانة - تقرير يومي`;
-  
-  const activePartners = partners.filter(p => p.is_active && p.phone);
-  if (activePartners.length === 0) {
-    alert("⚠️ لا يوجد شركاء نشطون بأرقام هواتف");
-    return;
-  }
-  
-  const userChoice = confirm(
-    `📋 التقرير جاهز للإرسال.\n\n` +
-    `${reportText}\n\n` +
-    `هل تريد فتح واتساب لإرسال التقرير لكل شريك على حدة؟\n` +
-    `(سيتم فتح نافذة واتساب لكل شريك، أرسل التقرير يدوياً)`
-  );
-  
-  if (!userChoice) return;
-  
-  for (const partner of activePartners) {
-    let phone = partner.phone.toString().replace(/[^\d]/g, '');
-    if (phone.startsWith('0')) phone = phone.substring(1);
-    if (phone.length === 10) phone = '20' + phone;
-    if (!phone.startsWith('20')) phone = '20' + phone;
-    
-    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(reportText)}`;
-    window.open(whatsappUrl, '_blank');
-    await new Promise(resolve => setTimeout(resolve, 800));
-  }
-  
-  alert(`✅ تم فتح واتساب لـ ${activePartners.length} شريك. قم بإرسال التقرير لكل منهم.`);
-};
-// ==================== نهاية دالة التقرير ====================
-    
-  // فلترة الأوردرات مع دعم showAllOrders
+    let totalIncome = 0, totalExpense = 0, totalProfitDist = 0, totalReserve = 0;
+    const profitDetails: string[] = [];
+    entries.forEach((entry: any) => {
+      if (entry.type === 'income') totalIncome += entry.amount;
+      else if (entry.type === 'expense') totalExpense += entry.amount;
+      else if (entry.type === 'profit_distribution') {
+        totalProfitDist += entry.amount;
+        profitDetails.push(`• ${entry.description} : ${entry.amount} ج.م`);
+      }
+      else if (entry.type === 'reserve') totalReserve += entry.amount;
+    });
+    const netBalance = totalIncome + totalReserve - totalExpense;
+    const reportText = `📊 *تقرير الخزنة اليومي* 📊\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📅 *التاريخ:* ${today}\n\n💰 *الإيرادات:* ${totalIncome.toLocaleString()} ج.م\n💸 *المصروفات:* ${totalExpense.toLocaleString()} ج.م\n📤 *توزيع أرباح الشركاء:* ${totalProfitDist.toLocaleString()} ج.م\n🏦 *الرصيد الاحتياطي:* ${totalReserve.toLocaleString()} ج.م\n✅ *صافي ربح اليوم:* ${netBalance.toLocaleString()} ج.م\n💰 *الرصيد الحالي للخزنة:* ${cashBalance.toLocaleString()} ج.م\n\n👥 *تفاصيل توزيع الأرباح:*\n${profitDetails.length ? profitDetails.join('\n') : 'لا توجد توزيعات'}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📞 للاستفسار: 01278885772\n✨ نظام إدارة الصيانة - تقرير يومي`;
+    const activePartners = partners.filter(p => p.is_active && p.phone);
+    if (activePartners.length === 0) {
+      alert("⚠️ لا يوجد شركاء نشطون بأرقام هواتف");
+      return;
+    }
+    const userChoice = confirm(`📋 التقرير جاهز للإرسال.\n\n${reportText}\n\nهل تريد فتح واتساب لإرسال التقرير لكل شريك على حدة؟`);
+    if (!userChoice) return;
+    for (const partner of activePartners) {
+      let phone = partner.phone.toString().replace(/[^\d]/g, '');
+      if (phone.startsWith('0')) phone = phone.substring(1);
+      if (phone.length === 10) phone = '20' + phone;
+      if (!phone.startsWith('20')) phone = '20' + phone;
+      const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(reportText)}`;
+      window.open(whatsappUrl, '_blank');
+      await new Promise(resolve => setTimeout(resolve, 800));
+    }
+    alert(`✅ تم فتح واتساب لـ ${activePartners.length} شريك. قم بإرسال التقرير لكل منهم.`);
+  };
+
+  // فلترة الأوردرات
   const filteredOrders = orders.filter(o => {
     if (searchTerm && !o.customer_name?.includes(searchTerm) && !o.phone?.includes(searchTerm) && !String(o.order_number).includes(searchTerm)) return false;
     if (filterStatus !== 'all' && o.status !== filterStatus) return false;
@@ -731,7 +733,7 @@ const sendDailyReportToPartners = async () => {
           <button onClick={() => setActiveTab('performance')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'performance' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>📊 أداء الفنيين</button>
         </div>
 
-        {/* Orders Tab */}
+        {/* Orders Tab (مختصر لتوفير المساحة، باقي الكود كما هو) */}
         {activeTab === 'orders' && (
           <div className="space-y-4">
             <div className="bg-slate-900 rounded-xl p-4 flex flex-wrap gap-3 items-center">
@@ -747,11 +749,7 @@ const sendDailyReportToPartners = async () => {
               <button onClick={()=>{setEditingOrder(null); setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") }); setShowOrderModal(true);}} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={18} /> أوردر جديد</button>
               <button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg"><RefreshCw size={18} /></button>
             </div>
-
-            {filteredOrders.length === 0 && !showAllOrders && (
-              <div className="text-center py-8 text-slate-400">لا توجد أوردرات (قيد الانتظار، قيد التنفيذ، أو بدون فني). اضغط "عرض الكل" لمشاهدة جميع الأوردرات.</div>
-            )}
-
+            {filteredOrders.length === 0 && !showAllOrders && <div className="text-center py-8 text-slate-400">لا توجد أوردرات (قيد الانتظار، قيد التنفيذ، أو بدون فني). اضغط "عرض الكل" لمشاهدة جميع الأوردرات.</div>}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredOrders.map(order => (
                 <div key={order.id} className={`bg-slate-900 rounded-xl border-r-4 p-4 ${isDelayed(order) ? 'border-red-500' : order.status === 'completed' ? 'border-green-500' : order.status === 'in-progress' ? 'border-blue-500' : 'border-yellow-500'}`}>
@@ -826,142 +824,178 @@ const sendDailyReportToPartners = async () => {
                 {canEditDelete() && <button onClick={()=>{setEditingCash(null); setCashForm({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] }); setShowCashModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={16}/> حركة جديدة</button>}
               </div>
             </div>
-            <div className="bg-purple-600/10 rounded-xl p-4 flex justify-between items-center flex-wrap gap-3 border border-purple-500/30">
-              <div><p className="text-sm font-semibold text-purple-300">توزيع أرباح الشركاء</p><p className="text-xs text-slate-400">يتم التوزيع تلقائياً حسب نسب الشركاء النشطين</p></div>
-              <div className="flex gap-2">
-                {canEditDelete() && <button onClick={distributePartnersProfit} className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg text-sm font-bold flex items-center gap-2"><DollarSign size={16}/> توزيع أرباح الشركاء (تلقائي)</button>}
+
+            <div className="bg-purple-600/10 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 border border-purple-500/30">
+              <div className="flex flex-col gap-1">
+                <p className="text-sm font-semibold text-purple-300">📅 توزيع أرباح الشركاء</p>
+                <p className="text-xs text-slate-400">اختر التاريخ ثم اضغط زر التوزيع (يتم توزيع صافي ربح اليوم بنسبة الشركاء)</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <input
+                  type="date"
+                  value={selectedProfitDate}
+                  onChange={(e) => setSelectedProfitDate(e.target.value)}
+                  className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
+                />
                 {canEditDelete() && (
                   <button
-                    onClick={sendDailyReportToPartners}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2"
+                    onClick={handleDistributeSelectedProfit}
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"
                   >
+                    <DollarSign size={16}/> توزيع أرباح التاريخ المحدد
+                  </button>
+                )}
+                {canEditDelete() && (
+                  <button onClick={sendDailyReportToPartners} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2">
                     <Send className="w-4 h-4" /> إرسال تقرير اليوم للشركاء
                   </button>
                 )}
               </div>
             </div>
+
             <div className="bg-slate-900 rounded-xl overflow-x-auto">
-              <table className="w-full text-sm"><thead className="bg-slate-800"><tr><th className="p-3">التاريخ</th><th>النوع</th><th>المبلغ</th><th>الوصف</th><th>إجراءات</th></tr></thead><tbody>{cashLedger.map(entry=>(
-                <tr key={entry.id} className="border-b border-slate-800"><td className="p-3 text-slate-300">{entry.date}</td><td className="text-slate-300">{entry.type==='income'?'💰 دخل':entry.type==='expense'?'💸 مصروف':entry.type==='profit_distribution'?'📤 توزيع أرباح':'🏦 رصيد احتياطي'}</td><td className={entry.type==='income'||entry.type==='reserve'?'text-green-400':'text-red-400'}>{entry.amount} ج.م</td><td className="max-w-xs break-words text-slate-300">{entry.description}</td><td>{canEditDelete() && <button onClick={()=>deleteCashEntry(entry.id)} className="text-red-400"><Trash2 size={16}/></button>}</td></tr>
-              ))}</tbody></table>
+              <table className="w-full text-sm">
+                <thead className="bg-slate-800">
+                  <tr><th className="p-3">التاريخ</th><th>النوع</th><th>المبلغ</th><th>الوصف</th><th>إجراءات</th></tr>
+                </thead>
+                <tbody>
+                  {cashLedger.map(entry=>(
+                    <tr key={entry.id} className="border-b border-slate-800">
+                      <td className="p-3 text-slate-300">{entry.date}</td>
+                      <td className="text-slate-300">{entry.type==='income'?'💰 دخل':entry.type==='expense'?'💸 مصروف':entry.type==='profit_distribution'?'📤 توزيع أرباح':'🏦 رصيد احتياطي'}</td>
+                      <td className={entry.type==='income'||entry.type==='reserve'?'text-green-400':'text-red-400'}>{entry.amount} ج.م</td>
+                      <td className="max-w-xs break-words text-slate-300">{entry.description}</td>
+                      <td>{canEditDelete() && <button onClick={()=>deleteCashEntry(entry.id)} className="text-red-400"><Trash2 size={16}/></button>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
 
         {/* Partners Tab */}
         {activeTab === 'partners' && (
-          <div className="space-y-4"><div className="flex justify-end">{canEditDelete() && <button onClick={()=>{setEditingPartner(null); setPartnerForm({ name: '', share_percentage: 0, phone: '', is_active: true }); setShowPartnerModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><UserPlus size={16}/> إضافة شريك</button>}</div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{partners.map(partner => (
-            <div key={partner.id} className="bg-slate-900 rounded-xl p-4 border border-slate-800"><div className="flex justify-between"><h3 className="font-bold text-white">{partner.name}</h3><span className={`text-xs px-2 py-1 rounded-full ${partner.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{partner.is_active ? 'نشط' : 'غير نشط'}</span></div><p className="text-2xl font-bold text-orange-500 mt-2">{partner.share_percentage}%</p><p className="text-sm text-slate-400">📞 {partner.phone || 'لا يوجد'}</p>{canEditDelete() && <div className="flex gap-2 mt-3"><button onClick={()=>{setEditingPartner(partner); setPartnerForm(partner); setShowPartnerModal(true);}} className="text-blue-500"><Edit size={16}/></button><button onClick={()=>deletePartner(partner.id, partner.name)} className="text-red-500"><Trash2 size={16}/></button></div>}</div>
-          ))}</div></div>
+          <div className="space-y-4">
+            <div className="flex justify-end">{canEditDelete() && <button onClick={()=>{setEditingPartner(null); setPartnerForm({ name: '', share_percentage: 0, phone: '', is_active: true }); setShowPartnerModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><UserPlus size={16}/> إضافة شريك</button>}</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{partners.map(partner => (
+              <div key={partner.id} className="bg-slate-900 rounded-xl p-4 border border-slate-800">
+                <div className="flex justify-between"><h3 className="font-bold text-white">{partner.name}</h3><span className={`text-xs px-2 py-1 rounded-full ${partner.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{partner.is_active ? 'نشط' : 'غير نشط'}</span></div>
+                <p className="text-2xl font-bold text-orange-500 mt-2">{partner.share_percentage}%</p>
+                <p className="text-sm text-slate-400">📞 {partner.phone || 'لا يوجد'}</p>
+                {canEditDelete() && <div className="flex gap-2 mt-3"><button onClick={()=>{setEditingPartner(partner); setPartnerForm(partner); setShowPartnerModal(true);}} className="text-blue-500"><Edit size={16}/></button><button onClick={()=>deletePartner(partner.id, partner.name)} className="text-red-500"><Trash2 size={16}/></button></div>}
+              </div>
+            ))}</div>
+          </div>
         )}
 
         {/* Notifications Tab */}
         {activeTab === 'notifications' && (
-          <div className="space-y-3"><div className="flex justify-between"><h2 className="text-xl font-bold">🔔 سجل الإشعارات</h2>{canEditDelete() && notifications.length>0 && <button onClick={deleteAllNotifications} className="bg-red-500/20 text-red-400 px-3 py-1 rounded-lg text-sm flex items-center gap-1"><Trash size={14}/> مسح الكل</button>}</div>
-          {notifications.map(notif=>(
-            <div key={notif.id} className="bg-slate-900 rounded-xl p-4 flex justify-between items-center"><div><span className="text-orange-400 font-semibold">{notif.action}</span><span className="mx-2 text-slate-600">|</span><span className="text-slate-300">{notif.details}</span><div className="text-xs text-slate-500 mt-1">{new Date(notif.created_at).toLocaleString('ar-EG')}</div></div>{canEditDelete() && <button onClick={()=>deleteNotification(notif.id)} className="text-red-400"><Trash size={16}/></button>}</div>
-          ))}
-          {notifications.length===0 && <div className="text-center py-8 text-slate-400">لا توجد إشعارات</div>}</div>
+          <div className="space-y-3">
+            <div className="flex justify-between"><h2 className="text-xl font-bold">🔔 سجل الإشعارات</h2>{canEditDelete() && notifications.length>0 && <button onClick={deleteAllNotifications} className="bg-red-500/20 text-red-400 px-3 py-1 rounded-lg text-sm flex items-center gap-1"><Trash size={14}/> مسح الكل</button>}</div>
+            {notifications.map(notif=>(
+              <div key={notif.id} className="bg-slate-900 rounded-xl p-4 flex justify-between items-center">
+                <div><span className="text-orange-400 font-semibold">{notif.action}</span><span className="mx-2 text-slate-600">|</span><span className="text-slate-300">{notif.details}</span><div className="text-xs text-slate-500 mt-1">{new Date(notif.created_at).toLocaleString('ar-EG')}</div></div>
+                {canEditDelete() && <button onClick={()=>deleteNotification(notif.id)} className="text-red-400"><Trash size={16}/></button>}
+              </div>
+            ))}
+            {notifications.length===0 && <div className="text-center py-8 text-slate-400">لا توجد إشعارات</div>}
+          </div>
         )}
 
         {/* Performance Tab */}
-        {activeTab === 'performance' && (
-          <TechnicianPerformance orders={orders} technicians={technicians} />
-        )}
+        {activeTab === 'performance' && <TechnicianPerformance orders={orders} technicians={technicians} />}
 
         {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions />}
       </main>
 
-      {/* Order Modal */}
+      {/* باقي المودالات (Order, Technician, Partner, Cash, Settlement) - كما هي في الكود السابق */}
       {showOrderModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl shadow-xl"><div className="flex justify-between mb-4"><h3 className="text-xl font-bold text-white">{editingOrder ? 'تعديل أوردر' : 'أوردر جديد'}</h3><button onClick={()=>setShowOrderModal(false)} className="text-slate-400"><X size={20}/></button></div>
-          <form onSubmit={saveOrder} className="space-y-4"><div className="grid grid-cols-2 gap-4"><div><label className="text-sm text-slate-400">اسم العميل</label><input type="text" value={formData.customer_name} onChange={e=>handleFormChange('customer_name',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/></div>
-          <div><label className="text-sm text-slate-400">رقم الهاتف</label><input type="text" value={formData.phone} onChange={e=>handleFormChange('phone',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/></div>
-          <div><label className="text-sm text-slate-400">نوع الجهاز</label><select value={formData.device_type} onChange={e=>handleFormChange('device_type',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="">اختر</option>{DEVICE_TYPES.map(d=><option key={d}>{d}</option>)}<option value="other">أخرى</option></select>{isOtherDevice && <input type="text" placeholder="جهاز مخصص" value={customDevice} onChange={e=>setCustomDevice(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 mt-2 text-white" required/>}</div>
-          <div><label className="text-sm text-slate-400">الماركة</label><select value={formData.brand} onChange={e=>handleFormChange('brand',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="">اختر</option>{BRANDS.map(b=><option key={b}>{b}</option>)}<option value="other">أخرى</option></select>{isOtherBrand && <input type="text" placeholder="ماركة مخصصة" value={customBrand} onChange={e=>setCustomBrand(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 mt-2 text-white" required/>}</div>
-          <div className="col-span-2"><label className="text-sm text-slate-400">العنوان</label><input type="text" value={formData.address} onChange={e=>handleFormChange('address',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/></div>
-          <div className="col-span-2"><label className="text-sm text-slate-400">وصف المشكلة</label><textarea rows={3} value={formData.problem_description} onChange={e=>handleFormChange('problem_description',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/></div>
-          <div><label className="text-sm text-slate-400">الفني</label><select value={formData.technician} onChange={e=>handleFormChange('technician',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="">اختر فني</option>{technicians.map(t=><option key={t.id}>{t.name}</option>)}</select></div>
-          <div><label className="text-sm text-slate-400">إجمالي المبلغ</label><input type="number" value={formData.total_amount} onChange={e=>handleFormChange('total_amount',parseFloat(e.target.value))} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/></div>
-          <div><label className="text-sm text-slate-400">قطع غيار</label><input type="number" value={formData.parts_cost} onChange={e=>handleFormChange('parts_cost',parseFloat(e.target.value))} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/></div>
-          <div><label className="text-sm text-slate-400">مواصلات</label><input type="number" value={formData.transport_cost} onChange={e=>handleFormChange('transport_cost',parseFloat(e.target.value))} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/></div>
-          <div className="col-span-2"><label className="flex items-center gap-2 text-slate-300"><input type="checkbox" checked={formData.is_paid} onChange={e=>handleFormChange('is_paid',e.target.checked)} /> تم التحصيل</label></div></div>
-          <div className="flex gap-3 pt-4"><button type="submit" className="flex-1 bg-orange-600 text-white py-2 rounded-lg font-bold">حفظ</button><button type="button" onClick={()=>setShowOrderModal(false)} className="flex-1 bg-slate-800 text-slate-300 py-2 rounded-lg font-bold">إلغاء</button></div></form></div>
+          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl shadow-xl">
+            <div className="flex justify-between mb-4"><h3 className="text-xl font-bold text-white">{editingOrder ? 'تعديل أوردر' : 'أوردر جديد'}</h3><button onClick={()=>setShowOrderModal(false)} className="text-slate-400"><X size={20}/></button></div>
+            <form onSubmit={saveOrder} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="text-sm text-slate-400">اسم العميل</label><input type="text" value={formData.customer_name} onChange={e=>handleFormChange('customer_name',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/></div>
+                <div><label className="text-sm text-slate-400">رقم الهاتف</label><input type="text" value={formData.phone} onChange={e=>handleFormChange('phone',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/></div>
+                <div><label className="text-sm text-slate-400">نوع الجهاز</label><select value={formData.device_type} onChange={e=>handleFormChange('device_type',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="">اختر</option>{DEVICE_TYPES.map(d=><option key={d}>{d}</option>)}<option value="other">أخرى</option></select>{isOtherDevice && <input type="text" placeholder="جهاز مخصص" value={customDevice} onChange={e=>setCustomDevice(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 mt-2 text-white" required/>}</div>
+                <div><label className="text-sm text-slate-400">الماركة</label><select value={formData.brand} onChange={e=>handleFormChange('brand',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="">اختر</option>{BRANDS.map(b=><option key={b}>{b}</option>)}<option value="other">أخرى</option></select>{isOtherBrand && <input type="text" placeholder="ماركة مخصصة" value={customBrand} onChange={e=>setCustomBrand(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 mt-2 text-white" required/>}</div>
+                <div className="col-span-2"><label className="text-sm text-slate-400">العنوان</label><input type="text" value={formData.address} onChange={e=>handleFormChange('address',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/></div>
+                <div className="col-span-2"><label className="text-sm text-slate-400">وصف المشكلة</label><textarea rows={3} value={formData.problem_description} onChange={e=>handleFormChange('problem_description',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/></div>
+                <div><label className="text-sm text-slate-400">الفني</label><select value={formData.technician} onChange={e=>handleFormChange('technician',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="">اختر فني</option>{technicians.map(t=><option key={t.id}>{t.name}</option>)}</select></div>
+                <div><label className="text-sm text-slate-400">إجمالي المبلغ</label><input type="number" value={formData.total_amount} onChange={e=>handleFormChange('total_amount',parseFloat(e.target.value))} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/></div>
+                <div><label className="text-sm text-slate-400">قطع غيار</label><input type="number" value={formData.parts_cost} onChange={e=>handleFormChange('parts_cost',parseFloat(e.target.value))} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/></div>
+                <div><label className="text-sm text-slate-400">مواصلات</label><input type="number" value={formData.transport_cost} onChange={e=>handleFormChange('transport_cost',parseFloat(e.target.value))} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/></div>
+                <div className="col-span-2"><label className="flex items-center gap-2 text-slate-300"><input type="checkbox" checked={formData.is_paid} onChange={e=>handleFormChange('is_paid',e.target.checked)} /> تم التحصيل</label></div>
+              </div>
+              <div className="flex gap-3 pt-4"><button type="submit" className="flex-1 bg-orange-600 text-white py-2 rounded-lg font-bold">حفظ</button><button type="button" onClick={()=>setShowOrderModal(false)} className="flex-1 bg-slate-800 text-slate-300 py-2 rounded-lg font-bold">إلغاء</button></div>
+            </form>
+          </div>
         </div>
       )}
 
-      {/* Technician Modal */}
       {showTechModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"><div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md"><h3 className="text-xl font-bold text-white mb-4">{editingTech ? 'تعديل فني' : 'فني جديد'}</h3><form onSubmit={saveTechnician} className="space-y-4"><input type="text" placeholder="الاسم" value={techForm.name} onChange={e=>setTechForm({...techForm, name: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><input type="text" placeholder="رقم الهاتف" value={techForm.phone} onChange={e=>setTechForm({...techForm, phone: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/><input type="text" placeholder="التخصص" value={techForm.specialization} onChange={e=>setTechForm({...techForm, specialization: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/><input type="text" placeholder="اسم المستخدم" value={techForm.username} onChange={e=>setTechForm({...techForm, username: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><input type="password" placeholder="كلمة المرور" value={techForm.password} onChange={e=>setTechForm({...techForm, password: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><input type="number" placeholder="نسبة الفني (%)" value={techForm.profit_percentage} onChange={e=>setTechForm({...techForm, profit_percentage: parseInt(e.target.value)})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" /><label className="flex items-center gap-2 text-slate-300"><input type="checkbox" checked={techForm.is_active} onChange={e=>setTechForm({...techForm, is_active: e.target.checked})} /> نشط</label><button type="submit" className="w-full bg-orange-600 text-white py-2 rounded-lg font-bold">حفظ</button></form></div></div>
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold text-white mb-4">{editingTech ? 'تعديل فني' : 'فني جديد'}</h3>
+            <form onSubmit={saveTechnician} className="space-y-4">
+              <input type="text" placeholder="الاسم" value={techForm.name} onChange={e=>setTechForm({...techForm, name: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/>
+              <input type="text" placeholder="رقم الهاتف" value={techForm.phone} onChange={e=>setTechForm({...techForm, phone: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/>
+              <input type="text" placeholder="التخصص" value={techForm.specialization} onChange={e=>setTechForm({...techForm, specialization: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/>
+              <input type="text" placeholder="اسم المستخدم" value={techForm.username} onChange={e=>setTechForm({...techForm, username: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/>
+              <input type="password" placeholder="كلمة المرور" value={techForm.password} onChange={e=>setTechForm({...techForm, password: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/>
+              <input type="number" placeholder="نسبة الفني (%)" value={techForm.profit_percentage} onChange={e=>setTechForm({...techForm, profit_percentage: parseInt(e.target.value)})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" />
+              <label className="flex items-center gap-2 text-slate-300"><input type="checkbox" checked={techForm.is_active} onChange={e=>setTechForm({...techForm, is_active: e.target.checked})} /> نشط</label>
+              <button type="submit" className="w-full bg-orange-600 text-white py-2 rounded-lg font-bold">حفظ</button>
+            </form>
+          </div>
+        </div>
       )}
 
-      {/* Partner Modal */}
       {showPartnerModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"><div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md"><h3 className="text-xl font-bold text-white mb-4">{editingPartner ? 'تعديل شريك' : 'إضافة شريك'}</h3><form onSubmit={savePartner} className="space-y-4"><input type="text" placeholder="اسم الشريك" value={partnerForm.name} onChange={e=>setPartnerForm({...partnerForm, name: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><input type="number" placeholder="نسبة الربح (%)" value={partnerForm.share_percentage} onChange={e=>setPartnerForm({...partnerForm, share_percentage: parseFloat(e.target.value)})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><input type="text" placeholder="رقم الهاتف" value={partnerForm.phone} onChange={e=>setPartnerForm({...partnerForm, phone: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/><label className="flex items-center gap-2 text-slate-300"><input type="checkbox" checked={partnerForm.is_active} onChange={e=>setPartnerForm({...partnerForm, is_active: e.target.checked})} /> نشط</label><button type="submit" className="w-full bg-orange-600 text-white py-2 rounded-lg font-bold">حفظ</button></form></div></div>
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold text-white mb-4">{editingPartner ? 'تعديل شريك' : 'إضافة شريك'}</h3>
+            <form onSubmit={savePartner} className="space-y-4">
+              <input type="text" placeholder="اسم الشريك" value={partnerForm.name} onChange={e=>setPartnerForm({...partnerForm, name: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/>
+              <input type="number" placeholder="نسبة الربح (%)" value={partnerForm.share_percentage} onChange={e=>setPartnerForm({...partnerForm, share_percentage: parseFloat(e.target.value)})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/>
+              <input type="text" placeholder="رقم الهاتف" value={partnerForm.phone} onChange={e=>setPartnerForm({...partnerForm, phone: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/>
+              <label className="flex items-center gap-2 text-slate-300"><input type="checkbox" checked={partnerForm.is_active} onChange={e=>setPartnerForm({...partnerForm, is_active: e.target.checked})} /> نشط</label>
+              <button type="submit" className="w-full bg-orange-600 text-white py-2 rounded-lg font-bold">حفظ</button>
+            </form>
+          </div>
+        </div>
       )}
 
-      {/* Cash Modal */}
       {showCashModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"><div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md"><h3 className="text-xl font-bold text-white mb-4">{editingCash ? 'تعديل حركة' : 'إضافة حركة'}</h3><form onSubmit={addCashEntry} className="space-y-4"><select value={cashForm.type} onChange={e=>setCashForm({...cashForm, type: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="income">💰 دخل</option><option value="expense">💸 مصروف</option></select><input type="number" placeholder="المبلغ" value={cashForm.amount} onChange={e=>setCashForm({...cashForm, amount: parseFloat(e.target.value)})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><input type="text" placeholder="الوصف" value={cashForm.description} onChange={e=>setCashForm({...cashForm, description: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><input type="date" value={cashForm.date} onChange={e=>setCashForm({...cashForm, date: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/><button type="submit" className="w-full bg-orange-600 text-white py-2 rounded-lg font-bold">حفظ</button></form></div></div>
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold text-white mb-4">{editingCash ? 'تعديل حركة' : 'إضافة حركة'}</h3>
+            <form onSubmit={addCashEntry} className="space-y-4">
+              <select value={cashForm.type} onChange={e=>setCashForm({...cashForm, type: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="income">💰 دخل</option><option value="expense">💸 مصروف</option></select>
+              <input type="number" placeholder="المبلغ" value={cashForm.amount} onChange={e=>setCashForm({...cashForm, amount: parseFloat(e.target.value)})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/>
+              <input type="text" placeholder="الوصف" value={cashForm.description} onChange={e=>setCashForm({...cashForm, description: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/>
+              <input type="date" value={cashForm.date} onChange={e=>setCashForm({...cashForm, date: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/>
+              <button type="submit" className="w-full bg-orange-600 text-white py-2 rounded-lg font-bold">حفظ</button>
+            </form>
+          </div>
+        </div>
       )}
 
-      {/* Settlement Modal */}
       {showSettleModal && selectedOrder && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
             <h3 className="text-xl font-bold text-white mb-4">تصفية الأوردر</h3>
             <div className="space-y-4">
-              <div>
-                <label className="text-sm text-slate-400">المبلغ الإجمالي</label>
-                <input
-                  type="number"
-                  value={settleForm.total_amount}
-                  onChange={(e) => handleSettleChange('total_amount', e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-slate-400">قطع غيار</label>
-                <input
-                  type="number"
-                  value={settleForm.parts_cost}
-                  onChange={(e) => handleSettleChange('parts_cost', e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-slate-400">مواصلات</label>
-                <input
-                  type="number"
-                  value={settleForm.transport_cost}
-                  onChange={(e) => handleSettleChange('transport_cost', e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"
-                />
-              </div>
+              <div><label className="text-sm text-slate-400">المبلغ الإجمالي</label><input type="number" value={settleForm.total_amount} onChange={(e) => handleSettleChange('total_amount', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" /></div>
+              <div><label className="text-sm text-slate-400">قطع غيار</label><input type="number" value={settleForm.parts_cost} onChange={(e) => handleSettleChange('parts_cost', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" /></div>
+              <div><label className="text-sm text-slate-400">مواصلات</label><input type="number" value={settleForm.transport_cost} onChange={(e) => handleSettleChange('transport_cost', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" /></div>
               <div className="bg-slate-800 p-3 rounded-lg space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">الصافي:</span>
-                  <span className="text-white font-bold">{settleForm.net_amount} ج.م</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">
-                    نصيب الفني ({technicians.find(t => t.name === selectedOrder?.technician)?.profit_percentage ?? 50}%):
-                  </span>
-                  <span className="text-green-400 font-bold">{settleForm.technician_share} ج.م</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">نصيب الشركة:</span>
-                  <span className="text-orange-400 font-bold">{settleForm.company_share} ج.م</span>
-                </div>
+                <div className="flex justify-between"><span className="text-slate-400">الصافي:</span><span className="text-white font-bold">{settleForm.net_amount} ج.م</span></div>
+                <div className="flex justify-between"><span className="text-slate-400">نصيب الفني ({technicians.find(t => t.name === selectedOrder?.technician)?.profit_percentage ?? 50}%):</span><span className="text-green-400 font-bold">{settleForm.technician_share} ج.م</span></div>
+                <div className="flex justify-between"><span className="text-slate-400">نصيب الشركة:</span><span className="text-orange-400 font-bold">{settleForm.company_share} ج.م</span></div>
               </div>
-              <button
-                onClick={submitSettlement}
-                className="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 rounded-lg font-bold"
-              >
-                تأكيد التصفية
-              </button>
+              <button onClick={submitSettlement} className="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 rounded-lg font-bold">تأكيد التصفية</button>
             </div>
           </div>
         </div>
