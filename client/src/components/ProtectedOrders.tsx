@@ -129,8 +129,13 @@ export default function ProtectedOrders() {
     company_share: 0
   });
 
-  // State for profit distribution date picker
+  // Date pickers for profit distribution and report
   const [selectedProfitDate, setSelectedProfitDate] = useState(() => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    return yesterday.toISOString().split('T')[0];
+  });
+  const [reportDate, setReportDate] = useState(() => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     return yesterday.toISOString().split('T')[0];
@@ -352,6 +357,53 @@ export default function ProtectedOrders() {
       return;
     }
     await distributeProfitForDate(selectedProfitDate);
+  };
+
+  // ========== دالة إرسال التقرير ليوم محدد ==========
+  const sendDailyReportToPartners = async (targetDate: string) => {
+    const entries = await fetchAPI(`cash_ledger?select=*&date=eq.${targetDate}&order=created_at.desc`);
+    if (!entries || entries.length === 0) {
+      alert(`⚠️ لا توجد حركات خزنة ليوم ${targetDate}`);
+      return;
+    }
+    let totalIncome = 0, totalExpense = 0, totalProfitDist = 0, totalReserve = 0;
+    const profitDetails: string[] = [];
+    entries.forEach((entry: any) => {
+      if (entry.type === 'income') totalIncome += entry.amount;
+      else if (entry.type === 'expense') totalExpense += entry.amount;
+      else if (entry.type === 'profit_distribution') {
+        totalProfitDist += entry.amount;
+        profitDetails.push(`• ${entry.description} : ${entry.amount} ج.م`);
+      }
+      else if (entry.type === 'reserve') totalReserve += entry.amount;
+    });
+    const netBalance = totalIncome + totalReserve - totalExpense;
+    const reportText = `📊 *تقرير الخزنة اليومي* 📊\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📅 *التاريخ:* ${targetDate}\n\n💰 *الإيرادات:* ${totalIncome.toLocaleString()} ج.م\n💸 *المصروفات:* ${totalExpense.toLocaleString()} ج.م\n📤 *توزيع أرباح الشركاء:* ${totalProfitDist.toLocaleString()} ج.م\n🏦 *الرصيد الاحتياطي:* ${totalReserve.toLocaleString()} ج.م\n✅ *صافي ربح اليوم:* ${netBalance.toLocaleString()} ج.م\n💰 *الرصيد الحالي للخزنة:* ${cashBalance.toLocaleString()} ج.م\n\n👥 *تفاصيل توزيع الأرباح:*\n${profitDetails.length ? profitDetails.join('\n') : 'لا توجد توزيعات'}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📞 للاستفسار: 01278885772\n✨ نظام إدارة الصيانة - تقرير يومي`;
+    const activePartners = partners.filter(p => p.is_active && p.phone);
+    if (activePartners.length === 0) {
+      alert("⚠️ لا يوجد شركاء نشطون بأرقام هواتف");
+      return;
+    }
+    const userChoice = confirm(`📋 التقرير جاهز للإرسال ليوم ${targetDate}.\n\n${reportText}\n\nهل تريد فتح واتساب لإرسال التقرير لكل شريك على حدة؟`);
+    if (!userChoice) return;
+    for (const partner of activePartners) {
+      let phone = partner.phone.toString().replace(/[^\d]/g, '');
+      if (phone.startsWith('0')) phone = phone.substring(1);
+      if (phone.length === 10) phone = '20' + phone;
+      if (!phone.startsWith('20')) phone = '20' + phone;
+      const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(reportText)}`;
+      window.open(whatsappUrl, '_blank');
+      await new Promise(resolve => setTimeout(resolve, 800));
+    }
+    alert(`✅ تم فتح واتساب لـ ${activePartners.length} شريك. قم بإرسال التقرير لكل منهم.`);
+  };
+
+  const handleSendReportForDate = async () => {
+    if (!reportDate) {
+      alert("⚠️ يرجى اختيار التاريخ أولاً.");
+      return;
+    }
+    await sendDailyReportToPartners(reportDate);
   };
 
   // ========== باقي الدوال (fetchData, calculateAmounts, etc.) ==========
@@ -643,46 +695,6 @@ export default function ProtectedOrders() {
   };
   const clearFilters = () => { setSearchTerm(''); setFilterStatus('all'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); };
 
-  // دالة إرسال التقرير اليومي للشركاء عبر واتساب
-  const sendDailyReportToPartners = async () => {
-    const today = new Date().toISOString().split('T')[0];
-    const entries = await fetchAPI(`cash_ledger?select=*&date=eq.${today}&order=created_at.desc`);
-    if (!entries || entries.length === 0) {
-      alert("⚠️ لا توجد حركات خزنة لهذا اليوم");
-      return;
-    }
-    let totalIncome = 0, totalExpense = 0, totalProfitDist = 0, totalReserve = 0;
-    const profitDetails: string[] = [];
-    entries.forEach((entry: any) => {
-      if (entry.type === 'income') totalIncome += entry.amount;
-      else if (entry.type === 'expense') totalExpense += entry.amount;
-      else if (entry.type === 'profit_distribution') {
-        totalProfitDist += entry.amount;
-        profitDetails.push(`• ${entry.description} : ${entry.amount} ج.م`);
-      }
-      else if (entry.type === 'reserve') totalReserve += entry.amount;
-    });
-    const netBalance = totalIncome + totalReserve - totalExpense;
-    const reportText = `📊 *تقرير الخزنة اليومي* 📊\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📅 *التاريخ:* ${today}\n\n💰 *الإيرادات:* ${totalIncome.toLocaleString()} ج.م\n💸 *المصروفات:* ${totalExpense.toLocaleString()} ج.م\n📤 *توزيع أرباح الشركاء:* ${totalProfitDist.toLocaleString()} ج.م\n🏦 *الرصيد الاحتياطي:* ${totalReserve.toLocaleString()} ج.م\n✅ *صافي ربح اليوم:* ${netBalance.toLocaleString()} ج.م\n💰 *الرصيد الحالي للخزنة:* ${cashBalance.toLocaleString()} ج.م\n\n👥 *تفاصيل توزيع الأرباح:*\n${profitDetails.length ? profitDetails.join('\n') : 'لا توجد توزيعات'}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📞 للاستفسار: 01278885772\n✨ نظام إدارة الصيانة - تقرير يومي`;
-    const activePartners = partners.filter(p => p.is_active && p.phone);
-    if (activePartners.length === 0) {
-      alert("⚠️ لا يوجد شركاء نشطون بأرقام هواتف");
-      return;
-    }
-    const userChoice = confirm(`📋 التقرير جاهز للإرسال.\n\n${reportText}\n\nهل تريد فتح واتساب لإرسال التقرير لكل شريك على حدة؟`);
-    if (!userChoice) return;
-    for (const partner of activePartners) {
-      let phone = partner.phone.toString().replace(/[^\d]/g, '');
-      if (phone.startsWith('0')) phone = phone.substring(1);
-      if (phone.length === 10) phone = '20' + phone;
-      if (!phone.startsWith('20')) phone = '20' + phone;
-      const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(reportText)}`;
-      window.open(whatsappUrl, '_blank');
-      await new Promise(resolve => setTimeout(resolve, 800));
-    }
-    alert(`✅ تم فتح واتساب لـ ${activePartners.length} شريك. قم بإرسال التقرير لكل منهم.`);
-  };
-
   // فلترة الأوردرات
   const filteredOrders = orders.filter(o => {
     if (searchTerm && !o.customer_name?.includes(searchTerm) && !o.phone?.includes(searchTerm) && !String(o.order_number).includes(searchTerm)) return false;
@@ -733,7 +745,7 @@ export default function ProtectedOrders() {
           <button onClick={() => setActiveTab('performance')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'performance' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>📊 أداء الفنيين</button>
         </div>
 
-        {/* Orders Tab (مختصر لتوفير المساحة، باقي الكود كما هو) */}
+        {/* Orders Tab */}
         {activeTab === 'orders' && (
           <div className="space-y-4">
             <div className="bg-slate-900 rounded-xl p-4 flex flex-wrap gap-3 items-center">
@@ -825,6 +837,7 @@ export default function ProtectedOrders() {
               </div>
             </div>
 
+            {/* قسم توزيع أرباح الشركاء مع اختيار التاريخ */}
             <div className="bg-purple-600/10 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 border border-purple-500/30">
               <div className="flex flex-col gap-1">
                 <p className="text-sm font-semibold text-purple-300">📅 توزيع أرباح الشركاء</p>
@@ -845,9 +858,28 @@ export default function ProtectedOrders() {
                     <DollarSign size={16}/> توزيع أرباح التاريخ المحدد
                   </button>
                 )}
+              </div>
+            </div>
+
+            {/* قسم إرسال تقرير الخزنة اليومي مع اختيار التاريخ */}
+            <div className="bg-blue-600/10 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 border border-blue-500/30">
+              <div className="flex flex-col gap-1">
+                <p className="text-sm font-semibold text-blue-300">📊 إرسال تقرير الخزنة للشركاء</p>
+                <p className="text-xs text-slate-400">اختر التاريخ ثم اضغط زر الإرسال (يفتح واتساب لكل شريك)</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <input
+                  type="date"
+                  value={reportDate}
+                  onChange={(e) => setReportDate(e.target.value)}
+                  className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
+                />
                 {canEditDelete() && (
-                  <button onClick={sendDailyReportToPartners} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2">
-                    <Send className="w-4 h-4" /> إرسال تقرير اليوم للشركاء
+                  <button
+                    onClick={handleSendReportForDate}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"
+                  >
+                    <Send size={16}/> إرسال تقرير التاريخ المحدد
                   </button>
                 )}
               </div>
@@ -876,31 +908,27 @@ export default function ProtectedOrders() {
 
         {/* Partners Tab */}
         {activeTab === 'partners' && (
-          <div className="space-y-4">
-            <div className="flex justify-end">{canEditDelete() && <button onClick={()=>{setEditingPartner(null); setPartnerForm({ name: '', share_percentage: 0, phone: '', is_active: true }); setShowPartnerModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><UserPlus size={16}/> إضافة شريك</button>}</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{partners.map(partner => (
-              <div key={partner.id} className="bg-slate-900 rounded-xl p-4 border border-slate-800">
-                <div className="flex justify-between"><h3 className="font-bold text-white">{partner.name}</h3><span className={`text-xs px-2 py-1 rounded-full ${partner.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{partner.is_active ? 'نشط' : 'غير نشط'}</span></div>
-                <p className="text-2xl font-bold text-orange-500 mt-2">{partner.share_percentage}%</p>
-                <p className="text-sm text-slate-400">📞 {partner.phone || 'لا يوجد'}</p>
-                {canEditDelete() && <div className="flex gap-2 mt-3"><button onClick={()=>{setEditingPartner(partner); setPartnerForm(partner); setShowPartnerModal(true);}} className="text-blue-500"><Edit size={16}/></button><button onClick={()=>deletePartner(partner.id, partner.name)} className="text-red-500"><Trash2 size={16}/></button></div>}
-              </div>
-            ))}</div>
-          </div>
+          <div className="space-y-4"><div className="flex justify-end">{canEditDelete() && <button onClick={()=>{setEditingPartner(null); setPartnerForm({ name: '', share_percentage: 0, phone: '', is_active: true }); setShowPartnerModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><UserPlus size={16}/> إضافة شريك</button>}</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{partners.map(partner => (
+            <div key={partner.id} className="bg-slate-900 rounded-xl p-4 border border-slate-800">
+              <div className="flex justify-between"><h3 className="font-bold text-white">{partner.name}</h3><span className={`text-xs px-2 py-1 rounded-full ${partner.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{partner.is_active ? 'نشط' : 'غير نشط'}</span></div>
+              <p className="text-2xl font-bold text-orange-500 mt-2">{partner.share_percentage}%</p>
+              <p className="text-sm text-slate-400">📞 {partner.phone || 'لا يوجد'}</p>
+              {canEditDelete() && <div className="flex gap-2 mt-3"><button onClick={()=>{setEditingPartner(partner); setPartnerForm(partner); setShowPartnerModal(true);}} className="text-blue-500"><Edit size={16}/></button><button onClick={()=>deletePartner(partner.id, partner.name)} className="text-red-500"><Trash2 size={16}/></button></div>}
+            </div>
+          ))}</div></div>
         )}
 
         {/* Notifications Tab */}
         {activeTab === 'notifications' && (
-          <div className="space-y-3">
-            <div className="flex justify-between"><h2 className="text-xl font-bold">🔔 سجل الإشعارات</h2>{canEditDelete() && notifications.length>0 && <button onClick={deleteAllNotifications} className="bg-red-500/20 text-red-400 px-3 py-1 rounded-lg text-sm flex items-center gap-1"><Trash size={14}/> مسح الكل</button>}</div>
-            {notifications.map(notif=>(
-              <div key={notif.id} className="bg-slate-900 rounded-xl p-4 flex justify-between items-center">
-                <div><span className="text-orange-400 font-semibold">{notif.action}</span><span className="mx-2 text-slate-600">|</span><span className="text-slate-300">{notif.details}</span><div className="text-xs text-slate-500 mt-1">{new Date(notif.created_at).toLocaleString('ar-EG')}</div></div>
-                {canEditDelete() && <button onClick={()=>deleteNotification(notif.id)} className="text-red-400"><Trash size={16}/></button>}
-              </div>
-            ))}
-            {notifications.length===0 && <div className="text-center py-8 text-slate-400">لا توجد إشعارات</div>}
-          </div>
+          <div className="space-y-3"><div className="flex justify-between"><h2 className="text-xl font-bold">🔔 سجل الإشعارات</h2>{canEditDelete() && notifications.length>0 && <button onClick={deleteAllNotifications} className="bg-red-500/20 text-red-400 px-3 py-1 rounded-lg text-sm flex items-center gap-1"><Trash size={14}/> مسح الكل</button>}</div>
+          {notifications.map(notif=>(
+            <div key={notif.id} className="bg-slate-900 rounded-xl p-4 flex justify-between items-center">
+              <div><span className="text-orange-400 font-semibold">{notif.action}</span><span className="mx-2 text-slate-600">|</span><span className="text-slate-300">{notif.details}</span><div className="text-xs text-slate-500 mt-1">{new Date(notif.created_at).toLocaleString('ar-EG')}</div></div>
+              {canEditDelete() && <button onClick={()=>deleteNotification(notif.id)} className="text-red-400"><Trash size={16}/></button>}
+            </div>
+          ))}
+          {notifications.length===0 && <div className="text-center py-8 text-slate-400">لا توجد إشعارات</div>}</div>
         )}
 
         {/* Performance Tab */}
