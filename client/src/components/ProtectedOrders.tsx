@@ -139,7 +139,7 @@ export default function ProtectedOrders() {
     return yesterday.toISOString().split('T')[0];
   });
 
-  // ✅ منع تكرار الحفظ (مشكلة 2)
+  // ✅ منع تكرار الحفظ
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -598,7 +598,7 @@ export default function ProtectedOrders() {
   // ✅ دالة حفظ الأوردر مع منع التكرار
   const saveOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmitting) return; // منع التكرار
+    if (isSubmitting) return;
     setIsSubmitting(true);
     
     const finalDevice = isOtherDevice ? customDevice : formData.device_type;
@@ -800,7 +800,7 @@ export default function ProtectedOrders() {
           <button onClick={() => setActiveTab('performance')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'performance' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>📊 أداء الفنيين</button>
         </div>
 
-        {/* Orders Tab (مختصر) */}
+        {/* Orders Tab */}
         {activeTab === 'orders' && (
           <div className="space-y-4">
             <div className="bg-slate-900 rounded-xl p-4 flex flex-wrap gap-3 items-center">
@@ -947,6 +947,7 @@ export default function ProtectedOrders() {
               </div>
             </div>
 
+            {/* ✅ جدول الخزنة (تم إصلاح هيكله) */}
             <div className="bg-slate-900 rounded-xl overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-slate-800">
@@ -982,7 +983,7 @@ export default function ProtectedOrders() {
                           </button>
                         )}
                       </td>
-                    </table>
+                    </tr>
                   ))}
                 </tbody>
               </table>
