@@ -206,25 +206,24 @@ export default function ProtectedOrders() {
       setPartners(data || []);
     } catch (err) { console.error(err); }
   }, []);
-const fetchCashLedger = useCallback(async () => {
-  try {
-    let endpoint = 'cash_ledger?select=*&order=date.desc';
-    if (cashFilterDate) endpoint = `cash_ledger?select=*&date=eq.${cashFilterDate}&order=date.desc`;
-    const data = await fetchAPI(endpoint);
-    setCashLedger(data || []);
-    const balance = (data || []).reduce((acc: number, entry: any) => {
-      if (entry.type === 'income') {
-        return acc + entry.amount;
-      } else if (entry.type === 'expense' || entry.type === 'profit_distribution') {
-        return acc - entry.amount;
-      }
-      // reserve لا يؤثر على الرصيد (يُعرض فقط للتوثيق)
-      return acc;
-    }, 0);
-    setCashBalance(balance);
-  } catch (err) { console.error(err); }
-}, [cashFilterDate]);
-  
+
+  const fetchCashLedger = useCallback(async () => {
+    try {
+      let endpoint = 'cash_ledger?select=*&order=date.desc';
+      if (cashFilterDate) endpoint = `cash_ledger?select=*&date=eq.${cashFilterDate}&order=date.desc`;
+      const data = await fetchAPI(endpoint);
+      setCashLedger(data || []);
+      const balance = (data || []).reduce((acc: number, entry: any) => {
+        if (entry.type === 'income') {
+          return acc + entry.amount;
+        } else if (entry.type === 'expense' || entry.type === 'profit_distribution') {
+          return acc - entry.amount;
+        }
+        return acc;
+      }, 0);
+      setCashBalance(balance);
+    } catch (err) { console.error(err); }
+  }, [cashFilterDate]);
 
   const addCashEntry = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -751,7 +750,7 @@ const fetchCashLedger = useCallback(async () => {
           <button onClick={() => setActiveTab('performance')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'performance' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>📊 أداء الفنيين</button>
         </div>
 
-        {/* Orders Tab (مختصر لتوفير المساحة) */}
+        {/* Orders Tab */}
         {activeTab === 'orders' && (
           <div className="space-y-4">
             <div className="bg-slate-900 rounded-xl p-4 flex flex-wrap gap-3 items-center">
@@ -892,45 +891,47 @@ const fetchCashLedger = useCallback(async () => {
             </div>
 
             <div className="bg-slate-900 rounded-xl overflow-x-auto">
-  <table className="w-full text-sm">
-    <thead className="bg-slate-800">
-      <tr>
-        <th className="p-3">التاريخ</th>
-        <th>النوع</th>
-        <th>المبلغ</th>
-        <th>الوصف</th>
-        <th>إجراءات</th>
-      </tr>
-    </thead>
-    <tbody>
-      {cashLedger.map((entry) => (
-        <tr key={entry.id} className="border-b border-slate-800">
-          <td className="p-3 text-slate-300">{entry.date}</td>
-          <td className="text-slate-300">
-            {entry.type === 'income'
-              ? '💰 دخل'
-              : entry.type === 'expense'
-              ? '💸 مصروف'
-              : entry.type === 'profit_distribution'
-              ? '📤 توزيع أرباح'
-              : '🏦 رصيد احتياطي'}
-          </td>
-          <td className={entry.type === 'income' || entry.type === 'reserve' ? 'text-green-400' : 'text-red-400'}>
-            {entry.amount} ج.م
-          </td>
-          <td className="max-w-xs break-words text-slate-300">{entry.description}</td>
-          <td>
-            {canEditDelete() && (
-              <button onClick={() => deleteCashEntry(entry.id)} className="text-red-400">
-                <Trash2 size={16} />
-              </button>
-            )}
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</div>
+              <table className="w-full text-sm">
+                <thead className="bg-slate-800">
+                  <tr>
+                    <th className="p-3">التاريخ</th>
+                    <th>النوع</th>
+                    <th>المبلغ</th>
+                    <th>الوصف</th>
+                    <th>إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cashLedger.map((entry) => (
+                    <tr key={entry.id} className="border-b border-slate-800">
+                      <td className="p-3 text-slate-300">{entry.date}</td>
+                      <td className="text-slate-300">
+                        {entry.type === 'income'
+                          ? '💰 دخل'
+                          : entry.type === 'expense'
+                          ? '💸 مصروف'
+                          : entry.type === 'profit_distribution'
+                          ? '📤 توزيع أرباح'
+                          : '🏦 رصيد احتياطي'}
+                      </td>
+                      <td className={entry.type === 'income' || entry.type === 'reserve' ? 'text-green-400' : 'text-red-400'}>
+                        {entry.amount} ج.م
+                      </td>
+                      <td className="max-w-xs break-words text-slate-300">{entry.description}</td>
+                      <td>
+                        {canEditDelete() && (
+                          <button onClick={() => deleteCashEntry(entry.id)} className="text-red-400">
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* Partners Tab */}
         {activeTab === 'partners' && (
@@ -963,7 +964,7 @@ const fetchCashLedger = useCallback(async () => {
         {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions />}
       </main>
 
-      {/* باقي المودالات (Order, Technician, Partner, Cash, Settlement) - نفس الكود السابق */}
+      {/* باقي المودالات (Order, Technician, Partner, Cash, Settlement) */}
       {showOrderModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl shadow-xl">
