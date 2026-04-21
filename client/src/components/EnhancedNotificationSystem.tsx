@@ -14,76 +14,42 @@ interface Notification {
   };
 }
 
-export const NotificationContext = React.createContext<{
-  addNotification: (notification: Omit<Notification, 'id' | 'timestamp'>) => void;
-  clearAll: () => void;
-} | null>(null);
+// متغير عام لتحديد ما إذا كان الصوت مصرح به
+let audioAllowed = false;
+let audioContext: AudioContext | null = null;
 
-export function useNotification() {
-  const context = React.useContext(NotificationContext);
-  if (!context) {
-    throw new Error('useNotification must be used within NotificationProvider');
-  }
-  return context;
-}
-
-export function EnhancedNotificationProvider({ children }: { children: React.ReactNode }) {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  const addNotification = useCallback((notification: Omit<Notification, 'id' | 'timestamp'>) => {
-    const id = Math.random().toString(36).substr(2, 9);
-    const newNotification: Notification = {
-      ...notification,
-      id,
-      timestamp: new Date(),
-      duration: notification.duration || (notification.type === 'critical' ? 0 : 5000),
-    };
-
-    setNotifications(prev => [...prev, newNotification]);
-    setUnreadCount(prev => prev + 1);
-
-    // تشغيل صوت التنبيه
-    if (soundEnabled) {
-      playNotificationSound(notification.type);
-    }
-
-    // إزالة الإشعار تلقائياً بعد المدة المحددة
-    if (newNotification.duration) {
-      setTimeout(() => {
-        removeNotification(id);
-      }, newNotification.duration);
-    }
-  }, [soundEnabled]);
-
-  const removeNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  };
-
-  const clearAll = () => {
-    setNotifications([]);
-    setUnreadCount(0);
-  };
-
-  return (
-    <NotificationContext.Provider value={{ addNotification, clearAll }}>
-      {children}
-      <NotificationContainer 
-        notifications={notifications} 
-        onRemove={removeNotification}
-        unreadCount={unreadCount}
-        soundEnabled={soundEnabled}
-        onToggleSound={() => setSoundEnabled(!soundEnabled)}
-        onClearAll={clearAll}
-      />
-    </NotificationContext.Provider>
-  );
-}
-
-function playNotificationSound(type: string) {
+// دالة لتفعيل الصوت (تُستدعى عند أول نقرة على الجرس)
+export function enableAudio() {
+  if (audioAllowed) return;
+  audioAllowed = true;
   try {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    audioContext.resume().then(() => {
+      // تشغيل نغمة اختبار قصيرة جداً
+      const oscillator = audioContext!.createOscillator();
+      const gainNode = audioContext!.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext!.destination);
+      oscillator.frequency.value = 400;
+      gainNode.gain.setValueAtTime(0.05, audioContext!.currentTime);
+      oscillator.start(audioContext!.currentTime);
+      oscillator.stop(audioContext!.currentTime + 0.1);
+    });
+  } catch (err) {
+    console.error('خطأ في تفعيل الصوت:', err);
+  }
+}
+
+// دالة تشغيل الصوت (تُستدعى عند وصول إشعار جديد)
+function playNotificationSound(type: string) {
+  if (!audioAllowed) return;
+  try {
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    audioContext.resume();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
 
@@ -107,10 +73,8 @@ function playNotificationSound(type: string) {
         duration = 0.4;
         break;
       case 'critical':
-        // صوت قوي للإشعارات الحرجة (أوردر جديد)
         frequency = 900;
         duration = 0.6;
-        // تشغيل نغمتين
         oscillator.frequency.setValueAtTime(900, audioContext.currentTime);
         oscillator.frequency.setValueAtTime(700, audioContext.currentTime + 0.15);
         break;
@@ -132,15 +96,80 @@ function playNotificationSound(type: string) {
   }
 }
 
-function NotificationContainer({ 
-  notifications, 
+export const NotificationContext = React.createContext<{
+  addNotification: (notification: Omit<Notification, 'id' | 'timestamp'>) => void;
+  clearAll: () => void;
+} | null>(null);
+
+export function useNotification() {
+  const context = React.useContext(NotificationContext);
+  if (!context) {
+    throw new Error('useNotification must be used within EnhancedNotificationProvider');
+  }
+  return context;
+}
+
+export function EnhancedNotificationProvider({ children }: { children: React.ReactNode }) {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const addNotification = useCallback((notification: Omit<Notification, 'id' | 'timestamp'>) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    const newNotification: Notification = {
+      ...notification,
+      id,
+      timestamp: new Date(),
+      duration: notification.duration || (notification.type === 'critical' ? 0 : 5000),
+    };
+
+    setNotifications(prev => [...prev, newNotification]);
+    setUnreadCount(prev => prev + 1);
+
+    if (soundEnabled) {
+      playNotificationSound(notification.type);
+    }
+
+    if (newNotification.duration) {
+      setTimeout(() => {
+        setNotifications(prev => prev.filter(n => n.id !== id));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }, newNotification.duration);
+    }
+  }, [soundEnabled]);
+
+  const clearAll = () => {
+    setNotifications([]);
+    setUnreadCount(0);
+  };
+
+  return (
+    <NotificationContext.Provider value={{ addNotification, clearAll }}>
+      {children}
+      <NotificationContainer
+        notifications={notifications}
+        onRemove={(id) => {
+          setNotifications(prev => prev.filter(n => n.id !== id));
+          setUnreadCount(prev => Math.max(0, prev - 1));
+        }}
+        unreadCount={unreadCount}
+        soundEnabled={soundEnabled}
+        onToggleSound={() => setSoundEnabled(!soundEnabled)}
+        onClearAll={clearAll}
+      />
+    </NotificationContext.Provider>
+  );
+}
+
+function NotificationContainer({
+  notifications,
   onRemove,
   unreadCount,
   soundEnabled,
   onToggleSound,
   onClearAll
-}: { 
-  notifications: Notification[]; 
+}: {
+  notifications: Notification[];
   onRemove: (id: string) => void;
   unreadCount: number;
   soundEnabled: boolean;
@@ -148,10 +177,19 @@ function NotificationContainer({
   onClearAll: () => void;
 }) {
   const [showHistory, setShowHistory] = useState(false);
+  const [audioActivated, setAudioActivated] = useState(false);
+
+  const handleFirstClick = () => {
+    if (!audioActivated) {
+      enableAudio();
+      setAudioActivated(true);
+    }
+    setShowHistory(!showHistory);
+  };
 
   return (
     <>
-      {/* الإشعارات النشطة */}
+      {/* الإشعارات النشطة (المنبثقة) */}
       <div className="fixed top-4 right-4 z-[9999] space-y-3 max-w-md pointer-events-none">
         {notifications.map(notification => (
           <div key={notification.id} className="pointer-events-auto">
@@ -163,28 +201,22 @@ function NotificationContainer({
         ))}
       </div>
 
-      {/* زر الجرس للإشعارات */}
+      {/* الأزرار الثابتة (الجرس + الصوت) */}
       <div className="fixed bottom-6 left-6 z-[9998] flex flex-col gap-2">
-        {/* زر التحكم بالصوت */}
         <button
           onClick={onToggleSound}
           className={`p-3 rounded-full shadow-lg transition-all ${
-            soundEnabled 
-              ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+            soundEnabled
+              ? 'bg-blue-600 hover:bg-blue-700 text-white'
               : 'bg-gray-600 hover:bg-gray-700 text-white'
           }`}
           title={soundEnabled ? 'كتم الصوت' : 'تفعيل الصوت'}
         >
-          {soundEnabled ? (
-            <Volume2 className="w-5 h-5" />
-          ) : (
-            <VolumeX className="w-5 h-5" />
-          )}
+          {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
         </button>
 
-        {/* زر الجرس */}
         <button
-          onClick={() => setShowHistory(!showHistory)}
+          onClick={handleFirstClick}
           className="relative p-3 rounded-full shadow-lg bg-orange-600 hover:bg-orange-700 text-white transition-all"
           title="الإشعارات"
         >
@@ -197,7 +229,7 @@ function NotificationContainer({
         </button>
       </div>
 
-      {/* نافذة السجل */}
+      {/* نافذة سجل الإشعارات */}
       {showHistory && (
         <div className="fixed bottom-24 left-6 z-[9998] bg-white rounded-xl shadow-2xl p-4 max-w-sm max-h-96 overflow-y-auto border border-gray-200">
           <div className="flex items-center justify-between mb-4">
@@ -246,11 +278,11 @@ function NotificationContainer({
   );
 }
 
-function NotificationItem({ 
-  notification, 
-  onRemove 
-}: { 
-  notification: Notification; 
+function NotificationItem({
+  notification,
+  onRemove
+}: {
+  notification: Notification;
   onRemove: () => void;
 }) {
   const getStyles = (type: string) => {
