@@ -8,7 +8,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { EnhancedNotificationProvider } from "./components/EnhancedNotificationSystem"; // ✅ استيراد من الملف الموجود فعلياً
+import { EnhancedNotificationProvider } from "./components/EnhancedNotificationSystem";
 import Home from "./pages/Home";
 import SamsungService from "./pages/SamsungService";
 import LGService from "./pages/LGService";
@@ -77,7 +77,6 @@ function AppContent() {
 
 function App() {
   useEffect(() => {
-    // الصفحات التي لا تحتاج تسجيل دخول (عامة)
     const publicPaths = [
       "/", "/login", "/invoice",
       "/samsung-service", "/lg-service", "/sharp-service",
@@ -89,18 +88,15 @@ function App() {
     const currentPath = window.location.pathname;
     const userRole = localStorage.getItem("userRole");
 
-    // إذا كان المسار عام، لا تتدخل (اترك الصفحة تفتح)
     if (publicPaths.includes(currentPath)) {
       return;
     }
 
-    // إذا لم يكن مسجلاً دخول، اذهب لتسجيل الدخول
     if (!userRole) {
       window.location.href = "/login";
       return;
     }
 
-    // إذا كان مسجلاً، لكنه يحاول الوصول لصفحة لا تناسب دوره، وجهه للصفحة الصحيحة
     if (userRole === "tech" && currentPath !== "/tech-portal") {
       window.location.href = "/tech-portal";
     } else if (userRole === "data-entry" && currentPath !== "/data-entry") {
@@ -112,10 +108,10 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <EnhancedNotificationProvider>  {/* ✅ المكون المستورد من EnhancedNotificationSystem */}
+      <EnhancedNotificationProvider>
         <ThemeProvider defaultTheme="light">
           <TooltipProvider>
-            <Toaster />
+            {/* <Toaster /> */}  {/* ✅ تم تعطيل Toaster */}
             <AppContent />
           </TooltipProvider>
         </ThemeProvider>
