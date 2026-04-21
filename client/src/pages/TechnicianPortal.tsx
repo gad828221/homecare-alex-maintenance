@@ -1,15 +1,13 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
   Wrench, LogOut, Clock, CheckCircle2, AlertCircle, 
   RefreshCw, Phone, MapPin, ClipboardList,
   Calendar, X, Trash2, Eye, ClockArrowUp, StickyNote,
-  Play, FileCheck, DollarSign, CalendarX, Ban, MessageSquare,
-  TrendingUp, Award, Filter, ChevronDown, ChevronUp
+  Play, FileCheck, DollarSign, CalendarX, Ban, MessageSquare
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useNotification } from "../components/EnhancedNotificationSystem"; // ✅ تغيير الاستيراد
 import { createClient } from '@supabase/supabase-js';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -81,9 +79,9 @@ export default function TechnicianPortal() {
     }
   }, []);
 
+  // ✅ دالة إخفاء رقم الهاتف (تعمل بشكل صحيح)
   const isPhoneHidden = (order: any) => {
-    if (order.status === 'completed' || order.status === 'cancelled' || order.status === 'inspected') return true;
-    return false;
+    return order.status === 'completed' || order.status === 'cancelled' || order.status === 'inspected';
   };
 
   const formatPhoneForWhatsApp = (phone: string) => {
@@ -178,59 +176,6 @@ export default function TechnicianPortal() {
       .subscribe();
     return () => { supabase.removeChannel(subscription); };
   }, [techName, addNotification, fetchData]);
-
-  // Advanced stats
-  const advancedStats = useMemo(() => {
-    const completedOrders = orders.filter(o => o.status === 'completed');
-    const totalEarnings = completedOrders.reduce((sum, o) => sum + (o.technician_share || 0), 0);
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
-      const dayOrders = completedOrders.filter(o => o.completed_at?.startsWith(dateStr));
-      const earnings = dayOrders.reduce((sum, o) => sum + (o.technician_share || 0), 0);
-      return { date: dateStr, earnings };
-    }).reverse();
-    // Ranking simulation (can be improved later)
-    const fetchRanking = async () => {
-      try {
-        const allTechs = await fetchAPI('technicians?select=name');
-        const allOrders = await fetchAPI('orders?select=technician,technician_share,status');
-        const techEarnings = allTechs.map((tech: any) => ({
-          name: tech.name,
-          earnings: allOrders.filter((o: any) => o.technician === tech.name && o.status === 'completed').reduce((s: number, o: any) => s + (o.technician_share || 0), 0)
-        }));
-        techEarnings.sort((a, b) => b.earnings - a.earnings);
-        const rank = techEarnings.findIndex(t => t.name === techName) + 1;
-        const total = techEarnings.length;
-        setRanking({ rank, total });
-      } catch (err) { console.error(err); }
-    };
-    fetchRanking();
-    return { last7Days, totalEarnings };
-  }, [orders, techName]);
-
-  const [ranking, setRanking] = useState({ rank: 0, total: 0 });
-
-  const filteredAndSortedOrders = useMemo(() => {
-    let filtered = [...orders];
-    if (filterStatus !== 'all') filtered = filtered.filter(o => o.status === filterStatus);
-    if (filterDate !== 'all') {
-      const now = new Date();
-      const today = now.toISOString().split('T')[0];
-      const weekAgo = new Date(now.setDate(now.getDate() - 7)).toISOString().split('T')[0];
-      const monthAgo = new Date(now.setMonth(now.getMonth() - 1)).toISOString().split('T')[0];
-      if (filterDate === 'today') filtered = filtered.filter(o => o.date === today);
-      else if (filterDate === 'week') filtered = filtered.filter(o => o.date >= weekAgo);
-      else if (filterDate === 'month') filtered = filtered.filter(o => o.date >= monthAgo);
-    }
-    if (filterDevice !== 'all') filtered = filtered.filter(o => o.device_type === filterDevice);
-    if (filterPriority !== 'all' && filtered.some(o => o.priority)) filtered = filtered.filter(o => o.priority === filterPriority);
-    if (sortBy === 'latest') filtered.sort((a, b) => new Date(b.created_at || b.date).getTime() - new Date(a.created_at || a.date).getTime());
-    else if (sortBy === 'oldest') filtered.sort((a, b) => new Date(a.created_at || a.date).getTime() - new Date(b.created_at || b.date).getTime());
-    else if (sortBy === 'most_delayed') filtered.sort((a, b) => (b.delay_days || 0) - (a.delay_days || 0));
-    return filtered;
-  }, [orders, filterStatus, filterDate, filterDevice, filterPriority, sortBy]);
 
   const updateStatus = async (id: number, newStatus: string, extraData = {}) => {
     try {
@@ -345,8 +290,6 @@ export default function TechnicianPortal() {
     </div>
   );
 
-  const deviceTypes = ['all', ...new Set(orders.map(o => o.device_type).filter(Boolean))];
-
   return (
     <div className="min-h-screen bg-slate-900 text-slate-200">
       <div className="bg-slate-800/80 border-b border-slate-700 sticky top-0 z-40 px-4 py-3">
@@ -357,113 +300,70 @@ export default function TechnicianPortal() {
       </div>
 
       <main className="max-w-4xl mx-auto p-4 space-y-5">
-        {/* Dashboard */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-4 text-white shadow-lg">
-            <div className="flex justify-between items-start"><div><p className="text-blue-100 text-sm">الأوردرات النشطة</p><p className="text-3xl font-bold">{stats.active}</p></div><Clock className="w-8 h-8 opacity-50" /></div>
-          </div>
-          <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-xl p-4 text-white shadow-lg">
-            <div className="flex justify-between items-start"><div><p className="text-green-100 text-sm">الأوردرات المكتملة</p><p className="text-3xl font-bold">{stats.completed}</p></div><CheckCircle2 className="w-8 h-8 opacity-50" /></div>
-          </div>
-          <div className="bg-gradient-to-br from-orange-600 to-orange-700 rounded-xl p-4 text-white shadow-lg">
-            <div className="flex justify-between items-start"><div><p className="text-orange-100 text-sm">إجمالي أرباحي</p><p className="text-2xl font-bold">{stats.earnings.toLocaleString()} ج.م</p></div><DollarSign className="w-8 h-8 opacity-50" /></div>
-          </div>
-          <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl p-4 text-white shadow-lg">
-            <div className="flex justify-between items-start"><div><p className="text-purple-100 text-sm">ترتيبي بين الفنيين</p><p className="text-2xl font-bold">{ranking.rank ? `#${ranking.rank}` : 'جاري...'}</p><p className="text-xs text-purple-200">من أصل {ranking.total} فني</p></div><Award className="w-8 h-8 opacity-50" /></div>
-          </div>
-        </div>
-
-        {/* Chart */}
-        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
-          <h3 className="text-white font-bold mb-3 flex items-center gap-2"><TrendingUp className="w-5 h-5 text-orange-400" /> أرباح آخر 7 أيام</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={advancedStats.last7Days}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-              <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} />
-              <YAxis stroke="#94a3b8" />
-              <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#475569' }} formatter={(value) => [`${value} ج.م`, 'الأرباح']} />
-              <Line type="monotone" dataKey="earnings" stroke="#f97316" strokeWidth={2} dot={{ fill: '#f97316' }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Filters & Sorting */}
-        <div className="bg-slate-800 rounded-xl p-3">
-          <button onClick={() => setShowFilters(!showFilters)} className="w-full flex justify-between items-center text-white font-medium py-2">
-            <span className="flex items-center gap-2"><Filter className="w-4 h-4" /> فلترة وترتيب</span>
-            {showFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </button>
-          {showFilters && (
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-3 pt-3 border-t border-slate-700">
-              <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-slate-700 p-2 rounded-lg text-sm"><option value="all">جميع الحالات</option><option value="pending">قيد الانتظار</option><option value="in-progress">قيد التنفيذ</option><option value="inspected">تم الكشف</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option><option value="deferred">مؤجل</option></select>
-              <select value={filterDate} onChange={e => setFilterDate(e.target.value)} className="bg-slate-700 p-2 rounded-lg text-sm"><option value="all">جميع التواريخ</option><option value="today">اليوم</option><option value="week">آخر 7 أيام</option><option value="month">آخر 30 يوماً</option></select>
-              <select value={filterDevice} onChange={e => setFilterDevice(e.target.value)} className="bg-slate-700 p-2 rounded-lg text-sm"><option value="all">جميع الأجهزة</option>{deviceTypes.filter(d => d !== 'all').map(d => <option key={d}>{d}</option>)}</select>
-              <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="bg-slate-700 p-2 rounded-lg text-sm"><option value="latest">الأحدث أولاً</option><option value="oldest">الأقدم أولاً</option><option value="most_delayed">الأكثر تأخيراً</option></select>
-              <button onClick={() => { setFilterStatus('all'); setFilterDate('all'); setFilterDevice('all'); setSortBy('latest'); }} className="bg-slate-700 text-slate-300 p-2 rounded-lg text-sm">إعادة ضبط</button>
-            </div>
-          )}
+        {/* Dashboard Stats */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-2xl font-bold text-orange-400">{stats.active}</div><div className="text-xs text-slate-400">نشط</div></div>
+          <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-2xl font-bold text-green-400">{stats.completed}</div><div className="text-xs text-slate-400">مكتمل</div></div>
+          <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-xl font-bold text-emerald-400">{stats.earnings.toLocaleString()} ج.م</div><div className="text-xs text-slate-400">أرباحي</div></div>
         </div>
 
         {/* Orders List */}
-        <div className="space-y-4">
-          {filteredAndSortedOrders.map(order => (
-            <div key={order.id} className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-bold text-white text-lg">{order.customer_name}</h3>
-                  <p className="text-xs text-slate-400">رقم: {order.order_number}</p>
+        <div className="space-y-3">
+          <h2 className="text-md font-semibold text-white flex items-center gap-2"><ClipboardList className="w-4 h-4 text-orange-400" /> أوردراتي</h2>
+          {orders.map(order => (
+            <div key={order.id} className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
+              <div className={`h-1 ${order.status === 'completed' ? 'bg-green-500' : order.status === 'in-progress' ? 'bg-blue-500' : order.status === 'cancelled' ? 'bg-red-500' : order.status === 'deferred' ? 'bg-purple-500' : order.status === 'inspected' ? 'bg-yellow-500' : 'bg-yellow-500'}`}></div>
+              <div className="p-4 space-y-3">
+                <div className="flex justify-between items-start">
+                  <div><div className="font-bold text-white">{order.customer_name}</div><div className="text-[11px] text-slate-400 flex items-center gap-1"><Calendar className="w-3 h-3" /> {order.date}</div></div>
+                  <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${order.status === 'completed' ? 'bg-green-500/20 text-green-400' : order.status === 'in-progress' ? 'bg-blue-500/20 text-blue-400' : order.status === 'cancelled' ? 'bg-red-500/20 text-red-400' : order.status === 'deferred' ? 'bg-purple-500/20 text-purple-400' : order.status === 'inspected' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                    {order.status === 'completed' ? 'مكتمل' : order.status === 'in-progress' ? 'جاري العمل' : order.status === 'cancelled' ? 'ملغي' : order.status === 'deferred' ? 'مؤجل' : order.status === 'inspected' ? 'تم الكشف' : 'قيد الانتظار'}
+                  </div>
                 </div>
-                <div className="flex gap-1">
-                  {order.status === 'pending' && <span className="bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded text-xs">جديد</span>}
-                  {order.status === 'in-progress' && <span className="bg-blue-500/20 text-blue-500 px-2 py-0.5 rounded text-xs">قيد التنفيذ</span>}
-                  {order.status === 'inspected' && <span className="bg-purple-500/20 text-purple-500 px-2 py-0.5 rounded text-xs">تم الكشف</span>}
-                  {order.status === 'completed' && <span className="bg-green-500/20 text-green-500 px-2 py-0.5 rounded text-xs">مكتمل</span>}
-                  {order.status === 'cancelled' && <span className="bg-red-500/20 text-red-500 px-2 py-0.5 rounded text-xs">ملغي</span>}
-                  {order.status === 'deferred' && <span className="bg-orange-500/20 text-orange-500 px-2 py-0.5 rounded text-xs">مؤجل</span>}
+                <div className="text-xs text-slate-300 space-y-1">
+                  <div>🔧 {order.device_type || 'جهاز'} - {order.brand || 'ماركة'}</div>
+                  <div className="flex items-start gap-1"><MapPin className="w-3 h-3 text-slate-500 mt-0.5" /> {order.address || 'لا يوجد عنوان'}</div>
+                  {order.problem_description && <div className="text-slate-400">⚠️ {order.problem_description}</div>}
+                </div>
+                {order.technician_note && (
+                  <div className="bg-slate-800 p-2 rounded-lg text-xs"><span className="text-slate-400">📝 ملاحظتك:</span> {order.technician_note}</div>
+                )}
+
+                {/* ✅ الأزرار - ترتيب صحيح */}
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {/* زر الاتصال - يظهر فقط إذا لم يكن مخفياً */}
+                  {!isPhoneHidden(order) ? (
+                    <a href={`tel:${order.phone}`} className="flex-1 bg-slate-700 hover:bg-slate-600 text-center text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1">
+                      <Phone className="w-4 h-4" /> اتصل
+                    </a>
+                  ) : (
+                    <div className="flex-1 bg-slate-800 text-slate-500 text-center text-sm font-medium py-2 rounded-lg cursor-not-allowed flex items-center justify-center gap-1">
+                      <Phone className="w-4 h-4" /> غير متاح
+                    </div>
+                  )}
+
+                  {/* بدء العمل - يظهر فقط للأوردرات الجديدة */}
+                  {order.status === 'pending' && (
+                    <button onClick={() => updateStatus(order.id, 'in-progress')} className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1 shadow-lg shadow-blue-900/20">
+                      <Play className="w-4 h-4" /> بدء العمل
+                    </button>
+                  )}
+
+                  {/* إجراءات - يظهر للأوردرات قيد التنفيذ فقط */}
+                  {order.status === 'in-progress' && (
+                    <button onClick={() => { setSelectedOrderForActions(order); setShowActionsModal(true); }} className="flex-1 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1 shadow-lg shadow-orange-900/20">
+                      <FileCheck className="w-4 h-4" /> إجراءات
+                    </button>
+                  )}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2 mt-3 text-sm">
-                <div className="flex items-center gap-2 text-slate-300"><Phone className="w-4 h-4" /> <span className="font-mono">{order.phone}</span></div>
-                <div className="flex items-center gap-2 text-slate-300"><Wrench className="w-4 h-4" /> {order.device_type} - {order.brand}</div>
-                <div className="flex items-center gap-2 text-slate-300 col-span-2"><MapPin className="w-4 h-4" /> {order.address}</div>
-                <div className="flex items-center gap-2 text-slate-300 col-span-2"><ClipboardList className="w-4 h-4" /> {order.problem_description}</div>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-4">
-                {order.status !== 'completed' && order.status !== 'cancelled' && order.status !== 'deferred' && (
-                  <>
-                    <button onClick={() => updateStatus(order.id, 'in-progress')} className="bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg text-sm flex items-center gap-1"><Play className="w-4 h-4" /> بدء العمل</button>
-                    <button onClick={() => openActionModal(order, 'inspect')} className="bg-purple-600 hover:bg-purple-700 px-3 py-1.5 rounded-lg text-sm flex items-center gap-1"><DollarSign className="w-4 h-4" /> كشف بقيمة</button>
-                    <button onClick={() => openSettleModal(order)} className="bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-lg text-sm flex items-center gap-1"><FileCheck className="w-4 h-4" /> تصفية الأوردر</button>
-                    <button onClick={() => openActionModal(order, 'defer')} className="bg-orange-600 hover:bg-orange-700 px-3 py-1.5 rounded-lg text-sm flex items-center gap-1"><CalendarX className="w-4 h-4" /> تأجيل</button>
-                    <button onClick={() => openActionModal(order, 'cancel')} className="bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-lg text-sm flex items-center gap-1"><Ban className="w-4 h-4" /> إلغاء</button>
-                    <button onClick={() => openActionModal(order, 'note')} className="bg-slate-600 hover:bg-slate-500 px-3 py-1.5 rounded-lg text-sm flex items-center gap-1"><StickyNote className="w-4 h-4" /> إضافة ملاحظة</button>
-                  </>
-                )}
-                {order.status === 'inspected' && (
-                  <button onClick={() => openSettleModal(order)} className="bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-lg text-sm flex items-center gap-1"><FileCheck className="w-4 h-4" /> تصفية الأوردر</button>
-                )}
-                {order.status === 'completed' && (
-                  <div className="text-green-400 text-sm flex items-center gap-1"><CheckCircle2 className="w-4 h-4" /> تم الإكمال - في انتظار مراجعة المدير</div>
-                )}
-                {order.status === 'deferred' && (
-                  <div className="text-orange-400 text-sm flex items-center gap-1"><ClockArrowUp className="w-4 h-4" /> مؤجل حتى إشعار آخر</div>
-                )}
-                {order.status === 'cancelled' && (
-                  <div className="text-red-400 text-sm flex items-center gap-1"><Ban className="w-4 h-4" /> ملغي</div>
-                )}
-              </div>
-              {order.technician_note && (
-                <div className="mt-3 bg-slate-700/50 p-2 rounded-lg text-xs text-slate-300"><MessageSquare className="w-3 h-3 inline ml-1" /> {order.technician_note}</div>
-              )}
             </div>
           ))}
-          {filteredAndSortedOrders.length === 0 && (
-            <div className="text-center py-8 text-slate-400">لا توجد أوردرات متاحة</div>
-          )}
+          {orders.length === 0 && <div className="text-center py-8 text-slate-400">لا توجد أوردرات</div>}
         </div>
       </main>
 
-      {/* Action Modal */}
+      {/* Action Modal (كشف، إلغاء، تأجيل، ملاحظة) */}
       {showActionModal && currentOrder && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md">
@@ -480,6 +380,35 @@ export default function TechnicianPortal() {
                 <textarea placeholder={actionType === 'note' ? "اكتب الملاحظة..." : "اكتب السبب..."} rows={3} value={actionValue} onChange={e => setActionValue(e.target.value)} className="w-full p-2 bg-slate-700 rounded-lg text-white" autoFocus />
               )}
               <button onClick={confirmAction} className="w-full bg-orange-600 hover:bg-orange-700 py-2 rounded-lg font-bold text-white">تأكيد</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Actions Modal (قائمة الإجراءات) */}
+      {showActionsModal && selectedOrderForActions && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowActionsModal(false)}>
+          <div className="bg-slate-800 rounded-2xl max-w-md w-full p-6 border border-slate-700 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-white">إجراءات الأوردر</h2>
+              <button onClick={() => setShowActionsModal(false)} className="p-1 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="space-y-3">
+              <button onClick={() => { openSettleModal(selectedOrderForActions); setShowActionsModal(false); }} className="w-full text-right px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl flex items-center gap-3 transition-all">
+                <FileCheck className="w-5 h-5 text-green-400" /> تصفية الأوردر
+              </button>
+              <button onClick={() => { openActionModal(selectedOrderForActions, 'inspect'); setShowActionsModal(false); }} className="w-full text-right px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl flex items-center gap-3 transition-all">
+                <DollarSign className="w-5 h-5 text-yellow-400" /> كشف بقيمة
+              </button>
+              <button onClick={() => { openActionModal(selectedOrderForActions, 'defer'); setShowActionsModal(false); }} className="w-full text-right px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl flex items-center gap-3 transition-all">
+                <CalendarX className="w-5 h-5 text-purple-400" /> تأجيل
+              </button>
+              <button onClick={() => { openActionModal(selectedOrderForActions, 'cancel'); setShowActionsModal(false); }} className="w-full text-right px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl flex items-center gap-3 transition-all">
+                <Ban className="w-5 h-5 text-red-400" /> إلغاء
+              </button>
+              <button onClick={() => { openActionModal(selectedOrderForActions, 'note'); setShowActionsModal(false); }} className="w-full text-right px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl flex items-center gap-3 transition-all">
+                <StickyNote className="w-5 h-5 text-blue-400" /> إضافة ملاحظة
+              </button>
             </div>
           </div>
         </div>
