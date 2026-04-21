@@ -6,7 +6,7 @@ import {
   Play, FileCheck, DollarSign, CalendarX, Ban, MessageSquare
 } from "lucide-react";
 import { useLocation } from "wouter";
-import { useNotification } from "../components/EnhancedNotificationSystem"; // ✅ تغيير الاستيراد
+import { useNotification } from "../components/EnhancedNotificationSystem";
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -45,13 +45,6 @@ export default function TechnicianPortal() {
   const [currentOrder, setCurrentOrder] = useState<any>(null);
   
   const [technicianPercentage, setTechnicianPercentage] = useState(50);
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterDate, setFilterDate] = useState<string>('all');
-  const [filterDevice, setFilterDevice] = useState<string>('all');
-  const [filterPriority, setFilterPriority] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<string>('latest');
-  const [showFilters, setShowFilters] = useState(false);
-  
   const [settleForm, setSettleForm] = useState({
     total_amount: 0,
     parts_cost: 0,
@@ -79,7 +72,7 @@ export default function TechnicianPortal() {
     }
   }, []);
 
-  // ✅ دالة إخفاء رقم الهاتف (تعمل بشكل صحيح)
+  // دالة إخفاء رقم الهاتف (تعمل بشكل صحيح)
   const isPhoneHidden = (order: any) => {
     return order.status === 'completed' || order.status === 'cancelled' || order.status === 'inspected';
   };
@@ -159,22 +152,46 @@ export default function TechnicianPortal() {
     return () => clearInterval(interval);
   }, [fetchData, fetchTechnicianPercentage, isActive]);
 
-  // Realtime subscription
+  // ✅ Realtime subscription (بدلاً من OrderMonitoringService)
   useEffect(() => {
     if (!techName) return;
+    
     const subscription = supabase
       .channel('orders-channel')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `technician=eq.${techName}` }, (payload) => {
-        console.log('تغيير في الأوردرات:', payload);
-        fetchData();
-        if (payload.eventType === 'INSERT') {
-          addNotification({ type: 'info', title: '📢 أوردر جديد', message: `تم إضافة أوردر جديد للعميل ${payload.new.customer_name}`, duration: 5000 });
-        } else if (payload.eventType === 'UPDATE') {
-          addNotification({ type: 'warning', title: '🔄 تحديث أوردر', message: `تم تحديث بيانات الأوردر رقم ${payload.new.order_number}`, duration: 4000 });
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+          filter: `technician=eq.${techName}`
+        },
+        (payload) => {
+          console.log('تغيير في الأوردرات:', payload);
+          fetchData();
+          
+          if (payload.eventType === 'INSERT') {
+            addNotification({
+              type: 'critical',
+              title: '📢 أوردر جديد',
+              message: `تم إضافة أوردر جديد للعميل ${payload.new.customer_name}`,
+              duration: 0
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            addNotification({
+              type: 'warning',
+              title: '🔄 تحديث أوردر',
+              message: `تم تحديث بيانات الأوردر رقم ${payload.new.order_number}`,
+              duration: 5000
+            });
+          }
         }
-      })
+      )
       .subscribe();
-    return () => { supabase.removeChannel(subscription); };
+    
+    return () => {
+      supabase.removeChannel(subscription);
+    };
   }, [techName, addNotification, fetchData]);
 
   const updateStatus = async (id: number, newStatus: string, extraData = {}) => {
@@ -300,14 +317,12 @@ export default function TechnicianPortal() {
       </div>
 
       <main className="max-w-4xl mx-auto p-4 space-y-5">
-        {/* Dashboard Stats */}
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-2xl font-bold text-orange-400">{stats.active}</div><div className="text-xs text-slate-400">نشط</div></div>
           <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-2xl font-bold text-green-400">{stats.completed}</div><div className="text-xs text-slate-400">مكتمل</div></div>
           <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-xl font-bold text-emerald-400">{stats.earnings.toLocaleString()} ج.م</div><div className="text-xs text-slate-400">أرباحي</div></div>
         </div>
 
-        {/* Orders List */}
         <div className="space-y-3">
           <h2 className="text-md font-semibold text-white flex items-center gap-2"><ClipboardList className="w-4 h-4 text-orange-400" /> أوردراتي</h2>
           {orders.map(order => (
@@ -329,9 +344,7 @@ export default function TechnicianPortal() {
                   <div className="bg-slate-800 p-2 rounded-lg text-xs"><span className="text-slate-400">📝 ملاحظتك:</span> {order.technician_note}</div>
                 )}
 
-                {/* ✅ الأزرار - ترتيب صحيح */}
                 <div className="flex flex-wrap gap-2 pt-2">
-                  {/* زر الاتصال - يظهر فقط إذا لم يكن مخفياً */}
                   {!isPhoneHidden(order) ? (
                     <a href={`tel:${order.phone}`} className="flex-1 bg-slate-700 hover:bg-slate-600 text-center text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1">
                       <Phone className="w-4 h-4" /> اتصل
@@ -342,14 +355,12 @@ export default function TechnicianPortal() {
                     </div>
                   )}
 
-                  {/* بدء العمل - يظهر فقط للأوردرات الجديدة */}
                   {order.status === 'pending' && (
                     <button onClick={() => updateStatus(order.id, 'in-progress')} className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1 shadow-lg shadow-blue-900/20">
                       <Play className="w-4 h-4" /> بدء العمل
                     </button>
                   )}
 
-                  {/* إجراءات - يظهر للأوردرات قيد التنفيذ فقط */}
                   {order.status === 'in-progress' && (
                     <button onClick={() => { setSelectedOrderForActions(order); setShowActionsModal(true); }} className="flex-1 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1 shadow-lg shadow-orange-900/20">
                       <FileCheck className="w-4 h-4" /> إجراءات
@@ -363,7 +374,6 @@ export default function TechnicianPortal() {
         </div>
       </main>
 
-      {/* Action Modal (كشف، إلغاء، تأجيل، ملاحظة) */}
       {showActionModal && currentOrder && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md">
@@ -385,7 +395,6 @@ export default function TechnicianPortal() {
         </div>
       )}
 
-      {/* Actions Modal (قائمة الإجراءات) */}
       {showActionsModal && selectedOrderForActions && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowActionsModal(false)}>
           <div className="bg-slate-800 rounded-2xl max-w-md w-full p-6 border border-slate-700 shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -414,7 +423,6 @@ export default function TechnicianPortal() {
         </div>
       )}
 
-      {/* Settlement Modal */}
       {showSettleModal && selectedOrder && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md">
