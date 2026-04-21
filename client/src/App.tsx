@@ -8,7 +8,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { EnhancedNotificationProvider } from "./components/EnhancedNotificationProvider"; // ✅ استبدال المستورد القديم
+import { EnhancedNotificationProvider } from "./components/EnhancedNotificationSystem"; // ✅ استيراد من الملف الموجود فعلياً
 import Home from "./pages/Home";
 import SamsungService from "./pages/SamsungService";
 import LGService from "./pages/LGService";
@@ -112,7 +112,7 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <EnhancedNotificationProvider>  {/* ✅ تم التغيير هنا */}
+      <EnhancedNotificationProvider>  {/* ✅ المكون المستورد من EnhancedNotificationSystem */}
         <ThemeProvider defaultTheme="light">
           <TooltipProvider>
             <Toaster />
