@@ -290,7 +290,7 @@ export default function ProtectedOrders() {
   try {
     const incomeEntries = await fetchAPI(`cash_ledger?select=amount&date=eq.${targetDate}&type=eq.income`);
     const totalIncome = (incomeEntries || []).reduce((sum, entry) => sum + (entry.amount || 0), 0);
-    const netProfit = totalIncome;  // ✅ المصروفات لا تؤثر
+    const netProfit = totalIncome; // ✅ المصروفات لا تؤثر على الربح
 
     if (netProfit <= 0) {
       alert(`⚠️ لا توجد أرباح ليوم ${targetDate}.`);
@@ -344,6 +344,31 @@ export default function ProtectedOrders() {
         });
       }
     }
+
+    if (remainingReserve > 0) {
+      const existingReserve = await fetchAPI(`cash_ledger?select=id&date=eq.${targetDate}&type=eq.reserve`);
+      if (!existingReserve || existingReserve.length === 0) {
+        await fetchAPI('cash_ledger', {
+          method: 'POST',
+          body: JSON.stringify({
+            type: 'reserve',
+            amount: remainingReserve,
+            description: `🏦 رصيد احتياطي - أرباح يوم ${targetDate}`,
+            date: targetDate
+          })
+        });
+      }
+    }
+
+    await addNotification('توزيع أرباح', `✅ تم توزيع ${amountToDistribute.toLocaleString()} ج.م`);
+    await fetchCashLedger();
+    await fetchData();
+    alert(`✅ تم التوزيع.\n💰 وزع: ${amountToDistribute.toLocaleString()} ج.م\n🏦 احتياطي: ${remainingReserve.toLocaleString()} ج.م`);
+  } catch (err) {
+    console.error(err);
+    alert("❌ حدث خطأ أثناء التوزيع");
+  }
+};
 
     if (remainingReserve > 0) {
       const existingReserve = await fetchAPI(`cash_ledger?select=id&date=eq.${targetDate}&type=eq.reserve`);
