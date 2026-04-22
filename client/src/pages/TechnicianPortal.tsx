@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useNotification } from "../components/EnhancedNotificationSystem";
+import TechnicianPerformance from "../components/TechnicianPerformance";
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -43,6 +44,7 @@ export default function TechnicianPortal() {
   const [actionType, setActionType] = useState<'cancel' | 'inspect' | 'defer' | 'note'>('note');
   const [actionValue, setActionValue] = useState("");
   const [currentOrder, setCurrentOrder] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<'orders' | 'performance'>('orders'); // ✅ إضافة تبويب الأداء
   
   const [technicianPercentage, setTechnicianPercentage] = useState(50);
   const [settleForm, setSettleForm] = useState({
@@ -72,7 +74,7 @@ export default function TechnicianPortal() {
     }
   }, []);
 
-  // دالة إخفاء رقم الهاتف (تعمل بشكل صحيح)
+  // دالة إخفاء رقم الهاتف
   const isPhoneHidden = (order: any) => {
     return order.status === 'completed' || order.status === 'cancelled' || order.status === 'inspected';
   };
@@ -152,7 +154,7 @@ export default function TechnicianPortal() {
     return () => clearInterval(interval);
   }, [fetchData, fetchTechnicianPercentage, isActive]);
 
-  // ✅ Realtime subscription (بدلاً من OrderMonitoringService)
+  // Realtime subscription
   useEffect(() => {
     if (!techName) return;
     
@@ -316,64 +318,100 @@ export default function TechnicianPortal() {
         </div>
       </div>
 
-      <main className="max-w-4xl mx-auto p-4 space-y-5">
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-2xl font-bold text-orange-400">{stats.active}</div><div className="text-xs text-slate-400">نشط</div></div>
-          <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-2xl font-bold text-green-400">{stats.completed}</div><div className="text-xs text-slate-400">مكتمل</div></div>
-          <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-xl font-bold text-emerald-400">{stats.earnings.toLocaleString()} ج.م</div><div className="text-xs text-slate-400">أرباحي</div></div>
-        </div>
+      {/* Tabs */}
+      <div className="flex gap-2 border-b border-slate-700 px-4 pt-4 max-w-4xl mx-auto">
+        <button onClick={() => setActiveTab('orders')} className={`px-4 py-2 rounded-t-lg text-sm font-medium transition ${activeTab === 'orders' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>
+          📋 الأوردرات
+        </button>
+        <button onClick={() => setActiveTab('performance')} className={`px-4 py-2 rounded-t-lg text-sm font-medium transition ${activeTab === 'performance' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>
+          📊 أداء الفني
+        </button>
+      </div>
 
-        <div className="space-y-3">
-          <h2 className="text-md font-semibold text-white flex items-center gap-2"><ClipboardList className="w-4 h-4 text-orange-400" /> أوردراتي</h2>
-          {orders.map(order => (
-            <div key={order.id} className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
-              <div className={`h-1 ${order.status === 'completed' ? 'bg-green-500' : order.status === 'in-progress' ? 'bg-blue-500' : order.status === 'cancelled' ? 'bg-red-500' : order.status === 'deferred' ? 'bg-purple-500' : order.status === 'inspected' ? 'bg-yellow-500' : 'bg-yellow-500'}`}></div>
-              <div className="p-4 space-y-3">
-                <div className="flex justify-between items-start">
-                  <div><div className="font-bold text-white">{order.customer_name}</div><div className="text-[11px] text-slate-400 flex items-center gap-1"><Calendar className="w-3 h-3" /> {order.date}</div></div>
-                  <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${order.status === 'completed' ? 'bg-green-500/20 text-green-400' : order.status === 'in-progress' ? 'bg-blue-500/20 text-blue-400' : order.status === 'cancelled' ? 'bg-red-500/20 text-red-400' : order.status === 'deferred' ? 'bg-purple-500/20 text-purple-400' : order.status === 'inspected' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                    {order.status === 'completed' ? 'مكتمل' : order.status === 'in-progress' ? 'جاري العمل' : order.status === 'cancelled' ? 'ملغي' : order.status === 'deferred' ? 'مؤجل' : order.status === 'inspected' ? 'تم الكشف' : 'قيد الانتظار'}
+      <main className="max-w-4xl mx-auto p-4 space-y-5">
+        {/* تبويب الأوردرات */}
+        {activeTab === 'orders' && (
+          <>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-2xl font-bold text-orange-400">{stats.active}</div><div className="text-xs text-slate-400">نشط</div></div>
+              <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-2xl font-bold text-green-400">{stats.completed}</div><div className="text-xs text-slate-400">مكتمل</div></div>
+              <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-xl font-bold text-emerald-400">{stats.earnings.toLocaleString()} ج.م</div><div className="text-xs text-slate-400">أرباحي</div></div>
+            </div>
+
+            <div className="space-y-3">
+              <h2 className="text-md font-semibold text-white flex items-center gap-2"><ClipboardList className="w-4 h-4 text-orange-400" /> أوردراتي</h2>
+              {orders.map(order => (
+                <div key={order.id} className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
+                  <div className={`h-1 ${order.status === 'completed' ? 'bg-green-500' : order.status === 'in-progress' ? 'bg-blue-500' : order.status === 'cancelled' ? 'bg-red-500' : order.status === 'deferred' ? 'bg-purple-500' : order.status === 'inspected' ? 'bg-yellow-500' : 'bg-yellow-500'}`}></div>
+                  <div className="p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div><div className="font-bold text-white">{order.customer_name}</div><div className="text-[11px] text-slate-400 flex items-center gap-1"><Calendar className="w-3 h-3" /> {order.date}</div></div>
+                      <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${order.status === 'completed' ? 'bg-green-500/20 text-green-400' : order.status === 'in-progress' ? 'bg-blue-500/20 text-blue-400' : order.status === 'cancelled' ? 'bg-red-500/20 text-red-400' : order.status === 'deferred' ? 'bg-purple-500/20 text-purple-400' : order.status === 'inspected' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                        {order.status === 'completed' ? 'مكتمل' : order.status === 'in-progress' ? 'جاري العمل' : order.status === 'cancelled' ? 'ملغي' : order.status === 'deferred' ? 'مؤجل' : order.status === 'inspected' ? 'تم الكشف' : 'قيد الانتظار'}
+                      </div>
+                    </div>
+                    <div className="text-xs text-slate-300 space-y-1">
+                      <div>🔧 {order.device_type || 'جهاز'} - {order.brand || 'ماركة'}</div>
+                      <div className="flex items-start gap-1"><MapPin className="w-3 h-3 text-slate-500 mt-0.5" /> {order.address || 'لا يوجد عنوان'}</div>
+                      {order.problem_description && <div className="text-slate-400">⚠️ {order.problem_description}</div>}
+                    </div>
+                    {order.technician_note && (
+                      <div className="bg-slate-800 p-2 rounded-lg text-xs"><span className="text-slate-400">📝 ملاحظتك:</span> {order.technician_note}</div>
+                    )}
+
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {!isPhoneHidden(order) ? (
+                        <a href={`tel:${order.phone}`} className="flex-1 bg-slate-700 hover:bg-slate-600 text-center text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1">
+                          <Phone className="w-4 h-4" /> اتصل
+                        </a>
+                      ) : (
+                        <div className="flex-1 bg-slate-800 text-slate-500 text-center text-sm font-medium py-2 rounded-lg cursor-not-allowed flex items-center justify-center gap-1">
+                          <Phone className="w-4 h-4" /> غير متاح
+                        </div>
+                      )}
+
+                      {order.status === 'pending' && (
+                        <button onClick={() => updateStatus(order.id, 'in-progress')} className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1 shadow-lg shadow-blue-900/20">
+                          <Play className="w-4 h-4" /> بدء العمل
+                        </button>
+                      )}
+
+                      {order.status === 'in-progress' && (
+                        <button onClick={() => { setSelectedOrderForActions(order); setShowActionsModal(true); }} className="flex-1 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1 shadow-lg shadow-orange-900/20">
+                          <FileCheck className="w-4 h-4" /> إجراءات
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
-                <div className="text-xs text-slate-300 space-y-1">
-                  <div>🔧 {order.device_type || 'جهاز'} - {order.brand || 'ماركة'}</div>
-                  <div className="flex items-start gap-1"><MapPin className="w-3 h-3 text-slate-500 mt-0.5" /> {order.address || 'لا يوجد عنوان'}</div>
-                  {order.problem_description && <div className="text-slate-400">⚠️ {order.problem_description}</div>}
-                </div>
-                {order.technician_note && (
-                  <div className="bg-slate-800 p-2 rounded-lg text-xs"><span className="text-slate-400">📝 ملاحظتك:</span> {order.technician_note}</div>
-                )}
-
-                <div className="flex flex-wrap gap-2 pt-2">
-                  {!isPhoneHidden(order) ? (
-                    <a href={`tel:${order.phone}`} className="flex-1 bg-slate-700 hover:bg-slate-600 text-center text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1">
-                      <Phone className="w-4 h-4" /> اتصل
-                    </a>
-                  ) : (
-                    <div className="flex-1 bg-slate-800 text-slate-500 text-center text-sm font-medium py-2 rounded-lg cursor-not-allowed flex items-center justify-center gap-1">
-                      <Phone className="w-4 h-4" /> غير متاح
-                    </div>
-                  )}
-
-                  {order.status === 'pending' && (
-                    <button onClick={() => updateStatus(order.id, 'in-progress')} className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1 shadow-lg shadow-blue-900/20">
-                      <Play className="w-4 h-4" /> بدء العمل
-                    </button>
-                  )}
-
-                  {order.status === 'in-progress' && (
-                    <button onClick={() => { setSelectedOrderForActions(order); setShowActionsModal(true); }} className="flex-1 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1 shadow-lg shadow-orange-900/20">
-                      <FileCheck className="w-4 h-4" /> إجراءات
-                    </button>
-                  )}
-                </div>
-              </div>
+              ))}
+              {orders.length === 0 && <div className="text-center py-8 text-slate-400">لا توجد أوردرات</div>}
             </div>
-          ))}
-          {orders.length === 0 && <div className="text-center py-8 text-slate-400">لا توجد أوردرات</div>}
-        </div>
+          </>
+        )}
+
+        {/* تبويب أداء الفني */}
+        {activeTab === 'performance' && (
+          <TechnicianPerformance technicians={[{ name: techName }]} orders={orders} />
+        )}
       </main>
 
+      {/* مودال الإجراءات السريعة */}
+      {showActionsModal && selectedOrderForActions && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md">
+            <div className="flex justify-between mb-4"><h3 className="text-xl font-bold text-white">إجراءات الأوردر</h3><button onClick={() => setShowActionsModal(false)} className="text-slate-400"><X className="w-5 h-5" /></button></div>
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={() => { setShowActionsModal(false); openActionModal(selectedOrderForActions, 'inspect'); }} className="bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-400 p-3 rounded-xl flex flex-col items-center gap-1 transition"><DollarSign className="w-6 h-6" /><span className="text-xs">كشف بقيمة</span></button>
+              <button onClick={() => { setShowActionsModal(false); openActionModal(selectedOrderForActions, 'cancel'); }} className="bg-red-600/20 hover:bg-red-600/30 text-red-400 p-3 rounded-xl flex flex-col items-center gap-1 transition"><Ban className="w-6 h-6" /><span className="text-xs">إلغاء</span></button>
+              <button onClick={() => { setShowActionsModal(false); openActionModal(selectedOrderForActions, 'defer'); }} className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 p-3 rounded-xl flex flex-col items-center gap-1 transition"><CalendarX className="w-6 h-6" /><span className="text-xs">تأجيل</span></button>
+              <button onClick={() => { setShowActionsModal(false); openActionModal(selectedOrderForActions, 'note'); }} className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 p-3 rounded-xl flex flex-col items-center gap-1 transition"><MessageSquare className="w-6 h-6" /><span className="text-xs">ملاحظة</span></button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* مودال الإجراء الفردي (كشف/إلغاء/تأجيل/ملاحظة) */}
       {showActionModal && currentOrder && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md">
@@ -387,56 +425,29 @@ export default function TechnicianPortal() {
               {actionType === 'inspect' ? (
                 <input type="number" placeholder="المبلغ (ج.م)" value={actionValue} onChange={e => setActionValue(e.target.value)} className="w-full p-2 bg-slate-700 rounded-lg text-white" autoFocus />
               ) : (
-                <textarea placeholder={actionType === 'note' ? "اكتب الملاحظة..." : "اكتب السبب..."} rows={3} value={actionValue} onChange={e => setActionValue(e.target.value)} className="w-full p-2 bg-slate-700 rounded-lg text-white" autoFocus />
+                <textarea placeholder={actionType === 'cancel' ? 'سبب الإلغاء' : actionType === 'defer' ? 'سبب التأجيل' : 'نص الملاحظة'} rows={3} value={actionValue} onChange={e => setActionValue(e.target.value)} className="w-full p-2 bg-slate-700 rounded-lg text-white" autoFocus />
               )}
-              <button onClick={confirmAction} className="w-full bg-orange-600 hover:bg-orange-700 py-2 rounded-lg font-bold text-white">تأكيد</button>
+              <button onClick={confirmAction} className="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 rounded-lg font-bold">تأكيد</button>
             </div>
           </div>
         </div>
       )}
 
-      {showActionsModal && selectedOrderForActions && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowActionsModal(false)}>
-          <div className="bg-slate-800 rounded-2xl max-w-md w-full p-6 border border-slate-700 shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-white">إجراءات الأوردر</h2>
-              <button onClick={() => setShowActionsModal(false)} className="p-1 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
-            </div>
-            <div className="space-y-3">
-              <button onClick={() => { openSettleModal(selectedOrderForActions); setShowActionsModal(false); }} className="w-full text-right px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl flex items-center gap-3 transition-all">
-                <FileCheck className="w-5 h-5 text-green-400" /> تصفية الأوردر
-              </button>
-              <button onClick={() => { openActionModal(selectedOrderForActions, 'inspect'); setShowActionsModal(false); }} className="w-full text-right px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl flex items-center gap-3 transition-all">
-                <DollarSign className="w-5 h-5 text-yellow-400" /> كشف بقيمة
-              </button>
-              <button onClick={() => { openActionModal(selectedOrderForActions, 'defer'); setShowActionsModal(false); }} className="w-full text-right px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl flex items-center gap-3 transition-all">
-                <CalendarX className="w-5 h-5 text-purple-400" /> تأجيل
-              </button>
-              <button onClick={() => { openActionModal(selectedOrderForActions, 'cancel'); setShowActionsModal(false); }} className="w-full text-right px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl flex items-center gap-3 transition-all">
-                <Ban className="w-5 h-5 text-red-400" /> إلغاء
-              </button>
-              <button onClick={() => { openActionModal(selectedOrderForActions, 'note'); setShowActionsModal(false); }} className="w-full text-right px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl flex items-center gap-3 transition-all">
-                <StickyNote className="w-5 h-5 text-blue-400" /> إضافة ملاحظة
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* مودال تصفية الأوردر (إنهاء) */}
       {showSettleModal && selectedOrder && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md">
-            <div className="flex justify-between mb-4"><h3 className="text-xl font-bold text-white">تصفية الأوردر</h3><button onClick={() => setShowSettleModal(false)} className="text-slate-400"><X className="w-5 h-5" /></button></div>
+            <h3 className="text-xl font-bold text-white mb-4">تصفية الأوردر (إكمال)</h3>
             <form onSubmit={submitSettlement} className="space-y-4">
-              <div><label className="text-sm text-slate-400">المبلغ الإجمالي</label><input type="number" value={settleForm.total_amount} onChange={(e) => handleSettleChange('total_amount', e.target.value)} className="w-full p-2 bg-slate-700 rounded-lg text-white" required /></div>
-              <div><label className="text-sm text-slate-400">قطع غيار</label><input type="number" value={settleForm.parts_cost} onChange={(e) => handleSettleChange('parts_cost', e.target.value)} className="w-full p-2 bg-slate-700 rounded-lg text-white" /></div>
-              <div><label className="text-sm text-slate-400">مواصلات</label><input type="number" value={settleForm.transport_cost} onChange={(e) => handleSettleChange('transport_cost', e.target.value)} className="w-full p-2 bg-slate-700 rounded-lg text-white" /></div>
-              <div className="bg-slate-700 p-3 rounded-lg space-y-2">
-                <div className="flex justify-between"><span className="text-slate-300">الصافي:</span><span className="text-white font-bold">{settleForm.net_amount} ج.م</span></div>
-                <div className="flex justify-between"><span className="text-slate-300">نصيب الفني ({technicianPercentage}%):</span><span className="text-green-400 font-bold">{settleForm.technician_share} ج.م</span></div>
-                <div className="flex justify-between"><span className="text-slate-300">نصيب الشركة:</span><span className="text-orange-400 font-bold">{settleForm.company_share} ج.م</span></div>
+              <div><label className="text-sm text-slate-400">المبلغ الإجمالي</label><input type="number" value={settleForm.total_amount} onChange={e => handleSettleChange('total_amount', e.target.value)} className="w-full bg-slate-700 rounded-lg p-2 text-white" required /></div>
+              <div><label className="text-sm text-slate-400">قطع غيار</label><input type="number" value={settleForm.parts_cost} onChange={e => handleSettleChange('parts_cost', e.target.value)} className="w-full bg-slate-700 rounded-lg p-2 text-white" /></div>
+              <div><label className="text-sm text-slate-400">مواصلات</label><input type="number" value={settleForm.transport_cost} onChange={e => handleSettleChange('transport_cost', e.target.value)} className="w-full bg-slate-700 rounded-lg p-2 text-white" /></div>
+              <div className="bg-slate-700/50 p-3 rounded-lg space-y-2">
+                <div className="flex justify-between"><span className="text-slate-400">الصافي:</span><span className="text-white">{settleForm.net_amount} ج.م</span></div>
+                <div className="flex justify-between"><span className="text-slate-400">نصيب الفني ({technicianPercentage}%):</span><span className="text-green-400">{settleForm.technician_share} ج.م</span></div>
+                <div className="flex justify-between"><span className="text-slate-400">نصيب الشركة:</span><span className="text-orange-400">{settleForm.company_share} ج.م</span></div>
               </div>
-              <button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 py-2 rounded-lg font-bold text-white">تأكيد التصفية</button>
+              <button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-bold">تأكيد الإكمال</button>
             </form>
           </div>
         </div>
