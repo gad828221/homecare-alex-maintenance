@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "sonner"; // ✅ استيراد صحيح من الحزمة
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Login from "./pages/LoginPage";
 import TechPortal from "./pages/TechnicianPortal";
@@ -8,7 +8,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { EnhancedNotificationProvider } from "./components/EnhancedNotificationSystem"; // ✅ استيراد الموجود
+import { EnhancedNotificationProvider } from "./components/EnhancedNotificationSystem";
 import Home from "./pages/Home";
 import SamsungService from "./pages/SamsungService";
 import LGService from "./pages/LGService";
@@ -29,25 +29,25 @@ import { Phone, MessageCircle } from "lucide-react";
 function Router() {
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/samsung-service"} component={SamsungService} />
-      <Route path={"/lg-service"} component={LGService} />
-      <Route path={"/sharp-service"} component={SharpService} />
-      <Route path={"/toshiba-service"} component={ToshibaService} />
-      <Route path={"/zanussi-service"} component={ZanussiService} />
-      <Route path={"/unionaire-service"} component={UnionaireService} />
-      <Route path={"/fresh-service"} component={FreshService} />
-      <Route path={"/white-whale-service"} component={WhiteWhaleService} />
-      <Route path={"/ariston-service"} component={AristonService} />
-      <Route path={"/beko-service"} component={BekoService} />
-      <Route path={"/hoover-service"} component={HooverService} />
-      <Route path={"/indesit-service"} component={IndesitService} />
-      <Route path={"/orders"} component={ProtectedOrders} />
-      <Route path={"/login"} component={Login} />
-      <Route path={"/tech-portal"} component={TechPortal} />
-      <Route path={"/data-entry"} component={DataEntry} />
-      <Route path={"/invoice"} component={InvoicePage} />
-      <Route path={"/404"} component={NotFound} />
+      <Route path="/" component={Home} />
+      <Route path="/samsung-service" component={SamsungService} />
+      <Route path="/lg-service" component={LGService} />
+      <Route path="/sharp-service" component={SharpService} />
+      <Route path="/toshiba-service" component={ToshibaService} />
+      <Route path="/zanussi-service" component={ZanussiService} />
+      <Route path="/unionaire-service" component={UnionaireService} />
+      <Route path="/fresh-service" component={FreshService} />
+      <Route path="/white-whale-service" component={WhiteWhaleService} />
+      <Route path="/ariston-service" component={AristonService} />
+      <Route path="/beko-service" component={BekoService} />
+      <Route path="/hoover-service" component={HooverService} />
+      <Route path="/indesit-service" component={IndesitService} />
+      <Route path="/orders" component={ProtectedOrders} />
+      <Route path="/login" component={Login} />
+      <Route path="/tech-portal" component={TechPortal} />
+      <Route path="/data-entry" component={DataEntry} />
+      <Route path="/invoice" component={InvoicePage} />
+      <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -109,7 +109,7 @@ function App() {
       <EnhancedNotificationProvider>
         <ThemeProvider defaultTheme="light">
           <TooltipProvider>
-            <Toaster />
+            <Toaster position="top-center" richColors />
             <AppContent />
           </TooltipProvider>
         </ThemeProvider>
