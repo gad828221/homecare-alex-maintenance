@@ -3,10 +3,9 @@ import {
   Plus, Search, LayoutDashboard, Users, 
   CheckCircle2, AlertCircle, 
   Edit, Trash2, RefreshCw, Phone,
-  Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut, Send
+  Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut
 } from "lucide-react";
 import AdminPermissions from './AdminPermissions';
-import TechnicianPerformance from './TechnicianPerformance';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -37,37 +36,6 @@ const addNotification = async (action: string, details: string) => {
   } catch (err) { console.error(err); }
 };
 
-const syncTechniciansToUsers = async () => {
-  try {
-    const techs = await fetchAPI('technicians?select=*');
-    if (!techs || techs.length === 0) return;
-    for (const tech of techs) {
-      const userData = {
-        username: tech.username?.trim(),
-        password: tech.password,
-        name: tech.name,
-        phone: tech.phone || '',
-        role: 'tech',
-        is_active: tech.is_active
-      };
-      if (!userData.username) continue;
-      const updateRes = await fetch(`${supabaseUrl}/rest/v1/users?username=eq.${userData.username}`, {
-        method: 'PATCH',
-        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
-      });
-      if (updateRes.status === 404) {
-        await fetch(`${supabaseUrl}/rest/v1/users`, {
-          method: 'POST',
-          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify(userData)
-        });
-      }
-    }
-    console.log("✅ تمت مزامنة الفنيين مع users");
-  } catch (err) { console.error("❌ فشل مزامنة الفنيين:", err); }
-};
-
 export default function ProtectedOrders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [technicians, setTechnicians] = useState<any[]>([]);
@@ -76,7 +44,7 @@ export default function ProtectedOrders() {
   const [cashLedger, setCashLedger] = useState<any[]>([]);
   const [cashBalance, setCashBalance] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'orders' | 'technicians' | 'reports' | 'invoicesReview' | 'cash' | 'partners' | 'notifications' | 'permissions' | 'performance'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'technicians' | 'reports' | 'invoicesReview' | 'cash' | 'partners' | 'notifications' | 'permissions'>('orders');
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showTechModal, setShowTechModal] = useState(false);
   const [showPartnerModal, setShowPartnerModal] = useState(false);
@@ -115,6 +83,7 @@ export default function ProtectedOrders() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<string>('');
   
+  // States for settlement modal
   const [showSettleModal, setShowSettleModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [settleForm, setSettleForm] = useState({
@@ -125,19 +94,6 @@ export default function ProtectedOrders() {
     technician_share: 0,
     company_share: 0
   });
-
-  const [selectedProfitDate, setSelectedProfitDate] = useState(() => {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    return yesterday.toISOString().split('T')[0];
-  });
-  const [reportDate, setReportDate] = useState(() => {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    return yesterday.toISOString().split('T')[0];
-  });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('currentUser');
@@ -207,19 +163,20 @@ export default function ProtectedOrders() {
     } catch (err) { console.error(err); }
   }, []);
 
-  // حساب الرصيد: reserve - expense - profit_distribution
   const fetchCashLedger = useCallback(async () => {
     try {
-      let endpoint = 'cash_ledger?select=*&order=date.desc,created_at.desc';
-      if (cashFilterDate) endpoint = `cash_ledger?select=*&date=eq.${cashFilterDate}&order=date.desc,created_at.desc`;
+      let endpoint = 'cash_ledger?select=*&order=date.desc';
+      if (cashFilterDate) endpoint = `cash_ledger?select=*&date=eq.${cashFilterDate}&order=date.desc`;
       const data = await fetchAPI(endpoint);
       setCashLedger(data || []);
-      let balance = 0;
-      (data || []).forEach((entry: any) => {
-        if (entry.type === 'reserve') balance += entry.amount;
-        else if (entry.type === 'expense' || entry.type === 'profit_distribution') balance -= entry.amount;
-        // تجاهل type='income' تماماً (لا نستخدمه)
-      });
+      const balance = (data || []).reduce((acc: number, entry: any) => {
+        if (entry.type === 'income' || entry.type === 'reserve') {
+          return acc + entry.amount;
+        } else if (entry.type === 'expense' || entry.type === 'profit_distribution') {
+          return acc - entry.amount;
+        }
+        return acc;
+      }, 0);
       setCashBalance(balance);
     } catch (err) { console.error(err); }
   }, [cashFilterDate]);
@@ -227,12 +184,9 @@ export default function ProtectedOrders() {
   const addCashEntry = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // تحويل أي إضافة "دخل" إلى "reserve" تلقائياً
-      const finalType = cashForm.type === 'income' ? 'reserve' : cashForm.type;
-      const payload = { ...cashForm, type: finalType };
-      if (editingCash) await fetchAPI(`cash_ledger?id=eq.${editingCash.id}`, { method: 'PATCH', body: JSON.stringify(payload) });
-      else await fetchAPI('cash_ledger', { method: 'POST', body: JSON.stringify(payload) });
-      await addNotification(editingCash ? 'تعديل حركة خزنة' : 'إضافة حركة خزنة', `تم ${editingCash ? 'تعديل' : 'إضافة'} حركة ${finalType} بقيمة ${cashForm.amount} ج.م`);
+      if (editingCash) await fetchAPI(`cash_ledger?id=eq.${editingCash.id}`, { method: 'PATCH', body: JSON.stringify(cashForm) });
+      else await fetchAPI('cash_ledger', { method: 'POST', body: JSON.stringify(cashForm) });
+      await addNotification(editingCash ? 'تعديل حركة خزنة' : 'إضافة حركة خزنة', `تم ${editingCash ? 'تعديل' : 'إضافة'} حركة ${cashForm.type} بقيمة ${cashForm.amount} ج.م`);
       setShowCashModal(false); setEditingCash(null); setCashForm({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] });
       fetchCashLedger();
     } catch (err) { console.error(err); }
@@ -249,7 +203,7 @@ export default function ProtectedOrders() {
 
   const deleteOrderProfitFromCash = async (order: any) => {
     try {
-      const entries = await fetchAPI(`cash_ledger?description=like=*${order.order_number}*&type=eq.reserve&select=id`);
+      const { data: entries } = await fetchAPI(`cash_ledger?description=like=*${order.order_number}*&type=eq.income&select=id`);
       if (entries && entries.length > 0) {
         for (const entry of entries) {
           await fetchAPI(`cash_ledger?id=eq.${entry.id}`, { method: 'DELETE' });
@@ -270,7 +224,7 @@ export default function ProtectedOrders() {
       const today = new Date().toISOString().split('T')[0];
       const response = await fetch(`${supabaseUrl}/rest/v1/cash_ledger`, {
         method: 'POST', headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'reserve', amount: companyShare, description: `أرباح شركة من أوردر ${order.customer_name} (رقم ${order.order_number})`, date: today })
+        body: JSON.stringify({ type: 'income', amount: companyShare, description: `أرباح شركة من أوردر ${order.customer_name} (رقم ${order.order_number})`, date: today })
       });
       if (response.ok) {
         await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${order.id}`, {
@@ -284,316 +238,126 @@ export default function ProtectedOrders() {
     } catch (err) { alert(`❌ حدث خطأ في الاتصال: ${err.message}`); return false; }
   };
 
-  // توزيع الأرباح: يحسب إجمالي الإيرادات (من جدول orders أو من أي مصدر خارجي)
-  // هنا سنفترض أن الإيرادات مخزنة في جدول منفصل "daily_revenue" أو سنأخذها من "orders"
-  // للتبسيط، سنأخذ company_share من الأوردرات المكتملة المدفوعة في هذا التاريخ
-  const getTotalRevenueForDate = async (targetDate: string): Promise<number> => {
+  const distributePartnersProfit = async () => {
     try {
-      // نفترض أن جدول orders يحتوي على company_share و is_paid و status='completed' و date
-      const ordersData = await fetchAPI(`orders?select=company_share&date=eq.${targetDate}&status=eq.completed&is_paid=eq.true`);
-      const total = (ordersData || []).reduce((sum: number, o: any) => sum + (o.company_share || 0), 0);
-      return total;
-    } catch (err) { console.error(err); return 0; }
-  };
-
-  const distributeProfitForDate = async (targetDate: string) => {
-    try {
-      const totalRevenue = await getTotalRevenueForDate(targetDate);
-      if (totalRevenue <= 0) {
-        alert(`⚠️ لا توجد إيرادات (أرباح شركة) ليوم ${targetDate}.`);
-        return;
-      }
-
-      const activePartners = partners.filter(p => p.is_active === true);
-      if (activePartners.length === 0) {
-        alert("⚠️ لا يوجد شركاء نشطون لتوزيع الأرباح.");
-        return;
-      }
-
-      const totalPartnerShares = activePartners.reduce((sum, p) => sum + (Number(p.share_percentage) || 0), 0);
-      if (totalPartnerShares <= 0) {
-        alert("⚠️ إجمالي نسب الشركاء غير صالح.");
-        return;
-      }
-
-      const amountToDistribute = (totalRevenue * totalPartnerShares) / 100;
-      const remainingReserve = totalRevenue - amountToDistribute;
-
-      if (amountToDistribute <= 0) {
-        alert(`⚠️ لا يوجد مبلغ كافٍ للتوزيع.`);
-        return;
-      }
-
-      const confirmMsg = `💰 إجمالي إيرادات يوم ${targetDate}: ${totalRevenue.toLocaleString()} ج.م\n📊 نسبة توزيع الشركاء: ${totalPartnerShares}%\n💰 سيتم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء\n🏦 سيتم إضافة ${remainingReserve.toLocaleString()} ج.م كرصيد احتياطي للخزنة\n⚠️ المصروفات لا تؤثر على هذا التوزيع.\nهل تريد الاستمرار؟`;
-      if (!confirm(confirmMsg)) return;
-
-      // منع التوزيع المزدوج
-      const existingDistributions = await fetchAPI(`cash_ledger?select=id&date=eq.${targetDate}&type=eq.profit_distribution`);
-      if (existingDistributions && existingDistributions.length > 0) {
-        alert(`⚠️ تم توزيع أرباح يوم ${targetDate} مسبقاً. لا يمكن التوزيع مرتين.`);
-        return;
-      }
-
+      const eligibleOrders = orders.filter(o => 
+        o.status === 'completed' && o.is_paid === true && (o.company_share || 0) > 0 && !o.profit_distributed_to_partners
+      );
+      const totalProfit = eligibleOrders.reduce((sum, o) => sum + (o.company_share || 0), 0);
+      if (totalProfit <= 0) { alert("⚠️ لا توجد أوردرات مكتملة ومدفوعة (لم يسبق توزيع أرباحها)."); return; }
+      const activePartners = partners.filter(p => p.is_active);
+      if (activePartners.length === 0) { alert("⚠️ لا يوجد شركاء نشطون لتوزيع الأرباح."); return; }
+      const totalShares = activePartners.reduce((s, p) => s + (Number(p.share_percentage) || 0), 0);
+      if (totalShares <= 0 || totalShares > 100) { alert("⚠️ إجمالي نسب الشركاء غير صالح (يجب أن يكون بين 1 و 100)."); return; }
+      const amountToDistribute = Math.floor((totalProfit * totalShares) / 100);
+      const remaining = totalProfit - amountToDistribute;
+      if (amountToDistribute <= 0) { alert(`⚠️ لا يوجد مبلغ كافٍ للتوزيع (${totalShares}% من ${totalProfit} ج.م = ${amountToDistribute} ج.م).`); return; }
+      if (!confirm(`💰 إجمالي أرباح غير موزعة: ${totalProfit.toLocaleString()} ج.م\n📤 نسبة التصفية: ${totalShares}% (مجموع نسب الشركاء النشطين)\n💰 سيتم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء\n🏦 سيتم إضافة ${remaining.toLocaleString()} ج.م إلى رصيد الخزنة الاحتياطي (لصالح الشركة)\n\nهل تريد الاستمرار؟`)) return;
       let distributedSum = 0;
       for (let i = 0; i < activePartners.length; i++) {
         const partner = activePartners[i];
-        let share = (amountToDistribute * Number(partner.share_percentage)) / totalPartnerShares;
-        if (i === activePartners.length - 1) {
-          share = amountToDistribute - distributedSum;
-        } else {
-          share = Math.floor(share);
-        }
+        let share = i === activePartners.length - 1 ? amountToDistribute - distributedSum : Math.floor((amountToDistribute * partner.share_percentage) / totalShares);
         distributedSum += share;
-
         if (share > 0) {
-          await fetchAPI('cash_ledger', {
-            method: 'POST',
-            body: JSON.stringify({
-              type: 'profit_distribution',
-              amount: share,
-              description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%) - أرباح يوم ${targetDate}`,
-              date: targetDate
-            })
-          });
+          await fetchAPI('cash_ledger', { method: 'POST', body: JSON.stringify({ type: 'profit_distribution', amount: share, description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%) - أرباح من ${eligibleOrders.length} أوردر`, date: new Date().toISOString().split('T')[0] }) });
         }
       }
-
-      // إضافة الرصيد الاحتياطي كـ reserve (هذا هو المبلغ الذي يزيد الخزنة)
-      if (remainingReserve > 0) {
-        const existingReserve = await fetchAPI(`cash_ledger?select=id&date=eq.${targetDate}&type=eq.reserve&description=like=*رصيد احتياطي*`);
-        if (!existingReserve || existingReserve.length === 0) {
-          await fetchAPI('cash_ledger', {
-            method: 'POST',
-            body: JSON.stringify({
-              type: 'reserve',
-              amount: remainingReserve,
-              description: `🏦 رصيد احتياطي للشركة - أرباح يوم ${targetDate}`,
-              date: targetDate
-            })
-          });
-        }
+      if (remaining > 0) {
+        await fetchAPI('cash_ledger', { method: 'POST', body: JSON.stringify({ type: 'reserve', amount: remaining, description: `🏦 رصيد احتياطي للشركة (غير موزع) من أرباح ${eligibleOrders.length} أوردر`, date: new Date().toISOString().split('T')[0] }) });
       }
-
-      await addNotification('توزيع أرباح الشركاء', `✅ تم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء وإضافة ${remainingReserve.toLocaleString()} ج.م للخزنة (أرباح يوم ${targetDate}).`);
-      await fetchCashLedger();
-      await fetchData();
-      alert(`✅ تم التوزيع بنجاح.\n💰 تم توزيع ${amountToDistribute.toLocaleString()} ج.م\n🏦 تم إضافة ${remainingReserve.toLocaleString()} ج.م للخزنة كرصيد احتياطي`);
-    } catch (err) {
-      console.error(err);
-      alert("❌ حدث خطأ أثناء توزيع الأرباح");
-    }
-  };
-
-  const sendDailyReportToPartners = async (targetDate: string) => {
-    try {
-      const entries = await fetchAPI(`cash_ledger?select=*&date=eq.${targetDate}&order=created_at.desc`);
-      if (!entries || entries.length === 0) {
-        alert(`⚠️ لا توجد حركات خزنة ليوم ${targetDate}`);
-        return false;
+      for (const order of eligibleOrders) {
+        await fetchAPI(`orders?id=eq.${order.id}`, { method: 'PATCH', body: JSON.stringify({ profit_distributed_to_partners: true }) });
       }
-
-      let totalExpense = 0, totalProfitDist = 0, totalReserve = 0;
-      const profitDetails = [];
-      for (const entry of entries) {
-        if (entry.type === 'expense') totalExpense += entry.amount;
-        else if (entry.type === 'profit_distribution') {
-          totalProfitDist += entry.amount;
-          profitDetails.push(`• ${entry.description} : ${entry.amount} ج.م`);
-        }
-        else if (entry.type === 'reserve') totalReserve += entry.amount;
-      }
-      // إجمالي الإيرادات = totalReserve + totalProfitDist (لأن reserve هو صافي الإيرادات بعد التوزيع)
-      const totalRevenue = totalReserve + totalProfitDist;
-      const currentBalance = cashBalance;
-
-      const reportText = `📊 *تقرير الخزنة اليومي* 📊
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📅 *التاريخ:* ${targetDate}
-
-💰 *إجمالي الإيرادات (ربح اليوم):* ${totalRevenue.toLocaleString()} ج.م
-💸 *المصروفات (تخصم من الرصيد فقط):* ${totalExpense.toLocaleString()} ج.م
-📤 *توزيع أرباح الشركاء:* ${totalProfitDist.toLocaleString()} ج.م
-🏦 *الرصيد الاحتياطي المضاف:* ${totalReserve.toLocaleString()} ج.م
-✅ *صافي الربح الموزع:* ${totalRevenue.toLocaleString()} ج.م
-💰 *الرصيد الحالي للخزنة:* ${currentBalance.toLocaleString()} ج.م
-
-👥 *تفاصيل توزيع الأرباح:*
-${profitDetails.length ? profitDetails.join('\n') : 'لا توجد توزيعات'}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📞 للاستفسار: 01278885772
-✨ نظام إدارة الصيانة - تقرير يومي`;
-
-      const activePartners = partners.filter(p => p.is_active && p.phone);
-      if (activePartners.length === 0) {
-        alert("⚠️ لا يوجد شركاء نشطون بأرقام هواتف");
-        return false;
-      }
-      if (!confirm(`📋 التقرير التالي سيتم إرساله للشركاء:\n\n${reportText}\n\nهل تريد المتابعة؟`)) return false;
-      for (const partner of activePartners) {
-        let phone = partner.phone.toString().replace(/[^\d]/g, '');
-        if (phone.startsWith('0')) phone = phone.substring(1);
-        if (phone.length === 10) phone = '20' + phone;
-        const message = `🔔 *تقرير يومي - شركاء الصيانة*\n\nمرحباً ${partner.name}،\n\n${reportText}`;
-        const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-        window.open(whatsappUrl, '_blank');
-        await new Promise(resolve => setTimeout(resolve, 800));
-      }
-      await addNotification('إرسال تقرير يومي', `تم إرسال تقرير يوم ${targetDate} إلى ${activePartners.length} شريك`);
-      alert(`✅ تم إرسال التقرير إلى ${activePartners.length} شريك.`);
-      return true;
-    } catch (err) {
-      console.error("فشل إرسال التقرير:", err);
-      alert("❌ حدث خطأ أثناء إرسال التقرير");
-      return false;
-    }
-  };
-
-  const handleDistributeSelectedProfit = async () => {
-    if (!selectedProfitDate) { alert("⚠️ يرجى اختيار التاريخ أولاً."); return; }
-    await distributeProfitForDate(selectedProfitDate);
+      await addNotification('توزيع أرباح الشركاء', `✅ تم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء (${totalShares}% من أرباح ${eligibleOrders.length} أوردر).`);
+      await fetchCashLedger(); await fetchData();
+      alert(`✅ تم التوزيع بنجاح.\n💰 تم توزيع ${amountToDistribute.toLocaleString()} ج.م\n🏦 تم إضافة ${remaining.toLocaleString()} ج.م للخزنة الاحتياطية`);
+    } catch (err) { console.error(err); alert("❌ حدث خطأ أثناء توزيع الأرباح"); }
   };
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
     try {
-      const [ordersData, techsData, notificationsData, partnersData, cashData] = await Promise.all([
-        fetchAPI('orders?select=*&order=created_at.desc'),
-        fetchAPI('technicians?select=*'),
-        fetchAPI('notifications?select=*&order=created_at.desc'),
-        fetchAPI('partners?select=*&order=created_at.desc'),
-        fetchAPI('cash_ledger?select=*&order=date.desc,created_at.desc')
-      ]);
-      setOrders(ordersData || []);
-      setTechnicians(techsData || []);
-      setNotifications(notificationsData || []);
-      setPartners(partnersData || []);
-      setCashLedger(cashData || []);
-      let balance = 0;
-      (cashData || []).forEach((entry: any) => {
-        if (entry.type === 'reserve') balance += entry.amount;
-        else if (entry.type === 'expense' || entry.type === 'profit_distribution') balance -= entry.amount;
-      });
-      setCashBalance(balance);
-      const pending = (ordersData || []).filter(o => o.status === 'pending').length;
-      const inProgress = (ordersData || []).filter(o => o.status === 'in_progress').length;
-      const completed = (ordersData || []).filter(o => o.status === 'completed').length;
-      const cancelled = (ordersData || []).filter(o => o.status === 'cancelled').length;
-      const totalIncome = (ordersData || []).filter(o => o.is_paid).reduce((sum, o) => sum + (o.company_share || 0), 0);
+      const [ordersData, techsData] = await Promise.all([ fetchAPI('orders?select=*&order=created_at.desc'), fetchAPI('technicians?select=*') ]);
+      setOrders(ordersData || []); setTechnicians(techsData || []);
+      const pending = (ordersData || []).filter((o: any) => o.status === 'pending').length;
+      const inProgress = (ordersData || []).filter((o: any) => o.status === 'in-progress').length;
+      const completed = (ordersData || []).filter((o: any) => o.status === 'completed').length;
+      const cancelled = (ordersData || []).filter((o: any) => o.status === 'cancelled').length;
+      const totalIncome = (ordersData || []).reduce((acc: number, o: any) => acc + (o.company_share || 0), 0);
       setStats({ pending, inProgress, completed, cancelled, totalIncome });
-    } catch (err) { console.error(err); }
-    finally { setLoading(false); }
+    } catch (err) { console.error(err); } finally { setLoading(false); }
   }, []);
 
   useEffect(() => {
-    fetchData();
-    syncTechniciansToUsers();
-  }, [fetchData]);
+    addNotification('تسجيل دخول', 'تم تسجيل دخول المدير');
+    fetchData(); fetchNotifications(); fetchCashLedger(); fetchPartners();
+    const interval = setInterval(() => { fetchData(); fetchNotifications(); fetchCashLedger(); }, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
-  // =================== واجهة المستخدم (مطابقة للصورة) ===================
-  return (
-    <div dir="rtl" className="min-h-screen bg-gray-100">
-      <header className="bg-white shadow-md p-4 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <LayoutDashboard className="text-blue-600" />
-          <h1 className="text-xl font-bold">لوحة تحكم المدير</h1>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="text-gray-600">مرحباً، {currentUser?.name || 'المدير'}</span>
-          <button onClick={handleLogout} className="bg-red-500 text-white px-3 py-1 rounded-lg flex items-center gap-1"><LogOut size={18} /> خروج</button>
-        </div>
-      </header>
+  // حساب المبالغ لنموذج إضافة/تعديل الأوردر (يستخدم نسبة الفني)
+  const calculateAmounts = (data: any) => {
+    const total = parseFloat(data.total_amount) || 0;
+    const parts = parseFloat(data.parts_cost) || 0;
+    const transport = parseFloat(data.transport_cost) || 0;
+    const net = total - parts - transport;
+    const selectedTech = technicians.find(t => t.name === data.technician);
+    const technicianPercent = selectedTech?.profit_percentage ?? 50;
+    const technicianShare = Math.round((net * technicianPercent) / 100);
+    const companyShare = net - technicianShare;
+    return { ...data, net_amount: net, company_share: companyShare, technician_share: technicianShare };
+  };
 
-      <div className="flex gap-2 p-4 border-b bg-white overflow-x-auto">
-        <button onClick={() => setActiveTab('orders')} className={`px-4 py-2 rounded-lg ${activeTab === 'orders' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>📋 الأوردرات</button>
-        <button onClick={() => setActiveTab('technicians')} className={`px-4 py-2 rounded-lg ${activeTab === 'technicians' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>👨‍🔧 الفنيين</button>
-        <button onClick={() => setActiveTab('reports')} className={`px-4 py-2 rounded-lg ${activeTab === 'reports' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>📊 التقارير</button>
-        <button onClick={() => setActiveTab('invoicesReview')} className={`px-4 py-2 rounded-lg ${activeTab === 'invoicesReview' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>📄 الفواتير</button>
-        <button onClick={() => setActiveTab('cash')} className={`px-4 py-2 rounded-lg ${activeTab === 'cash' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>💰 الخزنة</button>
-        <button onClick={() => setActiveTab('partners')} className={`px-4 py-2 rounded-lg ${activeTab === 'partners' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>🤝 الشركاء</button>
-        <button onClick={() => setActiveTab('notifications')} className={`px-4 py-2 rounded-lg ${activeTab === 'notifications' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>🔔 الإشعارات ({notifications.length})</button>
-        {userRole === 'admin' && <button onClick={() => setActiveTab('permissions')} className={`px-4 py-2 rounded-lg ${activeTab === 'permissions' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>🔐 الصلاحيات</button>}
-        <button onClick={() => setActiveTab('performance')} className={`px-4 py-2 rounded-lg ${activeTab === 'performance' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>📊 أداء الفنيين</button>
-      </div>
+  useEffect(() => {
+    if (formData.technician) {
+      setFormData(prev => calculateAmounts(prev));
+    }
+  }, [technicians, formData.technician]);
 
-      <div className="p-4">
-        {activeTab === 'cash' && (
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <p className="text-lg">رصيد الخزنة: <span className="font-bold text-green-600">{cashBalance.toLocaleString()} ج.م</span></p>
-            </div>
+  // حساب المبالغ لمودال التصفية (باستخدام البحث المرن)
+  const calculateSettlementAmounts = (data: any, technicianName: string) => {
+    const total = parseFloat(data.total_amount) || 0;
+    const parts = parseFloat(data.parts_cost) || 0;
+    const transport = parseFloat(data.transport_cost) || 0;
+    const net = total - parts - transport;
+    // بحث مرن: بالاسم أو اسم المستخدم، غير حساس لحالة الأحرف
+    const selectedTech = technicians.find(t => 
+      t.name === technicianName || 
+      t.username === technicianName ||
+      t.name.toLowerCase() === technicianName.toLowerCase() ||
+      t.username.toLowerCase() === technicianName.toLowerCase()
+    );
+    const technicianPercent = selectedTech?.profit_percentage ?? 50;
+    const technicianShare = Math.round((net * technicianPercent) / 100);
+    const companyShare = net - technicianShare;
+    return { ...data, net_amount: net, technician_share: technicianShare, company_share: companyShare };
+  };
 
-            <div className="flex justify-between mb-6">
-              <button onClick={() => { setEditingCash(null); setCashForm({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] }); setShowCashModal(true); }} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={18} /> حركة جديدة</button>
-              <button onClick={() => setCashFilterDate('')} className="bg-gray-500 text-white px-4 py-2 rounded-lg">إلغاء الفلتر</button>
-            </div>
+  const handleSettleChange = (field: string, value: string) => {
+    const numValue = parseFloat(value) || 0;
+    const updated = { ...settleForm, [field]: numValue };
+    const calculated = calculateSettlementAmounts(updated, selectedOrder?.technician);
+    setSettleForm(calculated);
+  };
 
-            <div className="mb-8 p-4 border rounded-lg">
-              <h3 className="text-lg font-semibold mb-3">📤 توزيع أرباح الشركاء</h3>
-              <p className="text-sm text-gray-500 mb-3">اختر التاريخ ثم اضغط زر التوزيع (يتم توزيع صافي ربح اليوم بنسبة الشركاء)</p>
-              <div className="flex flex-wrap items-end gap-4">
-                <div><input type="date" value={selectedProfitDate} onChange={(e) => setSelectedProfitDate(e.target.value)} className="border p-2 rounded" /></div>
-                <button onClick={handleDistributeSelectedProfit} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><DollarSign size={18} /> توزيع أرباح التاريخ المحدد</button>
-              </div>
-            </div>
+  const submitSettlement = async () => {
+    if (!selectedOrder) return;
+    await updateOrderStatus(selectedOrder.id, 'completed', settleForm);
+    setShowSettleModal(false);
+    setSelectedOrder(null);
+  };
 
-            <div className="mb-8 p-4 border rounded-lg">
-              <h3 className="text-lg font-semibold mb-3">📨 إرسال تقرير الخزنة للشركاء</h3>
-              <p className="text-sm text-gray-500 mb-3">اختر التاريخ ثم اضغط زر الإرسال (يفتح واتساب لكل شريك)</p>
-              <div className="flex flex-wrap items-end gap-4">
-                <div><input type="date" value={reportDate} onChange={(e) => setReportDate(e.target.value)} className="border p-2 rounded" /></div>
-                <button onClick={() => sendDailyReportToPartners(reportDate)} className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Send size={18} /> إرسال تقرير التاريخ المحدد</button>
-              </div>
-            </div>
+  const handleFormChange = (field: string, value: any) => {
+    if (field === 'device_type') { if (value === 'other') { setIsOtherDevice(true); setFormData({ ...formData, device_type: '' }); return; } else setIsOtherDevice(false); }
+    if (field === 'brand') { if (value === 'other') { setIsOtherBrand(true); setFormData({ ...formData, brand: '' }); return; } else setIsOtherBrand(false); }
+    const updated = { ...formData, [field]: value };
+    setFormData(calculateAmounts(updated));
+  };
 
-            <div className="overflow-x-auto">
-              <table className="w-full border">
-                <thead className="bg-gray-100">
-                  <tr><th className="p-2 border">التاريخ</th><th className="p-2 border">النوع</th><th className="p-2 border">المبلغ</th><th className="p-2 border">الوصف</th><th className="p-2 border">إجراءات</th></tr>
-                </thead>
-                <tbody>
-                  {cashLedger.map(entry => (
-                    <tr key={entry.id}>
-                      <td className="p-2 border">{entry.date}</td>
-                      <td className="p-2 border">{entry.type === 'expense' ? '💸 مصروف' : entry.type === 'profit_distribution' ? '📤 توزيع أرباح' : '🏦 رصيد احتياطي'}</td>
-                      <td className="p-2 border">{entry.amount.toLocaleString()} ج.م</td>
-                      <td className="p-2 border">{entry.description}</td>
-                      <td className="p-2 border">{canEditDelete() && <button onClick={() => deleteCashEntry(entry.id)} className="text-red-500"><Trash2 size={18} /></button>}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {activeTab !== 'cash' && (
-          <div className="bg-white p-4 rounded shadow">
-            <p className="text-gray-500">(محتويات التبويبات الأخرى - أضف دوال إنشاء وتعديل الأوردرات والفنيين من ملفك الأصلي)</p>
-          </div>
-        )}
-      </div>
-
-      {showCashModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96">
-            <h3 className="text-xl font-bold mb-4">{editingCash ? 'تعديل حركة' : 'إضافة حركة جديدة'}</h3>
-            <form onSubmit={addCashEntry}>
-              <select value={cashForm.type} onChange={(e) => setCashForm({ ...cashForm, type: e.target.value })} className="w-full border p-2 mb-3 rounded" required>
-                <option value="expense">مصروف</option>
-                <option value="income">دخل (سيُحول تلقائياً إلى رصيد احتياطي)</option>
-              </select>
-              <input type="number" placeholder="المبلغ" value={cashForm.amount} onChange={(e) => setCashForm({ ...cashForm, amount: parseFloat(e.target.value) })} className="w-full border p-2 mb-3 rounded" required />
-              <input type="text" placeholder="الوصف" value={cashForm.description} onChange={(e) => setCashForm({ ...cashForm, description: e.target.value })} className="w-full border p-2 mb-3 rounded" required />
-              <input type="date" value={cashForm.date} onChange={(e) => setCashForm({ ...cashForm, date: e.target.value })} className="w-full border p-2 mb-3 rounded" required />
-              <div className="flex gap-2">
-                <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded flex-1">حفظ</button>
-                <button type="button" onClick={() => setShowCashModal(false)} className="bg-gray-300 px-4 py-2 rounded">إلغاء</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+  const sendWhatsAppToCustomer = (order: any, newStatus: string) => {
+    const phone = formatPhoneForWhatsApp(order.phone);
+    if (!phone) return;
+    let statusMessage = "";
+    switch (newStatus) {
+      case 'in-progress': statusMessage = "🔧 تم بدء العمل على طلبك بواسطة الفني."; break;
+      case 'inspected': statusMessage = "🔍 تم الكشف على جهازك. سيتم إبلاغك بالخطوات التالية."; break;
+      case 'completed': statusMessage = "✅ تم إكمال طلب الصيانة بنجاح. شكراً لثقتك بنا!"
