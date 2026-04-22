@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Toaster } from "sonner"; // ✅ استيراد صحيح من الحزمة
+import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Login from "./pages/LoginPage";
 import TechPortal from "./pages/TechnicianPortal";
@@ -8,7 +8,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { EnhancedNotificationProvider } from "./components/EnhancedNotificationSystem";
+import EnhancedNotificationProvider from "./components/EnhancedNotificationSystem"; // ✅ استيراد افتراضي
 import Home from "./pages/Home";
 import SamsungService from "./pages/SamsungService";
 import LGService from "./pages/LGService";
