@@ -1,11 +1,10 @@
 import { useEffect } from "react";
-import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Login from "./pages/LoginPage";
 import TechPortal from "./pages/TechnicianPortal";
 import DataEntry from "./pages/DataEntryPage";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { EnhancedNotificationProvider } from "./components/EnhancedNotificationSystem";
@@ -26,28 +25,36 @@ import ProtectedOrders from "./components/ProtectedOrders";
 import InvoicePage from "./pages/InvoicePage";
 import { Phone, MessageCircle } from "lucide-react";
 
+const PUBLIC_PATHS = [
+  "/", "/login", "/invoice",
+  "/samsung-service", "/lg-service", "/sharp-service",
+  "/toshiba-service", "/zanussi-service", "/unionaire-service",
+  "/fresh-service", "/white-whale-service", "/ariston-service",
+  "/beko-service", "/hoover-service", "/indesit-service"
+];
+
 function Router() {
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/samsung-service"} component={SamsungService} />
-      <Route path={"/lg-service"} component={LGService} />
-      <Route path={"/sharp-service"} component={SharpService} />
-      <Route path={"/toshiba-service"} component={ToshibaService} />
-      <Route path={"/zanussi-service"} component={ZanussiService} />
-      <Route path={"/unionaire-service"} component={UnionaireService} />
-      <Route path={"/fresh-service"} component={FreshService} />
-      <Route path={"/white-whale-service"} component={WhiteWhaleService} />
-      <Route path={"/ariston-service"} component={AristonService} />
-      <Route path={"/beko-service"} component={BekoService} />
-      <Route path={"/hoover-service"} component={HooverService} />
-      <Route path={"/indesit-service"} component={IndesitService} />
-      <Route path={"/orders"} component={ProtectedOrders} />
-      <Route path={"/login"} component={Login} />
-      <Route path={"/tech-portal"} component={TechPortal} />
-      <Route path={"/data-entry"} component={DataEntry} />
-      <Route path={"/invoice"} component={InvoicePage} />
-      <Route path={"/404"} component={NotFound} />
+      <Route path="/" component={Home} />
+      <Route path="/samsung-service" component={SamsungService} />
+      <Route path="/lg-service" component={LGService} />
+      <Route path="/sharp-service" component={SharpService} />
+      <Route path="/toshiba-service" component={ToshibaService} />
+      <Route path="/zanussi-service" component={ZanussiService} />
+      <Route path="/unionaire-service" component={UnionaireService} />
+      <Route path="/fresh-service" component={FreshService} />
+      <Route path="/white-whale-service" component={WhiteWhaleService} />
+      <Route path="/ariston-service" component={AristonService} />
+      <Route path="/beko-service" component={BekoService} />
+      <Route path="/hoover-service" component={HooverService} />
+      <Route path="/indesit-service" component={IndesitService} />
+      <Route path="/orders" component={ProtectedOrders} />
+      <Route path="/login" component={Login} />
+      <Route path="/tech-portal" component={TechPortal} />
+      <Route path="/data-entry" component={DataEntry} />
+      <Route path="/invoice" component={InvoicePage} />
+      <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -67,9 +74,18 @@ function FloatingButtons() {
 }
 
 function AppContent() {
+  const [location] = useLocation();
+  const isPublicPath = PUBLIC_PATHS.includes(location);
+
   return (
     <>
-      <Router />
+      {isPublicPath ? (
+        <Router />
+      ) : (
+        <EnhancedNotificationProvider>
+          <Router />
+        </EnhancedNotificationProvider>
+      )}
       <FloatingButtons />
     </>
   );
@@ -77,20 +93,10 @@ function AppContent() {
 
 function App() {
   useEffect(() => {
-    const publicPaths = [
-      "/", "/login", "/invoice",
-      "/samsung-service", "/lg-service", "/sharp-service",
-      "/toshiba-service", "/zanussi-service", "/unionaire-service",
-      "/fresh-service", "/white-whale-service", "/ariston-service",
-      "/beko-service", "/hoover-service", "/indesit-service"
-    ];
-
     const currentPath = window.location.pathname;
     const userRole = localStorage.getItem("userRole");
 
-    if (publicPaths.includes(currentPath)) {
-      return;
-    }
+    if (PUBLIC_PATHS.includes(currentPath)) return;
 
     if (!userRole) {
       window.location.href = "/login";
@@ -108,14 +114,11 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <EnhancedNotificationProvider>
-        <ThemeProvider defaultTheme="light">
-          <TooltipProvider>
-            {/* <Toaster /> */}  {/* ✅ تم تعطيل Toaster */}
-            <AppContent />
-          </TooltipProvider>
-        </ThemeProvider>
-      </EnhancedNotificationProvider>
+      <ThemeProvider defaultTheme="light">
+        <TooltipProvider>
+          <AppContent />
+        </TooltipProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }
