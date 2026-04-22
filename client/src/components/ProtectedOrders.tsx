@@ -292,8 +292,7 @@ export default function ProtectedOrders() {
       const totalIncome = (incomeEntries || []).reduce((sum: number, entry: any) => sum + (entry.amount || 0), 0);
       const expenseEntries = await fetchAPI(`cash_ledger?select=amount&date=eq.${targetDate}&type=eq.expense`);
       const totalExpense = (expenseEntries || []).reduce((sum: number, entry: any) => sum + (entry.amount || 0), 0);
-      const netProfit = totalIncome - totalExpense;
-      if (netProfit <= 0) {
+      const netProfit = totalIncome;
         alert(`⚠️ لا توجد أرباح صافية ليوم ${targetDate}.`);
         return;
       }
