@@ -8,7 +8,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { NotificationProvider } from "./components/NotificationSystem"; // ✅ استيراد صحيح من الملف الموجود
+import EnhancedNotificationProvider from "./components/EnhancedNotificationSystem";
 import Home from "./pages/Home";
 import SamsungService from "./pages/SamsungService";
 import LGService from "./pages/LGService";
@@ -106,14 +106,14 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <NotificationProvider>
+      <EnhancedNotificationProvider>
         <ThemeProvider defaultTheme="light">
           <TooltipProvider>
             <Toaster position="top-center" richColors />
             <AppContent />
           </TooltipProvider>
         </ThemeProvider>
-      </NotificationProvider>
+      </EnhancedNotificationProvider>
     </ErrorBoundary>
   );
 }
