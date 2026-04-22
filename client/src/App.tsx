@@ -8,7 +8,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import EnhancedNotificationProvider from "./components/EnhancedNotificationSystem";
+import { EnhancedNotificationProvider } from "./components/EnhancedNotificationSystem"; // ✅ named import
 import Home from "./pages/Home";
 import SamsungService from "./pages/SamsungService";
 import LGService from "./pages/LGService";
