@@ -20,7 +20,7 @@ export function useNotification() {
   return context;
 }
 
-export function NotificationProvider({ children }: { children: React.ReactNode }) {
+export function EnhancedNotificationProvider({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const addNotification = useCallback((notification: Omit<Notification, 'id' | 'timestamp'>) => {
