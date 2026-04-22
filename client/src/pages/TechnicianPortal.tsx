@@ -44,7 +44,7 @@ export default function TechnicianPortal() {
   const [actionType, setActionType] = useState<'cancel' | 'inspect' | 'defer' | 'note'>('note');
   const [actionValue, setActionValue] = useState("");
   const [currentOrder, setCurrentOrder] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'orders' | 'performance'>('orders'); // ✅ إضافة تبويب الأداء
+  const [activeTab, setActiveTab] = useState<'orders' | 'performance'>('orders');
   
   const [technicianPercentage, setTechnicianPercentage] = useState(50);
   const [settleForm, setSettleForm] = useState({
@@ -74,7 +74,6 @@ export default function TechnicianPortal() {
     }
   }, []);
 
-  // دالة إخفاء رقم الهاتف
   const isPhoneHidden = (order: any) => {
     return order.status === 'completed' || order.status === 'cancelled' || order.status === 'inspected';
   };
@@ -154,10 +153,8 @@ export default function TechnicianPortal() {
     return () => clearInterval(interval);
   }, [fetchData, fetchTechnicianPercentage, isActive]);
 
-  // Realtime subscription
   useEffect(() => {
     if (!techName) return;
-    
     const subscription = supabase
       .channel('orders-channel')
       .on(
@@ -171,7 +168,6 @@ export default function TechnicianPortal() {
         (payload) => {
           console.log('تغيير في الأوردرات:', payload);
           fetchData();
-          
           if (payload.eventType === 'INSERT') {
             addNotification({
               type: 'critical',
@@ -190,10 +186,7 @@ export default function TechnicianPortal() {
         }
       )
       .subscribe();
-    
-    return () => {
-      supabase.removeChannel(subscription);
-    };
+    return () => { supabase.removeChannel(subscription); };
   }, [techName, addNotification, fetchData]);
 
   const updateStatus = async (id: number, newStatus: string, extraData = {}) => {
@@ -318,7 +311,6 @@ export default function TechnicianPortal() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-2 border-b border-slate-700 px-4 pt-4 max-w-4xl mx-auto">
         <button onClick={() => setActiveTab('orders')} className={`px-4 py-2 rounded-t-lg text-sm font-medium transition ${activeTab === 'orders' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>
           📋 الأوردرات
@@ -329,7 +321,6 @@ export default function TechnicianPortal() {
       </div>
 
       <main className="max-w-4xl mx-auto p-4 space-y-5">
-        {/* تبويب الأوردرات */}
         {activeTab === 'orders' && (
           <>
             <div className="grid grid-cols-3 gap-3">
@@ -377,9 +368,14 @@ export default function TechnicianPortal() {
                       )}
 
                       {order.status === 'in-progress' && (
-                        <button onClick={() => { setSelectedOrderForActions(order); setShowActionsModal(true); }} className="flex-1 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1 shadow-lg shadow-orange-900/20">
-                          <FileCheck className="w-4 h-4" /> إجراءات
-                        </button>
+                        <>
+                          <button onClick={() => { setSelectedOrderForActions(order); setShowActionsModal(true); }} className="flex-1 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1 shadow-lg shadow-orange-900/20">
+                            <FileCheck className="w-4 h-4" /> إجراءات
+                          </button>
+                          <button onClick={() => openSettleModal(order)} className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1 shadow-lg shadow-green-900/20">
+                            <DollarSign className="w-4 h-4" /> تصفية الأوردر
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -390,13 +386,11 @@ export default function TechnicianPortal() {
           </>
         )}
 
-        {/* تبويب أداء الفني */}
         {activeTab === 'performance' && (
           <TechnicianPerformance technicians={[{ name: techName }]} orders={orders} />
         )}
       </main>
 
-      {/* مودال الإجراءات السريعة */}
       {showActionsModal && selectedOrderForActions && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md">
@@ -411,7 +405,6 @@ export default function TechnicianPortal() {
         </div>
       )}
 
-      {/* مودال الإجراء الفردي (كشف/إلغاء/تأجيل/ملاحظة) */}
       {showActionModal && currentOrder && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md">
@@ -433,7 +426,6 @@ export default function TechnicianPortal() {
         </div>
       )}
 
-      {/* مودال تصفية الأوردر (إنهاء) */}
       {showSettleModal && selectedOrder && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md">
