@@ -285,140 +285,88 @@ export default function ProtectedOrders() {
     } catch (err) { alert(`❌ حدث خطأ في الاتصال: ${err.message}`); return false; }
   };
 
-  // دالة توزيع أرباح تاريخ محدد (مع منع تكرار reserve)
+  // ✅ الدالة الصحيحة لتوزيع أرباح تاريخ محدد (بدون تكرار أو أخطاء)
   const distributeProfitForDate = async (targetDate: string) => {
-  try {
-    const incomeEntries = await fetchAPI(`cash_ledger?select=amount&date=eq.${targetDate}&type=eq.income`);
-    const totalIncome = (incomeEntries || []).reduce((sum, entry) => sum + (entry.amount || 0), 0);
-    const netProfit = totalIncome; // ✅ المصروفات لا تؤثر على الربح
+    try {
+      const incomeEntries = await fetchAPI(`cash_ledger?select=amount&date=eq.${targetDate}&type=eq.income`);
+      const totalIncome = (incomeEntries || []).reduce((sum, entry) => sum + (entry.amount || 0), 0);
+      const netProfit = totalIncome; // ✅ المصروفات لا تؤثر على الربح
 
-    if (netProfit <= 0) {
-      alert(`⚠️ لا توجد أرباح ليوم ${targetDate}.`);
-      return;
-    }
-
-    const activePartners = partners.filter(p => p.is_active === true);
-    if (activePartners.length === 0) {
-      alert("⚠️ لا يوجد شركاء نشطون.");
-      return;
-    }
-
-    const totalPartnerShares = activePartners.reduce((sum, p) => sum + (Number(p.share_percentage) || 0), 0);
-    if (totalPartnerShares <= 0) {
-      alert("⚠️ إجمالي نسب الشركاء غير صالح.");
-      return;
-    }
-
-    const amountToDistribute = (netProfit * totalPartnerShares) / 100;
-    const remainingReserve = netProfit - amountToDistribute;
-
-    if (amountToDistribute <= 0) {
-      alert("⚠️ لا يوجد مبلغ كافٍ للتوزيع.");
-      return;
-    }
-
-    if (!confirm(`💰 أرباح يوم ${targetDate}: ${netProfit.toLocaleString()} ج.م\n📤 نسبة التوزيع: ${totalPartnerShares}%\n💰 سيتم توزيع ${amountToDistribute.toLocaleString()} ج.م\n🏦 سيتم إضافة ${remainingReserve.toLocaleString()} ج.م احتياطي\nهل تريد الاستمرار؟`)) return;
-
-    const existingDistributions = await fetchAPI(`cash_ledger?select=id&date=eq.${targetDate}&type=eq.profit_distribution`);
-    if (existingDistributions && existingDistributions.length > 0) {
-      alert("⚠️ تم التوزيع مسبقاً.");
-      return;
-    }
-
-    let distributedSum = 0;
-    for (let i = 0; i < activePartners.length; i++) {
-      const partner = activePartners[i];
-      let share = (amountToDistribute * partner.share_percentage) / totalPartnerShares;
-      if (i === activePartners.length - 1) share = amountToDistribute - distributedSum;
-      else share = Math.floor(share);
-      distributedSum += share;
-      if (share > 0) {
-        await fetchAPI('cash_ledger', {
-          method: 'POST',
-          body: JSON.stringify({
-            type: 'profit_distribution',
-            amount: share,
-            description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%) - أرباح يوم ${targetDate}`,
-            date: targetDate
-          })
-        });
+      if (netProfit <= 0) {
+        alert(`⚠️ لا توجد أرباح ليوم ${targetDate}.`);
+        return;
       }
-    }
 
-    if (remainingReserve > 0) {
-      const existingReserve = await fetchAPI(`cash_ledger?select=id&date=eq.${targetDate}&type=eq.reserve`);
-      if (!existingReserve || existingReserve.length === 0) {
-        await fetchAPI('cash_ledger', {
-          method: 'POST',
-          body: JSON.stringify({
-            type: 'reserve',
-            amount: remainingReserve,
-            description: `🏦 رصيد احتياطي - أرباح يوم ${targetDate}`,
-            date: targetDate
-          })
-        });
+      const activePartners = partners.filter(p => p.is_active === true);
+      if (activePartners.length === 0) {
+        alert("⚠️ لا يوجد شركاء نشطون.");
+        return;
       }
-    }
 
-    await addNotification('توزيع أرباح', `✅ تم توزيع ${amountToDistribute.toLocaleString()} ج.م`);
-    await fetchCashLedger();
-    await fetchData();
-    alert(`✅ تم التوزيع.\n💰 وزع: ${amountToDistribute.toLocaleString()} ج.م\n🏦 احتياطي: ${remainingReserve.toLocaleString()} ج.م`);
-  } catch (err) {
-    console.error(err);
-    alert("❌ حدث خطأ أثناء التوزيع");
-  }
-};
+      const totalPartnerShares = activePartners.reduce((sum, p) => sum + (Number(p.share_percentage) || 0), 0);
+      if (totalPartnerShares <= 0) {
+        alert("⚠️ إجمالي نسب الشركاء غير صالح.");
+        return;
+      }
 
-    if (remainingReserve > 0) {
-      const existingReserve = await fetchAPI(`cash_ledger?select=id&date=eq.${targetDate}&type=eq.reserve`);
-      if (!existingReserve || existingReserve.length === 0) {
-        await fetchAPI('cash_ledger', {
-          method: 'POST',
-          body: JSON.stringify({
-            type: 'reserve',
-            amount: remainingReserve,
-            description: `🏦 رصيد احتياطي - أرباح يوم ${targetDate}`,
-            date: targetDate
-          })
-        });
+      const amountToDistribute = (netProfit * totalPartnerShares) / 100;
+      const remainingReserve = netProfit - amountToDistribute;
 
+      if (amountToDistribute <= 0) {
+        alert("⚠️ لا يوجد مبلغ كافٍ للتوزيع.");
+        return;
+      }
 
-    await addNotification('توزيع أرباح', `✅ تم توزيع ${amountToDistribute.toLocaleString()} ج.م`);
-    await fetchCashLedger();
-    await fetchData();
-    alert(`✅ تم التوزيع.\n💰 وزع: ${amountToDistribute.toLocaleString()} ج.م\n🏦 احتياطي: ${remainingReserve.toLocaleString()} ج.م`);
-  } catch (err) {
-    console.error(err);
-    alert("❌ حدث خطأ أثناء التوزيع");
-  }
-};
-      
-      // التحقق من وجود reserve مسبقاً (لمنع التكرار)
-      if (remaining > 0) {
+      if (!confirm(`💰 أرباح يوم ${targetDate}: ${netProfit.toLocaleString()} ج.م\n📤 نسبة التوزيع: ${totalPartnerShares}%\n💰 سيتم توزيع ${amountToDistribute.toLocaleString()} ج.م\n🏦 سيتم إضافة ${remainingReserve.toLocaleString()} ج.م احتياطي\nهل تريد الاستمرار؟`)) return;
+
+      const existingDistributions = await fetchAPI(`cash_ledger?select=id&date=eq.${targetDate}&type=eq.profit_distribution`);
+      if (existingDistributions && existingDistributions.length > 0) {
+        alert("⚠️ تم التوزيع مسبقاً.");
+        return;
+      }
+
+      let distributedSum = 0;
+      for (let i = 0; i < activePartners.length; i++) {
+        const partner = activePartners[i];
+        let share = (amountToDistribute * partner.share_percentage) / totalPartnerShares;
+        if (i === activePartners.length - 1) share = amountToDistribute - distributedSum;
+        else share = Math.floor(share);
+        distributedSum += share;
+        if (share > 0) {
+          await fetchAPI('cash_ledger', {
+            method: 'POST',
+            body: JSON.stringify({
+              type: 'profit_distribution',
+              amount: share,
+              description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%) - أرباح يوم ${targetDate}`,
+              date: targetDate
+            })
+          });
+        }
+      }
+
+      if (remainingReserve > 0) {
         const existingReserve = await fetchAPI(`cash_ledger?select=id&date=eq.${targetDate}&type=eq.reserve`);
         if (!existingReserve || existingReserve.length === 0) {
           await fetchAPI('cash_ledger', {
             method: 'POST',
             body: JSON.stringify({
               type: 'reserve',
-              amount: remaining,
-              description: `🏦 رصيد احتياطي للشركة - أرباح يوم ${targetDate}`,
+              amount: remainingReserve,
+              description: `🏦 رصيد احتياطي - أرباح يوم ${targetDate}`,
               date: targetDate
             })
           });
-        } else {
-          console.log(`⚠️ reserve موجود مسبقاً ليوم ${targetDate}، تم تخطي الإضافة.`);
         }
       }
-      
-      await addNotification('توزيع أرباح الشركاء', `✅ تم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء (أرباح يوم ${targetDate}).`);
+
+      await addNotification('توزيع أرباح', `✅ تم توزيع ${amountToDistribute.toLocaleString()} ج.م`);
       await fetchCashLedger();
       await fetchData();
-      alert(`✅ تم التوزيع بنجاح.\n💰 تم توزيع ${amountToDistribute.toLocaleString()} ج.م\n🏦 تم إضافة ${remaining.toLocaleString()} ج.م للخزنة كرصيد احتياطي`);
+      alert(`✅ تم التوزيع.\n💰 وزع: ${amountToDistribute.toLocaleString()} ج.م\n🏦 احتياطي: ${remainingReserve.toLocaleString()} ج.م`);
     } catch (err) {
       console.error(err);
-      alert("❌ حدث خطأ أثناء توزيع الأرباح");
+      alert("❌ حدث خطأ أثناء التوزيع");
     }
   };
 
