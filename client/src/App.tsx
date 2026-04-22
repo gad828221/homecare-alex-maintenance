@@ -1,13 +1,14 @@
 import { useEffect } from "react";
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Login from "./pages/LoginPage";
 import TechPortal from "./pages/TechnicianPortal";
 import DataEntry from "./pages/DataEntryPage";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch, useLocation } from "wouter";
+import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { EnhancedNotificationProvider } from "./components/EnhancedNotificationSystem";
+import { NotificationProvider } from "./components/NotificationSystem";
 import Home from "./pages/Home";
 import SamsungService from "./pages/SamsungService";
 import LGService from "./pages/LGService";
@@ -25,36 +26,28 @@ import ProtectedOrders from "./components/ProtectedOrders";
 import InvoicePage from "./pages/InvoicePage";
 import { Phone, MessageCircle } from "lucide-react";
 
-const PUBLIC_PATHS = [
-  "/", "/login", "/invoice",
-  "/samsung-service", "/lg-service", "/sharp-service",
-  "/toshiba-service", "/zanussi-service", "/unionaire-service",
-  "/fresh-service", "/white-whale-service", "/ariston-service",
-  "/beko-service", "/hoover-service", "/indesit-service"
-];
-
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/samsung-service" component={SamsungService} />
-      <Route path="/lg-service" component={LGService} />
-      <Route path="/sharp-service" component={SharpService} />
-      <Route path="/toshiba-service" component={ToshibaService} />
-      <Route path="/zanussi-service" component={ZanussiService} />
-      <Route path="/unionaire-service" component={UnionaireService} />
-      <Route path="/fresh-service" component={FreshService} />
-      <Route path="/white-whale-service" component={WhiteWhaleService} />
-      <Route path="/ariston-service" component={AristonService} />
-      <Route path="/beko-service" component={BekoService} />
-      <Route path="/hoover-service" component={HooverService} />
-      <Route path="/indesit-service" component={IndesitService} />
-      <Route path="/orders" component={ProtectedOrders} />
-      <Route path="/login" component={Login} />
-      <Route path="/tech-portal" component={TechPortal} />
-      <Route path="/data-entry" component={DataEntry} />
-      <Route path="/invoice" component={InvoicePage} />
-      <Route path="/404" component={NotFound} />
+      <Route path={"/"} component={Home} />
+      <Route path={"/samsung-service"} component={SamsungService} />
+      <Route path={"/lg-service"} component={LGService} />
+      <Route path={"/sharp-service"} component={SharpService} />
+      <Route path={"/toshiba-service"} component={ToshibaService} />
+      <Route path={"/zanussi-service"} component={ZanussiService} />
+      <Route path={"/unionaire-service"} component={UnionaireService} />
+      <Route path={"/fresh-service"} component={FreshService} />
+      <Route path={"/white-whale-service"} component={WhiteWhaleService} />
+      <Route path={"/ariston-service"} component={AristonService} />
+      <Route path={"/beko-service"} component={BekoService} />
+      <Route path={"/hoover-service"} component={HooverService} />
+      <Route path={"/indesit-service"} component={IndesitService} />
+      <Route path={"/orders"} component={ProtectedOrders} />
+      <Route path={"/login"} component={Login} />
+      <Route path={"/tech-portal"} component={TechPortal} />
+      <Route path={"/data-entry"} component={DataEntry} />
+      <Route path={"/invoice"} component={InvoicePage} />
+      <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -74,18 +67,9 @@ function FloatingButtons() {
 }
 
 function AppContent() {
-  const [location] = useLocation();
-  const isPublicPath = PUBLIC_PATHS.includes(location);
-
   return (
     <>
-      {isPublicPath ? (
-        <Router />
-      ) : (
-        <EnhancedNotificationProvider>
-          <Router />
-        </EnhancedNotificationProvider>
-      )}
+      <Router />
       <FloatingButtons />
     </>
   );
@@ -93,16 +77,30 @@ function AppContent() {
 
 function App() {
   useEffect(() => {
+    // الصفحات التي لا تحتاج تسجيل دخول (عامة)
+    const publicPaths = [
+      "/", "/login", "/invoice",
+      "/samsung-service", "/lg-service", "/sharp-service",
+      "/toshiba-service", "/zanussi-service", "/unionaire-service",
+      "/fresh-service", "/white-whale-service", "/ariston-service",
+      "/beko-service", "/hoover-service", "/indesit-service"
+    ];
+
     const currentPath = window.location.pathname;
     const userRole = localStorage.getItem("userRole");
 
-    if (PUBLIC_PATHS.includes(currentPath)) return;
+    // إذا كان المسار عام، لا تتدخل (اترك الصفحة تفتح)
+    if (publicPaths.includes(currentPath)) {
+      return;
+    }
 
+    // إذا لم يكن مسجلاً دخول، اذهب لتسجيل الدخول
     if (!userRole) {
       window.location.href = "/login";
       return;
     }
 
+    // إذا كان مسجلاً، لكنه يحاول الوصول لصفحة لا تناسب دوره، وجهه للصفحة الصحيحة
     if (userRole === "tech" && currentPath !== "/tech-portal") {
       window.location.href = "/tech-portal";
     } else if (userRole === "data-entry" && currentPath !== "/data-entry") {
@@ -114,11 +112,14 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="light">
-        <TooltipProvider>
-          <AppContent />
-        </TooltipProvider>
-      </ThemeProvider>
+      <NotificationProvider>
+        <ThemeProvider defaultTheme="light">
+          <TooltipProvider>
+            <Toaster />
+            <AppContent />
+          </TooltipProvider>
+        </ThemeProvider>
+      </NotificationProvider>
     </ErrorBoundary>
   );
 }
