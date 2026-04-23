@@ -48,15 +48,26 @@ export default function AdminPermissions() {
     } catch (err) { console.error('خطأ في جلب المستخدمين:', err); } finally { setLoading(false); }
   };
 
+  // ✅ دالة حفظ وتعديل المستخدم (مع تحسين معالجة الأخطاء والتأكد من تحديث الدور)
   const handleSaveUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.username || !formData.name || !formData.password) { alert('⚠️ يرجى ملء جميع الحقول المطلوبة'); return; }
+    if (!formData.username || !formData.name || !formData.password) {
+      alert('⚠️ يرجى ملء جميع الحقول المطلوبة');
+      return;
+    }
+    const body = {
+      username: formData.username,
+      name: formData.name,
+      password: formData.password,
+      role: formData.role,
+      is_active: formData.is_active
+    };
     try {
       if (editingUser) {
         const response = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${editingUser.id}`, {
           method: 'PATCH',
           headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
+          body: JSON.stringify(body)
         });
         if (!response.ok) {
           const errorText = await response.text();
@@ -64,13 +75,17 @@ export default function AdminPermissions() {
         }
         alert('✅ تم تحديث المستخدم بنجاح');
       } else {
-        await fetchAPI('users', { method: 'POST', body: JSON.stringify(formData) });
+        await fetchAPI('users', { method: 'POST', body: JSON.stringify(body) });
         alert('✅ تم إضافة المستخدم بنجاح');
       }
-      setShowModal(false); setEditingUser(null);
+      setShowModal(false);
+      setEditingUser(null);
       setFormData({ username: '', name: '', password: '', role: 'user', is_active: true });
-      fetchUsers();
-    } catch (err: any) { console.error('خطأ في حفظ المستخدم:', err); alert(`❌ فشل حفظ المستخدم: ${err.message}`); }
+      fetchUsers(); // تحديث القائمة
+    } catch (err: any) {
+      console.error('خطأ في حفظ المستخدم:', err);
+      alert(`❌ فشل حفظ المستخدم: ${err.message}`);
+    }
   };
 
   const handleDeleteUser = async (id: number, name: string) => {
@@ -178,4 +193,4 @@ export default function AdminPermissions() {
       )}
     </div>
   );
-         }
+}
