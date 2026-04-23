@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { LogIn, User, Lock, AlertCircle, Wrench, LayoutDashboard } from 'lucide-react';
-import OneSignal from 'react-onesignal';
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -12,19 +11,19 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // ✅ دالة تهيئة OneSignal وربط المستخدم
+  // ✅ دالة تهيئة OneSignal ديناميكية (لتجنب أخطاء البناء إذا كانت الحزمة غير مثبتة)
   const initOneSignal = async (userId: string) => {
     try {
+      const OneSignal = (await import('react-onesignal')).default;
       await OneSignal.init({
-        appId: "4e110360-2a24-4aa3-be39-050c0ed9a3e0", // ضع App ID الخاص بك هنا
-        allowLocalhostAsSecureOrigin: true, // للتجربة على localhost
+        appId: "4e110360-2a24-4aa3-be39-050c0ed9a3e0",
+        allowLocalhostAsSecureOrigin: true,
       });
       console.log("OneSignal initialized");
       await OneSignal.login(userId);
-      console.log(`User ${userId} logged into OneSignal`);
-      await OneSignal.Slidedown.promptPush(); // طلب الإذن
+      await OneSignal.Slidedown.promptPush();
     } catch (err) {
-      console.error("OneSignal init error", err);
+      console.error("OneSignal init error (library may not be installed):", err);
     }
   };
 
@@ -58,7 +57,7 @@ export default function Login() {
           }));
           localStorage.setItem('userRole', user.role);
           
-          // ✅ تهيئة OneSignal للمستخدم الإداري
+          // محاولة تهيئة OneSignal (لن تؤثر على سير العمل إذا فشلت)
           await initOneSignal(user.id.toString());
           
           window.location.href = user.role === 'data-entry' ? '/data-entry' : '/orders';
@@ -91,7 +90,6 @@ export default function Login() {
           localStorage.setItem('userRole', 'tech');
           localStorage.setItem('techName', tech.name);
           
-          // ✅ تهيئة OneSignal للفني
           await initOneSignal(`tech_${tech.id}`);
           
           window.location.href = '/tech-portal';
