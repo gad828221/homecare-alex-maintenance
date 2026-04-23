@@ -11,10 +11,19 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install git-filter-repo
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git-filter-repo
+
       - name: Remove node_modules from history
         run: |
           git filter-repo --path client/node_modules --invert-paths --force
 
-      - name: Push cleaned history
+      - name: Remove dist from history
+        run: |
+          git filter-repo --path client/dist --invert-paths --force
+
+      - name: Force push cleaned history
         run: |
           git push --force --all
