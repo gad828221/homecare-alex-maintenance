@@ -39,34 +39,49 @@ const addNotification = async (action: string, details: string) => {
   } catch (err) { console.error(err); }
 };
 
+// ✅ دالة المزامنة المعدلة (تحافظ على صلاحيات المديرين والمشرفين)
 const syncTechniciansToUsers = async () => {
   try {
     const techs = await fetchAPI('technicians?select=*');
     if (!techs || techs.length === 0) return;
     for (const tech of techs) {
-      const userData = {
-        username: tech.username?.trim(),
+      if (!tech.username) continue;
+
+      // جلب المستخدم الحالي إن وجد
+      const existingUser = await fetchAPI(`users?select=role&username=eq.${encodeURIComponent(tech.username)}`);
+      const existingRole = existingUser && existingUser[0]?.role;
+
+      const userData: any = {
+        username: tech.username.trim(),
         password: tech.password,
         name: tech.name,
         phone: tech.phone || '',
-        role: 'tech',
         is_active: tech.is_active
       };
-      if (!userData.username) continue;
-      const updateRes = await fetch(`${supabaseUrl}/rest/v1/users?username=eq.${userData.username}`, {
-        method: 'PATCH',
-        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
-      });
-      if (updateRes.status === 404) {
-        await fetch(`${supabaseUrl}/rest/v1/users`, {
-          method: 'POST',
-          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+
+      if (existingUser && existingUser.length > 0) {
+        // إذا كان المستخدم موجوداً ودوره ليس 'tech' (مثلاً admin, manager, viewer), نحافظ على دوره الأصلي
+        if (existingRole !== 'tech') {
+          userData.role = existingRole;
+        } else {
+          userData.role = 'tech';
+        }
+        await fetchAPI(`users?username=eq.${encodeURIComponent(tech.username)}`, {
+          method: 'PATCH',
           body: JSON.stringify(userData)
         });
+        console.log(`✅ تم تحديث الفني ${tech.username} مع الاحتفاظ بالدور: ${userData.role}`);
+      } else {
+        // مستخدم جديد - نضيفه كفني
+        userData.role = 'tech';
+        await fetchAPI('users', {
+          method: 'POST',
+          body: JSON.stringify(userData)
+        });
+        console.log(`✅ تم إضافة فني جديد: ${tech.username}`);
       }
     }
-    console.log("✅ تمت مزامنة الفنيين مع users");
+    console.log("✅ تمت مزامنة الفنيين مع users (مع الاحتفاظ بالصلاحيات الأخرى)");
   } catch (err) { console.error("❌ فشل مزامنة الفنيين:", err); }
 };
 
@@ -887,7 +902,7 @@ export default function ProtectedOrders() {
               <div className="flex flex-wrap items-center gap-3"><input type="date" value={reportDate} onChange={e=>setReportDate(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"/>{canEditDelete() && <button onClick={handleSendReportForDate} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"><Send size={16}/> إرسال تقرير التاريخ المحدد</button>}</div>
             </div>
             <div className="bg-slate-900 rounded-xl overflow-x-auto">
-              <table className="w-full text-sm"><thead className="bg-slate-800"><tr><th className="p-3">التاريخ</th><th>النوع</th><th>المبلغ</th><th>الوصف</th><th>إجراءات</th></tr></thead><tbody>{cashLedger.map((entry) => (<tr key={entry.id} className="border-b border-slate-800"><td className="p-3 text-slate-300">{entry.date}</td><td className="text-slate-300">{entry.type === 'income' ? '💰 دخل' : entry.type === 'expense' ? '💸 مصروف' : entry.type === 'profit_distribution' ? '📤 توزيع أرباح' : '🏦 رصيد احتياطي'}</td><td className={entry.type === 'income' || entry.type === 'reserve' ? 'text-green-400' : 'text-red-400'}>{entry.amount} ج.م</td><td className="max-w-xs break-words text-slate-300">{entry.description}</td><td>{canEditDelete() && <button onClick={() => deleteCashEntry(entry.id)} className="text-red-400"><Trash2 size={16}/></button>}</td></tr>))}</tbody></table>
+              <table className="w-full text-sm"><thead className="bg-slate-800"><tr><th className="p-3">التاريخ</th><th>النوع</th><th>المبلغ</th><th>الوصف</th><th>إجراءات</th></tr></thead><tbody>{cashLedger.map((entry) => (<tr key={entry.id} className="border-b border-slate-800"><td className="p-3 text-slate-300">{entry.date}</td><td className="text-slate-300">{entry.type === 'income' ? '💰 دخل' : entry.type === 'expense' ? '💸 مصروف' : entry.type === 'profit_distribution' ? '📤 توزيع أرباح' : '🏦 رصيد احتياطي'}</td><td className={entry.type === 'income' || entry.type === 'reserve' ? 'text-green-400' : 'text-red-400'}>{entry.amount} ج.م</td><td className="max-w-xs break-words text-slate-300">{entry.description}</td><td>{canEditDelete() && <button onClick={() => deleteCashEntry(entry.id)} className="text-red-400"><Trash2 size={16}/></button>}</td><tr>))}</tbody></table>
             </div>
           </div>
         )}
