@@ -1,13 +1,15 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { 
   Plus, Search, LayoutDashboard, Users, 
   CheckCircle2, AlertCircle, 
   Edit, Trash2, RefreshCw, Phone,
-  Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut, Send
+  Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut, Send,
+  AlertTriangle
 } from "lucide-react";
 import AdminPermissions from './AdminPermissions';
 import TechnicianPerformance from './TechnicianPerformance';
 import { createClient } from '@supabase/supabase-js';
+import { useNotification } from './EnhancedNotificationSystem';
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -37,7 +39,6 @@ const addNotification = async (action: string, details: string) => {
   } catch (err) { console.error(err); }
 };
 
-// مزامنة الفنيين مع جدول users
 const syncTechniciansToUsers = async () => {
   try {
     const techs = await fetchAPI('technicians?select=*');
@@ -52,7 +53,6 @@ const syncTechniciansToUsers = async () => {
         is_active: tech.is_active
       };
       if (!userData.username) continue;
-      
       const updateRes = await fetch(`${supabaseUrl}/rest/v1/users?username=eq.${userData.username}`, {
         method: 'PATCH',
         headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
@@ -71,6 +71,7 @@ const syncTechniciansToUsers = async () => {
 };
 
 export default function ProtectedOrders() {
+  const { addNotification: toastNotification } = useNotification();
   const [orders, setOrders] = useState<any[]>([]);
   const [technicians, setTechnicians] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -113,7 +114,7 @@ export default function ProtectedOrders() {
     name: '', phone: '', specialization: '', is_active: true,
     username: '', password: '', profit_percentage: 50 
   });
-  const [stats, setStats] = useState({ pending: 0, inProgress: 0, completed: 0, cancelled: 0, totalIncome: 0 });
+  const [stats, setStats] = useState({ pending: 0, inProgress: 0, completed: 0, cancelled: 0, totalIncome: 0, stalled: 0 });
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<string>('');
   
@@ -140,6 +141,10 @@ export default function ProtectedOrders() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // إشعار الأوردرات المتوقفة
+  const stalledNotifiedRef = useRef<Set<number>>(new Set());
+  const [stalledOrdersCount, setStalledOrdersCount] = useState(0);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('currentUser');
@@ -195,6 +200,62 @@ export default function ProtectedOrders() {
     return getDaysDifference(order.date, order.status) > 2;
   };
 
+  // دالة لحساب عدد الأيام منذ تاريخ الأوردر (للاستخدام في الإشعار)
+  const getDaysSinceCreated = (order: any): number => {
+    const dateStr = order.created_at || order.date;
+    if (!dateStr) return 0;
+    const createdDate = new Date(dateStr);
+    if (isNaN(createdDate.getTime())) return 0;
+    const today = new Date();
+    const diffTime = today.getTime() - createdDate.getTime();
+    return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  // التحقق مما إذا كان الأوردر متوقف (غير مكتمل/ملغي ومر على إنشائه أكثر من 3 أيام)
+  const isOrderStalled = (order: any): boolean => {
+    if (order.status === 'completed' || order.status === 'cancelled') return false;
+    if (order.deleted_at) return false;
+    const days = getDaysSinceCreated(order);
+    return days >= 3;
+  };
+
+  // إشعار الأوردرات المتوقفة (toast)
+  const notifyStalledOrders = useCallback(() => {
+    if (!orders.length) return;
+    let stalledCount = 0;
+    orders.forEach(order => {
+      if (isOrderStalled(order)) {
+        stalledCount++;
+        if (!stalledNotifiedRef.current.has(order.id)) {
+          stalledNotifiedRef.current.add(order.id);
+          toastNotification({
+            type: 'error',
+            title: '⚠️ تنبيه: أوردر متوقف',
+            message: `الأوردر رقم ${order.order_number} (${order.customer_name}) لم يتم اتخاذ أي إجراء منذ أكثر من 3 أيام.`,
+            duration: 10000,
+          });
+        }
+      }
+    });
+    setStalledOrdersCount(stalledCount);
+    setStats(prev => ({ ...prev, stalled: stalledCount }));
+  }, [orders, toastNotification]);
+
+  // إشعار عند تحميل البيانات أول مرة
+  useEffect(() => {
+    if (orders.length > 0) {
+      notifyStalledOrders();
+    }
+  }, [orders, notifyStalledOrders]);
+
+  // فحص دوري كل دقيقة
+  useEffect(() => {
+    const interval = setInterval(() => {
+      notifyStalledOrders();
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [notifyStalledOrders]);
+
   const fetchNotifications = useCallback(async () => {
     try {
       const data = await fetchAPI('notifications?select=*&order=created_at.desc');
@@ -209,7 +270,6 @@ export default function ProtectedOrders() {
     } catch (err) { console.error(err); }
   }, []);
 
-  // ✅ تصحيح حساب الرصيد: إضافة reserve مع income
   const fetchCashLedger = useCallback(async () => {
     try {
       let endpoint = 'cash_ledger?select=*&order=date.desc';
@@ -217,11 +277,8 @@ export default function ProtectedOrders() {
       const data = await fetchAPI(endpoint);
       setCashLedger(data || []);
       const balance = (data || []).reduce((acc: number, entry: any) => {
-        if (entry.type === 'income' || entry.type === 'reserve') {
-          return acc + entry.amount;
-        } else if (entry.type === 'expense' || entry.type === 'profit_distribution') {
-          return acc - entry.amount;
-        }
+        if (entry.type === 'income' || entry.type === 'reserve') return acc + entry.amount;
+        else if (entry.type === 'expense' || entry.type === 'profit_distribution') return acc - entry.amount;
         return acc;
       }, 0);
       setCashBalance(balance);
@@ -250,7 +307,7 @@ export default function ProtectedOrders() {
 
   const deleteOrderProfitFromCash = async (order: any) => {
     try {
-      const { data: entries } = await fetchAPI(`cash_ledger?description=like=*${order.order_number}*&type=eq.income&select=id`);
+      const entries = await fetchAPI(`cash_ledger?description=like=*${order.order_number}*&type=eq.income&select=id`);
       if (entries && entries.length > 0) {
         for (const entry of entries) {
           await fetchAPI(`cash_ledger?id=eq.${entry.id}`, { method: 'DELETE' });
@@ -285,12 +342,11 @@ export default function ProtectedOrders() {
     } catch (err) { alert(`❌ حدث خطأ في الاتصال: ${err.message}`); return false; }
   };
 
-  // ✅ الدالة الصحيحة لتوزيع أرباح تاريخ محدد (بدون تكرار أو أخطاء)
   const distributeProfitForDate = async (targetDate: string) => {
     try {
       const incomeEntries = await fetchAPI(`cash_ledger?select=amount&date=eq.${targetDate}&type=eq.income`);
       const totalIncome = (incomeEntries || []).reduce((sum, entry) => sum + (entry.amount || 0), 0);
-      const netProfit = totalIncome; // ✅ المصروفات لا تؤثر على الربح
+      const netProfit = totalIncome; // المصروفات لا تؤثر على الربح
 
       if (netProfit <= 0) {
         alert(`⚠️ لا توجد أرباح ليوم ${targetDate}.`);
@@ -370,51 +426,82 @@ export default function ProtectedOrders() {
     }
   };
 
+  const sendDailyReportToPartners = async (targetDate: string) => {
+    try {
+      const entries = await fetchAPI(`cash_ledger?select=*&date=eq.${targetDate}&order=created_at.desc`);
+      if (!entries || entries.length === 0) {
+        alert(`⚠️ لا توجد حركات خزنة ليوم ${targetDate}`);
+        return false;
+      }
+
+      let totalIncome = 0, totalExpense = 0, totalProfitDist = 0, totalReserve = 0;
+      const profitDetails = [];
+
+      for (const entry of entries) {
+        if (entry.type === 'income') totalIncome += entry.amount;
+        else if (entry.type === 'expense') totalExpense += entry.amount;
+        else if (entry.type === 'profit_distribution') {
+          totalProfitDist += entry.amount;
+          profitDetails.push(`• ${entry.description} : ${entry.amount} ج.م`);
+        }
+        else if (entry.type === 'reserve') totalReserve += entry.amount;
+      }
+
+      const netProfit = totalIncome;
+      const currentBalance = cashBalance;
+
+      const reportText = `📊 *تقرير الخزنة اليومي* 📊
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 *التاريخ:* ${targetDate}
+
+💰 *الإيرادات (ربح اليوم):* ${totalIncome.toLocaleString()} ج.م
+💸 *المصروفات (تخصم من الرصيد فقط):* ${totalExpense.toLocaleString()} ج.م
+📤 *توزيع أرباح الشركاء:* ${totalProfitDist.toLocaleString()} ج.م
+🏦 *الرصيد الاحتياطي المضاف:* ${totalReserve.toLocaleString()} ج.م
+✅ *صافي الربح الموزع:* ${netProfit.toLocaleString()} ج.م
+💰 *الرصيد الحالي للخزنة:* ${currentBalance.toLocaleString()} ج.م
+
+👥 *تفاصيل توزيع الأرباح:*
+${profitDetails.length ? profitDetails.join('\n') : 'لا توجد توزيعات'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📞 للاستفسار: 01278885772
+✨ نظام إدارة الصيانة - تقرير يومي`;
+
+      const activePartners = partners.filter(p => p.is_active && p.phone);
+      if (activePartners.length === 0) {
+        alert("⚠️ لا يوجد شركاء نشطون بأرقام هواتف");
+        return false;
+      }
+
+      if (!confirm(`📋 التقرير التالي سيتم إرساله للشركاء:\n\n${reportText}\n\nهل تريد المتابعة؟`)) return false;
+
+      for (const partner of activePartners) {
+        let phone = partner.phone.toString().replace(/[^\d]/g, '');
+        if (phone.startsWith('0')) phone = phone.substring(1);
+        if (phone.length === 10) phone = '20' + phone;
+        const message = `🔔 *تقرير يومي - شركاء الصيانة*\n\nمرحباً ${partner.name}،\n\n${reportText}`;
+        const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+        await new Promise(resolve => setTimeout(resolve, 800));
+      }
+
+      await addNotification('إرسال تقرير يومي', `تم إرسال تقرير يوم ${targetDate} إلى ${activePartners.length} شريك`);
+      alert(`✅ تم إرسال التقرير إلى ${activePartners.length} شريك.`);
+      return true;
+    } catch (err) {
+      console.error("فشل إرسال التقرير:", err);
+      alert("❌ حدث خطأ أثناء إرسال التقرير");
+      return false;
+    }
+  };
+
   const handleDistributeSelectedProfit = async () => {
     if (!selectedProfitDate) {
       alert("⚠️ يرجى اختيار التاريخ أولاً.");
       return;
     }
     await distributeProfitForDate(selectedProfitDate);
-  };
-
-  // دالة إرسال التقرير ليوم محدد
-  const sendDailyReportToPartners = async (targetDate: string) => {
-    const entries = await fetchAPI(`cash_ledger?select=*&date=eq.${targetDate}&order=created_at.desc`);
-    if (!entries || entries.length === 0) {
-      alert(`⚠️ لا توجد حركات خزنة ليوم ${targetDate}`);
-      return;
-    }
-    let totalIncome = 0, totalExpense = 0, totalProfitDist = 0, totalReserve = 0;
-    const profitDetails: string[] = [];
-    entries.forEach((entry: any) => {
-      if (entry.type === 'income') totalIncome += entry.amount;
-      else if (entry.type === 'expense') totalExpense += entry.amount;
-      else if (entry.type === 'profit_distribution') {
-        totalProfitDist += entry.amount;
-        profitDetails.push(`• ${entry.description} : ${entry.amount} ج.م`);
-      }
-      else if (entry.type === 'reserve') totalReserve += entry.amount;
-    });
-    const netBalance = totalIncome + totalReserve - totalExpense;
-    const reportText = `📊 *تقرير الخزنة اليومي* 📊\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📅 *التاريخ:* ${targetDate}\n\n💰 *الإيرادات:* ${totalIncome.toLocaleString()} ج.م\n💸 *المصروفات:* ${totalExpense.toLocaleString()} ج.م\n📤 *توزيع أرباح الشركاء:* ${totalProfitDist.toLocaleString()} ج.م\n🏦 *الرصيد الاحتياطي:* ${totalReserve.toLocaleString()} ج.م\n✅ *صافي ربح اليوم:* ${netBalance.toLocaleString()} ج.م\n💰 *الرصيد الحالي للخزنة:* ${cashBalance.toLocaleString()} ج.م\n\n👥 *تفاصيل توزيع الأرباح:*\n${profitDetails.length ? profitDetails.join('\n') : 'لا توجد توزيعات'}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📞 للاستفسار: 01278885772\n✨ نظام إدارة الصيانة - تقرير يومي`;
-    const activePartners = partners.filter(p => p.is_active && p.phone);
-    if (activePartners.length === 0) {
-      alert("⚠️ لا يوجد شركاء نشطون بأرقام هواتف");
-      return;
-    }
-    const userChoice = confirm(`📋 التقرير جاهز للإرسال ليوم ${targetDate}.\n\n${reportText}\n\nهل تريد فتح واتساب لإرسال التقرير لكل شريك على حدة؟`);
-    if (!userChoice) return;
-    for (const partner of activePartners) {
-      let phone = partner.phone.toString().replace(/[^\d]/g, '');
-      if (phone.startsWith('0')) phone = phone.substring(1);
-      if (phone.length === 10) phone = '20' + phone;
-      if (!phone.startsWith('20')) phone = '20' + phone;
-      const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(reportText)}`;
-      window.open(whatsappUrl, '_blank');
-      await new Promise(resolve => setTimeout(resolve, 800));
-    }
-    alert(`✅ تم فتح واتساب لـ ${activePartners.length} شريك. قم بإرسال التقرير لكل منهم.`);
   };
 
   const handleSendReportForDate = async () => {
@@ -425,30 +512,43 @@ export default function ProtectedOrders() {
     await sendDailyReportToPartners(reportDate);
   };
 
-  // ✅ تعديل fetchData لاستبعاد الأوردرات المحذوفة (deleted_at IS NOT NULL)
   const fetchData = useCallback(async () => {
+    setLoading(true);
     try {
-      const [ordersData, techsData] = await Promise.all([
-        fetchAPI('orders?select=*&deleted_at=is.null&order=created_at.desc'),
-        fetchAPI('technicians?select=*')
+      const [ordersData, techsData, notificationsData, partnersData, cashData] = await Promise.all([
+        fetchAPI('orders?select=*&order=created_at.desc'),
+        fetchAPI('technicians?select=*'),
+        fetchAPI('notifications?select=*&order=created_at.desc'),
+        fetchAPI('partners?select=*&order=created_at.desc'),
+        fetchAPI('cash_ledger?select=*&order=date.desc')
       ]);
       setOrders(ordersData || []);
       setTechnicians(techsData || []);
-      const pending = (ordersData || []).filter((o: any) => o.status === 'pending').length;
-      const inProgress = (ordersData || []).filter((o: any) => o.status === 'in-progress').length;
-      const completed = (ordersData || []).filter((o: any) => o.status === 'completed').length;
-      const cancelled = (ordersData || []).filter((o: any) => o.status === 'cancelled').length;
-      const totalIncome = (ordersData || []).reduce((acc: number, o: any) => acc + (o.company_share || 0), 0);
-      setStats({ pending, inProgress, completed, cancelled, totalIncome });
-    } catch (err) { console.error(err); } finally { setLoading(false); }
+      setNotifications(notificationsData || []);
+      setPartners(partnersData || []);
+      setCashLedger(cashData || []);
+      
+      let balance = 0;
+      (cashData || []).forEach((entry: any) => {
+        if (entry.type === 'income' || entry.type === 'reserve') balance += entry.amount;
+        else if (entry.type === 'expense' || entry.type === 'profit_distribution') balance -= entry.amount;
+      });
+      setCashBalance(balance);
+      
+      const pending = (ordersData || []).filter(o => o.status === 'pending').length;
+      const inProgress = (ordersData || []).filter(o => o.status === 'in_progress').length;
+      const completed = (ordersData || []).filter(o => o.status === 'completed').length;
+      const cancelled = (ordersData || []).filter(o => o.status === 'cancelled').length;
+      const totalIncome = (ordersData || []).filter(o => o.is_paid).reduce((sum, o) => sum + (o.company_share || 0), 0);
+      setStats(prev => ({ ...prev, pending, inProgress, completed, cancelled, totalIncome, stalled: prev.stalled }));
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   }, []);
 
   useEffect(() => {
-    addNotification('تسجيل دخول', 'تم تسجيل دخول المدير');
-    fetchData(); fetchNotifications(); fetchCashLedger(); fetchPartners();
-    const interval = setInterval(() => { fetchData(); fetchNotifications(); fetchCashLedger(); }, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    fetchData();
+    syncTechniciansToUsers();
+  }, [fetchData]);
 
   const calculateAmounts = (data: any) => {
     const total = parseFloat(data.total_amount) || 0;
@@ -555,7 +655,6 @@ export default function ProtectedOrders() {
     } catch (err) { console.error(err); }
   };
 
-  // ✅ دالة الحذف الناعم (بدلاً من الحذف الدائم)
   const deleteOrder = async (id: number) => {
     if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لحذف الأوردرات");
     const order = orders.find(o => o.id === id);
@@ -567,12 +666,11 @@ export default function ProtectedOrders() {
           body: JSON.stringify({ deleted_at: new Date().toISOString() })
         });
         await addNotification('حذف أوردر (ناعم)', `تم حذف أوردر ${order.customer_name} (رقم ${order.order_number})`);
-        await fetchData();
+        fetchData();
       } catch (err) { console.error(err); }
     }
   };
 
-  // ✅ استعادة أوردر محذوف (اختياري)
   const restoreOrder = async (id: number) => {
     if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية");
     await fetchAPI(`orders?id=eq.${id}`, {
@@ -580,10 +678,9 @@ export default function ProtectedOrders() {
       body: JSON.stringify({ deleted_at: null })
     });
     await addNotification('استعادة أوردر', `تم استعادة الأوردر`);
-    await fetchData();
+    fetchData();
   };
 
-  // ✅ نسخ بيانات الأوردر إلى الحافظة (بدون إنشاء أوردر جديد)
   const copyOrderDetails = (order: any) => {
     const text = 
       `📋 *بيانات الأوردر* 📋\n` +
@@ -604,7 +701,6 @@ export default function ProtectedOrders() {
     alert("✅ تم نسخ بيانات الأوردر إلى الحافظة");
   };
 
-  // ✅ دالة حفظ الأوردر مع منع التكرار
   const saveOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -664,7 +760,7 @@ export default function ProtectedOrders() {
       updatedCount++;
     }
     await addNotification('تحديث نسب أرباح الفني', `تم تحديث نسب أرباح ${updatedCount} أوردر للفني ${technicianName} إلى ${newPercentage}%`);
-    await fetchData();
+    fetchData();
     alert(`✅ تم تحديث ${updatedCount} أوردر بنجاح.`);
   };
 
@@ -700,7 +796,7 @@ export default function ProtectedOrders() {
       await fetchAPI(`technicians?id=eq.${id}`, { method: 'DELETE' });
       await addNotification('حذف فني', `تم حذف الفني ${name}`);
       await syncTechniciansToUsers();
-      await fetchData();
+      fetchData();
     }
   };
 
@@ -778,7 +874,6 @@ export default function ProtectedOrders() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200" dir="rtl">
-      {/* Header */}
       <div className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 px-4 py-3">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3"><LayoutDashboard className="w-6 h-6 text-orange-500" /><div><h1 className="text-lg font-bold text-white">لوحة تحكم المدير</h1><p className="text-xs text-slate-400">{currentUser?.name || 'مدير النظام'}</p></div></div>
@@ -786,30 +881,19 @@ export default function ProtectedOrders() {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="bg-slate-900 rounded-xl p-4 text-center border border-slate-800"><p className="text-2xl font-bold text-white">{orders.length}</p><p className="text-xs text-slate-400">إجمالي الأوردرات</p></div>
-          <div className="bg-slate-900 rounded-xl p-4 text-center border border-slate-800"><p className="text-2xl font-bold text-yellow-500">{stats.pending}</p><p className="text-xs text-slate-400">قيد الانتظار</p></div>
-          <div className="bg-slate-900 rounded-xl p-4 text-center border border-slate-800"><p className="text-2xl font-bold text-green-500">{stats.completed}</p><p className="text-xs text-slate-400">مكتمل</p></div>
-          <div className="bg-slate-900 rounded-xl p-4 text-center border border-slate-800"><p className="text-xl font-bold text-orange-500">{stats.totalIncome.toLocaleString()} ج.م</p><p className="text-xs text-slate-400">أرباح الشركة</p></div>
-          <div className="bg-slate-900 rounded-xl p-4 text-center border border-slate-800"><p className="text-2xl font-bold text-blue-500">{technicians.filter(t=>t.is_active!==false).length}</p><p className="text-xs text-slate-400">فني متاح</p></div>
-        </div>
+      <div className="flex gap-2 p-4 border-b bg-slate-900 overflow-x-auto">
+        <button onClick={() => setActiveTab('orders')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'orders' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📋 الأوردرات</button>
+        <button onClick={() => setActiveTab('technicians')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'technicians' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>👨‍🔧 الفنيين</button>
+        <button onClick={() => setActiveTab('reports')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'reports' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📊 التقارير</button>
+        <button onClick={() => setActiveTab('invoicesReview')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'invoicesReview' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📄 الفواتير</button>
+        <button onClick={() => setActiveTab('cash')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'cash' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>💰 الخزنة</button>
+        <button onClick={() => setActiveTab('partners')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'partners' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>🤝 الشركاء</button>
+        <button onClick={() => setActiveTab('notifications')} className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1 transition ${activeTab === 'notifications' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}><Bell className="w-4 h-4" /> الإشعارات ({notifications.length})</button>
+        {userRole === 'admin' && <button onClick={() => setActiveTab('permissions')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'permissions' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>🔐 الصلاحيات</button>}
+        <button onClick={() => setActiveTab('performance')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'performance' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📊 أداء الفنيين</button>
+      </div>
 
-        {/* Tabs */}
-        <div className="flex flex-wrap gap-2 border-b border-slate-800 pb-2">
-          <button onClick={() => setActiveTab('orders')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'orders' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>📋 الأوردرات</button>
-          <button onClick={() => setActiveTab('technicians')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'technicians' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>👨‍🔧 الفنيين</button>
-          <button onClick={() => setActiveTab('reports')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'reports' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>📊 التقارير</button>
-          <button onClick={() => setActiveTab('invoicesReview')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'invoicesReview' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>📄 الفواتير</button>
-          <button onClick={() => setActiveTab('cash')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'cash' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>💰 الخزنة</button>
-          <button onClick={() => setActiveTab('partners')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'partners' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>🤝 الشركاء</button>
-          <button onClick={() => setActiveTab('notifications')} className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1 transition ${activeTab === 'notifications' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}><Bell className="w-4 h-4" /> الإشعارات ({notifications.length})</button>
-          {userRole === 'admin' && <button onClick={() => setActiveTab('permissions')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'permissions' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>🔐 الصلاحيات</button>}
-          <button onClick={() => setActiveTab('performance')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'performance' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>📊 أداء الفنيين</button>
-        </div>
-
-        {/* Orders Tab */}
+      <div className="p-4">
         {activeTab === 'orders' && (
           <div className="space-y-4">
             <div className="bg-slate-900 rounded-xl p-4 flex flex-wrap gap-3 items-center">
@@ -827,24 +911,59 @@ export default function ProtectedOrders() {
             </div>
             {filteredOrders.length === 0 && !showAllOrders && <div className="text-center py-8 text-slate-400">لا توجد أوردرات (قيد الانتظار، قيد التنفيذ، أو بدون فني). اضغط "عرض الكل" لمشاهدة جميع الأوردرات.</div>}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredOrders.map(order => (
-                <div key={order.id} className={`bg-slate-900 rounded-xl border-r-4 p-4 ${isDelayed(order) ? 'border-red-500' : order.status === 'completed' ? 'border-green-500' : order.status === 'in-progress' ? 'border-blue-500' : 'border-yellow-500'}`}>
-                  <div className="flex justify-between items-start"><div><h3 className="font-bold text-white">{order.customer_name}</h3><p className="text-xs text-slate-400">رقم: {order.order_number}</p></div><div className="flex gap-1"><button onClick={()=>togglePaidStatus(order.id, order.is_paid)} className={`p-1 rounded ${order.is_paid ? 'text-green-500 bg-green-500/10' : 'text-red-500 bg-red-500/10'}`}>{order.is_paid ? <CheckCircle2 size={16}/> : <AlertCircle size={16}/>}</button>{canEditDelete() && <><button onClick={()=>{setEditingOrder(order); setFormData(order); setShowOrderModal(true);}} className="p-1 text-blue-500"><Edit size={16}/></button><button onClick={() => copyOrderDetails(order)} className="p-1 text-slate-400" title="نسخ البيانات"><Copy size={16}/></button><button onClick={() => deleteOrder(order.id)} className="p-1 text-red-500"><Trash2 size={16}/></button></>}</div></div>
-                  <div className="grid grid-cols-2 gap-1 mt-2 text-sm"><div className="text-slate-300">📞 {order.phone}</div><div className="text-slate-300">🔧 {order.device_type} - {order.brand}</div><div className="col-span-2 text-slate-300">📍 {order.address}</div><div className="col-span-2 text-slate-300">📝 {order.problem_description}</div><div className="text-slate-300">💰 {order.total_amount} ج.م</div><div className="text-slate-300">👨‍🔧 {order.technician || '-'}</div></div>
-                  <div className="flex justify-between items-center mt-3"><select value={order.status} onChange={e=>updateOrderStatus(order.id, e.target.value)} className="text-xs bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white"><option value="pending">قيد الانتظار</option><option value="in-progress">قيد التنفيذ</option><option value="inspected">تم الكشف</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option></select><span className={`text-xs px-2 py-1 rounded ${order.is_paid ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{order.is_paid ? 'تم التحصيل' : 'لم يتحصل'}</span></div>
-                  {order.status === 'in-progress' && canEditDelete() && (
-                    <button onClick={() => { setSelectedOrder(order); setSettleForm({ total_amount: order.total_amount || 0, parts_cost: order.parts_cost || 0, transport_cost: order.transport_cost || 0, net_amount: order.net_amount || 0, technician_share: order.technician_share || 0, company_share: order.company_share || 0 }); setShowSettleModal(true); }} className="mt-2 w-full bg-orange-600 hover:bg-orange-700 text-white py-1 rounded-lg text-sm font-bold">تصفية الأوردر</button>
-                  )}
-                </div>
-              ))}
+              {filteredOrders.map(order => {
+                const stalled = isOrderStalled(order);
+                return (
+                  <div key={order.id} className={`bg-slate-900 rounded-xl border-r-4 p-4 ${stalled ? 'border-red-500 bg-red-900/10' : isDelayed(order) ? 'border-red-500' : order.status === 'completed' ? 'border-green-500' : order.status === 'in-progress' ? 'border-blue-500' : 'border-yellow-500'}`}>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-bold text-white flex items-center gap-2">
+                          {order.customer_name}
+                          {stalled && <AlertTriangle className="w-4 h-4 text-red-400 animate-pulse" title="متوقف منذ أكثر من 3 أيام" />}
+                        </h3>
+                        <p className="text-xs text-slate-400">رقم: {order.order_number}</p>
+                      </div>
+                      <div className="flex gap-1">
+                        <button onClick={()=>togglePaidStatus(order.id, order.is_paid)} className={`p-1 rounded ${order.is_paid ? 'text-green-500 bg-green-500/10' : 'text-red-500 bg-red-500/10'}`}>{order.is_paid ? <CheckCircle2 size={16}/> : <AlertCircle size={16}/>}</button>
+                        {canEditDelete() && <><button onClick={()=>{setEditingOrder(order); setFormData(order); setShowOrderModal(true);}} className="p-1 text-blue-500"><Edit size={16}/></button><button onClick={() => copyOrderDetails(order)} className="p-1 text-slate-400" title="نسخ البيانات"><Copy size={16}/></button><button onClick={() => deleteOrder(order.id)} className="p-1 text-red-500"><Trash2 size={16}/></button></>}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1 mt-2 text-sm">
+                      <div className="text-slate-300">📞 {order.phone}</div>
+                      <div className="text-slate-300">🔧 {order.device_type} - {order.brand}</div>
+                      <div className="col-span-2 text-slate-300">📍 {order.address}</div>
+                      <div className="col-span-2 text-slate-300">📝 {order.problem_description}</div>
+                      <div className="text-slate-300">💰 {order.total_amount} ج.م</div>
+                      <div className="text-slate-300">👨‍🔧 {order.technician || '-'}</div>
+                    </div>
+                    {stalled && (
+                      <div className="mt-2 bg-red-500/10 border border-red-500/30 rounded-lg p-2 text-xs text-red-300 flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4" /> هذا الأوردر متوقف منذ أكثر من 3 أيام. يرجى اتخاذ إجراء.
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center mt-3">
+                      <select value={order.status} onChange={e=>updateOrderStatus(order.id, e.target.value)} className="text-xs bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white">
+                        <option value="pending">قيد الانتظار</option>
+                        <option value="in-progress">قيد التنفيذ</option>
+                        <option value="inspected">تم الكشف</option>
+                        <option value="completed">مكتمل</option>
+                        <option value="cancelled">ملغي</option>
+                      </select>
+                      <span className={`text-xs px-2 py-1 rounded ${order.is_paid ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{order.is_paid ? 'تم التحصيل' : 'لم يتحصل'}</span>
+                    </div>
+                    {order.status === 'in-progress' && canEditDelete() && (
+                      <button onClick={() => { setSelectedOrder(order); setSettleForm({ total_amount: order.total_amount || 0, parts_cost: order.parts_cost || 0, transport_cost: order.transport_cost || 0, net_amount: order.net_amount || 0, technician_share: order.technician_share || 0, company_share: order.company_share || 0 }); setShowSettleModal(true); }} className="mt-2 w-full bg-orange-600 hover:bg-orange-700 text-white py-1 rounded-lg text-sm font-bold">تصفية الأوردر</button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* Technicians Tab */}
         {activeTab === 'technicians' && (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
+          <div className="bg-slate-900 rounded-xl p-4">
+            <div className="flex justify-between items-center mb-4">
               <div className="flex gap-2">
                 <button onClick={()=>setFilterTechStatus('active')} className={`px-3 py-1 rounded-full text-sm ${filterTechStatus==='active'?'bg-orange-600 text-white':'bg-slate-800 text-slate-300'}`}>النشطون</button>
                 <button onClick={()=>setFilterTechStatus('inactive')} className={`px-3 py-1 rounded-full text-sm ${filterTechStatus==='inactive'?'bg-orange-600 text-white':'bg-slate-800 text-slate-300'}`}>غير النشطون</button>
@@ -854,13 +973,13 @@ export default function ProtectedOrders() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {filteredTechnicians.map(tech => (
-                <div key={tech.id} className="bg-slate-900 rounded-xl p-4 text-center border border-slate-800">
-                  <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3"><Users className="w-8 h-8 text-orange-500" /></div>
+                <div key={tech.id} className="bg-slate-800 rounded-xl p-4 text-center border border-slate-700">
+                  <div className="w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-3"><Users className="w-8 h-8 text-orange-500" /></div>
                   <h3 className="font-bold text-white">{tech.name}</h3>
                   <p className="text-xs text-slate-400">{tech.specialization}</p>
                   <p className="text-xs text-slate-400 mt-1">نسبة الأرباح: {tech.profit_percentage ?? 50}%</p>
                   <div className="flex gap-2 mt-3">
-                    <button onClick={() => copyTechLink(tech)} className="flex-1 bg-slate-800 text-slate-300 py-1 rounded text-xs flex items-center justify-center gap-1">
+                    <button onClick={() => copyTechLink(tech)} className="flex-1 bg-slate-700 text-slate-300 py-1 rounded text-xs flex items-center justify-center gap-1">
                       {copiedId === tech.id ? <Check size={14}/> : <Copy size={14}/>} نسخ
                     </button>
                     {canEditDelete() && <>
@@ -876,7 +995,6 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* Reports Tab */}
         {activeTab === 'reports' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-slate-900 rounded-xl p-6 text-center"><p className="text-slate-400">إجمالي الإيرادات</p><p className="text-3xl font-bold text-white">{orders.reduce((a,o)=>a+(o.total_amount||0),0).toLocaleString()} ج.م</p></div>
@@ -885,7 +1003,6 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* Invoices Review Tab */}
         {activeTab === 'invoicesReview' && (
           <div className="space-y-3">
             {orders.filter(o=>o.status==='completed' && !o.invoice_approved).map(order => (
@@ -898,7 +1015,6 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* Cash Tab */}
         {activeTab === 'cash' && (
           <div className="space-y-4">
             <div className="flex justify-between items-center flex-wrap gap-3">
@@ -911,127 +1027,40 @@ export default function ProtectedOrders() {
             </div>
 
             <div className="bg-purple-600/10 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 border border-purple-500/30">
-              <div className="flex flex-col gap-1">
-                <p className="text-sm font-semibold text-purple-300">📅 توزيع أرباح الشركاء</p>
-                <p className="text-xs text-slate-400">اختر التاريخ ثم اضغط زر التوزيع (يتم توزيع صافي ربح اليوم بنسبة الشركاء)</p>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <input
-                  type="date"
-                  value={selectedProfitDate}
-                  onChange={(e) => setSelectedProfitDate(e.target.value)}
-                  className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
-                />
-                {canEditDelete() && (
-                  <button
-                    onClick={handleDistributeSelectedProfit}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"
-                  >
-                    <DollarSign size={16}/> توزيع أرباح التاريخ المحدد
-                  </button>
-                )}
-              </div>
+              <div className="flex flex-col gap-1"><p className="text-sm font-semibold text-purple-300">📅 توزيع أرباح الشركاء</p><p className="text-xs text-slate-400">اختر التاريخ ثم اضغط زر التوزيع (يتم توزيع صافي ربح اليوم بنسبة الشركاء)</p></div>
+              <div className="flex flex-wrap items-center gap-3"><input type="date" value={selectedProfitDate} onChange={e=>setSelectedProfitDate(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"/>{canEditDelete() && <button onClick={handleDistributeSelectedProfit} className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"><DollarSign size={16}/> توزيع أرباح التاريخ المحدد</button>}</div>
             </div>
 
             <div className="bg-blue-600/10 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 border border-blue-500/30">
-              <div className="flex flex-col gap-1">
-                <p className="text-sm font-semibold text-blue-300">📊 إرسال تقرير الخزنة للشركاء</p>
-                <p className="text-xs text-slate-400">اختر التاريخ ثم اضغط زر الإرسال (يفتح واتساب لكل شريك)</p>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <input
-                  type="date"
-                  value={reportDate}
-                  onChange={(e) => setReportDate(e.target.value)}
-                  className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
-                />
-                {canEditDelete() && (
-                  <button
-                    onClick={handleSendReportForDate}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"
-                  >
-                    <Send size={16}/> إرسال تقرير التاريخ المحدد
-                  </button>
-                )}
-              </div>
+              <div className="flex flex-col gap-1"><p className="text-sm font-semibold text-blue-300">📊 إرسال تقرير الخزنة للشركاء</p><p className="text-xs text-slate-400">اختر التاريخ ثم اضغط زر الإرسال (يفتح واتساب لكل شريك)</p></div>
+              <div className="flex flex-wrap items-center gap-3"><input type="date" value={reportDate} onChange={e=>setReportDate(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"/>{canEditDelete() && <button onClick={handleSendReportForDate} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"><Send size={16}/> إرسال تقرير التاريخ المحدد</button>}</div>
             </div>
 
-            {/* جدول الخزنة */}
             <div className="bg-slate-900 rounded-xl overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-800">
-                  <tr>
-                    <th className="p-3">التاريخ</th>
-                    <th>النوع</th>
-                    <th>المبلغ</th>
-                    <th>الوصف</th>
-                    <th>إجراءات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cashLedger.map((entry) => (
-                    <tr key={entry.id} className="border-b border-slate-800">
-                      <td className="p-3 text-slate-300">{entry.date}</td>
-                      <td className="text-slate-300">
-                        {entry.type === 'income'
-                          ? '💰 دخل'
-                          : entry.type === 'expense'
-                          ? '💸 مصروف'
-                          : entry.type === 'profit_distribution'
-                          ? '📤 توزيع أرباح'
-                          : '🏦 رصيد احتياطي'}
-                      </td>
-                      <td className={entry.type === 'income' || entry.type === 'reserve' ? 'text-green-400' : 'text-red-400'}>
-                        {entry.amount} ج.م
-                      </td>
-                      <td className="max-w-xs break-words text-slate-300">{entry.description}</td>
-                      <td>
-                        {canEditDelete() && (
-                          <button onClick={() => deleteCashEntry(entry.id)} className="text-red-400">
-                            <Trash2 size={16} />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+              <table className="w-full text-sm"><thead className="bg-slate-800"><tr><th className="p-3">التاريخ</th><th>النوع</th><th>المبلغ</th><th>الوصف</th><th>إجراءات</th></tr></thead><tbody>{cashLedger.map((entry) => (<tr key={entry.id} className="border-b border-slate-800"><td className="p-3 text-slate-300">{entry.date}</td><td className="text-slate-300">{entry.type === 'income' ? '💰 دخل' : entry.type === 'expense' ? '💸 مصروف' : entry.type === 'profit_distribution' ? '📤 توزيع أرباح' : '🏦 رصيد احتياطي'}</td><td className={entry.type === 'income' || entry.type === 'reserve' ? 'text-green-400' : 'text-red-400'}>{entry.amount} ج.م</td><td className="max-w-xs break-words text-slate-300">{entry.description}</td><td>{canEditDelete() && <button onClick={() => deleteCashEntry(entry.id)} className="text-red-400"><Trash2 size={16}/></button>}</td></tr>))}</tbody></table></div>
           </div>
         )}
 
-        {/* Partners Tab */}
         {activeTab === 'partners' && (
           <div className="space-y-4"><div className="flex justify-end">{canEditDelete() && <button onClick={()=>{setEditingPartner(null); setPartnerForm({ name: '', share_percentage: 0, phone: '', is_active: true }); setShowPartnerModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><UserPlus size={16}/> إضافة شريك</button>}</div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{partners.map(partner => (
-            <div key={partner.id} className="bg-slate-900 rounded-xl p-4 border border-slate-800">
-              <div className="flex justify-between"><h3 className="font-bold text-white">{partner.name}</h3><span className={`text-xs px-2 py-1 rounded-full ${partner.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{partner.is_active ? 'نشط' : 'غير نشط'}</span></div>
-              <p className="text-2xl font-bold text-orange-500 mt-2">{partner.share_percentage}%</p>
-              <p className="text-sm text-slate-400">📞 {partner.phone || 'لا يوجد'}</p>
-              {canEditDelete() && <div className="flex gap-2 mt-3"><button onClick={()=>{setEditingPartner(partner); setPartnerForm(partner); setShowPartnerModal(true);}} className="text-blue-500"><Edit size={16}/></button><button onClick={()=>deletePartner(partner.id, partner.name)} className="text-red-500"><Trash2 size={16}/></button></div>}
-            </div>
+            <div key={partner.id} className="bg-slate-900 rounded-xl p-4 border border-slate-800"><div className="flex justify-between"><h3 className="font-bold text-white">{partner.name}</h3><span className={`text-xs px-2 py-1 rounded-full ${partner.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{partner.is_active ? 'نشط' : 'غير نشط'}</span></div><p className="text-2xl font-bold text-orange-500 mt-2">{partner.share_percentage}%</p><p className="text-sm text-slate-400">📞 {partner.phone || 'لا يوجد'}</p>{canEditDelete() && <div className="flex gap-2 mt-3"><button onClick={()=>{setEditingPartner(partner); setPartnerForm(partner); setShowPartnerModal(true);}} className="text-blue-500"><Edit size={16}/></button><button onClick={()=>deletePartner(partner.id, partner.name)} className="text-red-500"><Trash2 size={16}/></button></div>}</div>
           ))}</div></div>
         )}
 
-        {/* Notifications Tab */}
         {activeTab === 'notifications' && (
           <div className="space-y-3"><div className="flex justify-between"><h2 className="text-xl font-bold">🔔 سجل الإشعارات</h2>{canEditDelete() && notifications.length>0 && <button onClick={deleteAllNotifications} className="bg-red-500/20 text-red-400 px-3 py-1 rounded-lg text-sm flex items-center gap-1"><Trash size={14}/> مسح الكل</button>}</div>
           {notifications.map(notif=>(
-            <div key={notif.id} className="bg-slate-900 rounded-xl p-4 flex justify-between items-center">
-              <div><span className="text-orange-400 font-semibold">{notif.action}</span><span className="mx-2 text-slate-600">|</span><span className="text-slate-300">{notif.details}</span><div className="text-xs text-slate-500 mt-1">{new Date(notif.created_at).toLocaleString('ar-EG')}</div></div>
-              {canEditDelete() && <button onClick={()=>deleteNotification(notif.id)} className="text-red-400"><Trash size={16}/></button>}
-            </div>
+            <div key={notif.id} className="bg-slate-900 rounded-xl p-4 flex justify-between items-center"><div><span className="text-orange-400 font-semibold">{notif.action}</span><span className="mx-2 text-slate-600">|</span><span className="text-slate-300">{notif.details}</span><div className="text-xs text-slate-500 mt-1">{new Date(notif.created_at).toLocaleString('ar-EG')}</div></div>{canEditDelete() && <button onClick={()=>deleteNotification(notif.id)} className="text-red-400"><Trash size={16}/></button>}</div>
           ))}
           {notifications.length===0 && <div className="text-center py-8 text-slate-400">لا توجد إشعارات</div>}</div>
         )}
 
-        {/* Performance Tab */}
         {activeTab === 'performance' && <TechnicianPerformance orders={orders} technicians={technicians} />}
-
         {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions />}
-      </main>
+      </div>
 
-      {/* باقي المودالات (Order, Technician, Partner, Cash, Settlement) - كما هي */}
+      {/* مودالات (Order, Technician, Partner, Cash, Settlement) كما هي باقية */}
       {showOrderModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl shadow-xl">
