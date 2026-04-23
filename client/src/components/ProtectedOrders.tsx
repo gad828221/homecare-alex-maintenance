@@ -438,7 +438,7 @@ export default function ProtectedOrders() {
     try {
       const [ordersData, deletedData, techsData, notificationsData, partnersData, cashData] = await Promise.all([
         fetchAPI('orders?select=*&deleted_at=is.null&order=created_at.desc'),
-        fetchAPI('orders?select=*&deleted_at=is.not.null&order=created_at.desc'),
+        fetchAPI('orders?select=*&deleted_at=not.is.null&order=created_at.desc'),
         fetchAPI('technicians?select=*'),
         fetchAPI('notifications?select=*&order=created_at.desc'),
         fetchAPI('partners?select=*&order=created_at.desc'),
@@ -761,7 +761,6 @@ export default function ProtectedOrders() {
         {activeTab === 'orders' && (
           <div className="space-y-4">
             <div className="bg-slate-900 rounded-xl p-4 flex flex-wrap gap-3 items-center">
-              {/* Search and filters */}
               <div className="relative flex-1 min-w-[200px]"><Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} /><input type="text" placeholder="بحث..." className="w-full pr-10 p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} /></div>
               <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"><option value="all">الكل</option><option value="pending">قيد الانتظار</option><option value="in-progress">قيد التنفيذ</option><option value="inspected">تم الكشف</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option></select>
               <select value={filterTechnician} onChange={e=>setFilterTechnician(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"><option value="">جميع الفنيين</option>{technicians.map(t=><option key={t.id} value={t.name}>{t.name}</option>)}</select>
