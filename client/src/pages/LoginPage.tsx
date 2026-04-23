@@ -11,6 +11,26 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // دالة لتفعيل الإشعارات عبر OneSignal
+  const initOneSignal = async (userId: string) => {
+    try {
+      if (window.OneSignalDeferred) {
+        const [oneSignalPromise] = window.OneSignalDeferred;
+        const OneSignal = await oneSignalPromise?.(OneSignal);
+        if (OneSignal) {
+          await OneSignal.login(userId);
+          await OneSignal.Slidedown.promptPush();
+          console.log("OneSignal initialized for user:", userId);
+        }
+      } else {
+        // في حالة لم يتم تحميل الـ SDK بعد، انتظر ثم حاول مرة أخرى
+        setTimeout(() => initOneSignal(userId), 1000);
+      }
+    } catch (err) {
+      console.error("OneSignal init error", err);
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -40,6 +60,10 @@ export default function Login() {
             role: user.role
           }));
           localStorage.setItem('userRole', user.role);
+          
+          // ✅ تفعيل الإشعارات للمدير
+          await initOneSignal(user.id.toString());
+          
           window.location.href = user.role === 'data-entry' ? '/data-entry' : '/orders';
         } else {
           setError('❌ اسم المستخدم أو كلمة المرور غير صحيحة');
@@ -69,6 +93,10 @@ export default function Login() {
           }));
           localStorage.setItem('userRole', 'tech');
           localStorage.setItem('techName', tech.name);
+          
+          // ✅ تفعيل الإشعارات للفني
+          await initOneSignal(`tech_${tech.id}`);
+          
           window.location.href = '/tech-portal';
         } else {
           setError('❌ اسم المستخدم أو كلمة المرور غير صحيحة');
@@ -171,4 +199,4 @@ export default function Login() {
       </div>
     </div>
   );
-}
+            }
