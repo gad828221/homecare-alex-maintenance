@@ -16,14 +16,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git-filter-repo
 
-      - name: Remove node_modules from history
+      - name: Remove large folders from history
         run: |
-          git filter-repo --path client/node_modules --invert-paths --force
+          git filter-repo --path client/node_modules --path client/dist --invert-paths --force
 
-      - name: Remove dist from history
+      - name: Force push to main
         run: |
-          git filter-repo --path client/dist --invert-paths --force
-
-      - name: Force push cleaned history
-        run: |
-          git push --force --all
+          git push --force origin main
