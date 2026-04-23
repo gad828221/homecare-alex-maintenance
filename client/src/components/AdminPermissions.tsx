@@ -53,7 +53,15 @@ export default function AdminPermissions() {
     if (!formData.username || !formData.name || !formData.password) { alert('⚠️ يرجى ملء جميع الحقول المطلوبة'); return; }
     try {
       if (editingUser) {
-        await fetchAPI(`users?id=eq.${editingUser.id}`, { method: 'PATCH', body: JSON.stringify(formData) });
+        const response = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${editingUser.id}`, {
+          method: 'PATCH',
+          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
         alert('✅ تم تحديث المستخدم بنجاح');
       } else {
         await fetchAPI('users', { method: 'POST', body: JSON.stringify(formData) });
@@ -62,7 +70,7 @@ export default function AdminPermissions() {
       setShowModal(false); setEditingUser(null);
       setFormData({ username: '', name: '', password: '', role: 'user', is_active: true });
       fetchUsers();
-    } catch (err) { console.error('خطأ في حفظ المستخدم:', err); alert('❌ حدث خطأ في حفظ المستخدم'); }
+    } catch (err: any) { console.error('خطأ في حفظ المستخدم:', err); alert(`❌ فشل حفظ المستخدم: ${err.message}`); }
   };
 
   const handleDeleteUser = async (id: number, name: string) => {
@@ -102,7 +110,7 @@ export default function AdminPermissions() {
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case 'admin': return '🔐 مدير';
+      case 'admin': return '🔐 مدير رئيسي';
       case 'manager': return '📊 مدير عمليات';
       case 'data-entry': return '📝 إدخال بيانات';
       case 'tech': return '🔧 فني';
@@ -139,7 +147,6 @@ export default function AdminPermissions() {
         ))}
       </div>
 
-      {/* مودال إضافة / تعديل مستخدم */}
       {showModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
@@ -148,7 +155,7 @@ export default function AdminPermissions() {
               <div><label className="text-sm text-gray-600">اسم المستخدم</label><input type="text" value={formData.username} onChange={e => setFormData({ ...formData, username: e.target.value })} className="w-full border rounded px-3 py-2" required /></div>
               <div><label className="text-sm text-gray-600">الاسم الكامل</label><input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full border rounded px-3 py-2" required /></div>
               <div><label className="text-sm text-gray-600">كلمة المرور</label><input type="password" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} className="w-full border rounded px-3 py-2" required /></div>
-              <div><label className="text-sm text-gray-600">الدور</label><select value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value as User['role'] })} className="w-full border rounded px-3 py-2"><option value="user">👤 مستخدم عادي</option><option value="viewer">👀 مشاهد</option><option value="data-entry">📝 إدخال بيانات</option><option value="tech">🔧 فني</option><option value="manager">📊 مدير عمليات</option><option value="admin">🔐 مدير</option></select></div>
+              <div><label className="text-sm text-gray-600">الدور</label><select value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value as User['role'] })} className="w-full border rounded px-3 py-2"><option value="user">👤 مستخدم عادي</option><option value="viewer">👀 مشاهد</option><option value="data-entry">📝 إدخال بيانات</option><option value="tech">🔧 فني</option><option value="manager">📊 مدير عمليات</option><option value="admin">🔐 مدير رئيسي</option></select></div>
               <div className="flex items-center gap-2"><input type="checkbox" checked={formData.is_active} onChange={e => setFormData({ ...formData, is_active: e.target.checked })} className="w-4 h-4" /><label className="text-sm text-gray-600">نشط</label></div>
               <div className="flex gap-3"><button type="submit" className="flex-1 bg-orange-500 text-white py-2 rounded font-bold">حفظ</button><button type="button" onClick={() => setShowModal(false)} className="flex-1 bg-gray-200 text-gray-800 py-2 rounded font-bold">إلغاء</button></div>
             </form>
@@ -156,7 +163,6 @@ export default function AdminPermissions() {
         </div>
       )}
 
-      {/* مودال عرض بيانات الدخول */}
       {showCredentialsModal && selectedUser && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
@@ -172,4 +178,4 @@ export default function AdminPermissions() {
       )}
     </div>
   );
-}
+         }
