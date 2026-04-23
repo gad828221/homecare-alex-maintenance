@@ -45,6 +45,40 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     
+    <!-- OneSignal Push Notifications -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "4e110360-2a24-4aa3-be39-050c0ed9a3e0",
+          allowLocalhostAsSecureOrigin: true,
+        });
+        console.log("OneSignal ready");
+        
+        // محاولة تسجيل الدخول إذا كان هناك مستخدم مخزن
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
+          try {
+            const user = JSON.parse(storedUser);
+            const userId = user.id ? user.id.toString() : (user.role === 'tech' ? `tech_${user.id}` : `admin_${user.id}`);
+            await OneSignal.login(userId);
+            console.log("OneSignal login success:", userId);
+          } catch(e) { console.error(e); }
+        }
+      });
+      
+      // استمع لحدث مخصص من React لتسجيل الدخول بعد تحميل الصفحة
+      window.addEventListener('onesignal-login', async (event) => {
+        const { userId } = event.detail;
+        if (window.OneSignalDeferred) {
+          const [oneSignalPromise] = window.OneSignalDeferred;
+          const OneSignal = await oneSignalPromise?.(OneSignal);
+          if (OneSignal) await OneSignal.login(userId);
+        }
+      });
+    </script>
+    
     <!-- Structured Data (JSON-LD) -->
     <script type="application/ld+json">
     {
