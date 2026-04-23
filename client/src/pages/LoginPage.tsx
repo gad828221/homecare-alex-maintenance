@@ -11,22 +11,6 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // ✅ دالة تهيئة OneSignal ديناميكية (لتجنب أخطاء البناء إذا كانت الحزمة غير مثبتة)
-  const initOneSignal = async (userId: string) => {
-    try {
-      const OneSignal = (await import('react-onesignal')).default;
-      await OneSignal.init({
-        appId: "4e110360-2a24-4aa3-be39-050c0ed9a3e0",
-        allowLocalhostAsSecureOrigin: true,
-      });
-      console.log("OneSignal initialized");
-      await OneSignal.login(userId);
-      await OneSignal.Slidedown.promptPush();
-    } catch (err) {
-      console.error("OneSignal init error (library may not be installed):", err);
-    }
-  };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -56,10 +40,6 @@ export default function Login() {
             role: user.role
           }));
           localStorage.setItem('userRole', user.role);
-          
-          // محاولة تهيئة OneSignal (لن تؤثر على سير العمل إذا فشلت)
-          await initOneSignal(user.id.toString());
-          
           window.location.href = user.role === 'data-entry' ? '/data-entry' : '/orders';
         } else {
           setError('❌ اسم المستخدم أو كلمة المرور غير صحيحة');
@@ -89,9 +69,6 @@ export default function Login() {
           }));
           localStorage.setItem('userRole', 'tech');
           localStorage.setItem('techName', tech.name);
-          
-          await initOneSignal(`tech_${tech.id}`);
-          
           window.location.href = '/tech-portal';
         } else {
           setError('❌ اسم المستخدم أو كلمة المرور غير صحيحة');
