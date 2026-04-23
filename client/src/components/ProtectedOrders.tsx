@@ -433,7 +433,6 @@ export default function ProtectedOrders() {
     await sendDailyReportToPartners(reportDate);
   };
 
-  // ✅ جلب البيانات مع ضمان أن deletedOrders مصفوفة
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -587,8 +586,7 @@ export default function ProtectedOrders() {
 
   const restoreOrder = async (id: number) => {
     if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية");
-    // البحث في deletedOrders (وهي مصفوفة)
-    const order = Array.isArray(deletedOrders) ? deletedOrders.find(o => o.id === id) : null;
+    const order = deletedOrders.find(o => o.id === id);
     if (!order) return;
     if (confirm(`استعادة أوردر ${order.customer_name} (${order.order_number})؟`)) {
       try {
@@ -740,7 +738,6 @@ export default function ProtectedOrders() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200" dir="rtl">
-      {/* Header and Tabs as in previous version (unchanged) */}
       <div className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 px-4 py-3">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3"><LayoutDashboard className="w-6 h-6 text-orange-500" /><div><h1 className="text-lg font-bold text-white">لوحة تحكم المدير</h1><p className="text-xs text-slate-400">{currentUser?.name || 'مدير النظام'}</p></div></div>
@@ -764,6 +761,7 @@ export default function ProtectedOrders() {
         {activeTab === 'orders' && (
           <div className="space-y-4">
             <div className="bg-slate-900 rounded-xl p-4 flex flex-wrap gap-3 items-center">
+              {/* Search and filters */}
               <div className="relative flex-1 min-w-[200px]"><Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} /><input type="text" placeholder="بحث..." className="w-full pr-10 p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} /></div>
               <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"><option value="all">الكل</option><option value="pending">قيد الانتظار</option><option value="in-progress">قيد التنفيذ</option><option value="inspected">تم الكشف</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option></select>
               <select value={filterTechnician} onChange={e=>setFilterTechnician(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"><option value="">جميع الفنيين</option>{technicians.map(t=><option key={t.id} value={t.name}>{t.name}</option>)}</select>
@@ -817,19 +815,193 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {/* باقي التبويبات (technicians, reports, invoicesReview, cash, partners, notifications, performance, permissions) بنفس الشكل السابق، لم نغيرها */}
-        {activeTab === 'technicians' && (/* نفس الكود السابق */)}
-        {activeTab === 'reports' && (/* نفس الكود السابق */)}
-        {activeTab === 'invoicesReview' && (/* نفس الكود السابق */)}
-        {activeTab === 'cash' && (/* نفس الكود السابق */)}
-        {activeTab === 'partners' && (/* نفس الكود السابق */)}
-        {activeTab === 'notifications' && (/* نفس الكود السابق */)}
+        {activeTab === 'technicians' && (
+          <div className="bg-slate-900 rounded-xl p-4">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex gap-2">
+                <button onClick={()=>setFilterTechStatus('active')} className={`px-3 py-1 rounded-full text-sm ${filterTechStatus==='active'?'bg-orange-600 text-white':'bg-slate-800 text-slate-300'}`}>النشطون</button>
+                <button onClick={()=>setFilterTechStatus('inactive')} className={`px-3 py-1 rounded-full text-sm ${filterTechStatus==='inactive'?'bg-orange-600 text-white':'bg-slate-800 text-slate-300'}`}>غير النشطون</button>
+                <button onClick={()=>setFilterTechStatus('all')} className={`px-3 py-1 rounded-full text-sm ${filterTechStatus==='all'?'bg-orange-600 text-white':'bg-slate-800 text-slate-300'}`}>الجميع</button>
+              </div>
+              {canEditDelete() && <button onClick={()=>{setEditingTech(null); setTechForm({ name: '', phone: '', specialization: '', is_active: true, username: '', password: '', profit_percentage: 50 }); setShowTechModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={18}/> إضافة فني</button>}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {filteredTechnicians.map(tech => (
+                <div key={tech.id} className="bg-slate-800 rounded-xl p-4 text-center border border-slate-700">
+                  <div className="w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-3"><Users className="w-8 h-8 text-orange-500" /></div>
+                  <h3 className="font-bold text-white">{tech.name}</h3>
+                  <p className="text-xs text-slate-400">{tech.specialization}</p>
+                  <p className="text-xs text-slate-400 mt-1">نسبة الأرباح: {tech.profit_percentage ?? 50}%</p>
+                  <div className="flex gap-2 mt-3">
+                    <button onClick={() => copyTechLink(tech)} className="flex-1 bg-slate-700 text-slate-300 py-1 rounded text-xs flex items-center justify-center gap-1">
+                      {copiedId === tech.id ? <Check size={14}/> : <Copy size={14}/>} نسخ
+                    </button>
+                    {canEditDelete() && <>
+                      <button onClick={()=>{setEditingTech(tech); setTechForm(tech); setShowTechModal(true);}} className="p-1 text-blue-500"><Edit size={16}/></button>
+                      <button onClick={()=>deleteTechnician(tech.id, tech.name)} className="p-1 text-red-500"><Trash2 size={16}/></button>
+                      <button onClick={()=>toggleTechnicianActive(tech)} className={`p-1 ${tech.is_active!==false ? 'text-green-500' : 'text-red-500'}`}>{tech.is_active!==false ? 'نشط' : 'تعطيل'}</button>
+                      <button onClick={() => updateAllPendingOrdersProfit(tech.name, tech.profit_percentage ?? 50)} className="p-1 text-purple-500 hover:text-purple-400" title="تحديث نسب الأوردرات غير المكتملة لهذا الفني"><RefreshCw size={16}/></button>
+                    </>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'reports' && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-slate-900 rounded-xl p-6 text-center"><p className="text-slate-400">إجمالي الإيرادات</p><p className="text-3xl font-bold text-white">{orders.reduce((a,o)=>a+(o.total_amount||0),0).toLocaleString()} ج.م</p></div>
+            <div className="bg-slate-900 rounded-xl p-6 text-center"><p className="text-slate-400">إجمالي المصاريف</p><p className="text-3xl font-bold text-white">{orders.reduce((a,o)=>a+(o.parts_cost+o.transport_cost||0),0).toLocaleString()} ج.م</p></div>
+            <div className="bg-slate-900 rounded-xl p-6 text-center"><p className="text-slate-400">صافي أرباح الشركة</p><p className="text-3xl font-bold text-orange-500">{stats.totalIncome.toLocaleString()} ج.م</p></div>
+          </div>
+        )}
+
+        {activeTab === 'invoicesReview' && (
+          <div className="space-y-3">
+            {orders.filter(o=>o.status==='completed' && !o.invoice_approved).map(order => (
+              <div key={order.id} className="bg-slate-900 rounded-xl p-4 flex justify-between items-center flex-wrap gap-3 border border-slate-800">
+                <div><p className="font-bold text-white">{order.customer_name}</p><p className="text-sm text-slate-400">{order.device_type} - {order.brand}</p><p className="text-orange-400">المبلغ: {order.total_amount} ج.م</p></div>
+                <button onClick={()=>printAndSendInvoice(order)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2"><Printer size={16}/> طباعة الفاتورة</button>
+              </div>
+            ))}
+            {orders.filter(o=>o.status==='completed' && !o.invoice_approved).length===0 && <div className="text-center py-8 text-slate-400">لا توجد فواتير بانتظار المراجعة</div>}
+          </div>
+        )}
+
+        {activeTab === 'cash' && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center flex-wrap gap-3">
+              <div className="bg-emerald-500/20 p-4 rounded-xl"><p className="text-slate-400">رصيد الخزنة</p><p className="text-3xl font-bold text-emerald-400">{cashBalance.toLocaleString()} ج.م</p></div>
+              <div className="flex gap-2">
+                <input type="date" value={cashFilterDate} onChange={e=>setCashFilterDate(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"/>
+                <button onClick={()=>setCashFilterDate('')} className="bg-slate-700 text-white px-3 py-2 rounded-lg text-sm">إلغاء الفلتر</button>
+                {canEditDelete() && <button onClick={()=>{setEditingCash(null); setCashForm({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] }); setShowCashModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={16}/> حركة جديدة</button>}
+              </div>
+            </div>
+            <div className="bg-purple-600/10 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 border border-purple-500/30">
+              <div className="flex flex-col gap-1"><p className="text-sm font-semibold text-purple-300">📅 توزيع أرباح الشركاء</p><p className="text-xs text-slate-400">اختر التاريخ ثم اضغط زر التوزيع (يتم توزيع صافي ربح اليوم بنسبة الشركاء)</p></div>
+              <div className="flex flex-wrap items-center gap-3"><input type="date" value={selectedProfitDate} onChange={e=>setSelectedProfitDate(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"/>{canEditDelete() && <button onClick={handleDistributeSelectedProfit} className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"><DollarSign size={16}/> توزيع أرباح التاريخ المحدد</button>}</div>
+            </div>
+            <div className="bg-blue-600/10 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 border border-blue-500/30">
+              <div className="flex flex-col gap-1"><p className="text-sm font-semibold text-blue-300">📊 إرسال تقرير الخزنة للشركاء</p><p className="text-xs text-slate-400">اختر التاريخ ثم اضغط زر الإرسال (يفتح واتساب لكل شريك)</p></div>
+              <div className="flex flex-wrap items-center gap-3"><input type="date" value={reportDate} onChange={e=>setReportDate(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"/>{canEditDelete() && <button onClick={handleSendReportForDate} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"><Send size={16}/> إرسال تقرير التاريخ المحدد</button>}</div>
+            </div>
+            <div className="bg-slate-900 rounded-xl overflow-x-auto">
+              <table className="w-full text-sm"><thead className="bg-slate-800"><tr><th className="p-3">التاريخ</th><th>النوع</th><th>المبلغ</th><th>الوصف</th><th>إجراءات</th></tr></thead><tbody>{cashLedger.map((entry) => (<tr key={entry.id} className="border-b border-slate-800"><td className="p-3 text-slate-300">{entry.date}</td><td className="text-slate-300">{entry.type === 'income' ? '💰 دخل' : entry.type === 'expense' ? '💸 مصروف' : entry.type === 'profit_distribution' ? '📤 توزيع أرباح' : '🏦 رصيد احتياطي'}</td><td className={entry.type === 'income' || entry.type === 'reserve' ? 'text-green-400' : 'text-red-400'}>{entry.amount} ج.م</td><td className="max-w-xs break-words text-slate-300">{entry.description}</td><td>{canEditDelete() && <button onClick={() => deleteCashEntry(entry.id)} className="text-red-400"><Trash2 size={16}/></button>}</td></tr>))}</tbody></table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'partners' && (
+          <div className="space-y-4"><div className="flex justify-end">{canEditDelete() && <button onClick={()=>{setEditingPartner(null); setPartnerForm({ name: '', share_percentage: 0, phone: '', is_active: true }); setShowPartnerModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><UserPlus size={16}/> إضافة شريك</button>}</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{partners.map(partner => (
+            <div key={partner.id} className="bg-slate-900 rounded-xl p-4 border border-slate-800"><div className="flex justify-between"><h3 className="font-bold text-white">{partner.name}</h3><span className={`text-xs px-2 py-1 rounded-full ${partner.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{partner.is_active ? 'نشط' : 'غير نشط'}</span></div><p className="text-2xl font-bold text-orange-500 mt-2">{partner.share_percentage}%</p><p className="text-sm text-slate-400">📞 {partner.phone || 'لا يوجد'}</p>{canEditDelete() && <div className="flex gap-2 mt-3"><button onClick={()=>{setEditingPartner(partner); setPartnerForm(partner); setShowPartnerModal(true);}} className="text-blue-500"><Edit size={16}/></button><button onClick={()=>deletePartner(partner.id, partner.name)} className="text-red-500"><Trash2 size={16}/></button></div>}</div>
+          ))}</div></div>
+        )}
+
+        {activeTab === 'notifications' && (
+          <div className="space-y-3"><div className="flex justify-between"><h2 className="text-xl font-bold">🔔 سجل الإشعارات</h2>{canEditDelete() && notifications.length>0 && <button onClick={deleteAllNotifications} className="bg-red-500/20 text-red-400 px-3 py-1 rounded-lg text-sm flex items-center gap-1"><Trash size={14}/> مسح الكل</button>}</div>
+          {notifications.map(notif=>(
+            <div key={notif.id} className="bg-slate-900 rounded-xl p-4 flex justify-between items-center"><div><span className="text-orange-400 font-semibold">{notif.action}</span><span className="mx-2 text-slate-600">|</span><span className="text-slate-300">{notif.details}</span><div className="text-xs text-slate-500 mt-1">{new Date(notif.created_at).toLocaleString('ar-EG')}</div></div>{canEditDelete() && <button onClick={()=>deleteNotification(notif.id)} className="text-red-400"><Trash size={16}/></button>}</div>
+          ))}
+          {notifications.length===0 && <div className="text-center py-8 text-slate-400">لا توجد إشعارات</div>}</div>
+        )}
+
         {activeTab === 'performance' && <TechnicianPerformance orders={orders} technicians={technicians} />}
         {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions />}
       </div>
 
-      {/* المودالات (Order, Technician, Partner, Cash, Settlement) كما هي في الكود السابق، لم نغيرها */}
-      {/* ... */}
+      {showOrderModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl shadow-xl">
+            <div className="flex justify-between mb-4"><h3 className="text-xl font-bold text-white">{editingOrder ? 'تعديل أوردر' : 'أوردر جديد'}</h3><button onClick={()=>setShowOrderModal(false)} className="text-slate-400"><X size={20}/></button></div>
+            <form onSubmit={saveOrder} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="text-sm text-slate-400">اسم العميل</label><input type="text" value={formData.customer_name} onChange={e=>handleFormChange('customer_name',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/></div>
+                <div><label className="text-sm text-slate-400">رقم الهاتف</label><input type="text" value={formData.phone} onChange={e=>handleFormChange('phone',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/></div>
+                <div><label className="text-sm text-slate-400">نوع الجهاز</label><select value={formData.device_type} onChange={e=>handleFormChange('device_type',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="">اختر</option>{DEVICE_TYPES.map(d=><option key={d}>{d}</option>)}<option value="other">أخرى</option></select>{isOtherDevice && <input type="text" placeholder="جهاز مخصص" value={customDevice} onChange={e=>setCustomDevice(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 mt-2 text-white" required/>}</div>
+                <div><label className="text-sm text-slate-400">الماركة</label><select value={formData.brand} onChange={e=>handleFormChange('brand',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="">اختر</option>{BRANDS.map(b=><option key={b}>{b}</option>)}<option value="other">أخرى</option></select>{isOtherBrand && <input type="text" placeholder="ماركة مخصصة" value={customBrand} onChange={e=>setCustomBrand(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 mt-2 text-white" required/>}</div>
+                <div className="col-span-2"><label className="text-sm text-slate-400">العنوان</label><input type="text" value={formData.address} onChange={e=>handleFormChange('address',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/></div>
+                <div className="col-span-2"><label className="text-sm text-slate-400">وصف المشكلة</label><textarea rows={3} value={formData.problem_description} onChange={e=>handleFormChange('problem_description',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/></div>
+                <div><label className="text-sm text-slate-400">الفني</label><select value={formData.technician} onChange={e=>handleFormChange('technician',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="">اختر فني</option>{technicians.map(t=><option key={t.id}>{t.name}</option>)}</select></div>
+                <div><label className="text-sm text-slate-400">إجمالي المبلغ</label><input type="number" value={formData.total_amount} onChange={e=>handleFormChange('total_amount',parseFloat(e.target.value))} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/></div>
+                <div><label className="text-sm text-slate-400">قطع غيار</label><input type="number" value={formData.parts_cost} onChange={e=>handleFormChange('parts_cost',parseFloat(e.target.value))} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/></div>
+                <div><label className="text-sm text-slate-400">مواصلات</label><input type="number" value={formData.transport_cost} onChange={e=>handleFormChange('transport_cost',parseFloat(e.target.value))} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/></div>
+                <div className="col-span-2"><label className="flex items-center gap-2 text-slate-300"><input type="checkbox" checked={formData.is_paid} onChange={e=>handleFormChange('is_paid',e.target.checked)} /> تم التحصيل</label></div>
+              </div>
+              <div className="flex gap-3 pt-4"><button type="submit" disabled={isSubmitting} className="flex-1 bg-orange-600 text-white py-2 rounded-lg font-bold">{isSubmitting ? 'جاري الحفظ...' : 'حفظ'}</button><button type="button" onClick={()=>setShowOrderModal(false)} className="flex-1 bg-slate-800 text-slate-300 py-2 rounded-lg font-bold">إلغاء</button></div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showTechModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold text-white mb-4">{editingTech ? 'تعديل فني' : 'فني جديد'}</h3>
+            <form onSubmit={saveTechnician} className="space-y-4">
+              <input type="text" placeholder="الاسم" value={techForm.name} onChange={e=>setTechForm({...techForm, name: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/>
+              <input type="text" placeholder="رقم الهاتف" value={techForm.phone} onChange={e=>setTechForm({...techForm, phone: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/>
+              <input type="text" placeholder="التخصص" value={techForm.specialization} onChange={e=>setTechForm({...techForm, specialization: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/>
+              <input type="text" placeholder="اسم المستخدم" value={techForm.username} onChange={e=>setTechForm({...techForm, username: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/>
+              <input type="password" placeholder="كلمة المرور" value={techForm.password} onChange={e=>setTechForm({...techForm, password: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/>
+              <input type="number" placeholder="نسبة الفني (%)" value={techForm.profit_percentage} onChange={e=>setTechForm({...techForm, profit_percentage: parseInt(e.target.value)})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" />
+              <label className="flex items-center gap-2 text-slate-300"><input type="checkbox" checked={techForm.is_active} onChange={e=>setTechForm({...techForm, is_active: e.target.checked})} /> نشط</label>
+              <button type="submit" className="w-full bg-orange-600 text-white py-2 rounded-lg font-bold">حفظ</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showPartnerModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold text-white mb-4">{editingPartner ? 'تعديل شريك' : 'إضافة شريك'}</h3>
+            <form onSubmit={savePartner} className="space-y-4">
+              <input type="text" placeholder="اسم الشريك" value={partnerForm.name} onChange={e=>setPartnerForm({...partnerForm, name: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/>
+              <input type="number" placeholder="نسبة الربح (%)" value={partnerForm.share_percentage} onChange={e=>setPartnerForm({...partnerForm, share_percentage: parseFloat(e.target.value)})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/>
+              <input type="text" placeholder="رقم الهاتف" value={partnerForm.phone} onChange={e=>setPartnerForm({...partnerForm, phone: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"/>
+              <label className="flex items-center gap-2 text-slate-300"><input type="checkbox" checked={partnerForm.is_active} onChange={e=>setPartnerForm({...partnerForm, is_active: e.target.checked})} /> نشط</label>
+              <button type="submit" className="w-full bg-orange-600 text-white py-2 rounded-lg font-bold">حفظ</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showCashModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold text-white mb-4">{editingCash ? 'تعديل حركة' : 'إضافة حركة'}</h3>
+            <form onSubmit={addCashEntry} className="space-y-4">
+              <select value={cashForm.type} onChange={e=>setCashForm({...cashForm, type: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="income">💰 دخل</option><option value="expense">💸 مصروف</option></select>
+              <input type="number" placeholder="المبلغ" value={cashForm.amount} onChange={e=>setCashForm({...cashForm, amount: parseFloat(e.target.value)})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/>
+              <input type="text" placeholder="الوصف" value={cashForm.description} onChange={e=>setCashForm({...cashForm, description: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/>
+              <input type="date" value={cashForm.date} onChange={e=>setCashForm({...cashForm, date: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/>
+              <button type="submit" className="w-full bg-orange-600 text-white py-2 rounded-lg font-bold">حفظ</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showSettleModal && selectedOrder && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold text-white mb-4">تصفية الأوردر</h3>
+            <div className="space-y-4">
+              <div><label className="text-sm text-slate-400">المبلغ الإجمالي</label><input type="number" value={settleForm.total_amount} onChange={(e) => handleSettleChange('total_amount', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" /></div>
+              <div><label className="text-sm text-slate-400">قطع غيار</label><input type="number" value={settleForm.parts_cost} onChange={(e) => handleSettleChange('parts_cost', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" /></div>
+              <div><label className="text-sm text-slate-400">مواصلات</label><input type="number" value={settleForm.transport_cost} onChange={(e) => handleSettleChange('transport_cost', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" /></div>
+              <div className="bg-slate-800 p-3 rounded-lg space-y-2">
+                <div className="flex justify-between"><span className="text-slate-400">الصافي:</span><span className="text-white font-bold">{settleForm.net_amount} ج.م</span></div>
+                <div className="flex justify-between"><span className="text-slate-400">نصيب الفني ({technicians.find(t => t.name === selectedOrder?.technician)?.profit_percentage ?? 50}%):</span><span className="text-green-400 font-bold">{settleForm.technician_share} ج.م</span></div>
+                <div className="flex justify-between"><span className="text-slate-400">نصيب الشركة:</span><span className="text-orange-400 font-bold">{settleForm.company_share} ج.م</span></div>
+              </div>
+              <button onClick={submitSettlement} className="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 rounded-lg font-bold">تأكيد التصفية</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
