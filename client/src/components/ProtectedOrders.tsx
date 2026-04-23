@@ -38,10 +38,8 @@ const addNotification = async (action: string, details: string) => {
   } catch (err) { console.error(err); }
 };
 
-// تم تعطيل المزامنة التلقائية لمنع تغيير صلاحيات المستخدمين
-// إذا أردت إعادة تفعيلها لاحقاً، قم بإزالة التعليق عن السطر في useEffect
+// تم تعطيل المزامنة التلقائية (انظر useEffect أدناه)
 const syncTechniciansToUsers = async () => {
-  // هذه الدالة لا تفعل شيئاً الآن (معطلة)
   console.log("تم تعطيل مزامنة الفنيين تلقائياً للحفاظ على الصلاحيات");
   return;
 };
@@ -259,7 +257,7 @@ export default function ProtectedOrders() {
     } catch (err) { alert(`❌ حدث خطأ في الاتصال: ${err.message}`); return false; }
   };
 
-  // توزيع الأرباح (صافي الربح = الإيرادات فقط بدون خصم المصروفات)
+  // توزيع الأرباح (صافي الربح = الإيرادات فقط)
   const distributeProfitForDate = async (targetDate: string) => {
     try {
       const incomeEntries = await fetchAPI(`cash_ledger?select=amount&date=eq.${targetDate}&type=eq.income`);
@@ -433,11 +431,10 @@ export default function ProtectedOrders() {
 
   useEffect(() => {
     fetchData();
-    // تم تعطيل المزامنة التلقائية لمنع تغيير صلاحيات المستخدمين
-    // syncTechniciansToUsers();
+    // syncTechniciansToUsers(); // تم تعطيل المزامنة التلقائية تمامًا
   }, [fetchData]);
 
-  // باقي الدوال (حساب النسب، التصفية، إلخ) كما هي من الكود الأصلي - اختصار للطول
+  // الدوال المساعدة (حساب النسب، حفظ الأوردر، إلخ) كما هي من الكود الأصلي - اختصار للطول
   const calculateAmounts = (data: any) => {
     const total = parseFloat(data.total_amount) || 0;
     const parts = parseFloat(data.parts_cost) || 0;
@@ -724,6 +721,7 @@ export default function ProtectedOrders() {
       <div className="p-4">
         {activeTab === 'orders' && (
           <div className="space-y-4">
+            {/* شريط البحث والفلترة */}
             <div className="bg-slate-900 rounded-xl p-4 flex flex-wrap gap-3 items-center">
               <div className="relative flex-1 min-w-[200px]"><Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} /><input type="text" placeholder="بحث..." className="w-full pr-10 p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} /></div>
               <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"><option value="all">الكل</option><option value="pending">قيد الانتظار</option><option value="in-progress">قيد التنفيذ</option><option value="inspected">تم الكشف</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option></select>
@@ -850,7 +848,44 @@ export default function ProtectedOrders() {
               <div className="flex flex-wrap items-center gap-3"><input type="date" value={reportDate} onChange={e=>setReportDate(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"/>{canEditDelete() && <button onClick={handleSendReportForDate} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"><Send size={16}/> إرسال تقرير التاريخ المحدد</button>}</div>
             </div>
             <div className="bg-slate-900 rounded-xl overflow-x-auto">
-              <table className="w-full text-sm"><thead className="bg-slate-800"><tr><th className="p-3">التاريخ</th><th>النوع</th><th>المبلغ</th><th>الوصف</th><th>إجراءات</th></tr></thead><tbody>{cashLedger.map((entry) => (<tr key={entry.id} className="border-b border-slate-800"><td className="p-3 text-slate-300">{entry.date}</td><td className="text-slate-300">{entry.type === 'income' ? '💰 دخل' : entry.type === 'expense' ? '💸 مصروف' : entry.type === 'profit_distribution' ? '📤 توزيع أرباح' : '🏦 رصيد احتياطي'}</td><td className={entry.type === 'income' || entry.type === 'reserve' ? 'text-green-400' : 'text-red-400'}>{entry.amount} ج.م<\/td><td className="max-w-xs break-words text-slate-300">{entry.description}<\/td><td>{canEditDelete() && <button onClick={() => deleteCashEntry(entry.id)} className="text-red-400"><Trash2 size={16}/><\/button>}<\/td><\/tr>))}<\/tbody><\/table>
+              <table className="w-full text-sm">
+                <thead className="bg-slate-800">
+                  <tr>
+                    <th className="p-3">التاريخ</th>
+                    <th>النوع</th>
+                    <th>المبلغ</th>
+                    <th>الوصف</th>
+                    <th>إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cashLedger.map((entry) => (
+                    <tr key={entry.id} className="border-b border-slate-800">
+                      <td className="p-3 text-slate-300">{entry.date}</td>
+                      <td className="text-slate-300">
+                        {entry.type === 'income'
+                          ? '💰 دخل'
+                          : entry.type === 'expense'
+                          ? '💸 مصروف'
+                          : entry.type === 'profit_distribution'
+                          ? '📤 توزيع أرباح'
+                          : '🏦 رصيد احتياطي'}
+                      </td>
+                      <td className={entry.type === 'income' || entry.type === 'reserve' ? 'text-green-400' : 'text-red-400'}>
+                        {entry.amount} ج.م
+                      </td>
+                      <td className="max-w-xs break-words text-slate-300">{entry.description}</td>
+                      <td>
+                        {canEditDelete() && (
+                          <button onClick={() => deleteCashEntry(entry.id)} className="text-red-400">
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
@@ -874,12 +909,13 @@ export default function ProtectedOrders() {
         {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions />}
       </div>
 
-      {/* المودالات (مختصرة) */}
+      {/* المودالات (كما هي سابقاً) */}
       {showOrderModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl shadow-xl">
             <div className="flex justify-between mb-4"><h3 className="text-xl font-bold text-white">{editingOrder ? 'تعديل أوردر' : 'أوردر جديد'}</h3><button onClick={()=>setShowOrderModal(false)} className="text-slate-400"><X size={20}/></button></div>
             <form onSubmit={saveOrder} className="space-y-4">
+              {/* حقول النموذج كما هي */}
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="text-sm text-slate-400">اسم العميل</label><input type="text" value={formData.customer_name} onChange={e=>handleFormChange('customer_name',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/></div>
                 <div><label className="text-sm text-slate-400">رقم الهاتف</label><input type="text" value={formData.phone} onChange={e=>handleFormChange('phone',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/></div>
