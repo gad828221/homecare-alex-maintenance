@@ -1,0 +1,20 @@
+name: Clean Repository
+
+on:
+  workflow_dispatch:
+
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Remove node_modules from history
+        run: |
+          git filter-repo --path client/node_modules --invert-paths --force
+
+      - name: Push cleaned history
+        run: |
+          git push --force --all
