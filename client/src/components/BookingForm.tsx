@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MessageCircle, CheckCircle, User, Phone, Wrench, MapPin } from "lucide-react";
+import { notifyAdmins } from "../lib/onesignal";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -103,9 +104,12 @@ export default function BookingForm() {
 
       const message = `🔧 *طلب صيانة جديد*\n\n🆔 *رقم الأوردر:* ${orderNumber}\n👤 *الاسم:* ${formData.customer_name}\n📞 *الهاتف:* ${formData.phone}\n🔨 *نوع الجهاز:* ${finalDeviceType}\n🏷️ *الماركة:* ${finalBrand}\n⚠️ *المشكلة:* ${formData.problem_description}\n📍 *العنوان:* ${formData.address}\n\n📌 سيتم التواصل معك قريباً لتحديد موعد المعاينة.`;
       
-      const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(message)}`;
+       const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, "_blank");
-
+      
+      // إشعار Push للمديرين
+      notifyAdmins('أوردر جديد من الموقع', `عميل جديد: ${formData.customer_name} طلب صيانة ${finalDeviceType}`);
+      
       setSubmitMessage("✅ تم استلام طلبك بنجاح! سيتم التواصل معك قريباً.");
       
       // إعادة تعيين النموذج
