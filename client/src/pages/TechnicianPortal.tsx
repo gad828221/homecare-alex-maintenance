@@ -134,7 +134,8 @@ export default function TechnicianPortal() {
   const fetchData = useCallback(async () => {
     if (!techName || !isActive) return;
     try {
-      const data = await fetchAPI(`orders?technician=eq.${encodeURIComponent(techName)}&order=created_at.desc`);
+      // إضافة شرط deleted_at=is.null لاستبعاد الأوردرات المحذوفة
+      const data = await fetchAPI(`orders?select=*&technician=eq.${encodeURIComponent(techName)}&deleted_at=is.null&order=created_at.desc`);
       setOrders(data);
       const active = data.filter((o: any) => o.status === 'pending' || o.status === 'in-progress').length;
       const completed = data.filter((o: any) => o.status === 'completed').length;
@@ -229,7 +230,6 @@ export default function TechnicianPortal() {
     notifyAdmin("⏰ تأجيل الطلب", order, `السبب: ${reason}`);
   };
 
-  // ✅ دالة إضافة ملاحظة مع تحديث فوري
   const handleNote = async (order: any, note: string) => {
     const oldNote = order.technician_note || '';
     const newNote = oldNote ? `${oldNote}\n${note}` : note;
@@ -239,7 +239,7 @@ export default function TechnicianPortal() {
         body: JSON.stringify({ technician_note: newNote })
       });
       await addNotification('📝 ملاحظة فنية', `أضاف الفني ملاحظة للأوردر رقم ${order.order_number}: ${note}`);
-      await fetchData(); // إعادة جلب الأوردرات لظهور الملاحظة فوراً
+      await fetchData();
       addNotification({ type: 'success', title: '✅ تم الإضافة', message: 'تم حفظ الملاحظة', duration: 3000 });
     } catch (err) { console.error(err); }
   };
@@ -340,8 +340,19 @@ export default function TechnicianPortal() {
                   <div className="p-4 space-y-3">
                     <div className="flex justify-between items-start">
                       <div><div className="font-bold text-white">{order.customer_name}</div><div className="text-[11px] text-slate-400 flex items-center gap-1"><Calendar className="w-3 h-3" /> {order.date}</div></div>
-                      <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${order.status === 'completed' ? 'bg-green-500/20 text-green-400' : order.status === 'in-progress' ? 'bg-blue-500/20 text-blue-400' : order.status === 'cancelled' ? 'bg-red-500/20 text-red-400' : order.status === 'deferred' ? 'bg-purple-500/20 text-purple-400' : order.status === 'inspected' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                        {order.status === 'completed' ? 'مكتمل' : order.status === 'in-progress' ? 'جاري العمل' : order.status === 'cancelled' ? 'ملغي' : order.status === 'deferred' ? 'مؤجل' : order.status === 'inspected' ? 'تم الكشف' : 'قيد الانتظار'}
+                      <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        order.status === 'completed' ? 'bg-green-500/20 text-green-400' : 
+                        order.status === 'in-progress' ? 'bg-blue-500/20 text-blue-400' : 
+                        order.status === 'cancelled' ? 'bg-red-500/20 text-red-400' : 
+                        order.status === 'deferred' ? 'bg-purple-500/20 text-purple-400' : 
+                        order.status === 'inspected' ? 'bg-yellow-500/20 text-yellow-400' : 
+                        'bg-yellow-500/20 text-yellow-400'
+                      }`}>
+                        {order.status === 'completed' ? 'مكتمل' : 
+                         order.status === 'in-progress' ? 'جاري العمل' : 
+                         order.status === 'cancelled' ? 'ملغي' : 
+                         order.status === 'deferred' ? 'مؤجل' : 
+                         order.status === 'inspected' ? 'تم الكشف' : 'قيد الانتظار'}
                       </div>
                     </div>
                     <div className="text-xs text-slate-300 space-y-1">
