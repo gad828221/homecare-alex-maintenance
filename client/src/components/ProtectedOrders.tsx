@@ -1,14 +1,15 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { 
   Plus, Search, LayoutDashboard, Users, 
   CheckCircle2, AlertCircle, 
   Edit, Trash2, RefreshCw, Phone,
   Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut, Send,
-  RotateCcw
+  AlertTriangle, RotateCcw
 } from "lucide-react";
 import AdminPermissions from './AdminPermissions';
 import TechnicianPerformance from './TechnicianPerformance';
 import { createClient } from '@supabase/supabase-js';
+import { useNotification } from './EnhancedNotificationSystem';
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -38,13 +39,14 @@ const addNotification = async (action: string, details: string) => {
   } catch (err) { console.error(err); }
 };
 
-// تم تعطيل المزامنة التلقائية (انظر useEffect أدناه)
 const syncTechniciansToUsers = async () => {
   console.log("تم تعطيل مزامنة الفنيين تلقائياً للحفاظ على الصلاحيات");
   return;
 };
 
 export default function ProtectedOrders() {
+  const { addNotification: toastNotification } = useNotification();
+
   const [orders, setOrders] = useState<any[]>([]);
   const [technicians, setTechnicians] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -187,15 +189,15 @@ export default function ProtectedOrders() {
 
   const fetchCashLedger = useCallback(async () => {
     try {
-      let endpoint = 'cash_ledger?select=*&order=date.desc';
-      if (cashFilterDate) endpoint = `cash_ledger?select=*&date=eq.${cashFilterDate}&order=date.desc`;
+      let endpoint = 'cash_ledger?select=*&order=date.desc,created_at.desc';
+      if (cashFilterDate) endpoint = `cash_ledger?select=*&date=eq.${cashFilterDate}&order=date.desc,created_at.desc`;
       const data = await fetchAPI(endpoint);
       setCashLedger(data || []);
-      const balance = (data || []).reduce((acc: number, entry: any) => {
-        if (entry.type === 'income' || entry.type === 'reserve') return acc + entry.amount;
-        else if (entry.type === 'expense' || entry.type === 'profit_distribution') return acc - entry.amount;
-        return acc;
-      }, 0);
+      let balance = 0;
+      (data || []).forEach((entry: any) => {
+        if (entry.type === 'income' || entry.type === 'reserve') balance += entry.amount;
+        else if (entry.type === 'expense' || entry.type === 'profit_distribution') balance -= entry.amount;
+      });
       setCashBalance(balance);
     } catch (err) { console.error(err); }
   }, [cashFilterDate]);
@@ -257,11 +259,11 @@ export default function ProtectedOrders() {
     } catch (err) { alert(`❌ حدث خطأ في الاتصال: ${err.message}`); return false; }
   };
 
-  // توزيع الأرباح (صافي الربح = الإيرادات فقط)
+  // ✅ توزيع الأرباح (بدون إضافة reserve)
   const distributeProfitForDate = async (targetDate: string) => {
     try {
       const incomeEntries = await fetchAPI(`cash_ledger?select=amount&date=eq.${targetDate}&type=eq.income`);
-      const totalIncome = (incomeEntries || []).reduce((sum: number, entry: any) => sum + (entry.amount || 0), 0);
+      const totalIncome = (incomeEntries || []).reduce((sum, entry) => sum + (entry.amount || 0), 0);
       const netProfit = totalIncome;
       if (netProfit <= 0) {
         alert(`⚠️ لا توجد أرباح ليوم ${targetDate}.`);
@@ -278,17 +280,18 @@ export default function ProtectedOrders() {
         return;
       }
       const amountToDistribute = (netProfit * totalPartnerShares) / 100;
-      const remainingReserve = netProfit - amountToDistribute;
       if (amountToDistribute <= 0) {
         alert("⚠️ لا يوجد مبلغ كافٍ للتوزيع.");
         return;
       }
-      if (!confirm(`💰 أرباح يوم ${targetDate}: ${netProfit.toLocaleString()} ج.م\n📤 نسبة التوزيع: ${totalPartnerShares}%\n💰 سيتم توزيع ${amountToDistribute.toLocaleString()} ج.م\n🏦 سيتم إضافة ${remainingReserve.toLocaleString()} ج.م احتياطي\nهل تريد الاستمرار؟`)) return;
+      if (!confirm(`💰 أرباح يوم ${targetDate}: ${netProfit.toLocaleString()} ج.م\n📤 نسبة التوزيع: ${totalPartnerShares}%\n💰 سيتم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء\nهل تريد الاستمرار؟`)) return;
+
       const existingDistributions = await fetchAPI(`cash_ledger?select=id&date=eq.${targetDate}&type=eq.profit_distribution`);
       if (existingDistributions && existingDistributions.length > 0) {
         alert("⚠️ تم التوزيع مسبقاً.");
         return;
       }
+
       let distributedSum = 0;
       for (let i = 0; i < activePartners.length; i++) {
         const partner = activePartners[i];
@@ -308,30 +311,24 @@ export default function ProtectedOrders() {
           });
         }
       }
-      if (remainingReserve > 0) {
-        const existingReserve = await fetchAPI(`cash_ledger?select=id&date=eq.${targetDate}&type=eq.reserve`);
-        if (!existingReserve || existingReserve.length === 0) {
-          await fetchAPI('cash_ledger', {
-            method: 'POST',
-            body: JSON.stringify({
-              type: 'reserve',
-              amount: remainingReserve,
-              description: `🏦 رصيد احتياطي - أرباح يوم ${targetDate}`,
-              date: targetDate
-            })
-          });
-        }
-      }
+
       await addNotification('توزيع أرباح', `✅ تم توزيع ${amountToDistribute.toLocaleString()} ج.م`);
+      toastNotification({
+        type: 'success',
+        title: '✅ توزيع أرباح',
+        message: `تم توزيع ${amountToDistribute.toLocaleString()} ج.م`,
+        duration: 5000
+      });
       await fetchCashLedger();
       await fetchData();
-      alert(`✅ تم التوزيع.\n💰 وزع: ${amountToDistribute.toLocaleString()} ج.م\n🏦 احتياطي: ${remainingReserve.toLocaleString()} ج.م`);
+      alert(`✅ تم التوزيع بنجاح.\n💰 تم توزيع ${amountToDistribute.toLocaleString()} ج.م`);
     } catch (err) {
       console.error(err);
       alert("❌ حدث خطأ أثناء التوزيع");
     }
   };
 
+  // ✅ إرسال التقرير مع رصيد الافتتاح والختام
   const sendDailyReportToPartners = async (targetDate: string) => {
     try {
       const entries = await fetchAPI(`cash_ledger?select=*&date=eq.${targetDate}&order=created_at.desc`);
@@ -339,6 +336,14 @@ export default function ProtectedOrders() {
         alert(`⚠️ لا توجد حركات خزنة ليوم ${targetDate}`);
         return false;
       }
+
+      const allBefore = await fetchAPI(`cash_ledger?select=type,amount&date=lt.${targetDate}`);
+      let openingBalance = 0;
+      (allBefore || []).forEach((entry: any) => {
+        if (entry.type === 'income' || entry.type === 'reserve') openingBalance += entry.amount;
+        else if (entry.type === 'expense' || entry.type === 'profit_distribution') openingBalance -= entry.amount;
+      });
+
       let totalIncome = 0, totalExpense = 0, totalProfitDist = 0, totalReserve = 0;
       const profitDetails = [];
       for (const entry of entries) {
@@ -350,15 +355,37 @@ export default function ProtectedOrders() {
         }
         else if (entry.type === 'reserve') totalReserve += entry.amount;
       }
+
       const netProfit = totalIncome;
-      const currentBalance = cashBalance;
-      const reportText = `📊 *تقرير الخزنة اليومي* 📊\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📅 *التاريخ:* ${targetDate}\n\n💰 *الإيرادات (ربح اليوم):* ${totalIncome.toLocaleString()} ج.م\n💸 *المصروفات (تخصم من الرصيد فقط):* ${totalExpense.toLocaleString()} ج.م\n📤 *توزيع أرباح الشركاء:* ${totalProfitDist.toLocaleString()} ج.م\n🏦 *الرصيد الاحتياطي المضاف:* ${totalReserve.toLocaleString()} ج.م\n✅ *صافي الربح الموزع:* ${netProfit.toLocaleString()} ج.م\n💰 *الرصيد الحالي للخزنة:* ${currentBalance.toLocaleString()} ج.م\n\n👥 *تفاصيل توزيع الأرباح:*\n${profitDetails.length ? profitDetails.join('\n') : 'لا توجد توزيعات'}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📞 للاستفسار: 01278885772\n✨ نظام إدارة الصيانة - تقرير يومي`;
+      const closingBalance = openingBalance + totalIncome + totalReserve - totalExpense - totalProfitDist;
+
+      const reportText = `📊 *تقرير الخزنة اليومي* 📊
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 *التاريخ:* ${targetDate}
+
+💰 *رصيد أول اليوم:* ${openingBalance.toLocaleString()} ج.م
+💰 *الإيرادات (ربح اليوم):* ${totalIncome.toLocaleString()} ج.م
+💸 *المصروفات (تخصم من الرصيد فقط):* ${totalExpense.toLocaleString()} ج.م
+📤 *توزيع أرباح الشركاء:* ${totalProfitDist.toLocaleString()} ج.م
+🏦 *الرصيد الاحتياطي المضاف:* ${totalReserve.toLocaleString()} ج.م
+✅ *صافي الربح الموزع:* ${netProfit.toLocaleString()} ج.م
+💰 *رصيد آخر اليوم:* ${closingBalance.toLocaleString()} ج.م
+
+👥 *تفاصيل توزيع الأرباح:*
+${profitDetails.length ? profitDetails.join('\n') : 'لا توجد توزيعات'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📞 للاستفسار: 01278885772
+✨ نظام إدارة الصيانة - تقرير يومي`;
+
       const activePartners = partners.filter(p => p.is_active && p.phone);
       if (activePartners.length === 0) {
         alert("⚠️ لا يوجد شركاء نشطون بأرقام هواتف");
         return false;
       }
+
       if (!confirm(`📋 التقرير التالي سيتم إرساله للشركاء:\n\n${reportText}\n\nهل تريد المتابعة؟`)) return false;
+
       for (const partner of activePartners) {
         let phone = partner.phone.toString().replace(/[^\d]/g, '');
         if (phone.startsWith('0')) phone = phone.substring(1);
@@ -368,7 +395,14 @@ export default function ProtectedOrders() {
         window.open(whatsappUrl, '_blank');
         await new Promise(resolve => setTimeout(resolve, 800));
       }
+
       await addNotification('إرسال تقرير يومي', `تم إرسال تقرير يوم ${targetDate} إلى ${activePartners.length} شريك`);
+      toastNotification({
+        type: 'info',
+        title: '📊 تقرير الخزنة',
+        message: `تم إرسال التقرير إلى ${activePartners.length} شريك`,
+        duration: 4000
+      });
       alert(`✅ تم إرسال التقرير إلى ${activePartners.length} شريك.`);
       return true;
     } catch (err) {
@@ -403,7 +437,7 @@ export default function ProtectedOrders() {
         fetchAPI('technicians?select=*'),
         fetchAPI('notifications?select=*&order=created_at.desc'),
         fetchAPI('partners?select=*&order=created_at.desc'),
-        fetchAPI('cash_ledger?select=*&order=date.desc')
+        fetchAPI('cash_ledger?select=*&order=date.desc,created_at.desc')
       ]);
       setOrders(Array.isArray(ordersData) ? ordersData : []);
       setDeletedOrders(Array.isArray(deletedData) ? deletedData : []);
@@ -431,10 +465,10 @@ export default function ProtectedOrders() {
 
   useEffect(() => {
     fetchData();
-    // syncTechniciansToUsers(); // تم تعطيل المزامنة التلقائية تمامًا
+    // syncTechniciansToUsers(); // تم تعطيل المزامنة
   }, [fetchData]);
 
-  // الدوال المساعدة (حساب النسب، حفظ الأوردر، إلخ) كما هي من الكود الأصلي - اختصار للطول
+  // دوال مساعدة (حساب النسب، حفظ الأوردر، تحديث الحالة، إلخ) بنفس الكود الأصلي
   const calculateAmounts = (data: any) => {
     const total = parseFloat(data.total_amount) || 0;
     const parts = parseFloat(data.parts_cost) || 0;
@@ -721,7 +755,6 @@ export default function ProtectedOrders() {
       <div className="p-4">
         {activeTab === 'orders' && (
           <div className="space-y-4">
-            {/* شريط البحث والفلترة */}
             <div className="bg-slate-900 rounded-xl p-4 flex flex-wrap gap-3 items-center">
               <div className="relative flex-1 min-w-[200px]"><Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} /><input type="text" placeholder="بحث..." className="w-full pr-10 p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} /></div>
               <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"><option value="all">الكل</option><option value="pending">قيد الانتظار</option><option value="in-progress">قيد التنفيذ</option><option value="inspected">تم الكشف</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option></select>
@@ -760,8 +793,8 @@ export default function ProtectedOrders() {
             
             {showDeleted && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Array.isArray(deletedOrders) && deletedOrders.length === 0 && <div className="col-span-full text-center py-8 text-slate-400">لا توجد أوردرات محذوفة</div>}
-                {Array.isArray(deletedOrders) && deletedOrders.map(order => (
+                {deletedOrders.length === 0 && <div className="col-span-full text-center py-8 text-slate-400">لا توجد أوردرات محذوفة</div>}
+                {deletedOrders.map(order => (
                   <div key={order.id} className="bg-slate-800/50 rounded-xl border border-slate-700 p-4 opacity-70">
                     <div className="flex justify-between items-start">
                       <div><h3 className="font-bold text-white">{order.customer_name}</h3><p className="text-xs text-slate-400">رقم: {order.order_number}</p><p className="text-xs text-red-400">🗑️ محذوف في {new Date(order.deleted_at).toLocaleDateString('ar-EG')}</p></div>
@@ -849,15 +882,7 @@ export default function ProtectedOrders() {
             </div>
             <div className="bg-slate-900 rounded-xl overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-slate-800">
-                  <tr>
-                    <th className="p-3">التاريخ</th>
-                    <th>النوع</th>
-                    <th>المبلغ</th>
-                    <th>الوصف</th>
-                    <th>إجراءات</th>
-                  </tr>
-                </thead>
+                <thead className="bg-slate-800"><tr><th className="p-3">التاريخ</th><th>النوع</th><th>المبلغ</th><th>الوصف</th><th>إجراءات</th></tr></thead>
                 <tbody>
                   {cashLedger.map((entry) => (
                     <tr key={entry.id} className="border-b border-slate-800">
@@ -891,31 +916,44 @@ export default function ProtectedOrders() {
         )}
 
         {activeTab === 'partners' && (
-          <div className="space-y-4"><div className="flex justify-end">{canEditDelete() && <button onClick={()=>{setEditingPartner(null); setPartnerForm({ name: '', share_percentage: 0, phone: '', is_active: true }); setShowPartnerModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><UserPlus size={16}/> إضافة شريك</button>}</div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{partners.map(partner => (
-            <div key={partner.id} className="bg-slate-900 rounded-xl p-4 border border-slate-800"><div className="flex justify-between"><h3 className="font-bold text-white">{partner.name}</h3><span className={`text-xs px-2 py-1 rounded-full ${partner.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{partner.is_active ? 'نشط' : 'غير نشط'}</span></div><p className="text-2xl font-bold text-orange-500 mt-2">{partner.share_percentage}%</p><p className="text-sm text-slate-400">📞 {partner.phone || 'لا يوجد'}</p>{canEditDelete() && <div className="flex gap-2 mt-3"><button onClick={()=>{setEditingPartner(partner); setPartnerForm(partner); setShowPartnerModal(true);}} className="text-blue-500"><Edit size={16}/></button><button onClick={()=>deletePartner(partner.id, partner.name)} className="text-red-500"><Trash2 size={16}/></button></div>}</div>
-          ))}</div></div>
+          <div className="space-y-4">
+            <div className="flex justify-end">{canEditDelete() && <button onClick={()=>{setEditingPartner(null); setPartnerForm({ name: '', share_percentage: 0, phone: '', is_active: true }); setShowPartnerModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><UserPlus size={16}/> إضافة شريك</button>}</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {partners.map(partner => (
+                <div key={partner.id} className="bg-slate-900 rounded-xl p-4 border border-slate-800">
+                  <div className="flex justify-between"><h3 className="font-bold text-white">{partner.name}</h3><span className={`text-xs px-2 py-1 rounded-full ${partner.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{partner.is_active ? 'نشط' : 'غير نشط'}</span></div>
+                  <p className="text-2xl font-bold text-orange-500 mt-2">{partner.share_percentage}%</p>
+                  <p className="text-sm text-slate-400">📞 {partner.phone || 'لا يوجد'}</p>
+                  {canEditDelete() && <div className="flex gap-2 mt-3"><button onClick={()=>{setEditingPartner(partner); setPartnerForm(partner); setShowPartnerModal(true);}} className="text-blue-500"><Edit size={16}/></button><button onClick={()=>deletePartner(partner.id, partner.name)} className="text-red-500"><Trash2 size={16}/></button></div>}
+                </div>
+              ))}
+            </div>
+          </div>
         )}
 
         {activeTab === 'notifications' && (
-          <div className="space-y-3"><div className="flex justify-between"><h2 className="text-xl font-bold">🔔 سجل الإشعارات</h2>{canEditDelete() && notifications.length>0 && <button onClick={deleteAllNotifications} className="bg-red-500/20 text-red-400 px-3 py-1 rounded-lg text-sm flex items-center gap-1"><Trash size={14}/> مسح الكل</button>}</div>
-          {notifications.map(notif=>(
-            <div key={notif.id} className="bg-slate-900 rounded-xl p-4 flex justify-between items-center"><div><span className="text-orange-400 font-semibold">{notif.action}</span><span className="mx-2 text-slate-600">|</span><span className="text-slate-300">{notif.details}</span><div className="text-xs text-slate-500 mt-1">{new Date(notif.created_at).toLocaleString('ar-EG')}</div></div>{canEditDelete() && <button onClick={()=>deleteNotification(notif.id)} className="text-red-400"><Trash size={16}/></button>}</div>
-          ))}
-          {notifications.length===0 && <div className="text-center py-8 text-slate-400">لا توجد إشعارات</div>}</div>
+          <div className="space-y-3">
+            <div className="flex justify-between"><h2 className="text-xl font-bold">🔔 سجل الإشعارات</h2>{canEditDelete() && notifications.length>0 && <button onClick={deleteAllNotifications} className="bg-red-500/20 text-red-400 px-3 py-1 rounded-lg text-sm flex items-center gap-1"><Trash size={14}/> مسح الكل</button>}</div>
+            {notifications.map(notif=>(
+              <div key={notif.id} className="bg-slate-900 rounded-xl p-4 flex justify-between items-center">
+                <div><span className="text-orange-400 font-semibold">{notif.action}</span><span className="mx-2 text-slate-600">|</span><span className="text-slate-300">{notif.details}</span><div className="text-xs text-slate-500 mt-1">{new Date(notif.created_at).toLocaleString('ar-EG')}</div></div>
+                {canEditDelete() && <button onClick={()=>deleteNotification(notif.id)} className="text-red-400"><Trash size={16}/></button>}
+              </div>
+            ))}
+            {notifications.length===0 && <div className="text-center py-8 text-slate-400">لا توجد إشعارات</div>}
+          </div>
         )}
 
         {activeTab === 'performance' && <TechnicianPerformance orders={orders} technicians={technicians} />}
         {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions />}
       </div>
 
-      {/* المودالات (كما هي سابقاً) */}
+      {/* مودالات */}
       {showOrderModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl shadow-xl">
             <div className="flex justify-between mb-4"><h3 className="text-xl font-bold text-white">{editingOrder ? 'تعديل أوردر' : 'أوردر جديد'}</h3><button onClick={()=>setShowOrderModal(false)} className="text-slate-400"><X size={20}/></button></div>
             <form onSubmit={saveOrder} className="space-y-4">
-              {/* حقول النموذج كما هي */}
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="text-sm text-slate-400">اسم العميل</label><input type="text" value={formData.customer_name} onChange={e=>handleFormChange('customer_name',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/></div>
                 <div><label className="text-sm text-slate-400">رقم الهاتف</label><input type="text" value={formData.phone} onChange={e=>handleFormChange('phone',e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required/></div>
