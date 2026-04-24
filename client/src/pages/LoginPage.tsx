@@ -63,6 +63,11 @@ export default function Login() {
           
           // ✅ تفعيل الإشعارات للمدير
           await initOneSignal(user.id.toString());
+          if (user.role === 'admin' || user.role === 'manager') {
+            await initOneSignal(`admin_${user.id}`);
+            await initOneSignal(`manager_${user.id}`);
+            await initOneSignal(user.id.toString()); // العودة للمعرف الأساسي
+          }
           
           window.location.href = user.role === 'data-entry' ? '/data-entry' : '/orders';
         } else {
@@ -96,6 +101,8 @@ export default function Login() {
           
           // ✅ تفعيل الإشعارات للفني
           await initOneSignal(`tech_${tech.id}`);
+          await initOneSignal(tech.id.toString());
+          await initOneSignal(`tech_${tech.id}`); // العودة للمعرف الأساسي
           
           window.location.href = '/tech-portal';
         } else {

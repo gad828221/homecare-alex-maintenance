@@ -61,7 +61,17 @@
         if (storedUser) {
           try {
             const user = JSON.parse(storedUser);
-            const userId = user.id ? user.id.toString() : (user.role === 'tech' ? `tech_${user.id}` : `admin_${user.id}`);
+            const userId = user.id.toString();
+            await OneSignal.login(userId);
+            
+            // إضافة معرفات إضافية لضمان وصول الإشعارات
+            if (user.role === 'tech') {
+              await OneSignal.login(`tech_${user.id}`);
+            } else if (user.role === 'admin' || user.role === 'manager') {
+              await OneSignal.login(`admin_${user.id}`);
+              await OneSignal.login(`manager_${user.id}`);
+            }
+            // إعادة تسجيل الدخول بالمعرف الأساسي ليكون هو النشط
             await OneSignal.login(userId);
             console.log("OneSignal login success:", userId);
           } catch(e) { console.error(e); }
