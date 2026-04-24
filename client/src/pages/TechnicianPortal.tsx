@@ -3,7 +3,7 @@ import {
   Wrench, LogOut, Clock, CheckCircle2, AlertCircle, 
   RefreshCw, Phone, MapPin, ClipboardList,
   Calendar, X, Trash2, Eye, ClockArrowUp, StickyNote,
-  Play, FileCheck, DollarSign, CalendarX, Ban, MessageSquare
+  Play, FileCheck, DollarSign, CalendarX, Ban, MessageSquare, Search
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useNotification } from "../components/EnhancedNotificationSystem";
@@ -46,6 +46,10 @@ export default function TechnicianPortal() {
   const [currentOrder, setCurrentOrder] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'orders' | 'performance'>('orders');
   
+  // ✅ إضافة متغيرات الفلتر
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+
   const [technicianPercentage, setTechnicianPercentage] = useState(50);
   const [settleForm, setSettleForm] = useState({
     total_amount: 0,
@@ -134,7 +138,7 @@ export default function TechnicianPortal() {
   const fetchData = useCallback(async () => {
     if (!techName || !isActive) return;
     try {
-      // إضافة شرط deleted_at=is.null لاستبعاد الأوردرات المحذوفة
+      // ✅ إضافة شرط deleted_at=is.null لاستبعاد الأوردرات المحذوفة
       const data = await fetchAPI(`orders?select=*&technician=eq.${encodeURIComponent(techName)}&deleted_at=is.null&order=created_at.desc`);
       setOrders(data);
       const active = data.filter((o: any) => o.status === 'pending' || o.status === 'in-progress').length;
@@ -291,6 +295,13 @@ export default function TechnicianPortal() {
     setCurrentOrder(null);
   };
 
+  // ✅ دالة الفلترة للأوردرات
+  const filteredOrders = orders.filter(order => {
+    if (searchTerm && !order.customer_name?.includes(searchTerm) && !order.order_number?.includes(searchTerm) && !order.phone?.includes(searchTerm)) return false;
+    if (filterStatus !== 'all' && order.status !== filterStatus) return false;
+    return true;
+  });
+
   if (!isActive) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
@@ -332,9 +343,42 @@ export default function TechnicianPortal() {
               <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-xl font-bold text-emerald-400">{stats.earnings.toLocaleString()} ج.م</div><div className="text-xs text-slate-400">أرباحي</div></div>
             </div>
 
+            {/* ✅ شريط الفلتر */}
+            <div className="bg-slate-800 rounded-xl p-3 flex flex-wrap gap-2 items-center">
+              <div className="relative flex-1 min-w-[180px]">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <input
+                  type="text"
+                  placeholder="بحث بالعميل أو الرقم أو الهاتف"
+                  className="w-full bg-slate-700 border border-slate-600 rounded-lg pr-9 p-2 text-sm text-white"
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <select
+                value={filterStatus}
+                onChange={e => setFilterStatus(e.target.value)}
+                className="bg-slate-700 border border-slate-600 rounded-lg p-2 text-sm text-white"
+              >
+                <option value="all">كل الحالات</option>
+                <option value="pending">قيد الانتظار</option>
+                <option value="in-progress">جاري العمل</option>
+                <option value="inspected">تم الكشف</option>
+                <option value="completed">مكتمل</option>
+                <option value="cancelled">ملغي</option>
+                <option value="deferred">مؤجل</option>
+              </select>
+              <button
+                onClick={() => { setSearchTerm(''); setFilterStatus('all'); }}
+                className="bg-slate-600 hover:bg-slate-500 text-white px-3 py-2 rounded-lg text-sm transition"
+              >
+                مسح الفلتر
+              </button>
+            </div>
+
             <div className="space-y-3">
               <h2 className="text-md font-semibold text-white flex items-center gap-2"><ClipboardList className="w-4 h-4 text-orange-400" /> أوردراتي</h2>
-              {orders.map(order => (
+              {filteredOrders.map(order => (
                 <div key={order.id} className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
                   <div className={`h-1 ${order.status === 'completed' ? 'bg-green-500' : order.status === 'in-progress' ? 'bg-blue-500' : order.status === 'cancelled' ? 'bg-red-500' : order.status === 'deferred' ? 'bg-purple-500' : order.status === 'inspected' ? 'bg-yellow-500' : 'bg-yellow-500'}`}></div>
                   <div className="p-4 space-y-3">
@@ -395,7 +439,7 @@ export default function TechnicianPortal() {
                   </div>
                 </div>
               ))}
-              {orders.length === 0 && <div className="text-center py-8 text-slate-400">لا توجد أوردرات</div>}
+              {filteredOrders.length === 0 && <div className="text-center py-8 text-slate-400">لا توجد أوردرات</div>}
             </div>
           </>
         )}
