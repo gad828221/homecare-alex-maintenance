@@ -107,7 +107,27 @@ export default function BookingForm() {
        const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, "_blank");
       
-      // إشعار Push للمديرين
+      // إرسال إشعار قوي للمديرين من الخادم
+      try {
+        await fetch('/api/notify-new-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderNumber,
+            customerName: formData.customer_name,
+            phone: formData.phone,
+            deviceType: finalDeviceType,
+            brand: finalBrand,
+            address: formData.address,
+            totalAmount: 0
+          })
+        });
+        console.log('[BookingForm] Server notification sent');
+      } catch (notifyError) {
+        console.error('[BookingForm] Failed to send server notification:', notifyError);
+      }
+      
+      // إشعار Push من المتصفح أيضاً (احتياطي)
       notifyAdmins('أوردر جديد من الموقع', `عميل جديد: ${formData.customer_name} طلب صيانة ${finalDeviceType}`);
       
       setSubmitMessage("✅ تم استلام طلبك بنجاح! سيتم التواصل معك قريباً.");
