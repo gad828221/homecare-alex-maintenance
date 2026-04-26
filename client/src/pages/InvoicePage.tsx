@@ -98,7 +98,8 @@ export default function InvoicePageNew() {
       `🔧 *تفاصيل الخدمة:*\n` +
       `  • الجهاز: ${invoice.device_type || invoice.device} - ${invoice.brand}\n` +
       `  • المشكلة: ${invoice.problem_description || invoice.problem || 'غير محددة'}\n` +
-      `  • قطع الغيار: ${invoice.parts_used || 'لا توجد'}\n\n` +
+      `  • قطع الغيار: ${invoice.parts_used || 'لا توجد'}\n` +
+      `  ${invoice.technician ? `• الفني: ${invoice.technician}\n` : ''}\n` +
       `💰 *المبلغ والضمان:*\n` +
       `  • المبلغ: ${invoice.total_amount || 0} ج.م\n` +
       `  • الضمان: 🛡️ ${invoice.warranty_period || '6 أشهر'}\n\n` +
@@ -134,7 +135,7 @@ export default function InvoicePageNew() {
         {/* الفاتورة - تصميم عصري */}
         <div ref={invoiceRef} className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100" style={{ fontFamily: 'Cairo, Tahoma, sans-serif' }}>
           
-          {/* رأس الفاتورة بشعار بسيط */}
+          {/* رأس الفاتورة */}
           <div className="bg-white px-8 pt-8 pb-6 border-b border-gray-200 flex justify-between items-start flex-wrap gap-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-800">فاتورة صيانة</h1>
@@ -195,6 +196,12 @@ export default function InvoicePageNew() {
                 <p className="text-gray-500 text-xs">قطع الغيار المستخدمة</p>
                 <p className="font-medium text-gray-800">{invoice.parts_used || 'لا توجد'}</p>
               </div>
+              {invoice.technician && (
+                <div className="md:col-span-2">
+                  <p className="text-gray-500 text-xs">الفني المسئول</p>
+                  <p className="font-medium text-gray-800">{invoice.technician}</p>
+                </div>
+              )}
             </div>
           </div>
           
@@ -243,34 +250,19 @@ export default function InvoicePageNew() {
         
         {/* أزرار الإجراءات */}
         <div className="flex flex-wrap justify-center gap-3 mt-8">
-          <button
-            onClick={downloadAsImage}
-            className="bg-white hover:bg-gray-100 text-gray-700 px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 shadow-md border border-gray-200 transition-all"
-          >
+          <button onClick={downloadAsImage} className="bg-white hover:bg-gray-100 text-gray-700 px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 shadow-md border border-gray-200 transition-all">
             <Download className="w-4 h-4" /> تحميل صورة
           </button>
-          <button
-            onClick={downloadPDF}
-            className="bg-white hover:bg-gray-100 text-gray-700 px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 shadow-md border border-gray-200 transition-all"
-          >
+          <button onClick={downloadPDF} className="bg-white hover:bg-gray-100 text-gray-700 px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 shadow-md border border-gray-200 transition-all">
             <FileText className="w-4 h-4" /> تحميل PDF
           </button>
-          <button
-            onClick={() => window.print()}
-            className="bg-white hover:bg-gray-100 text-gray-700 px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 shadow-md border border-gray-200 transition-all"
-          >
+          <button onClick={() => window.print()} className="bg-white hover:bg-gray-100 text-gray-700 px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 shadow-md border border-gray-200 transition-all">
             <Printer className="w-4 h-4" /> طباعة
           </button>
-          <button
-            onClick={sendViaWhatsApp}
-            className="bg-green-500 hover:bg-green-600 text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 shadow-md transition-all"
-          >
+          <button onClick={sendViaWhatsApp} className="bg-green-500 hover:bg-green-600 text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 shadow-md transition-all">
             <Send className="w-4 h-4" /> إرسال واتساب
           </button>
-          <button
-            onClick={copyToClipboard}
-            className="bg-gray-800 hover:bg-gray-900 text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 shadow-md transition-all"
-          >
+          <button onClick={copyToClipboard} className="bg-gray-800 hover:bg-gray-900 text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 shadow-md transition-all">
             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
             {copied ? "تم النسخ" : "نسخ النص"}
           </button>
