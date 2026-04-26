@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { X, Send, Shield } from 'lucide-react';
 import { invoiceService } from '@/services/invoiceService';
-import { whatsappService } from '@/services/whatsappService';
 
 interface InvoiceApprovalModalProps {
   order: any;
@@ -29,7 +28,7 @@ export const InvoiceApprovalModal: React.FC<InvoiceApprovalModalProps> = ({
     'سنتان ضمان على قطع الغيار والعمل'
   ];
 
-  const handleApprove = async () => {
+  const handleApprove = () => {
     const finalWarranty = isCustom ? customWarranty : warranty;
     if (!finalWarranty.trim()) {
       alert('يرجى اختيار أو إدخال الضمان');
@@ -38,9 +37,9 @@ export const InvoiceApprovalModal: React.FC<InvoiceApprovalModalProps> = ({
 
     onApprove(finalWarranty);
 
-    // إنشاء كائن الفاتورة بكل البيانات المطلوبة
-    const invoice = {
-      orderNumber: `MG-${order.id}`,  // تنسيق رقم الفاتورة
+    const invoiceData = {
+      id: order.id,
+      orderNumber: `MG-${order.id}`,
       customerName: order.customer_name,
       phone: order.phone,
       device: order.device,
@@ -48,37 +47,15 @@ export const InvoiceApprovalModal: React.FC<InvoiceApprovalModalProps> = ({
       problem: order.problem_description || order.problem,
       totalAmount: order.total_amount,
       warranty: finalWarranty,
-      date: order.date || new Date().toISOString(),
+      date: new Date().toLocaleDateString('ar-EG'),
       address: order.address,
       partsUsed: order.parts_used,
-      technician: order.technician
+      technicianName: order.technician,
     };
 
-    // توليد نص الفاتورة
-    const invoiceText = invoiceService.generateInvoiceText(invoice);
+    // ✅ استخدم دالة الإرسال الموجودة في invoiceService
+    invoiceService.sendInvoiceViaWhatsApp(invoiceData);
     
-    // التحقق من صحة رقم الهاتف وإرسال الفاتورة
-    if (whatsappService.isValidEgyptianNumber(order.phone)) {
-      const result = await whatsappService.sendAdminNotification(
-        order.phone,
-        order.customer_name,
-        `الجهاز: ${order.device}\nالماركة: ${order.brand}\nالمشكلة: ${order.problem || order.problem_description}`,
-        invoiceText  // إرسال النص المنسق الجديد
-      );
-
-      if (result.success && result.link) {
-        onSendWhatsApp(result.link);
-      } else {
-        // إذا فشل الإرسال، نرسل الرابط مباشرة
-        const link = invoiceService.generateWhatsAppLink(order.phone, invoice);
-        onSendWhatsApp(link);
-      }
-    } else {
-      // رقم غير صالح، نعرض رابط يدوي
-      const link = invoiceService.generateWhatsAppLink(order.phone, invoice);
-      onSendWhatsApp(link);
-    }
-
     onClose();
   };
 
@@ -141,7 +118,6 @@ export const InvoiceApprovalModal: React.FC<InvoiceApprovalModalProps> = ({
               ))}
             </div>
 
-            {/* ضمان مخصص */}
             <label className="flex items-center p-3 bg-slate-800/50 rounded-xl border border-slate-700 hover:border-orange-500 cursor-pointer transition-all">
               <input
                 type="radio"
@@ -164,20 +140,10 @@ export const InvoiceApprovalModal: React.FC<InvoiceApprovalModalProps> = ({
             )}
           </div>
 
-          {/* أزرار الإجراء */}
           <div className="flex gap-3 pt-4">
-            <button
-              onClick={onClose}
-              className="flex-1 bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-2xl font-bold transition-all"
-            >
-              إلغاء
-            </button>
-            <button
-              onClick={handleApprove}
-              className="flex-1 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95"
-            >
-              <Send className="w-4 h-4" />
-              موافقة وإرسال الفاتورة
+            <button onClick={onClose} className="flex-1 bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-2xl font-bold transition-all">إلغاء</button>
+            <button onClick={handleApprove} className="flex-1 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95">
+              <Send className="w-4 h-4" /> موافقة وإرسال الفاتورة
             </button>
           </div>
         </div>
