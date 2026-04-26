@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { Download, Printer, Send, Copy, Check } from "lucide-react";
-import { invoiceDownloadService } from "../services/invoiceDownload";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -64,6 +63,19 @@ export default function InvoicePageNew() {
       pdf.save(`فاتورة_${invoice?.order_number || "order"}.pdf`);
     } catch (err) {
       alert("حدث خطأ في تحميل PDF");
+    }
+  };
+
+  const downloadAsImage = async () => {
+    if (!invoiceRef.current) return;
+    try {
+      const canvas = await html2canvas(invoiceRef.current, { scale: 2 });
+      const link = document.createElement('a');
+      link.download = `فاتورة_${invoice?.order_number || "order"}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (err) {
+      alert("حدث خطأ في تحميل الصورة");
     }
   };
 
@@ -251,12 +263,12 @@ export default function InvoicePageNew() {
         {/* أزرار الإجراءات */}
         <div className="flex flex-wrap justify-center gap-3 mt-8">
           <button
-          <button
             onClick={downloadAsImage}
             className="bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-all"
           >
             <Download className="w-5 h-5" /> تحميل صورة
           </button>
+          <button
             onClick={downloadPDF}
             className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-all"
           >
