@@ -46,22 +46,19 @@ const syncTechniciansToUsers = async () => {
   return;
 };
 
-// ========== دالة الإشعارات الخارجية النهائية (مبسطة وقوية) ==========
-const sendPushNotification = async (title: string, message: string) => {
+// ========== دالة الإشعارات النهائية (باستخدام sendToExternalUserId) ==========
+const sendPushToExternalId = async (externalId: string, title: string, message: string) => {
   try {
     if (!window.OneSignal) {
-      setTimeout(() => sendPushNotification(title, message), 1000);
-      return;
+      console.log("OneSignal not ready");
+      return false;
     }
-    const isEnabled = await window.OneSignal.isPushNotificationsEnabled();
-    if (!isEnabled) {
-      await window.OneSignal.showSlidedown();
-      return;
-    }
-    window.OneSignal.sendSelfNotification(title, message, {}, () => {});
-    console.log(`✅ Push sent: ${title}`);
+    await window.OneSignal.sendToExternalUserId(externalId, title, message);
+    console.log(`✅ تم الإرسال إلى ${externalId}`);
+    return true;
   } catch (err) {
-    console.error("Push error:", err);
+    console.error(err);
+    return false;
   }
 };
 
@@ -280,11 +277,177 @@ export default function ProtectedOrders() {
     } catch (err) { alert(`❌ حدث خطأ في الاتصال: ${err.message}`); return false; }
   };
 
-  // دوال توزيع الأرباح وإرسال التقارير (مختصرة للاختصار، لكنها موجودة في ملفك الأصلي)
-  const distributeProfitForDate = async (targetDate: string) => { /* ... */ };
-  const sendDailyReportToPartners = async (targetDate: string) => { /* ... */ };
-  const handleDistributeSelectedProfit = async () => {};
-  const handleSendReportForDate = async () => {};
+  // ========== دوال توزيع الأرباح والتقارير (كامله كما هي في الملف الأصلي) ==========
+  const distributeProfitForDate = async (targetDate: string) => {
+    try {
+      const incomeEntries = await fetchAPI(`cash_ledger?select=amount&date=eq.${targetDate}&type=eq.income`);
+      const totalIncome = (incomeEntries || []).reduce((sum, entry) => sum + (entry.amount || 0), 0);
+      const netProfit = totalIncome;
+      if (netProfit <= 0) {
+        alert(`⚠️ لا توجد أرباح ليوم ${targetDate}.`);
+        return;
+      }
+      const activePartners = partners.filter(p => p.is_active === true);
+      if (activePartners.length === 0) {
+        alert("⚠️ لا يوجد شركاء نشطون.");
+        return;
+      }
+      const totalPartnerShares = activePartners.reduce((sum, p) => sum + (Number(p.share_percentage) || 0), 0);
+      if (totalPartnerShares <= 0) {
+        alert("⚠️ إجمالي نسب الشركاء غير صالح.");
+        return;
+      }
+      const amountToDistribute = (netProfit * totalPartnerShares) / 100;
+      if (amountToDistribute <= 0) {
+        alert("⚠️ لا يوجد مبلغ كافٍ للتوزيع.");
+        return;
+      }
+      if (!confirm(`💰 أرباح يوم ${targetDate}: ${netProfit.toLocaleString()} ج.م\n📤 نسبة التوزيع: ${totalPartnerShares}%\n💰 سيتم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء\nهل تريد الاستمرار؟`)) return;
+
+      const existingDistributions = await fetchAPI(`cash_ledger?select=id&date=eq.${targetDate}&type=eq.profit_distribution`);
+      if (existingDistributions && existingDistributions.length > 0) {
+        alert("⚠️ تم التوزيع مسبقاً.");
+        return;
+      }
+
+      let distributedSum = 0;
+      for (let i = 0; i < activePartners.length; i++) {
+        const partner = activePartners[i];
+        let share = (amountToDistribute * partner.share_percentage) / totalPartnerShares;
+        if (i === activePartners.length - 1) share = amountToDistribute - distributedSum;
+        else share = Math.floor(share);
+        distributedSum += share;
+        if (share > 0) {
+          await fetchAPI('cash_ledger', {
+            method: 'POST',
+            body: JSON.stringify({
+              type: 'profit_distribution',
+              amount: share,
+              description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%) - أرباح يوم ${targetDate}`,
+              date: targetDate
+            })
+          });
+        }
+      }
+
+      await addNotification('توزيع أرباح', `✅ تم توزيع ${amountToDistribute.toLocaleString()} ج.م`);
+      if (toastNotification) {
+        toastNotification({
+          type: 'success',
+          title: '✅ توزيع أرباح',
+          message: `تم توزيع ${amountToDistribute.toLocaleString()} ج.م`,
+          duration: 5000
+        });
+      }
+      await fetchCashLedger();
+      await fetchData();
+      alert(`✅ تم التوزيع بنجاح.\n💰 تم توزيع ${amountToDistribute.toLocaleString()} ج.م`);
+    } catch (err) {
+      console.error(err);
+      alert("❌ حدث خطأ أثناء التوزيع");
+    }
+  };
+
+  const sendDailyReportToPartners = async (targetDate: string) => {
+    try {
+      const entries = await fetchAPI(`cash_ledger?select=*&date=eq.${targetDate}&order=created_at.desc`);
+      if (!entries || entries.length === 0) {
+        alert(`⚠️ لا توجد حركات خزنة ليوم ${targetDate}`);
+        return false;
+      }
+
+      const allBefore = await fetchAPI(`cash_ledger?select=type,amount&date=lt.${targetDate}`);
+      let openingBalance = 0;
+      (allBefore || []).forEach((entry: any) => {
+        if (entry.type === 'income' || entry.type === 'reserve') openingBalance += entry.amount;
+        else if (entry.type === 'expense' || entry.type === 'profit_distribution') openingBalance -= entry.amount;
+      });
+
+      let totalIncome = 0, totalExpense = 0, totalProfitDist = 0, totalReserve = 0;
+      const profitDetails = [];
+      for (const entry of entries) {
+        if (entry.type === 'income') totalIncome += entry.amount;
+        else if (entry.type === 'expense') totalExpense += entry.amount;
+        else if (entry.type === 'profit_distribution') {
+          totalProfitDist += entry.amount;
+          profitDetails.push(`• ${entry.description} : ${entry.amount} ج.م`);
+        }
+        else if (entry.type === 'reserve') totalReserve += entry.amount;
+      }
+
+      const netProfit = totalIncome;
+      const closingBalance = openingBalance + totalIncome + totalReserve - totalExpense - totalProfitDist;
+
+      const reportText = `📊 *تقرير الخزنة اليومي* 📊
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 *التاريخ:* ${targetDate}
+
+💰 *رصيد أول اليوم:* ${openingBalance.toLocaleString()} ج.م
+💰 *الإيرادات (ربح اليوم):* ${totalIncome.toLocaleString()} ج.م
+💸 *المصروفات (تخصم من الرصيد فقط):* ${totalExpense.toLocaleString()} ج.م
+📤 *توزيع أرباح الشركاء:* ${totalProfitDist.toLocaleString()} ج.م
+🏦 *الرصيد الاحتياطي المضاف:* ${totalReserve.toLocaleString()} ج.م
+✅ *صافي الربح الموزع:* ${netProfit.toLocaleString()} ج.م
+💰 *رصيد آخر اليوم:* ${closingBalance.toLocaleString()} ج.م
+
+👥 *تفاصيل توزيع الأرباح:*
+${profitDetails.length ? profitDetails.join('\n') : 'لا توجد توزيعات'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📞 للاستفسار: 01278885772
+✨ نظام إدارة الصيانة - تقرير يومي`;
+
+      const activePartners = partners.filter(p => p.is_active && p.phone);
+      if (activePartners.length === 0) {
+        alert("⚠️ لا يوجد شركاء نشطون بأرقام هواتف");
+        return false;
+      }
+
+      if (!confirm(`📋 التقرير التالي سيتم إرساله للشركاء:\n\n${reportText}\n\nهل تريد المتابعة؟`)) return false;
+
+      for (const partner of activePartners) {
+        let phone = partner.phone.toString().replace(/[^\d]/g, '');
+        if (phone.startsWith('0')) phone = phone.substring(1);
+        if (phone.length === 10) phone = '20' + phone;
+        const message = `🔔 *تقرير يومي - شركاء الصيانة*\n\nمرحباً ${partner.name}،\n\n${reportText}`;
+        const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+        await new Promise(resolve => setTimeout(resolve, 800));
+      }
+
+      await addNotification('إرسال تقرير يومي', `تم إرسال تقرير يوم ${targetDate} إلى ${activePartners.length} شريك`);
+      if (toastNotification) {
+        toastNotification({
+          type: 'info',
+          title: '📊 تقرير الخزنة',
+          message: `تم إرسال التقرير إلى ${activePartners.length} شريك`,
+          duration: 4000
+        });
+      }
+      alert(`✅ تم إرسال التقرير إلى ${activePartners.length} شريك.`);
+      return true;
+    } catch (err) {
+      console.error("فشل إرسال التقرير:", err);
+      alert("❌ حدث خطأ أثناء إرسال التقرير");
+      return false;
+    }
+  };
+
+  const handleDistributeSelectedProfit = async () => {
+    if (!selectedProfitDate) {
+      alert("⚠️ يرجى اختيار التاريخ أولاً.");
+      return;
+    }
+    await distributeProfitForDate(selectedProfitDate);
+  };
+
+  const handleSendReportForDate = async () => {
+    if (!reportDate) {
+      alert("⚠️ يرجى اختيار التاريخ أولاً.");
+      return;
+    }
+    await sendDailyReportToPartners(reportDate);
+  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -325,6 +488,7 @@ export default function ProtectedOrders() {
     fetchData();
   }, [fetchData]);
 
+  // دوال مساعدة (حساب النسب، حفظ الأوردر، تحديث الحالة، إلخ)
   const calculateAmounts = (data: any) => {
     const total = parseFloat(data.total_amount) || 0;
     const parts = parseFloat(data.parts_cost) || 0;
@@ -404,12 +568,24 @@ export default function ProtectedOrders() {
       if (newStatus === 'completed' && order.is_paid && !order.profit_added_to_cash) await addCompanyProfitToCash({ ...order, status: newStatus, ...extraData });
       sendWhatsAppToCustomer(order, newStatus);
       fetchData();
+      
       if (toastNotification) {
-        toastNotification({ type: 'info', title: '🔄 تحديث الحالة', message: `تم تغيير حالة أوردر ${order.customer_name} إلى ${newStatus}`, duration: 3000 });
+        toastNotification({
+          type: 'info',
+          title: '🔄 تحديث الحالة',
+          message: `تم تغيير حالة أوردر ${order.customer_name} إلى ${newStatus}`,
+          duration: 3000
+        });
       }
+      
+      // ✅ إشعار خارجي للمديرين والفني عند تغيير الحالة
       if (newStatus === 'completed' || newStatus === 'in-progress') {
-        await sendPushNotification(`🔄 تحديث حالة`, `تم تغيير حالة أوردر ${order.customer_name} إلى ${newStatus}`);
-        if (order.technician) await sendPushNotification(`🔧 للفني ${order.technician}`, `تم تغيير حالة أوردر ${order.customer_name}`);
+        const adminExtId = "admin_1"; // استبدل حسب External ID في Dashboard
+        await sendPushToExternalId(adminExtId, `🔄 تحديث حالة`, `تم تغيير حالة أوردر ${order.customer_name} إلى ${newStatus}`);
+        if (order.technician) {
+          const techExtId = `tech_${order.technician}`; // حسب ما هو مسجل في OneSignal
+          await sendPushToExternalId(techExtId, `🔧 تحديث`, `تم تغيير حالة أوردر ${order.customer_name} إلى ${newStatus}`);
+        }
       }
     } catch (err) { console.error(err); }
   };
@@ -424,8 +600,14 @@ export default function ProtectedOrders() {
       await addNotification('تحديث حالة الدفع', `✅ تم تحديث حالة تحصيل أوردر ${order.customer_name} إلى ${newPaidStatus ? 'تم التحصيل' : 'لم يتم التحصيل'}`);
       if (newPaidStatus && order.status === 'completed' && !order.profit_added_to_cash) await addCompanyProfitToCash({ ...order, is_paid: true });
       fetchData(); fetchCashLedger();
+      
       if (toastNotification) {
-        toastNotification({ type: newPaidStatus ? 'success' : 'warning', title: '💰 حالة الدفع', message: `${order.customer_name}: ${newPaidStatus ? 'تم التحصيل' : 'لم يتم التحصيل'}`, duration: 3000 });
+        toastNotification({
+          type: newPaidStatus ? 'success' : 'warning',
+          title: '💰 حالة الدفع',
+          message: `${order.customer_name}: ${newPaidStatus ? 'تم التحصيل' : 'لم يتم التحصيل'}`,
+          duration: 3000
+        });
       }
     } catch (err) { console.error(err); }
   };
@@ -434,17 +616,28 @@ export default function ProtectedOrders() {
     if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لحذف الأوردرات");
     const order = orders.find(o => o.id === id);
     if (!order) return;
-    const confirmation = prompt(`❗ حذف أوردر العميل: ${order.customer_name}\nرقم الأوردر: ${order.order_number}\n\nللتأكيد، اكتب كلمة "حذف" ثم اضغط OK.`);
+    const confirmation = prompt(
+      `❗ حذف أوردر العميل: ${order.customer_name}\nرقم الأوردر: ${order.order_number}\n\nللتأكيد، اكتب كلمة "حذف" ثم اضغط OK.`
+    );
     if (confirmation !== "حذف") {
       alert("❌ تم إلغاء الحذف");
       return;
     }
     try {
-      await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ deleted_at: new Date().toISOString() }) });
+      await fetchAPI(`orders?id=eq.${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ deleted_at: new Date().toISOString() })
+      });
       await addNotification('حذف أوردر (ناعم)', `تم نقل أوردر ${order.customer_name} (رقم ${order.order_number}) إلى سلة المحذوفات`);
       fetchData();
+      
       if (toastNotification) {
-        toastNotification({ type: 'error', title: '🗑️ حذف أوردر', message: `تم نقل أوردر ${order.customer_name} إلى سلة المحذوفات`, duration: 3000 });
+        toastNotification({
+          type: 'error',
+          title: '🗑️ حذف أوردر',
+          message: `تم نقل أوردر ${order.customer_name} إلى سلة المحذوفات`,
+          duration: 3000
+        });
       }
     } catch (err) { console.error(err); }
   };
@@ -455,7 +648,10 @@ export default function ProtectedOrders() {
     if (!order) return;
     if (confirm(`استعادة أوردر ${order.customer_name} (${order.order_number})؟`)) {
       try {
-        await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ deleted_at: null }) });
+        await fetchAPI(`orders?id=eq.${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ deleted_at: null })
+        });
         await addNotification('استعادة أوردر', `تم استعادة أوردر ${order.customer_name} (رقم ${order.order_number})`);
         fetchData();
       } catch (err) { console.error(err); }
@@ -483,17 +679,31 @@ export default function ProtectedOrders() {
         if (oldOrder?.status === 'completed' && oldOrder?.is_paid && oldOrder?.profit_added_to_cash) await deleteOrderProfitFromCash(oldOrder);
         await fetchAPI(`orders?id=eq.${editingOrder.id}`, { method: 'PATCH', body: JSON.stringify(orderToSave) });
         await addNotification('تعديل أوردر', `تم تعديل أوردر ${formData.customer_name}`);
-        if (orderToSave.technician) notifyTechnician(orderToSave.technician, '🔄 تحديث في الأوردر', `تم تحديث بيانات الأوردر الخاص بالعميل: ${formData.customer_name}`);
+        
+        if (orderToSave.technician) {
+          notifyTechnician(orderToSave.technician, '🔄 تحديث في الأوردر', `تم تحديث بيانات الأوردر الخاص بالعميل: ${formData.customer_name}`);
+        }
+        
         if (orderToSave.status === 'completed' && orderToSave.is_paid && !orderToSave.profit_added_to_cash) await addCompanyProfitToCash({ ...orderToSave, id: editingOrder.id });
         alert("✅ تم تعديل الأوردر بنجاح");
       } else {
         await fetchAPI('orders', { method: 'POST', body: JSON.stringify(orderToSave) });
         await addNotification('إضافة أوردر', `تم إضافة أوردر جديد للعميل ${formData.customer_name}`);
-        if (orderToSave.technician) notifyTechnician(orderToSave.technician, '📢 أوردر جديد محول إليك', `تم تعيين أوردر جديد لك للعميل: ${formData.customer_name} في ${formData.address}`);
+        
+        if (orderToSave.technician) {
+          notifyTechnician(orderToSave.technician, '📢 أوردر جديد محول إليك', `تم تعيين أوردر جديد لك للعميل: ${formData.customer_name} في ${formData.address}`);
+        }
+        
         alert("✅ تم إضافة الأوردر بنجاح");
         sendWhatsAppToCustomerOnCreate(orderToSave);
-        await sendPushNotification('📋 أوردر جديد', `تم إضافة أوردر جديد للعميل ${formData.customer_name}`);
-        if (orderToSave.technician) await sendPushNotification(`🔧 للفني ${orderToSave.technician}`, `تم تعيين أوردر جديد لك: ${formData.customer_name}`);
+        
+        // ✅ إشعار خارجي للمديرين والفني عند إضافة أوردر جديد
+        const adminExtId = "admin_1";
+        await sendPushToExternalId(adminExtId, '📋 أوردر جديد', `تم إضافة أوردر جديد للعميل ${formData.customer_name}`);
+        if (orderToSave.technician) {
+          const techExtId = `tech_${orderToSave.technician}`;
+          await sendPushToExternalId(techExtId, '🔧 أوردر جديد', `تم تعيين أوردر جديد لك: ${formData.customer_name}`);
+        }
       }
       setShowOrderModal(false); setEditingOrder(null);
       setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") });
@@ -579,7 +789,8 @@ export default function ProtectedOrders() {
       totalAmount: order.total_amount, warranty: warranty, date: new Date().toLocaleDateString('ar-EG'),
       address: order.address, partsUsed: parts, technicianName: order.technician
     });
-    await sendPushNotification('📄 فاتورة معتمدة', `تم اعتماد فاتورة للعميل ${order.customer_name}`);
+    const adminExtId = "admin_1";
+    await sendPushToExternalId(adminExtId, '📄 فاتورة معتمدة', `تم اعتماد فاتورة للعميل ${order.customer_name}`);
     alert("✅ تم اعتماد الفاتورة وإرسالها للعميل");
     fetchData();
   };
@@ -624,11 +835,15 @@ export default function ProtectedOrders() {
         {userRole === 'admin' && <button onClick={() => setActiveTab('permissions')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'permissions' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>🔐 الصلاحيات</button>}
         <button onClick={() => setActiveTab('performance')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'performance' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📊 أداء الفنيين</button>
 
-        {/* أزرار الاختبار */}
-        <button onClick={async () => { await window.OneSignal?.showSlidedown(); alert("افتح النافذة واسمح"); }} className="bg-green-600 px-3 py-2 rounded-lg text-sm">🔔 تفعيل</button>
-        <button onClick={() => sendPushNotification('🧪 اختبار', 'هذا إشعار من التطبيق')} className="bg-purple-600 px-3 py-2 rounded-lg text-sm">🧪 اختبار</button>
-        <button onClick={async () => { const id = await window.OneSignal?.getExternalUserId(); alert(`ID: ${id || "غير مسجل"}`); }} className="bg-yellow-600 px-3 py-2 rounded-lg text-sm">🆔 معرفي</button>
-        <button onClick={() => { if (toastNotification) toastNotification({ type: 'success', title: 'Toast', message: 'يعمل', duration: 3000 }); else alert('غير متوفر'); }} className="bg-teal-600 px-3 py-2 rounded-lg text-sm">📢 Toast</button>
+        {/* ✅ أزرار الاختبار والإشعارات */}
+        <button onClick={async () => { await window.OneSignal?.showSlidedown(); alert("افتح النافذة واسمح"); }} className="bg-green-600 text-white px-3 py-2 rounded-lg text-sm">🔔 تفعيل</button>
+        <button onClick={async () => { 
+          const externalId = "admin_1"; // غيّر حسب External ID الذي يظهر في Dashboard
+          await sendPushToExternalId(externalId, "🔥 اختبار مباشر", "هذه رسالة من التطبيق");
+          alert(`تم إرسال الإشعار إلى ${externalId}`);
+        }} className="bg-red-600 text-white px-3 py-2 rounded-lg text-sm">🔥 اختبار نهائي</button>
+        <button onClick={async () => { const id = await window.OneSignal?.getExternalUserId(); alert(`External ID: ${id || "غير مسجل"}`); }} className="bg-yellow-600 text-white px-3 py-2 rounded-lg text-sm">🆔 معرفي</button>
+        <button onClick={() => { if (toastNotification) toastNotification({ type: 'success', title: 'Toast', message: 'يعمل', duration: 3000 }); else alert('غير متوفر'); }} className="bg-teal-600 text-white px-3 py-2 rounded-lg text-sm">📢 Toast</button>
       </div>
 
       <div className="p-4">
@@ -860,7 +1075,7 @@ export default function ProtectedOrders() {
         {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions />}
       </div>
 
-      {/* المودالات (Order, Technician, Partner, Cash, Settlement) - كلها موجودة */}
+      {/* مودالات (Order, Technician, Partner, Cash, Settlement) */}
       {showOrderModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl shadow-xl">
