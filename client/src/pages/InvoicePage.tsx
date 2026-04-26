@@ -1,41 +1,63 @@
 import { useState, useEffect, useRef } from "react";
 import { Download, Printer, Send, Copy, Check, FileText, Phone, MapPin, Calendar, Hash, User, Wrench, CreditCard, Shield, AlertTriangle } from "lucide-react";
-import { invoiceDownloadService } from "../services/invoiceDownloadService.ts";
+import { invoiceDownloadService } from "../services/invoiceDownloadService";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
 
-// دالة مساعدة لحساب تاريخ انتهاء الضمان والأيام المتبقية
+// دالة مساعدة لحساب تاريخ انتهاء الضمان والأيام المتبقية (تعتمد على تاريخ الأوردر)
 const calculateWarrantyRemaining = (invoice: any) => {
   if (!invoice) return { endDate: null, daysLeft: null, expired: false, months: 0 };
   
   // 1. تحديد فترة الضمان بالأشهر (مثال "6 أشهر" -> 6)
-  let months = 6; // افتراضي
+  let months = 6;
   const warrantyPeriod = invoice.warranty_period || "6 أشهر";
   const match = warrantyPeriod.match(/(\d+)/);
   if (match) months = parseInt(match[1], 10);
   
-  // 2. تاريخ البدء: نستخدم invoice_date إن وُجد، وإلا created_at، وإلا التاريخ الحالي
+  // 2. 🔥 المهم: تاريخ بدء الضمان = تاريخ إنشاء الأوردر (وليس اليوم)
   let startDate;
-  if (invoice.invoice_date) startDate = new Date(invoice.invoice_date);
-  else if (invoice.created_at) startDate = new Date(invoice.created_at);
-  else startDate = new Date();
   
-  // تجنب التواريخ غير الصالحة
-  if (isNaN(startDate.getTime())) startDate = new Date();
+  // نستخدم created_at أولاً (تاريخ إنشاء الأوردر)
+  if (invoice.created_at) {
+    startDate = new Date(invoice.created_at);
+  } 
+  // إذا لم يوجد created_at، نستخدم invoice_date
+  else if (invoice.invoice_date) {
+    startDate = new Date(invoice.invoice_date);
+  }
+  // إذا لم يوجد أي منهما، نستخدم date (التاريخ النصي)
+  else if (invoice.date) {
+    // محاولة تحويل التاريخ النصي (مثل "26/4/2026")
+    const parts = invoice.date.split('/');
+    if (parts.length === 3) {
+      startDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+    } else {
+      startDate = new Date(invoice.date);
+    }
+  }
+  // أخيراً إذا لم نجد أي تاريخ، نستخدم تاريخ اليوم (كحل احتياطي)
+  else {
+    startDate = new Date();
+  }
+  
+  // التحقق من صحة التاريخ
+  if (isNaN(startDate.getTime())) {
+    startDate = new Date();
+  }
   
   // 3. حساب تاريخ الانتهاء بإضافة الأشهر
   const endDate = new Date(startDate);
   endDate.setMonth(endDate.getMonth() + months);
   
-  // 4. حساب الأيام المتبقية
+  // 4. حساب الأيام المتبقية بالنسبة لليوم الحالي
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const timeDiff = endDate.getTime() - today.getTime();
   const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
   const expired = daysLeft < 0;
   
-  return { endDate, daysLeft: Math.abs(daysLeft), expired, months };
+  return { endDate, daysLeft: Math.abs(daysLeft), expired, months, startDate };
 };
 
 export default function InvoicePageNew() {
@@ -43,7 +65,13 @@ export default function InvoicePageNew() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
-  const [warrantyRemaining, setWarrantyRemaining] = useState<{ daysLeft: number | null; expired: boolean; endDate: Date | null; months: number }>({ daysLeft: null, expired: false, endDate: null, months: 0 });
+  const [warrantyRemaining, setWarrantyRemaining] = useState<{ daysLeft: number | null; expired: boolean; endDate: Date | null; months: number; startDate: Date | null }>({ 
+    daysLeft: null, 
+    expired: false, 
+    endDate: null, 
+    months: 0, 
+    startDate: null 
+  });
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -66,6 +94,10 @@ export default function InvoicePageNew() {
           // حساب الضمان فور تحميل البيانات
           const remaining = calculateWarrantyRemaining(data[0]);
           setWarrantyRemaining(remaining);
+          console.log("تاريخ إنشاء الأوردر:", data[0].created_at);
+          console.log("تاريخ بدء الضمان:", remaining.startDate);
+          console.log("تاريخ انتهاء الضمان:", remaining.endDate);
+          console.log("الأيام المتبقية:", remaining.daysLeft);
         } else {
           setError("الفاتورة غير موجودة");
         }
@@ -79,7 +111,7 @@ export default function InvoicePageNew() {
     fetchInvoice();
   }, []);
 
-  // تحديث العداد يومياً (اختياري)
+  // تحديث العداد يومياً
   useEffect(() => {
     if (!invoice) return;
     const interval = setInterval(() => {
@@ -136,10 +168,15 @@ export default function InvoicePageNew() {
   // تنسيق عرض الضمان
   const warrantyDisplay = () => {
     if (!warrantyRemaining.endDate) return `🛡️ ${invoice.warranty_period || '6 أشهر'}`;
+    
+    // تنسيق التاريخ
+    const endDateFormatted = warrantyRemaining.endDate.toLocaleDateString('ar-EG');
+    const startDateFormatted = warrantyRemaining.startDate?.toLocaleDateString('ar-EG') || 'تاريخ غير محدد';
+    
     if (warrantyRemaining.expired) {
-      return `⚠️ انتهى الضمان منذ ${warrantyRemaining.daysLeft} يوم`;
+      return `⚠️ انتهى الضمان منذ ${warrantyRemaining.daysLeft} يوم (تاريخ الانتهاء: ${endDateFormatted})`;
     } else {
-      return `🛡️ متبقي ${warrantyRemaining.daysLeft} يوم (حتى ${warrantyRemaining.endDate.toLocaleDateString('ar-EG')})`;
+      return `🛡️ متبقي ${warrantyRemaining.daysLeft} يوم (يبدأ من ${startDateFormatted} - حتى ${endDateFormatted})`;
     }
   };
 
@@ -158,12 +195,18 @@ export default function InvoicePageNew() {
             <div className="text-left">
               <div className="flex items-center gap-2 text-gray-600 text-sm">
                 <Calendar className="w-4 h-4" />
-                <span>{new Date().toLocaleDateString('ar-EG')}</span>
+                <span>تاريخ الفاتورة: {new Date().toLocaleDateString('ar-EG')}</span>
               </div>
               <div className="flex items-center gap-2 text-gray-600 text-sm mt-1">
                 <Hash className="w-4 h-4" />
                 <span>رقم الفاتورة: <strong>{invoice.order_number || invoice.id}</strong></span>
               </div>
+              {invoice.created_at && (
+                <div className="flex items-center gap-2 text-gray-500 text-xs mt-1">
+                  <Calendar className="w-3 h-3" />
+                  <span>تاريخ التنفيذ: {new Date(invoice.created_at).toLocaleDateString('ar-EG')}</span>
+                </div>
+              )}
             </div>
           </div>
           
@@ -232,7 +275,12 @@ export default function InvoicePageNew() {
               <div className="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-gray-100">
                 <div>
                   <p className="text-xs text-gray-500">فترة الضمان</p>
-                  <p className="text-lg font-bold text-blue-600">{warrantyDisplay()}</p>
+                  <div className="text-md font-bold text-blue-600">
+                    {warrantyDisplay()}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    (مدة الضمان: {invoice.warranty_period || '6 أشهر'})
+                  </p>
                 </div>
                 {warrantyRemaining.expired ? (
                   <AlertTriangle className="w-8 h-8 text-red-500 opacity-70" />
@@ -251,6 +299,7 @@ export default function InvoicePageNew() {
               <li>الضمان لا يغطي الأعطال الناتجة عن الاستخدام الخاطئ</li>
               <li>خدمة الصيانة متاحة 24 ساعة طوال أيام الأسبوع</li>
               <li>يرجى الاتصال بنا فوراً عند ظهور أي مشكلة</li>
+              <li>الضمان يسري من تاريخ تنفيذ الأوردر ({invoice.created_at ? new Date(invoice.created_at).toLocaleDateString('ar-EG') : 'تاريخ غير محدد'})</li>
             </ul>
           </div>
           
@@ -266,7 +315,7 @@ export default function InvoicePageNew() {
           </div>
         </div>
         
-        {/* أزرار الإجراءات - تم إزالة زر تحميل الصورة */}
+        {/* أزرار الإجراءات */}
         <div className="flex flex-wrap justify-center gap-3 mt-8">
           <button onClick={handleDownloadPDF} className="bg-white hover:bg-gray-100 text-gray-700 px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 shadow-md border border-gray-200 transition-all">
             <FileText className="w-4 h-4" /> تحميل PDF
