@@ -1,15 +1,49 @@
 import { useState, useEffect, useRef } from "react";
-import { Download, Printer, Send, Copy, Check, FileText, Phone, MapPin, Calendar, Hash, User, Wrench, CreditCard, Shield } from "lucide-react";
-import { invoiceDownloadService } from "../services/invoiceDownloadService";
+import { Download, Printer, Send, Copy, Check, FileText, Phone, MapPin, Calendar, Hash, User, Wrench, CreditCard, Shield, AlertTriangle } from "lucide-react";
+import { invoiceDownloadService } from "../services/invoiceDownload.ts";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
+
+// دالة مساعدة لحساب تاريخ انتهاء الضمان والأيام المتبقية
+const calculateWarrantyRemaining = (invoice: any) => {
+  if (!invoice) return { endDate: null, daysLeft: null, expired: false, months: 0 };
+  
+  // 1. تحديد فترة الضمان بالأشهر (مثال "6 أشهر" -> 6)
+  let months = 6; // افتراضي
+  const warrantyPeriod = invoice.warranty_period || "6 أشهر";
+  const match = warrantyPeriod.match(/(\d+)/);
+  if (match) months = parseInt(match[1], 10);
+  
+  // 2. تاريخ البدء: نستخدم invoice_date إن وُجد، وإلا created_at، وإلا التاريخ الحالي
+  let startDate;
+  if (invoice.invoice_date) startDate = new Date(invoice.invoice_date);
+  else if (invoice.created_at) startDate = new Date(invoice.created_at);
+  else startDate = new Date();
+  
+  // تجنب التواريخ غير الصالحة
+  if (isNaN(startDate.getTime())) startDate = new Date();
+  
+  // 3. حساب تاريخ الانتهاء بإضافة الأشهر
+  const endDate = new Date(startDate);
+  endDate.setMonth(endDate.getMonth() + months);
+  
+  // 4. حساب الأيام المتبقية
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const timeDiff = endDate.getTime() - today.getTime();
+  const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+  const expired = daysLeft < 0;
+  
+  return { endDate, daysLeft: Math.abs(daysLeft), expired, months };
+};
 
 export default function InvoicePageNew() {
   const [invoice, setInvoice] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [warrantyRemaining, setWarrantyRemaining] = useState<{ daysLeft: number | null; expired: boolean; endDate: Date | null; months: number }>({ daysLeft: null, expired: false, endDate: null, months: 0 });
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -29,6 +63,9 @@ export default function InvoicePageNew() {
         const data = await response.json();
         if (data && data.length > 0) {
           setInvoice(data[0]);
+          // حساب الضمان فور تحميل البيانات
+          const remaining = calculateWarrantyRemaining(data[0]);
+          setWarrantyRemaining(remaining);
         } else {
           setError("الفاتورة غير موجودة");
         }
@@ -42,17 +79,19 @@ export default function InvoicePageNew() {
     fetchInvoice();
   }, []);
 
+  // تحديث العداد يومياً (اختياري)
+  useEffect(() => {
+    if (!invoice) return;
+    const interval = setInterval(() => {
+      const remaining = calculateWarrantyRemaining(invoice);
+      setWarrantyRemaining(remaining);
+    }, 24 * 60 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [invoice]);
+
   const handleDownloadPDF = async () => {
     if (invoice) {
       await invoiceDownloadService.downloadAsPDF(invoice, invoice.order_number || invoice.id);
-    } else {
-      alert("لا توجد بيانات الفاتورة");
-    }
-  };
-
-  const handleDownloadImage = async () => {
-    if (invoiceRef.current && invoice) {
-      await invoiceDownloadService.downloadAsImage(invoiceRef.current, invoice.order_number || invoice.id);
     } else {
       alert("لا توجد بيانات الفاتورة");
     }
@@ -93,6 +132,16 @@ export default function InvoicePageNew() {
   if (loading) return <div className="flex items-center justify-center min-h-screen bg-gray-100"><div className="text-xl text-gray-600">جاري تحميل الفاتورة...</div></div>;
   if (error) return <div className="flex items-center justify-center min-h-screen bg-gray-100"><div className="text-xl text-red-500">{error}</div></div>;
   if (!invoice) return <div className="flex items-center justify-center min-h-screen bg-gray-100"><div className="text-xl text-gray-500">لا توجد بيانات</div></div>;
+
+  // تنسيق عرض الضمان
+  const warrantyDisplay = () => {
+    if (!warrantyRemaining.endDate) return `🛡️ ${invoice.warranty_period || '6 أشهر'}`;
+    if (warrantyRemaining.expired) {
+      return `⚠️ انتهى الضمان منذ ${warrantyRemaining.daysLeft} يوم`;
+    } else {
+      return `🛡️ متبقي ${warrantyRemaining.daysLeft} يوم (حتى ${warrantyRemaining.endDate.toLocaleDateString('ar-EG')})`;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8" dir="rtl">
@@ -170,7 +219,7 @@ export default function InvoicePageNew() {
             </div>
           </div>
           
-          {/* المبلغ والضمان */}
+          {/* المبلغ والضمان - مع العداد التنازلي */}
           <div className="px-8 py-6 bg-gradient-to-r from-blue-50/50 to-white border-b border-gray-100">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-gray-100">
@@ -183,9 +232,13 @@ export default function InvoicePageNew() {
               <div className="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-gray-100">
                 <div>
                   <p className="text-xs text-gray-500">فترة الضمان</p>
-                  <p className="text-2xl font-bold text-blue-600">🛡️ {invoice.warranty_period || '6 أشهر'}</p>
+                  <p className="text-lg font-bold text-blue-600">{warrantyDisplay()}</p>
                 </div>
-                <Shield className="w-8 h-8 text-blue-500 opacity-70" />
+                {warrantyRemaining.expired ? (
+                  <AlertTriangle className="w-8 h-8 text-red-500 opacity-70" />
+                ) : (
+                  <Shield className="w-8 h-8 text-blue-500 opacity-70" />
+                )}
               </div>
             </div>
           </div>
@@ -213,11 +266,8 @@ export default function InvoicePageNew() {
           </div>
         </div>
         
-        {/* أزرار الإجراءات */}
+        {/* أزرار الإجراءات - تم إزالة زر تحميل الصورة */}
         <div className="flex flex-wrap justify-center gap-3 mt-8">
-          <button onClick={handleDownloadImage} className="bg-white hover:bg-gray-100 text-gray-700 px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 shadow-md border border-gray-200 transition-all">
-            <Download className="w-4 h-4" /> تحميل صورة
-          </button>
           <button onClick={handleDownloadPDF} className="bg-white hover:bg-gray-100 text-gray-700 px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 shadow-md border border-gray-200 transition-all">
             <FileText className="w-4 h-4" /> تحميل PDF
           </button>
