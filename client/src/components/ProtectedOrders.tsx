@@ -46,47 +46,22 @@ const syncTechniciansToUsers = async () => {
   return;
 };
 
-// ✅ دالة الإشعارات الخارجية المعدلة (القوية)
-const sendExternalNotification = async (title: string, message: string) => {
+// ========== دالة الإشعارات الخارجية النهائية (مبسطة وقوية) ==========
+const sendPushNotification = async (title: string, message: string) => {
   try {
     if (!window.OneSignal) {
-      console.log("⏳ OneSignal غير جاهز، إعادة المحاولة بعد ثانية");
-      setTimeout(() => sendExternalNotification(title, message), 1000);
+      setTimeout(() => sendPushNotification(title, message), 1000);
       return;
     }
-
-    // 1. التأكد من تسجيل المستخدم في OneSignal
-    let externalId = await window.OneSignal.getExternalUserId();
-    if (!externalId) {
-      const storedUser = localStorage.getItem('currentUser');
-      if (storedUser) {
-        try {
-          const user = JSON.parse(storedUser);
-          externalId = user.id.toString();
-          await window.OneSignal.login(externalId);
-          console.log("✅ تم تسجيل الدخول إلى OneSignal بالمعرف:", externalId);
-        } catch(e) { console.error("فشل تسجيل الدخول:", e); }
-      }
-    }
-
-    // 2. التأكد من تفعيل الإشعارات
     const isEnabled = await window.OneSignal.isPushNotificationsEnabled();
     if (!isEnabled) {
-      console.log("⚠️ الإشعارات غير مفعلة، سيتم طلب الإذن");
       await window.OneSignal.showSlidedown();
       return;
     }
-
-    // 3. إرسال الإشعار
-    if (externalId) {
-      await window.OneSignal.sendToExternalUserId(externalId, title, message);
-      console.log(`✅ إشعار مرسل إلى المستخدم ${externalId}: ${title}`);
-    } else {
-      await window.OneSignal.sendSelfNotification(title, message, {}, () => {});
-      console.log(`✅ إشعار مرسل للجلسة الحالية: ${title}`);
-    }
-  } catch (error) {
-    console.error("❌ فشل إرسال الإشعار:", error);
+    window.OneSignal.sendSelfNotification(title, message, {}, () => {});
+    console.log(`✅ Push sent: ${title}`);
+  } catch (err) {
+    console.error("Push error:", err);
   }
 };
 
@@ -429,13 +404,12 @@ export default function ProtectedOrders() {
       if (newStatus === 'completed' && order.is_paid && !order.profit_added_to_cash) await addCompanyProfitToCash({ ...order, status: newStatus, ...extraData });
       sendWhatsAppToCustomer(order, newStatus);
       fetchData();
-      
-      // ✅ إشعار خارجي للمديرين والفني عند تغيير الحالة
+      if (toastNotification) {
+        toastNotification({ type: 'info', title: '🔄 تحديث الحالة', message: `تم تغيير حالة أوردر ${order.customer_name} إلى ${newStatus}`, duration: 3000 });
+      }
       if (newStatus === 'completed' || newStatus === 'in-progress') {
-        await sendExternalNotification(`🔄 تحديث حالة`, `تم تغيير حالة أوردر ${order.customer_name} إلى ${newStatus}`);
-        if (order.technician) {
-          await sendExternalNotification(`🔧 للفني ${order.technician}`, `تم تغيير حالة أوردر ${order.customer_name}`, order.technician);
-        }
+        await sendPushNotification(`🔄 تحديث حالة`, `تم تغيير حالة أوردر ${order.customer_name} إلى ${newStatus}`);
+        if (order.technician) await sendPushNotification(`🔧 للفني ${order.technician}`, `تم تغيير حالة أوردر ${order.customer_name}`);
       }
     } catch (err) { console.error(err); }
   };
@@ -450,6 +424,9 @@ export default function ProtectedOrders() {
       await addNotification('تحديث حالة الدفع', `✅ تم تحديث حالة تحصيل أوردر ${order.customer_name} إلى ${newPaidStatus ? 'تم التحصيل' : 'لم يتم التحصيل'}`);
       if (newPaidStatus && order.status === 'completed' && !order.profit_added_to_cash) await addCompanyProfitToCash({ ...order, is_paid: true });
       fetchData(); fetchCashLedger();
+      if (toastNotification) {
+        toastNotification({ type: newPaidStatus ? 'success' : 'warning', title: '💰 حالة الدفع', message: `${order.customer_name}: ${newPaidStatus ? 'تم التحصيل' : 'لم يتم التحصيل'}`, duration: 3000 });
+      }
     } catch (err) { console.error(err); }
   };
 
@@ -457,20 +434,18 @@ export default function ProtectedOrders() {
     if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لحذف الأوردرات");
     const order = orders.find(o => o.id === id);
     if (!order) return;
-    const confirmation = prompt(
-      `❗ حذف أوردر العميل: ${order.customer_name}\nرقم الأوردر: ${order.order_number}\n\nللتأكيد، اكتب كلمة "حذف" ثم اضغط OK.`
-    );
+    const confirmation = prompt(`❗ حذف أوردر العميل: ${order.customer_name}\nرقم الأوردر: ${order.order_number}\n\nللتأكيد، اكتب كلمة "حذف" ثم اضغط OK.`);
     if (confirmation !== "حذف") {
       alert("❌ تم إلغاء الحذف");
       return;
     }
     try {
-      await fetchAPI(`orders?id=eq.${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ deleted_at: new Date().toISOString() })
-      });
+      await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ deleted_at: new Date().toISOString() }) });
       await addNotification('حذف أوردر (ناعم)', `تم نقل أوردر ${order.customer_name} (رقم ${order.order_number}) إلى سلة المحذوفات`);
       fetchData();
+      if (toastNotification) {
+        toastNotification({ type: 'error', title: '🗑️ حذف أوردر', message: `تم نقل أوردر ${order.customer_name} إلى سلة المحذوفات`, duration: 3000 });
+      }
     } catch (err) { console.error(err); }
   };
 
@@ -480,10 +455,7 @@ export default function ProtectedOrders() {
     if (!order) return;
     if (confirm(`استعادة أوردر ${order.customer_name} (${order.order_number})؟`)) {
       try {
-        await fetchAPI(`orders?id=eq.${id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ deleted_at: null })
-        });
+        await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ deleted_at: null }) });
         await addNotification('استعادة أوردر', `تم استعادة أوردر ${order.customer_name} (رقم ${order.order_number})`);
         fetchData();
       } catch (err) { console.error(err); }
@@ -511,29 +483,17 @@ export default function ProtectedOrders() {
         if (oldOrder?.status === 'completed' && oldOrder?.is_paid && oldOrder?.profit_added_to_cash) await deleteOrderProfitFromCash(oldOrder);
         await fetchAPI(`orders?id=eq.${editingOrder.id}`, { method: 'PATCH', body: JSON.stringify(orderToSave) });
         await addNotification('تعديل أوردر', `تم تعديل أوردر ${formData.customer_name}`);
-        
-        if (orderToSave.technician) {
-          notifyTechnician(orderToSave.technician, '🔄 تحديث في الأوردر', `تم تحديث بيانات الأوردر الخاص بالعميل: ${formData.customer_name}`);
-        }
-        
+        if (orderToSave.technician) notifyTechnician(orderToSave.technician, '🔄 تحديث في الأوردر', `تم تحديث بيانات الأوردر الخاص بالعميل: ${formData.customer_name}`);
         if (orderToSave.status === 'completed' && orderToSave.is_paid && !orderToSave.profit_added_to_cash) await addCompanyProfitToCash({ ...orderToSave, id: editingOrder.id });
         alert("✅ تم تعديل الأوردر بنجاح");
       } else {
         await fetchAPI('orders', { method: 'POST', body: JSON.stringify(orderToSave) });
         await addNotification('إضافة أوردر', `تم إضافة أوردر جديد للعميل ${formData.customer_name}`);
-        
-        if (orderToSave.technician) {
-          notifyTechnician(orderToSave.technician, '📢 أوردر جديد محول إليك', `تم تعيين أوردر جديد لك للعميل: ${formData.customer_name} في ${formData.address}`);
-        }
-        
+        if (orderToSave.technician) notifyTechnician(orderToSave.technician, '📢 أوردر جديد محول إليك', `تم تعيين أوردر جديد لك للعميل: ${formData.customer_name} في ${formData.address}`);
         alert("✅ تم إضافة الأوردر بنجاح");
         sendWhatsAppToCustomerOnCreate(orderToSave);
-        
-        // ✅ إشعار خارجي عند إضافة أوردر جديد
-        await sendExternalNotification('📋 أوردر جديد', `تم إضافة أوردر جديد للعميل ${formData.customer_name}`);
-        if (orderToSave.technician) {
-          await sendExternalNotification(`🔧 للفني ${orderToSave.technician}`, `تم تعيين أوردر جديد لك: ${formData.customer_name}`, orderToSave.technician);
-        }
+        await sendPushNotification('📋 أوردر جديد', `تم إضافة أوردر جديد للعميل ${formData.customer_name}`);
+        if (orderToSave.technician) await sendPushNotification(`🔧 للفني ${orderToSave.technician}`, `تم تعيين أوردر جديد لك: ${formData.customer_name}`);
       }
       setShowOrderModal(false); setEditingOrder(null);
       setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") });
@@ -612,28 +572,14 @@ export default function ProtectedOrders() {
     
     await fetchAPI(`orders?id=eq.${order.id}`, { method: 'PATCH', body: JSON.stringify({ invoice_approved: true, warranty_period: warranty, parts_used: parts, invoice_date: new Date().toISOString().split('T')[0] }) });
     await addNotification('اعتماد فاتورة', `تم اعتماد فاتورة ${order.customer_name} مع ضمان ${warranty}`);
-    
     window.open(`/invoice?id=${order.id}`, '_blank');
-    
     invoiceService.sendInvoiceViaWhatsApp({
-      id: order.id.toString(),
-      orderNumber: order.order_number,
-      customerName: order.customer_name,
-      phone: order.phone,
-      device: order.device_type,
-      brand: order.brand,
-      problem: order.problem_description || 'غير محددة',
-      totalAmount: order.total_amount,
-      warranty: warranty,
-      date: new Date().toLocaleDateString('ar-EG'),
-      address: order.address,
-      partsUsed: parts,
-      technicianName: order.technician
+      id: order.id.toString(), orderNumber: order.order_number, customerName: order.customer_name, phone: order.phone,
+      device: order.device_type, brand: order.brand, problem: order.problem_description || 'غير محددة',
+      totalAmount: order.total_amount, warranty: warranty, date: new Date().toLocaleDateString('ar-EG'),
+      address: order.address, partsUsed: parts, technicianName: order.technician
     });
-    
-    // ✅ إشعار خارجي عند اعتماد فاتورة
-    await sendExternalNotification('📄 فاتورة معتمدة', `تم اعتماد فاتورة للعميل ${order.customer_name}`);
-    
+    await sendPushNotification('📄 فاتورة معتمدة', `تم اعتماد فاتورة للعميل ${order.customer_name}`);
     alert("✅ تم اعتماد الفاتورة وإرسالها للعميل");
     fetchData();
   };
@@ -677,53 +623,12 @@ export default function ProtectedOrders() {
         <button onClick={() => setActiveTab('notifications')} className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1 transition ${activeTab === 'notifications' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}><Bell className="w-4 h-4" /> الإشعارات ({notifications.length})</button>
         {userRole === 'admin' && <button onClick={() => setActiveTab('permissions')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'permissions' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>🔐 الصلاحيات</button>}
         <button onClick={() => setActiveTab('performance')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'performance' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📊 أداء الفنيين</button>
-        
-        {/* ✅ أزرار الإشعارات */}
-        <button 
-          onClick={async () => {
-            if (window.OneSignal) {
-              await window.OneSignal.showSlidedown();
-              alert("✅ تم فتح نافذة الإشعارات، يرجى الضغط على 'سماح'");
-            } else {
-              alert("⚠️ جاري تحميل الإشعارات، حاول مرة أخرى بعد ثانية");
-            }
-          }}
-          className="bg-green-600 text-white px-3 py-2 rounded-lg text-sm"
-        >
-          🔔 تفعيل الإشعارات
-        </button>
-        
-        <button 
-          onClick={() => sendExternalNotification('🧪 اختبار يدوي', 'هذا إشعار تجريبي من التطبيق')}
-          className="bg-purple-600 text-white px-3 py-2 rounded-lg text-sm"
-        >
-          🧪 اختبار الإشعار
-        </button>
-        
-        <button 
-          onClick={async () => {
-            if (window.OneSignal) {
-              const externalId = await window.OneSignal.getExternalUserId();
-              alert(`معرف المستخدم في OneSignal هو: ${externalId || "غير مسجل"}`);
-              if (!externalId) {
-                const storedUser = localStorage.getItem('currentUser');
-                if (storedUser) {
-                  try {
-                    const user = JSON.parse(storedUser);
-                    const userId = user.id.toString();
-                    await window.OneSignal.login(userId);
-                    alert(`✅ تم تسجيل الدخول بـ ID: ${userId}`);
-                  } catch(e) { alert("خطأ في التسجيل"); }
-                }
-              }
-            } else {
-              alert("OneSignal لم يتم تحميله بعد");
-            }
-          }}
-          className="bg-yellow-600 text-white px-3 py-2 rounded-lg text-sm"
-        >
-          🆔 معرف المستخدم
-        </button>
+
+        {/* أزرار الاختبار */}
+        <button onClick={async () => { await window.OneSignal?.showSlidedown(); alert("افتح النافذة واسمح"); }} className="bg-green-600 px-3 py-2 rounded-lg text-sm">🔔 تفعيل</button>
+        <button onClick={() => sendPushNotification('🧪 اختبار', 'هذا إشعار من التطبيق')} className="bg-purple-600 px-3 py-2 rounded-lg text-sm">🧪 اختبار</button>
+        <button onClick={async () => { const id = await window.OneSignal?.getExternalUserId(); alert(`ID: ${id || "غير مسجل"}`); }} className="bg-yellow-600 px-3 py-2 rounded-lg text-sm">🆔 معرفي</button>
+        <button onClick={() => { if (toastNotification) toastNotification({ type: 'success', title: 'Toast', message: 'يعمل', duration: 3000 }); else alert('غير متوفر'); }} className="bg-teal-600 px-3 py-2 rounded-lg text-sm">📢 Toast</button>
       </div>
 
       <div className="p-4">
@@ -788,12 +693,7 @@ export default function ProtectedOrders() {
                       )}
                       {order.status === 'in-progress' && canEditDelete() && (<button onClick={() => { setSelectedOrder(order); setSettleForm({ total_amount: order.total_amount || 0, parts_cost: order.parts_cost || 0, transport_cost: order.transport_cost || 0, net_amount: order.net_amount || 0, technician_share: order.technician_share || 0, company_share: order.company_share || 0 }); setShowSettleModal(true); }} className="mt-2 w-full bg-orange-600 hover:bg-orange-700 text-white py-1 rounded-lg text-sm font-bold">تصفية الأوردر</button>)}
                       {order.status === 'completed' && (
-                        <button 
-                          onClick={() => window.open(`/invoice?id=${order.id}`, '_blank')}
-                          className="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white py-1 rounded-lg text-sm font-bold"
-                        >
-                          📄 عرض الفاتورة
-                        </button>
+                        <button onClick={() => window.open(`/invoice?id=${order.id}`, '_blank')} className="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white py-1 rounded-lg text-sm font-bold">📄 عرض الفاتورة</button>
                       )}
                     </div>
                   );
@@ -960,7 +860,7 @@ export default function ProtectedOrders() {
         {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions />}
       </div>
 
-      {/* المودالات (كما هي دون تغيير) */}
+      {/* المودالات (Order, Technician, Partner, Cash, Settlement) - كلها موجودة */}
       {showOrderModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl shadow-xl">
