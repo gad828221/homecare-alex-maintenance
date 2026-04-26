@@ -38,34 +38,45 @@ export const InvoiceApprovalModal: React.FC<InvoiceApprovalModalProps> = ({
 
     onApprove(finalWarranty);
 
-    // إنشاء الفاتورة
+    // إنشاء كائن الفاتورة بكل البيانات المطلوبة
     const invoice = {
-      id: order.id,
-      orderNumber: `#${order.id}`,
+      orderNumber: `MG-${order.id}`,  // تنسيق رقم الفاتورة
       customerName: order.customer_name,
       phone: order.phone,
       device: order.device,
       brand: order.brand,
-      problem: order.problem,
+      problem: order.problem_description || order.problem,
       totalAmount: order.total_amount,
       warranty: finalWarranty,
-      date: order.date
+      date: order.date || new Date().toISOString(),
+      address: order.address,
+      partsUsed: order.parts_used,
+      technician: order.technician
     };
 
-    // إنشاء رسالة الواتس
+    // توليد نص الفاتورة
     const invoiceText = invoiceService.generateInvoiceText(invoice);
     
+    // التحقق من صحة رقم الهاتف وإرسال الفاتورة
     if (whatsappService.isValidEgyptianNumber(order.phone)) {
       const result = await whatsappService.sendAdminNotification(
         order.phone,
         order.customer_name,
-        `الجهاز: ${order.device}\nالماركة: ${order.brand}\nالمشكلة: ${order.problem}`,
-        'مكتمل - الفاتورة مرفقة'
+        `الجهاز: ${order.device}\nالماركة: ${order.brand}\nالمشكلة: ${order.problem || order.problem_description}`,
+        invoiceText  // إرسال النص المنسق الجديد
       );
 
       if (result.success && result.link) {
         onSendWhatsApp(result.link);
+      } else {
+        // إذا فشل الإرسال، نرسل الرابط مباشرة
+        const link = invoiceService.generateWhatsAppLink(order.phone, invoice);
+        onSendWhatsApp(link);
       }
+    } else {
+      // رقم غير صالح، نعرض رابط يدوي
+      const link = invoiceService.generateWhatsAppLink(order.phone, invoice);
+      onSendWhatsApp(link);
     }
 
     onClose();
