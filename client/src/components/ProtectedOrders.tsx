@@ -46,30 +46,17 @@ const syncTechniciansToUsers = async () => {
   return;
 };
 
-// ✅ إرسال إشعارات OneSignal الخارجية (للمديرين والفنيين)
-const sendExternalNotification = async (title: string, message: string, userId?: string) => {
+// ✅ إرسال إشعارات OneSignal الخارجية
+const sendExternalNotification = async (title: string, message: string) => {
   try {
-    const OneSignal = window.OneSignal;
-    if (!OneSignal) {
-      console.log('⚠️ OneSignal غير موجود بعد');
-      return;
-    }
-
-    const isSubscribed = await OneSignal.isPushNotificationsEnabled();
-    if (!isSubscribed) {
-      console.log('⚠️ المستخدم لم يفعل الإشعارات');
-      return;
-    }
-
-    if (userId) {
-      await OneSignal.sendTag("user_id", userId);
-      await OneSignal.sendSelfNotification(title, message, {}, (completed: any) => {
-        console.log(`✅ إشعار مرسل للمستخدم ${userId}: ${title}`);
+    if (window.OneSignal) {
+      console.log('📤 جاري إرسال إشعار:', title);
+      window.OneSignal.sendSelfNotification(title, message, {}, (completed: any) => {
+        console.log('✅ تم إرسال الإشعار بنجاح:', title);
       });
     } else {
-      await OneSignal.sendSelfNotification(title, message, {}, (completed: any) => {
-        console.log(`✅ إشعار مرسل للجميع: ${title}`);
-      });
+      console.log('⚠️ OneSignal غير جاهز، سيتم المحاولة مرة أخرى');
+      setTimeout(() => sendExternalNotification(title, message), 1000);
     }
   } catch (error) {
     console.error('❌ فشل إرسال الإشعار:', error);
