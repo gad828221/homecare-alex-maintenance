@@ -53,6 +53,7 @@
         await OneSignal.init({
           appId: "4e110360-2a24-4aa3-be39-050c0ed9a3e0",
           allowLocalhostAsSecureOrigin: true,
+          serviceWorkerPath: "/OneSignalSDKWorker.js", // ✅ أضف هذا السطر
         });
         console.log("OneSignal ready");
         
