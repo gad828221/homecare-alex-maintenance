@@ -1,50 +1,47 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
 import { Bell, AlertCircle, Info, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function NotificationPermissionButton() {
-  const location = useLocation();
   const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'default' | 'loading'>('default');
   const [isVisible, setIsVisible] = useState(true);
   const [showInstructions, setShowInstructions] = useState(false);
 
-  // ✅ التحقق من دور المستخدم المسموح له برؤية هذا الزر
+  // ✅ تحديد المسار الحالي مباشرة (آمن ولا يحتاج React Router)
+  const currentPath = window.location.pathname;
+
+  // ✅ التحقق من دور المستخدم المسموح له
   const allowedRoles = ['admin', 'manager', 'viewer', 'tech'];
   const userRole = localStorage.getItem('userRole');
   const isAllowedUser = userRole && allowedRoles.includes(userRole);
 
   // ❌ إذا المستخدم ليس من الأدوار المطلوبة، لا نعرض أي شيء
-  if (!isAllowedUser) {
-    return null;
-  }
+  if (!isAllowedUser) return null;
 
-  // ❌ أيضاً نمنع الظهور في الصفحة الرئيسية إذا كان هناك دور مسموح (اختياري للاحتياط)
-  if (location.pathname === '/') {
-    return null;
-  }
+  // ❌ لا نعرض أيضاً في الصفحة الرئيسية (احتياطي)
+  if (currentPath === '/') return null;
 
   useEffect(() => {
-    checkNotificationPermission();
-    const handlePermissionGranted = () => {
+    const checkPermission = async () => {
+      try {
+        if (!window.OneSignal) return;
+        const isSubscribed = await window.OneSignal.User.getOnesignalId();
+        if (isSubscribed) setPermissionStatus('granted');
+        else setPermissionStatus(Notification.permission === 'denied' ? 'denied' : 'default');
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    checkPermission();
+
+    const handleGranted = () => {
       setPermissionStatus('granted');
       setTimeout(() => setIsVisible(false), 2000);
     };
-    window.addEventListener('onesignal-permission-granted', handlePermissionGranted);
-    return () => window.removeEventListener('onesignal-permission-granted', handlePermissionGranted);
+    window.addEventListener('onesignal-permission-granted', handleGranted);
+    return () => window.removeEventListener('onesignal-permission-granted', handleGranted);
   }, []);
 
-  const checkNotificationPermission = async () => {
-    try {
-      if (!window.OneSignal) return;
-      const isSubscribed = await window.OneSignal.User.getOnesignalId();
-      if (isSubscribed) setPermissionStatus('granted');
-      else setPermissionStatus(Notification.permission === 'denied' ? 'denied' : 'default');
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const handleEnableNotifications = async () => {
+  const handleEnable = async () => {
     setPermissionStatus('loading');
     try {
       if (!window.OneSignal) return;
@@ -116,7 +113,7 @@ export default function NotificationPermissionButton() {
             )}
           </div>
         ) : (
-          <button onClick={handleEnableNotifications} disabled={permissionStatus === 'loading'} className={`w-full py-3 rounded-lg font-bold text-white shadow-lg transition-all active:scale-95 ${
+          <button onClick={handleEnable} disabled={permissionStatus === 'loading'} className={`w-full py-3 rounded-lg font-bold text-white shadow-lg transition-all active:scale-95 ${
             permissionStatus === 'loading' ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
           }`}>
             {permissionStatus === 'loading' ? 'جاري التفعيل...' : 'تفعيل الإشعارات الآن 🔔'}
