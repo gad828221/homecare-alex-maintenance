@@ -50,11 +50,24 @@
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
+        console.log("[OneSignal] Initializing OneSignal SDK");
+        
         await OneSignal.init({
           appId: "4e110360-2a24-4aa3-be39-050c0ed9a3e0",
           allowLocalhostAsSecureOrigin: true,
+          notificationClickHandlerMatch: 'origin',
+          notificationDisplay: 'native',
         });
-        console.log("OneSignal ready");
+        
+        console.log("[OneSignal] OneSignal initialized successfully");
+        
+        // طلب صلاحيات الإشعارات بشكل فوري
+        try {
+          const permission = await OneSignal.Notifications.requestPermission();
+          console.log("[OneSignal] Notification permission requested:", permission);
+        } catch (error) {
+          console.warn("[OneSignal] Permission request failed:", error);
+        }
         
         // محاولة تسجيل الدخول إذا كان هناك مستخدم مخزن
         const storedUser = localStorage.getItem('currentUser');
@@ -62,29 +75,72 @@
           try {
             const user = JSON.parse(storedUser);
             const userId = user.id.toString();
-            await OneSignal.login(userId);
             
-            // إضافة معرفات إضافية لضمان وصول الإشعارات
+            console.log("[OneSignal] Attempting to login user:", userId, "Role:", user.role);
+            
+            // تسجيل الدخول بالمعرف الأساسي
+            await OneSignal.login(userId);
+            console.log("[OneSignal] Primary login success:", userId);
+            
+            // إضافة معرفات إضافية حسب الدور
             if (user.role === 'tech') {
               await OneSignal.login(`tech_${user.id}`);
+              console.log("[OneSignal] Tech login success: tech_" + user.id);
             } else if (user.role === 'admin' || user.role === 'manager') {
               await OneSignal.login(`admin_${user.id}`);
               await OneSignal.login(`manager_${user.id}`);
+              console.log("[OneSignal] Admin/Manager login success: admin_" + user.id);
             }
-            // إعادة تسجيل الدخول بالمعرف الأساسي ليكون هو النشط
-            await OneSignal.login(userId);
-            console.log("OneSignal login success:", userId);
-          } catch(e) { console.error(e); }
+            
+            // تعيين tags للمستخدم
+            await OneSignal.User.addTag('user_id', userId);
+            await OneSignal.User.addTag('role', user.role);
+            console.log("[OneSignal] Tags added for user:", userId);
+            
+          } catch(e) { 
+            console.error("[OneSignal] Login error:", e); 
+          }
         }
       });
       
       // استمع لحدث مخصص من React لتسجيل الدخول بعد تحميل الصفحة
       window.addEventListener('onesignal-login', async (event) => {
-        const { userId } = event.detail;
-        if (window.OneSignalDeferred) {
-          const [oneSignalPromise] = window.OneSignalDeferred;
-          const OneSignal = await oneSignalPromise?.(OneSignal);
-          if (OneSignal) await OneSignal.login(userId);
+        const { userId, role } = event.detail;
+        console.log("[OneSignal] Custom login event received:", userId, role);
+        
+        try {
+          if (window.OneSignal) {
+            await window.OneSignal.login(userId);
+            
+            if (role === 'tech') {
+              await window.OneSignal.login(`tech_${userId}`);
+            } else if (role === 'admin' || role === 'manager') {
+              await window.OneSignal.login(`admin_${userId}`);
+              await window.OneSignal.login(`manager_${userId}`);
+            }
+            
+            await window.OneSignal.User.addTag('user_id', userId);
+            await window.OneSignal.User.addTag('role', role);
+            
+            console.log("[OneSignal] Custom login completed for:", userId);
+          }
+        } catch (error) {
+          console.error("[OneSignal] Custom login error:", error);
+        }
+      });
+      
+      // استمع لحدث تفعيل الإشعارات
+      window.addEventListener('onesignal-enable-notifications', async (event) => {
+        console.log("[OneSignal] Enable notifications event received");
+        
+        try {
+          if (window.OneSignal) {
+            const permission = await window.OneSignal.Notifications.requestPermission();
+            console.log("[OneSignal] Permission granted:", permission);
+            window.dispatchEvent(new CustomEvent('onesignal-permission-granted', { detail: { permission } }));
+          }
+        } catch (error) {
+          console.error("[OneSignal] Enable notifications error:", error);
         }
       });
     </script>

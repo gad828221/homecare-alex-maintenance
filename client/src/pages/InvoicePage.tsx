@@ -248,15 +248,15 @@ export default function InvoicePageNew() {
           </div>
         </div>
         
-        {/* أزرار الإجراءات */}
+                {/* أزرار الإجراءات */}
         <div className="flex flex-wrap justify-center gap-3 mt-8">
-          <button
           <button
             onClick={downloadAsImage}
             className="bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-all"
           >
             <Download className="w-5 h-5" /> تحميل صورة
           </button>
+          <button
             onClick={downloadPDF}
             className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-all"
           >
@@ -279,6 +279,7 @@ export default function InvoicePageNew() {
             className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-all"
           >
             {copied ? (
+
               <>
                 <Check className="w-5 h-5" /> تم النسخ
               </>

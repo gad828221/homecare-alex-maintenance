@@ -30,6 +30,11 @@ async function sendPushNotification(userIds: string[], title: string, message: s
         ios_badgeType: "Increase",
         ios_badgeCount: 1,
         priority: 10,
+        android_priority: "high",
+        android_channel_id: "4e110360-2a24-4aa3-be39-050c0ed9a3e0",
+        big_picture: "https://maintenanceguide.life/logo.png",
+        android_big_picture: "https://maintenanceguide.life/logo.png",
+        send_after: Math.floor(Date.now() / 1000),
       })
     });
     
