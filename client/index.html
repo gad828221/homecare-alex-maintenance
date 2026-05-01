@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- Primary Meta Tags -->
     <title>Maintenance Guide | صيانة فورية بالمنزل - الإسكندرية</title>
     <meta name="title" content="Maintenance Guide | صيانة فورية بالمنزل - الإسكندرية" />
     <meta name="description" content="خدمات صيانة احترافية لجميع الأجهزة المنزلية بالإسكندرية. ثلاجات، غسالات، تكييفات، بوتاجاز، سخانات. وصول الفني في أقل من ساعة مع ضمان على جميع الإصلاحات." />
@@ -14,28 +13,29 @@
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
+        const storedUser = localStorage.getItem('currentUser');
+        const userRole = localStorage.getItem('userRole');
+        
+        // لا تظهر زر الإشعارات إلا للمدير أو الفني أو مدير العمليات
+        const isStaff = userRole === 'admin' || userRole === 'manager' || userRole === 'technician';
+
         await OneSignal.init({
           appId: "4e110360-2a24-4aa3-be39-050c0ed9a3e0",
           safari_web_id: "web.onesignal.auto.10425712-4022-480a-9e7b-871f3080e050",
           notifyButton: {
-            enable: true,
+            enable: isStaff, // يظهر فقط لفريق العمل
           },
           allowLocalhostAsSecureOrigin: true,
         });
         
-        // ربط المستخدم فور تسجيل الدخول
-        const storedUser = localStorage.getItem('currentUser');
-        if (storedUser) {
+        if (storedUser && isStaff) {
           const user = JSON.parse(storedUser);
           await OneSignal.login(user.id.toString());
-          if (user.role === 'admin' || user.role === 'manager') {
-            await OneSignal.User.addTag("role", "admin");
-          }
+          await OneSignal.User.addTag("role", userRole);
         }
       });
     </script>
 
-    <!-- Favicon -->
     <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="apple-touch-icon" href="/logo.png" />
   </head>

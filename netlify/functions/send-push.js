@@ -6,7 +6,7 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { title, message, external_ids, tags } = JSON.parse(event.body);
+    const { title, message, external_ids, target_roles } = JSON.parse(event.body);
     
     const ONESIGNAL_APP_ID = "4e110360-2a24-4aa3-be39-050c0ed9a3e0";
     const ONESIGNAL_REST_API_KEY = "NDY3Y2FjNzQtOTk1OS00Y2ViLThmZTUtZTUyZWIyMzI0MDI0";
@@ -18,13 +18,19 @@ exports.handler = async (event, context) => {
       priority: 10,
       android_priority: "high",
       ios_badgeType: "Increase",
-      ios_badgeCount: 1,
-      included_segments: ["All"] // إرسال للكل لضمان وصول الإشعار للمدير
+      ios_badgeCount: 1
     };
 
-    // إذا تم تحديد معرفات معينة، نستخدمها، وإلا نرسل للكل
-    if (external_ids && external_ids.length > 0) {
-      delete notificationData.included_segments;
+    // فلترة المستلمين بناءً على الصلاحيات (Roles)
+    if (target_roles && target_roles.length > 0) {
+      notificationData.filters = target_roles.map((role, index) => {
+        const filter = { field: "tag", key: "role", relation: "=", value: role };
+        // إضافة "OR" بين الفلاتر إذا كان هناك أكثر من دور
+        return index === 0 ? filter : { operator: "OR", ...filter };
+      }).flat();
+    } 
+    // أو الإرسال لمعرفات محددة (فني معين مثلاً)
+    else if (external_ids && external_ids.length > 0) {
       notificationData.include_external_user_ids = external_ids;
     }
 
