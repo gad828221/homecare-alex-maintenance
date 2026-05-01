@@ -1,4 +1,7 @@
 [build]
-  base = "."
-  command = "cd client && pnpm install && pnpm build"
+  command = "pnpm install && pnpm build"
   publish = "dist"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
