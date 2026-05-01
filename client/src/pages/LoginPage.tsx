@@ -11,24 +11,9 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // دالة لتفعيل الإشعارات عبر OneSignal
+  // OneSignal disabled temporarily to fix blank page issue
   const initOneSignal = async (userId: string) => {
-    try {
-      if (window.OneSignalDeferred) {
-        const [oneSignalPromise] = window.OneSignalDeferred;
-        const OneSignal = await oneSignalPromise?.(OneSignal);
-        if (OneSignal) {
-          await OneSignal.login(userId);
-          await OneSignal.Slidedown.promptPush();
-          console.log("OneSignal initialized for user:", userId);
-        }
-      } else {
-        // في حالة لم يتم تحميل الـ SDK بعد، انتظر ثم حاول مرة أخرى
-        setTimeout(() => initOneSignal(userId), 1000);
-      }
-    } catch (err) {
-      console.error("OneSignal init error", err);
-    }
+    console.log("OneSignal placeholder for:", userId);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
