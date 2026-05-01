@@ -25,7 +25,7 @@ import IndesitService from "./pages/IndesitService";
 import ProtectedOrders from "./components/ProtectedOrders";
 import InvoicePage from "./pages/InvoicePage";
 import { Phone, MessageCircle } from "lucide-react";
-import NotificationPermissionButton from "./components/NotificationPermissionButton";
+
 
 function Router() {
   return (
@@ -72,7 +72,6 @@ function AppContent() {
     <>
       <Router />
       <FloatingButtons />
-      <NotificationPermissionButton />
     </>
   );
 }

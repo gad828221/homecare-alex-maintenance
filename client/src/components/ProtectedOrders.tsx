@@ -10,7 +10,7 @@ import AdminPermissions from './AdminPermissions';
 import TechnicianPerformance from './TechnicianPerformance';
 import { createClient } from '@supabase/supabase-js';
 import { useNotification } from './EnhancedNotificationSystem';
-import { notifyTechnician, notifyAdmins } from '../lib/onesignal';
+
 import { invoiceService } from '../services/invoiceService';
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';

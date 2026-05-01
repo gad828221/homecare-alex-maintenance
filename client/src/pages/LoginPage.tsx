@@ -11,10 +11,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // OneSignal disabled temporarily to fix blank page issue
-  const initOneSignal = async (userId: string) => {
-    console.log("OneSignal placeholder for:", userId);
-  };
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,13 +43,7 @@ export default function Login() {
           }));
           localStorage.setItem('userRole', user.role);
           
-          // ✅ تفعيل الإشعارات للمدير
-          await initOneSignal(user.id.toString());
-          if (user.role === 'admin' || user.role === 'manager') {
-            await initOneSignal(`admin_${user.id}`);
-            await initOneSignal(`manager_${user.id}`);
-            await initOneSignal(user.id.toString()); // العودة للمعرف الأساسي
-          }
+
           
           window.location.href = user.role === 'data-entry' ? '/data-entry' : '/orders';
         } else {
@@ -84,10 +75,7 @@ export default function Login() {
           localStorage.setItem('userRole', 'tech');
           localStorage.setItem('techName', tech.name);
           
-          // ✅ تفعيل الإشعارات للفني
-          await initOneSignal(`tech_${tech.id}`);
-          await initOneSignal(tech.id.toString());
-          await initOneSignal(`tech_${tech.id}`); // العودة للمعرف الأساسي
+
           
           window.location.href = '/tech-portal';
         } else {

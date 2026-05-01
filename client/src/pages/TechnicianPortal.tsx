@@ -9,7 +9,7 @@ import { useLocation } from "wouter";
 import { useNotification } from "../components/EnhancedNotificationSystem";
 import TechnicianPerformance from "../components/TechnicianPerformance";
 import { createClient } from '@supabase/supabase-js';
-import { notifyAdmins } from '../lib/onesignal';
+
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -210,8 +210,7 @@ export default function TechnicianPortal() {
         if (newStatus === 'deferred') statusAr = "مؤجل ⏰";
         notifyAdmin(`تغيير حالة الأوردر إلى: ${statusAr}`, oldOrder);
         
-        // إشعار Push للمدير
-        notifyAdmins(`تحديث من الفني: ${techName}`, `تم تغيير حالة أوردر العميل ${oldOrder.customer_name} إلى: ${statusAr}`);
+
       }
     } catch (err) { console.error(err); }
   };
@@ -249,7 +248,7 @@ export default function TechnicianPortal() {
       await addNotification('📝 ملاحظة فنية', `أضاف الفني ملاحظة للأوردر رقم ${order.order_number}: ${note}`);
       
       // إشعار Push للمدير
-      notifyAdmins(`ملاحظة من الفني: ${techName}`, `أضاف الفني ملاحظة للأوردر رقم ${order.order_number}: ${note}`);
+
       
       await fetchData();
       addNotification({ type: 'success', title: '✅ تم الإضافة', message: 'تم حفظ الملاحظة', duration: 3000 });
