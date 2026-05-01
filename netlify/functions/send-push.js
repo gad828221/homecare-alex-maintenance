@@ -9,7 +9,7 @@ exports.handler = async (event, context) => {
     const { title, message, external_ids, tags } = JSON.parse(event.body);
     
     const ONESIGNAL_APP_ID = "4e110360-2a24-4aa3-be39-050c0ed9a3e0";
-    const ONESIGNAL_REST_API_KEY = "NDY3Y2FjNzQtOTk1OS00Y2ViLThmZTUtZTUyZWIyMzI0MDI0"; // REST API Key
+    const ONESIGNAL_REST_API_KEY = "NDY3Y2FjNzQtOTk1OS00Y2ViLThmZTUtZTUyZWIyMzI0MDI0";
 
     const notificationData = {
       app_id: ONESIGNAL_APP_ID,
@@ -18,19 +18,14 @@ exports.handler = async (event, context) => {
       priority: 10,
       android_priority: "high",
       ios_badgeType: "Increase",
-      ios_badgeCount: 1
+      ios_badgeCount: 1,
+      included_segments: ["All"] // إرسال للكل لضمان وصول الإشعار للمدير
     };
 
+    // إذا تم تحديد معرفات معينة، نستخدمها، وإلا نرسل للكل
     if (external_ids && external_ids.length > 0) {
+      delete notificationData.included_segments;
       notificationData.include_external_user_ids = external_ids;
-    } else if (tags) {
-      // إرسال بناءً على الـ tags (مثلاً للمديرين)
-      notificationData.filters = [
-        { field: "tag", key: "role", relation: "=", value: "admin" }
-      ];
-    } else {
-      // إرسال للكل كخيار احتياطي
-      notificationData.included_segments = ["All"];
     }
 
     const response = await axios.post('https://onesignal.com/api/v1/notifications', notificationData, {
