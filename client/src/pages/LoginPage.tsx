@@ -11,8 +11,6 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -30,11 +28,20 @@ export default function Login() {
         const data = await res.json();
         if (data && data.length > 0 && data[0].password === password) {
           const user = data[0];
+          
+          // ✅ منع الفنيين من الدخول كمدير
+          if (user.role === 'tech') {
+            setError('❌ هذا الحساب مخصص للفنيين. الرجاء اختيار دور "فني" في الأعلى.');
+            setLoading(false);
+            return;
+          }
+          
           if (user.is_active === false) {
             setError('❌ الحساب غير نشط. يرجى التواصل مع الإدارة.');
             setLoading(false);
             return;
           }
+          
           localStorage.setItem('currentUser', JSON.stringify({
             id: user.id,
             username: user.username,
@@ -42,8 +49,6 @@ export default function Login() {
             role: user.role
           }));
           localStorage.setItem('userRole', user.role);
-          
-
           
           window.location.href = user.role === 'data-entry' ? '/data-entry' : '/orders';
         } else {
@@ -74,8 +79,6 @@ export default function Login() {
           }));
           localStorage.setItem('userRole', 'tech');
           localStorage.setItem('techName', tech.name);
-          
-
           
           window.location.href = '/tech-portal';
         } else {
