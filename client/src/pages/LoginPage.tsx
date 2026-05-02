@@ -25,11 +25,11 @@ export default function Login() {
             'Content-Type': 'application/json'
           }
         });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (data && data.length > 0 && data[0].password === password) {
           const user = data[0];
           
-          // ✅ منع الفنيين من الدخول كمدير
           if (user.role === 'tech') {
             setError('❌ هذا الحساب مخصص للفنيين. الرجاء اختيار دور "فني" في الأعلى.');
             setLoading(false);
@@ -51,6 +51,7 @@ export default function Login() {
           localStorage.setItem('userRole', user.role);
           
           window.location.href = user.role === 'data-entry' ? '/data-entry' : '/orders';
+          return; // مهم: منع استمرار التنفيذ
         } else {
           setError('❌ اسم المستخدم أو كلمة المرور غير صحيحة');
         }
@@ -62,6 +63,7 @@ export default function Login() {
             'Content-Type': 'application/json'
           }
         });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (data && data.length > 0 && data[0].password === password) {
           const tech = data[0];
@@ -81,6 +83,7 @@ export default function Login() {
           localStorage.setItem('techName', tech.name);
           
           window.location.href = '/tech-portal';
+          return;
         } else {
           setError('❌ اسم المستخدم أو كلمة المرور غير صحيحة');
         }
