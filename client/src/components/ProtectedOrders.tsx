@@ -1350,7 +1350,7 @@ ${profitDetails.length ? profitDetails.join('\n') : 'لا توجد توزيعا�
                         <th key={idx} className="p-3 text-right border border-slate-700">{col}</th>
                       ))}
                     </tr>
-                  </thead
+                  </thead>
                     <tbody>
   {reportData.map((row, idx) => (
     <tr key={idx} className="border-b border-slate-800">
