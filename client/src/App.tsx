@@ -8,7 +8,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { EnhancedNotificationProvider } from "./components/EnhancedNotificationSystem"; // ✅ named import
+import { EnhancedNotificationProvider } from "./components/EnhancedNotificationSystem";
 import Home from "./pages/Home";
 import SamsungService from "./pages/SamsungService";
 import LGService from "./pages/LGService";
@@ -25,7 +25,6 @@ import IndesitService from "./pages/IndesitService";
 import ProtectedOrders from "./components/ProtectedOrders";
 import InvoicePage from "./pages/InvoicePage";
 import { Phone, MessageCircle } from "lucide-react";
-
 
 function Router() {
   return (
