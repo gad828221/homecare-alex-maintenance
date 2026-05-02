@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { MessageCircle, CheckCircle, User, Phone, Wrench, MapPin, AlertCircle } from "lucide-react";
+import { useNotification } from "./EnhancedNotificationSystem";
+import { notifyAdmin } from "../lib/whatsapp";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -8,6 +9,8 @@ const DEVICE_TYPES = ['غسالة', 'ثلاجة', 'بوتاجاز', 'سخان', 
 const BRANDS = ['سامسونج', 'LG', 'شارب', 'توشيبا', 'زانوسي', 'يونيون إير', 'فريش', 'وايت ويل', 'أريستون', 'بيكو', 'هوفر', 'إنديست'];
 
 export default function BookingForm() {
+  const { addNotification } = useNotification();
+
   const [formData, setFormData] = useState({
     customer_name: "",
     phone: "",
@@ -16,12 +19,12 @@ export default function BookingForm() {
     brand: "",
     problem_description: "",
   });
-  
+
   const [isOtherDevice, setIsOtherDevice] = useState(false);
   const [customDevice, setCustomDevice] = useState("");
   const [isOtherBrand, setIsOtherBrand] = useState(false);
   const [customBrand, setCustomBrand] = useState("");
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
 
@@ -32,7 +35,7 @@ export default function BookingForm() {
 
     const finalDeviceType = isOtherDevice ? customDevice : formData.device_type;
     const finalBrand = isOtherBrand ? customBrand : formData.brand;
-    
+
     const orderNumber = `MG-${Date.now()}`;
     const orderToSave = {
       order_number: orderNumber,
@@ -59,192 +62,104 @@ export default function BookingForm() {
       });
 
       if (response.ok) {
-        setSubmitMessage("✅ تم استلام طلبك بنجاح! سنتواصل معك قريباً.");
-        setFormData({
-          customer_name: "",
-          phone: "",
-          device_type: "",
-          address: "",
-          brand: "",
-          problem_description: "",
-        });
-        
-        // إرسال إشعار للمديرين
-        try {
-          await fetch('/.netlify/functions/send-push', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              title: '📋 أوردر جديد من الموقع',
-              message: `عميل جديد: ${formData.customer_name} - جهاز: ${finalDeviceType}`,
-              tags: true
-            })
-          });
-        } catch (err) { console.error('Push Error:', err); }
+        // إشعار واتساب للمديرين
+        const adminMsg = `🔔 *أوردر جديد* 🔔\n\n👤 العميل: ${formData.customer_name}\n📞 الهاتف: ${formData.phone}\n🔧 الجهاز: ${finalDeviceType} - ${finalBrand}\n📍 العنوان: ${formData.address}\n🔢 رقم الأوردر: ${orderNumber}\n📝 المشكلة: ${formData.problem_description || "بدون"}`;
+        notifyAdmin(adminMsg);
 
-        const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(`أوردر جديد: ${orderNumber}\nالاسم: ${formData.customer_name}\nالجهاز: ${finalDeviceType}\nالعنوان: ${formData.address}`)}`;
-        window.open(whatsappUrl, "_blank");
+        setSubmitMessage("✅ تم استلام طلبك بنجاح!");
+        setTimeout(() => setSubmitMessage(""), 5000);
+
+        addNotification({
+          type: 'success',
+          title: '📋 أوردر جديد',
+          message: `تم استلام طلب جديد من ${formData.customer_name} - جهاز: ${finalDeviceType}`,
+          duration: 8000
+        });
+
+        setFormData({
+          customer_name: "", phone: "", device_type: "", address: "", brand: "", problem_description: ""
+        });
+        setIsOtherDevice(false); setIsOtherBrand(false);
+        setCustomDevice(""); setCustomBrand("");
+
+        // واتساب للعميل (تأكيد)
+        const customerWhatsapp = formData.phone.replace(/[^\d]/g, '');
+        const customerMessage = `📝 مرحباً ${formData.customer_name}، تم استلام طلب الصيانة الخاص بك بنجاح. رقم الأوردر: ${orderNumber}. سيتم التواصل معك قريباً.`;
+        window.open(`https://wa.me/${customerWhatsapp}?text=${encodeURIComponent(customerMessage)}`, '_blank');
+        
+        // واتساب لرقم الدعم
+        const supportWhatsapp = "201558625259";
+        const supportMessage = `أوردر جديد: ${orderNumber}\nالاسم: ${formData.customer_name}\nالجهاز: ${finalDeviceType}`;
+        window.open(`https://wa.me/${supportWhatsapp}?text=${encodeURIComponent(supportMessage)}`, '_blank');
       } else {
-        throw new Error("فشل في إرسال الطلب");
+        setSubmitMessage("❌ حدث خطأ، حاول مرة أخرى");
+        addNotification({
+          type: 'error',
+          title: '❌ فشل الحجز',
+          message: 'حدث خطأ أثناء إرسال طلبك، حاول مرة أخرى',
+          duration: 5000
+        });
       }
     } catch (err: any) {
       setSubmitMessage(`❌ خطأ: ${err.message}`);
+      addNotification({
+        type: 'error',
+        title: '❌ خطأ في الاتصال',
+        message: 'تعذر الاتصال بقاعدة البيانات',
+        duration: 5000
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="bg-white rounded-3xl shadow-2xl p-8 border border-slate-100 max-w-2xl mx-auto my-12" dir="rtl">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-slate-900 mb-2">احجز موعد صيانة الآن</h2>
-        <p className="text-slate-500">سجل بياناتك وسيتواصل معك فني متخصص خلال دقائق</p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-              <User className="w-4 h-4 text-orange-600" /> اسم العميل
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.customer_name}
-              onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-all"
-              placeholder="الاسم بالكامل"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-              <Phone className="w-4 h-4 text-orange-600" /> رقم الهاتف
-            </label>
-            <input
-              type="tel"
-              required
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-all"
-              placeholder="رقم الموبايل"
-            />
-          </div>
+    <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6 md:p-8">
+      <h2 className="text-3xl font-bold text-center mb-6 text-slate-800">📝 احجز موعد صيانة الآن</h2>
+      {submitMessage && (
+        <div className={`mb-4 p-3 rounded-lg text-center ${submitMessage.includes('✅') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+          {submitMessage}
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      )}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-              <Wrench className="w-4 h-4 text-orange-600" /> نوع الجهاز
-            </label>
-            <select
-              required
-              value={isOtherDevice ? "other" : formData.device_type}
-              onChange={(e) => {
-                if (e.target.value === "other") {
-                  setIsOtherDevice(true);
-                  setFormData({ ...formData, device_type: "" });
-                } else {
-                  setIsOtherDevice(false);
-                  setFormData({ ...formData, device_type: e.target.value });
-                }
-              }}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-all"
-            >
-              <option value="">اختر نوع الجهاز</option>
-              {DEVICE_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
-              <option value="other">أخرى...</option>
+            <label className="block text-slate-700 mb-1">الاسم *</label>
+            <input type="text" required className="w-full bg-slate-100 border border-slate-300 rounded-xl p-3 text-slate-800" value={formData.customer_name} onChange={e => setFormData({...formData, customer_name: e.target.value})} />
+          </div>
+          <div>
+            <label className="block text-slate-700 mb-1">رقم الهاتف *</label>
+            <input type="tel" required className="w-full bg-slate-100 border border-slate-300 rounded-xl p-3 text-slate-800" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+          </div>
+          <div>
+            <label className="block text-slate-700 mb-1">نوع الجهاز</label>
+            <select className="w-full bg-slate-100 border border-slate-300 rounded-xl p-3 text-slate-800" value={formData.device_type} onChange={e => { if (e.target.value === 'other') { setIsOtherDevice(true); setFormData({...formData, device_type: ''}); } else { setIsOtherDevice(false); setFormData({...formData, device_type: e.target.value}); } }}>
+              <option value="">اختر</option>
+              {DEVICE_TYPES.map(d => <option key={d}>{d}</option>)}
+              <option value="other">أخرى</option>
             </select>
-            {isOtherDevice && (
-              <input
-                type="text"
-                required
-                value={customDevice}
-                onChange={(e) => setCustomDevice(e.target.value)}
-                className="w-full mt-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-all"
-                placeholder="اكتب نوع الجهاز"
-              />
-            )}
+            {isOtherDevice && <input type="text" placeholder="أدخل النوع" className="w-full mt-2 bg-slate-100 border border-slate-300 rounded-xl p-3 text-slate-800" value={customDevice} onChange={e => setCustomDevice(e.target.value)} required />}
           </div>
-
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-              <Star className="w-4 h-4 text-orange-600" /> الماركة
-            </label>
-            <select
-              required
-              value={isOtherBrand ? "other" : formData.brand}
-              onChange={(e) => {
-                if (e.target.value === "other") {
-                  setIsOtherBrand(true);
-                  setFormData({ ...formData, brand: "" });
-                } else {
-                  setIsOtherBrand(false);
-                  setFormData({ ...formData, brand: e.target.value });
-                }
-              }}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-all"
-            >
-              <option value="">اختر الماركة</option>
-              {BRANDS.map(brand => <option key={brand} value={brand}>{brand}</option>)}
-              <option value="other">أخرى...</option>
+            <label className="block text-slate-700 mb-1">الماركة</label>
+            <select className="w-full bg-slate-100 border border-slate-300 rounded-xl p-3 text-slate-800" value={formData.brand} onChange={e => { if (e.target.value === 'other') { setIsOtherBrand(true); setFormData({...formData, brand: ''}); } else { setIsOtherBrand(false); setFormData({...formData, brand: e.target.value}); } }}>
+              <option value="">اختر</option>
+              {BRANDS.map(b => <option key={b}>{b}</option>)}
+              <option value="other">أخرى</option>
             </select>
-            {isOtherBrand && (
-              <input
-                type="text"
-                required
-                value={customBrand}
-                onChange={(e) => setCustomBrand(e.target.value)}
-                className="w-full mt-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-all"
-                placeholder="اكتب الماركة"
-              />
-            )}
+            {isOtherBrand && <input type="text" placeholder="أدخل الماركة" className="w-full mt-2 bg-slate-100 border border-slate-300 rounded-xl p-3 text-slate-800" value={customBrand} onChange={e => setCustomBrand(e.target.value)} required />}
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-slate-700 mb-1">العنوان</label>
+            <input type="text" required className="w-full bg-slate-100 border border-slate-300 rounded-xl p-3 text-slate-800" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-slate-700 mb-1">وصف المشكلة (اختياري)</label>
+            <textarea rows={2} className="w-full bg-slate-100 border border-slate-300 rounded-xl p-3 text-slate-800" value={formData.problem_description} onChange={e => setFormData({...formData, problem_description: e.target.value})} />
           </div>
         </div>
-
-        <div>
-          <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-orange-600" /> العنوان بالتفصيل
-          </label>
-          <input
-            type="text"
-            required
-            value={formData.address}
-            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-all"
-            placeholder="المنطقة - الشارع - رقم العقار"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-            <MessageCircle className="w-4 h-4 text-orange-600" /> وصف المشكلة
-          </label>
-          <textarea
-            value={formData.problem_description}
-            onChange={(e) => setFormData({ ...formData, problem_description: e.target.value })}
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-all h-24 resize-none"
-            placeholder="اشرح العطل باختصار..."
-          ></textarea>
-        </div>
-
-        {submitMessage && (
-          <div className={`p-4 rounded-xl flex items-center gap-3 ${submitMessage.includes('✅') ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
-            {submitMessage.includes('✅') ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-            <span className="font-bold">{submitMessage}</span>
-          </div>
-        )}
-
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-bold py-4 rounded-xl transition-all active:scale-95 shadow-xl shadow-orange-900/20 disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
-        >
-          {isSubmitting ? (
-            <>جاري الإرسال...</>
-          ) : (
-            <>تأكيد طلب الصيانة الآن</>
-          )}
+        <button type="submit" disabled={isSubmitting} className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-xl font-bold text-lg transition-all disabled:opacity-50">
+          {isSubmitting ? "جاري الإرسال..." : "📅 تأكيد الحجز"}
         </button>
       </form>
     </div>
