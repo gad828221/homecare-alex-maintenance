@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { LogIn, User, Lock, AlertCircle, Wrench, LayoutDashboard } from 'lucide-react';
-
-const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
+import { supabase } from '../lib/supabaseClient';
 
 export default function Login() {
   const [role, setRole] = useState<'admin' | 'tech'>('admin');
@@ -18,15 +16,13 @@ export default function Login() {
 
     try {
       if (role === 'admin') {
-        const res = await fetch(`${supabaseUrl}/rest/v1/users?select=*&username=eq.${encodeURIComponent(username)}`, {
-          headers: {
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+        const { data, error: supabaseError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('username', username);
+
+        if (supabaseError) throw supabaseError;
+
         if (data && data.length > 0 && data[0].password === password) {
           const user = data[0];
           
@@ -51,20 +47,17 @@ export default function Login() {
           localStorage.setItem('userRole', user.role);
           
           window.location.href = user.role === 'data-entry' ? '/data-entry' : '/orders';
-          return; // مهم: منع استمرار التنفيذ
         } else {
           setError('❌ اسم المستخدم أو كلمة المرور غير صحيحة');
         }
       } else {
-        const res = await fetch(`${supabaseUrl}/rest/v1/technicians?select=*&username=eq.${encodeURIComponent(username)}`, {
-          headers: {
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+        const { data, error: supabaseError } = await supabase
+          .from('technicians')
+          .select('*')
+          .eq('username', username);
+
+        if (supabaseError) throw supabaseError;
+
         if (data && data.length > 0 && data[0].password === password) {
           const tech = data[0];
           if (tech.is_active === false) {
@@ -83,7 +76,6 @@ export default function Login() {
           localStorage.setItem('techName', tech.name);
           
           window.location.href = '/tech-portal';
-          return;
         } else {
           setError('❌ اسم المستخدم أو كلمة المرور غير صحيحة');
         }
