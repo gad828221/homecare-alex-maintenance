@@ -70,21 +70,22 @@ export default function InvoicePageNew() {
     const endDate = calculateWarrantyEndDate(invoice?.warranty_period);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999);
-    
+
     if (today > end) return "انتهى الضمان";
-    
-    const diffTime = end.getTime() - today.getTime();
-    const totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (totalDays <= 0) return "انتهى الضمان";
-    
-    const months = Math.floor(totalDays / 30);
-    const days = totalDays % 30;
-    
-    if (totalDays === 0) return "ينتهي اليوم";
+
+    let months = (end.getFullYear() - today.getFullYear()) * 12;
+    months += end.getMonth() - today.getMonth();
+    let days = end.getDate() - today.getDate();
+
+    if (days < 0) {
+        months--;
+        const prevMonthDate = new Date(end.getFullYear(), end.getMonth(), 0);
+        days = prevMonthDate.getDate() + days;
+    }
+
+    if (months === 0 && days === 0) return "ينتهي اليوم";
     if (months === 0) return `${days} يوم`;
     if (days === 0) return `${months} شهر`;
     return `${months} شهر و ${days} يوم`;
@@ -342,21 +343,6 @@ export default function InvoicePageNew() {
                 <li>خدمة الصيانة متاحة 24 ساعة طوال أيام الأسبوع</li>
                 <li>يرجى الاتصال بنا فوراً عند ظهور أي مشكلة</li>
               </ul>
-            </div>
-            
-            <div className="flex justify-between pt-6 border-t-2 border-gray-300">
-              <div className="text-center">
-                <div className="w-24 h-12 border-2 border-dashed border-gray-400 rounded mb-2"></div>
-                <p className="text-xs text-gray-600 font-bold">ختم الشركة</p>
-              </div>
-              <div className="text-center">
-                <div className="w-24 h-0.5 bg-gray-400 mt-8"></div>
-                <p className="text-xs text-gray-600 font-bold">توقيع الفني</p>
-              </div>
-              <div className="text-center">
-                <div className="w-24 h-0.5 bg-gray-400 mt-8"></div>
-                <p className="text-xs text-gray-600 font-bold">توقيع العميل</p>
-              </div>
             </div>
             
             <div className="text-center pt-6 text-gray-600 text-sm border-t-2 border-gray-200">
