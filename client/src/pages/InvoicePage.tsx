@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { Download, Printer, Send, Copy, Check } from "lucide-react";
 import { invoiceDownloadService } from "../services/invoiceDownload";
@@ -52,18 +51,139 @@ export default function InvoicePageNew() {
     return cleaned;
   };
 
+  // حساب تاريخ انتهاء الضمان
+  const calculateWarrantyEndDate = (warrantyPeriod: string) => {
+    const orderDate = new Date(invoice?.created_at || new Date());
+    let months = 6; // الافتراضي 6 أشهر
+    
+    if (warrantyPeriod?.includes('سنة')) months = 12;
+    else if (warrantyPeriod?.includes('شهر')) {
+      const match = warrantyPeriod.match(/(\d+)/);
+      if (match) months = parseInt(match[1]);
+    }
+    
+    const endDate = new Date(orderDate);
+    endDate.setMonth(endDate.getMonth() + months);
+    return endDate;
+  };
+
+  // حساب المتبقي من الضمان
+  const getWarrantyRemaining = () => {
+    const endDate = calculateWarrantyEndDate(invoice?.warranty_period);
+    const today = new Date();
+    const daysRemaining = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysRemaining <= 0) return "انتهى الضمان";
+    if (daysRemaining > 30) {
+      const monthsRemaining = Math.ceil(daysRemaining / 30);
+      return `${monthsRemaining} شهر`;
+    }
+    return `${daysRemaining} يوم`;
+  };
+
   const downloadPDF = async () => {
     if (!invoiceRef.current) return;
     try {
-      const canvas = await html2canvas(invoiceRef.current, { scale: 2 });
-      const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const imgWidth = 190;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      pdf.addImage(imgData, "PNG", 10, 0, imgWidth, imgHeight);
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      let yPosition = 10;
+
+      // الرأس
+      pdf.setFillColor(230, 100, 50);
+      pdf.rect(0, 0, pageWidth, 35, "F");
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(20);
+      pdf.text("🔧 Maintenance Guide", pageWidth / 2, 12, { align: "center" });
+      pdf.setFontSize(12);
+      pdf.text("فاتورة صيانة وضمان الأجهزة المنزلية", pageWidth / 2, 22, { align: "center" });
+      pdf.setFontSize(10);
+      pdf.text("خدمة صيانة 24 ساعة بالمنزل | 01278885772 | 01558625259", pageWidth / 2, 30, { align: "center" });
+
+      yPosition = 40;
+
+      // عنوان الفاتورة
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(14);
+      pdf.setFont(undefined, "bold");
+      pdf.text("📄 فاتورة الصيانة والضمان", pageWidth / 2, yPosition, { align: "center" });
+      yPosition += 8;
+
+      // رقم الفاتورة والتاريخ
+      pdf.setFontSize(10);
+      pdf.setFont(undefined, "normal");
+      pdf.text(`رقم الفاتورة: ${invoice?.order_number || invoice?.id}`, 15, yPosition);
+      pdf.text(`التاريخ: ${new Date(invoice?.created_at || new Date()).toLocaleDateString('ar-EG')}`, pageWidth - 15, yPosition, { align: "right" });
+      yPosition += 10;
+
+      // بيانات العميل
+      pdf.setFont(undefined, "bold");
+      pdf.text("👤 بيانات العميل", 15, yPosition);
+      yPosition += 7;
+      pdf.setFont(undefined, "normal");
+      pdf.text(`الاسم: ${invoice?.customer_name || '-'}`, 20, yPosition);
+      yPosition += 5;
+      pdf.text(`الهاتف: ${invoice?.phone || '-'}`, 20, yPosition);
+      yPosition += 5;
+      pdf.text(`العنوان: ${invoice?.address || '-'}`, 20, yPosition);
+      yPosition += 10;
+
+      // تفاصيل الخدمة
+      pdf.setFont(undefined, "bold");
+      pdf.text("🔧 تفاصيل الخدمة", 15, yPosition);
+      yPosition += 7;
+      pdf.setFont(undefined, "normal");
+      pdf.text(`الجهاز: ${invoice?.device_type || invoice?.device || '-'} - ${invoice?.brand || '-'}`, 20, yPosition);
+      yPosition += 5;
+      pdf.text(`المشكلة: ${invoice?.problem_description || invoice?.problem || '-'}`, 20, yPosition);
+      yPosition += 5;
+      pdf.text(`قطع الغيار: ${invoice?.parts_used || 'لا توجد'}`, 20, yPosition);
+      yPosition += 10;
+
+      // المبلغ والضمان
+      pdf.setFont(undefined, "bold");
+      pdf.text("💰 المبلغ والضمان", 15, yPosition);
+      yPosition += 7;
+      pdf.setFont(undefined, "normal");
+      pdf.text(`المبلغ الإجمالي: ${invoice?.total_amount || 0} ج.م`, 20, yPosition);
+      yPosition += 5;
+      pdf.text(`فترة الضمان: 🛡️ ${invoice?.warranty_period || '6 أشهر'}`, 20, yPosition);
+      yPosition += 5;
+      pdf.text(`تاريخ انتهاء الضمان: ${calculateWarrantyEndDate(invoice?.warranty_period).toLocaleDateString('ar-EG')}`, 20, yPosition);
+      yPosition += 5;
+      pdf.text(`المتبقي من الضمان: ${getWarrantyRemaining()}`, 20, yPosition);
+      yPosition += 10;
+
+      // شروط الضمان
+      pdf.setFont(undefined, "bold");
+      pdf.text("📋 شروط الضمان", 15, yPosition);
+      yPosition += 7;
+      pdf.setFont(undefined, "normal");
+      const warrantyTerms = [
+        "الضمان يغطي جميع الأعطال المفاجئة والعيوب الصناعية",
+        "الضمان لا يغطي الأعطال الناتجة عن الاستخدام الخاطئ",
+        "خدمة الصيانة متاحة 24 ساعة طوال أيام الأسبوع",
+        "يرجى الاتصال بنا فوراً عند ظهور أي مشكلة"
+      ];
+      warrantyTerms.forEach(term => {
+        pdf.text(`• ${term}`, 20, yPosition);
+        yPosition += 5;
+      });
+
+      yPosition += 5;
+
+      // الشكر
+      pdf.setFont(undefined, "bold");
+      pdf.text("✨ شكراً لثقتك بنا ✨", pageWidth / 2, yPosition, { align: "center" });
+      yPosition += 7;
+      pdf.setFont(undefined, "normal");
+      pdf.text("للاستفسار والدعم الفني: 01278885772", pageWidth / 2, yPosition, { align: "center" });
+      yPosition += 5;
+      pdf.text("خدمة صيانة 24 ساعة بالمنزل - Maintenance Guide", pageWidth / 2, yPosition, { align: "center" });
+
       pdf.save(`فاتورة_${invoice?.order_number || "order"}.pdf`);
     } catch (err) {
-      alert("حدث خطأ في تحميل PDF");
+      alert("❌ حدث خطأ في تحميل PDF");
     }
   };
 
@@ -74,11 +194,12 @@ export default function InvoicePageNew() {
     }
 
     const phone = formatPhoneForWhatsApp(invoice.phone);
+    const warrantyEndDate = calculateWarrantyEndDate(invoice?.warranty_period).toLocaleDateString('ar-EG');
     const message = `📄 *فاتورة الصيانة والضمان* 📄\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
       `✅ شكراً لثقتك بنا\n\n` +
       `🔢 *رقم الفاتورة:* ${invoice.order_number || invoice.id}\n` +
-      `📅 *التاريخ:* ${new Date().toLocaleDateString('ar-EG')}\n\n` +
+      `📅 *تاريخ الخدمة:* ${new Date(invoice?.created_at || new Date()).toLocaleDateString('ar-EG')}\n\n` +
       `👤 *بيانات العميل:*\n` +
       `  • الاسم: ${invoice.customer_name}\n` +
       `  • الهاتف: ${invoice.phone}\n` +
@@ -89,7 +210,9 @@ export default function InvoicePageNew() {
       `  • قطع الغيار: ${invoice.parts_used || 'لا توجد'}\n\n` +
       `💰 *المبلغ والضمان:*\n` +
       `  • المبلغ: ${invoice.total_amount || 0} ج.م\n` +
-      `  • الضمان: 🛡️ ${invoice.warranty_period || '6 أشهر'}\n\n` +
+      `  • الضمان: 🛡️ ${invoice.warranty_period || '6 أشهر'}\n` +
+      `  • تاريخ انتهاء الضمان: ${warrantyEndDate}\n` +
+      `  • المتبقي من الضمان: ${getWarrantyRemaining()}\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
       `📞 للاستفسار والدعم الفني:\n` +
       `  📱 01278885772\n` +
@@ -146,9 +269,9 @@ export default function InvoicePageNew() {
                 <span className="text-gray-600">رقم الفاتورة:</span>
                 <p className="font-bold text-orange-600 text-lg">{invoice.order_number || invoice.id}</p>
               </div>
-              <div className="bg-blue-100 px-4 py-2 rounded-lg">
+                <div className="bg-blue-100 px-4 py-2 rounded-lg">
                 <span className="text-gray-600">التاريخ:</span>
-                <p className="font-bold text-blue-600">{new Date().toLocaleDateString('ar-EG')}</p>
+                <p className="font-bold text-blue-600">{new Date(invoice?.created_at || new Date()).toLocaleDateString('ar-EG')}</p>
               </div>
             </div>
           </div>
@@ -208,6 +331,14 @@ export default function InvoicePageNew() {
                 <div className="bg-white p-4 rounded-lg text-center">
                   <span className="text-gray-500 text-xs block mb-1">فترة الضمان</span>
                   <p className="text-2xl font-bold text-blue-600">🛡️ {invoice.warranty_period || '6 أشهر'}</p>
+                </div>
+                <div className="bg-white p-4 rounded-lg text-center col-span-2">
+                  <span className="text-gray-500 text-xs block mb-1">تاريخ انتهاء الضمان</span>
+                  <p className="text-xl font-bold text-red-600">{calculateWarrantyEndDate(invoice?.warranty_period).toLocaleDateString('ar-EG')}</p>
+                </div>
+                <div className="bg-white p-4 rounded-lg text-center col-span-2">
+                  <span className="text-gray-500 text-xs block mb-1">المتبقي من الضمان</span>
+                  <p className="text-xl font-bold text-purple-600">{getWarrantyRemaining()}</p>
                 </div>
               </div>
             </div>
