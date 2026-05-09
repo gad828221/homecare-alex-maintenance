@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { TrendingUp, Clock, Award, DollarSign, AlertCircle } from 'lucide-react';
+import { TrendingUp, Clock, Award, DollarSign, AlertCircle, Star } from 'lucide-react';
 
 interface TechnicianStats {
   name: string;
