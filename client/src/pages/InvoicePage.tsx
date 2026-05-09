@@ -51,7 +51,6 @@ export default function InvoicePageNew() {
     return cleaned;
   };
 
-  // ✅ حساب تاريخ انتهاء الضمان (دقيق)
   const calculateWarrantyEndDate = (warrantyPeriod: string) => {
     const orderDate = new Date(invoice?.created_at || new Date());
     let months = 6;
@@ -67,28 +66,28 @@ export default function InvoicePageNew() {
     return endDate;
   };
 
-  // ✅ حساب المتبقي من الضمان (مُصلح)
   const getWarrantyRemaining = () => {
     const endDate = calculateWarrantyEndDate(invoice?.warranty_period);
     const today = new Date();
-    const diffTime = endDate.getTime() - today.getTime();
+    today.setHours(0, 0, 0, 0);
+    
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    
+    if (today > end) return "انتهى الضمان";
+    
+    const diffTime = end.getTime() - today.getTime();
     const totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     if (totalDays <= 0) return "انتهى الضمان";
     
-    const years = Math.floor(totalDays / 365);
-    const months = Math.floor((totalDays % 365) / 30);
+    const months = Math.floor(totalDays / 30);
     const days = totalDays % 30;
     
-    let result = '';
-    if (years > 0) result += `${years} سنة `;
-    if (months > 0) result += `${months} شهر `;
-    if (days > 0 && years === 0) result += `${days} يوم`;
-    
-    if (!result) {
-      return months > 0 ? `${months} شهر` : `${totalDays} يوم`;
-    }
-    return result.trim();
+    if (totalDays === 0) return "ينتهي اليوم";
+    if (months === 0) return `${days} يوم`;
+    if (days === 0) return `${months} شهر`;
+    return `${months} شهر و ${days} يوم`;
   };
 
   const downloadPDF = async () => {
@@ -96,10 +95,8 @@ export default function InvoicePageNew() {
     try {
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
       let yPosition = 10;
 
-      // الرأس
       pdf.setFillColor(230, 100, 50);
       pdf.rect(0, 0, pageWidth, 35, "F");
       pdf.setTextColor(255, 255, 255);
@@ -109,24 +106,20 @@ export default function InvoicePageNew() {
       pdf.text("فاتورة صيانة وضمان الأجهزة المنزلية", pageWidth / 2, 22, { align: "center" });
       pdf.setFontSize(10);
       pdf.text("خدمة صيانة 24 ساعة بالمنزل | 01278885772 | 01558625259", pageWidth / 2, 30, { align: "center" });
-
       yPosition = 40;
 
-      // عنوان الفاتورة
       pdf.setTextColor(0, 0, 0);
       pdf.setFontSize(14);
       pdf.setFont(undefined, "bold");
       pdf.text("📄 فاتورة الصيانة والضمان", pageWidth / 2, yPosition, { align: "center" });
       yPosition += 8;
 
-      // رقم الفاتورة والتاريخ
       pdf.setFontSize(10);
       pdf.setFont(undefined, "normal");
       pdf.text(`رقم الفاتورة: ${invoice?.order_number || invoice?.id}`, 15, yPosition);
       pdf.text(`التاريخ: ${new Date(invoice?.created_at || new Date()).toLocaleDateString('ar-EG')}`, pageWidth - 15, yPosition, { align: "right" });
       yPosition += 10;
 
-      // بيانات العميل
       pdf.setFont(undefined, "bold");
       pdf.text("👤 بيانات العميل", 15, yPosition);
       yPosition += 7;
@@ -138,7 +131,6 @@ export default function InvoicePageNew() {
       pdf.text(`العنوان: ${invoice?.address || '-'}`, 20, yPosition);
       yPosition += 10;
 
-      // تفاصيل الخدمة
       pdf.setFont(undefined, "bold");
       pdf.text("🔧 تفاصيل الخدمة", 15, yPosition);
       yPosition += 7;
@@ -150,7 +142,6 @@ export default function InvoicePageNew() {
       pdf.text(`قطع الغيار: ${invoice?.parts_used || 'لا توجد'}`, 20, yPosition);
       yPosition += 10;
 
-      // المبلغ والضمان
       pdf.setFont(undefined, "bold");
       pdf.text("💰 المبلغ والضمان", 15, yPosition);
       yPosition += 7;
@@ -164,7 +155,6 @@ export default function InvoicePageNew() {
       pdf.text(`المتبقي من الضمان: ${getWarrantyRemaining()}`, 20, yPosition);
       yPosition += 10;
 
-      // شروط الضمان
       pdf.setFont(undefined, "bold");
       pdf.text("📋 شروط الضمان", 15, yPosition);
       yPosition += 7;
@@ -179,10 +169,8 @@ export default function InvoicePageNew() {
         pdf.text(`• ${term}`, 20, yPosition);
         yPosition += 5;
       });
-
       yPosition += 5;
 
-      // الشكر
       pdf.setFont(undefined, "bold");
       pdf.text("✨ شكراً لثقتك بنا ✨", pageWidth / 2, yPosition, { align: "center" });
       yPosition += 7;
@@ -252,10 +240,8 @@ export default function InvoicePageNew() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4 md:p-8" dir="rtl">
       <div className="max-w-4xl mx-auto">
-        {/* الفاتورة */}
         <div ref={invoiceRef} className="bg-white rounded-3xl shadow-2xl overflow-hidden" style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}>
           
-          {/* Header */}
           <div className="bg-gradient-to-r from-orange-600 via-red-600 to-orange-700 p-8 text-white text-center relative overflow-hidden">
             <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20"></div>
             <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/10 rounded-full -ml-20 -mb-20"></div>
@@ -271,7 +257,6 @@ export default function InvoicePageNew() {
             </div>
           </div>
           
-          {/* عنوان الفاتورة */}
           <div className="text-center py-8 border-b-4 border-orange-200 bg-gradient-to-b from-orange-50 to-white">
             <h2 className="text-3xl font-bold text-gray-800 mb-4">📄 فاتورة الصيانة والضمان</h2>
             <div className="flex justify-center gap-12 text-sm text-gray-700 mt-4">
@@ -286,9 +271,7 @@ export default function InvoicePageNew() {
             </div>
           </div>
           
-          {/* المحتوى */}
           <div className="p-8 space-y-6">
-            {/* العميل */}
             <div className="border-r-4 border-orange-500 bg-gradient-to-l from-orange-50 to-white p-4 rounded-lg">
               <h3 className="font-bold text-orange-700 mb-3 text-lg">👤 بيانات العميل</h3>
               <div className="grid grid-cols-2 gap-3 text-sm">
@@ -307,7 +290,6 @@ export default function InvoicePageNew() {
               </div>
             </div>
             
-            {/* الخدمة */}
             <div className="border-r-4 border-green-500 bg-gradient-to-l from-green-50 to-white p-4 rounded-lg">
               <h3 className="font-bold text-green-700 mb-3 text-lg">🔧 تفاصيل الخدمة</h3>
               <div className="grid grid-cols-2 gap-3 text-sm">
@@ -330,7 +312,6 @@ export default function InvoicePageNew() {
               </div>
             </div>
             
-            {/* المبلغ والضمان */}
             <div className="border-r-4 border-blue-500 bg-gradient-to-l from-blue-50 to-white p-4 rounded-lg">
               <h3 className="font-bold text-blue-700 mb-3 text-lg">💰 المبلغ والضمان</h3>
               <div className="grid grid-cols-2 gap-4">
@@ -353,7 +334,6 @@ export default function InvoicePageNew() {
               </div>
             </div>
             
-            {/* شروط الضمان */}
             <div className="bg-gradient-to-l from-purple-50 to-white p-4 rounded-lg border-r-4 border-purple-500">
               <h3 className="font-bold text-purple-700 mb-2 text-lg">📋 شروط الضمان</h3>
               <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
@@ -364,7 +344,6 @@ export default function InvoicePageNew() {
               </ul>
             </div>
             
-            {/* توقيعات */}
             <div className="flex justify-between pt-6 border-t-2 border-gray-300">
               <div className="text-center">
                 <div className="w-24 h-12 border-2 border-dashed border-gray-400 rounded mb-2"></div>
@@ -380,7 +359,6 @@ export default function InvoicePageNew() {
               </div>
             </div>
             
-            {/* شكر */}
             <div className="text-center pt-6 text-gray-600 text-sm border-t-2 border-gray-200">
               <p className="font-bold mb-2">✨ شكراً لثقتك بنا ✨</p>
               <p>للاستفسار والدعم الفني: 01278885772</p>
@@ -389,41 +367,18 @@ export default function InvoicePageNew() {
           </div>
         </div>
         
-                {/* أزرار الإجراءات */}
         <div className="flex flex-wrap justify-center gap-3 mt-8">
-
-          <button
-            onClick={downloadPDF}
-            className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-all"
-          >
+          <button onClick={downloadPDF} className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-all">
             <Download className="w-5 h-5" /> تحميل PDF
           </button>
-          <button
-            onClick={() => window.print()}
-            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-all"
-          >
+          <button onClick={() => window.print()} className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-all">
             <Printer className="w-5 h-5" /> طباعة
           </button>
-          <button
-            onClick={sendViaWhatsApp}
-            className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-all"
-          >
+          <button onClick={sendViaWhatsApp} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-all">
             <Send className="w-5 h-5" /> إرسال واتساب
           </button>
-          <button
-            onClick={copyToClipboard}
-            className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-all"
-          >
-            {copied ? (
-
-              <>
-                <Check className="w-5 h-5" /> تم النسخ
-              </>
-            ) : (
-              <>
-                <Copy className="w-5 h-5" /> نسخ
-              </>
-            )}
+          <button onClick={copyToClipboard} className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-all">
+            {copied ? ( <><Check className="w-5 h-5" /> تم النسخ</> ) : ( <><Copy className="w-5 h-5" /> نسخ</> )}
           </button>
         </div>
       </div>
