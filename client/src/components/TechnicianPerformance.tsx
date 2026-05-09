@@ -14,11 +14,9 @@ interface TechnicianStats {
 }
 
 export default function TechnicianPerformance({ orders, technicians }: { orders: any[]; technicians: any[] }) {
-  // حساب إحصائيات كل فني
   const stats: TechnicianStats[] = useMemo(() => {
     const techMap = new Map<string, TechnicianStats>();
     
-    // تهيئة الخريطة بجميع الفنيين
     technicians.forEach(tech => {
       techMap.set(tech.name, {
         name: tech.name,
@@ -32,7 +30,6 @@ export default function TechnicianPerformance({ orders, technicians }: { orders:
       });
     });
     
-    // معالجة الأوردرات
     orders.forEach(order => {
       const techName = order.technician;
       if (!techName || !techMap.has(techName)) return;
@@ -44,7 +41,6 @@ export default function TechnicianPerformance({ orders, technicians }: { orders:
         techStats.completed++;
         techStats.totalEarnings += order.technician_share || 0;
         
-        // حساب أيام الإكمال (إذا كان هناك تاريخ الإكمال)
         if (order.completed_at && order.date) {
           const start = new Date(order.date);
           const end = new Date(order.completed_at);
@@ -55,7 +51,6 @@ export default function TechnicianPerformance({ orders, technicians }: { orders:
         techStats.inProgress++;
       }
       
-      // حساب التأخير (الأوردرات التي مضى عليها أكثر من يومين ولم تكتمل)
       if (order.status !== 'completed' && order.status !== 'cancelled') {
         const orderDate = new Date(order.date);
         const today = new Date();
@@ -66,7 +61,6 @@ export default function TechnicianPerformance({ orders, technicians }: { orders:
       }
     });
     
-    // حساب نسب التأخير
     techMap.forEach(tech => {
       tech.delayedPercentage = tech.totalOrders ? (tech.delayed / tech.totalOrders) * 100 : 0;
     });
@@ -74,20 +68,17 @@ export default function TechnicianPerformance({ orders, technicians }: { orders:
     return Array.from(techMap.values()).sort((a, b) => b.completed - a.completed);
   }, [orders, technicians]);
   
-  // إحصائيات عامة للبطاقات
   const topEarner = [...stats].sort((a, b) => b.totalEarnings - a.totalEarnings)[0];
   const topPerformer = [...stats].sort((a, b) => b.completed - a.completed)[0];
   const totalCompleted = stats.reduce((sum, t) => sum + t.completed, 0);
   const totalDelayed = stats.reduce((sum, t) => sum + t.delayed, 0);
   
-  // بيانات الرسم البياني الشريطي (أفضل 5 فنيين من حيث الأرباح)
   const barData = stats.slice(0, 5).map(t => ({
     name: t.name,
     الأرباح: t.totalEarnings,
     المنجز: t.completed,
   }));
   
-  // بيانات الرسم الدائري (توزيع الأوردرات حسب الحالة)
   const pieData = [
     { name: 'مكتمل', value: totalCompleted, color: '#10b981' },
     { name: 'قيد التنفيذ', value: stats.reduce((sum, t) => sum + t.inProgress, 0), color: '#3b82f6' },
@@ -98,7 +89,6 @@ export default function TechnicianPerformance({ orders, technicians }: { orders:
   
   return (
     <div className="space-y-6">
-      {/* بطاقات الأداء العامة */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-5 text-white shadow-lg">
           <div className="flex justify-between items-start">
@@ -126,9 +116,7 @@ export default function TechnicianPerformance({ orders, technicians }: { orders:
         </div>
       </div>
       
-      {/* الرسوم البيانية */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* الرسم البياني الشريطي: أرباح الفنيين */}
         <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
           <h3 className="text-white font-bold mb-4 text-center">🏆 أعلى الفنيين أرباحاً</h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -144,7 +132,6 @@ export default function TechnicianPerformance({ orders, technicians }: { orders:
           </ResponsiveContainer>
         </div>
         
-        {/* الرسم الدائري: توزيع الأوردرات */}
         <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
           <h3 className="text-white font-bold mb-4 text-center">📊 توزيع الأوردرات (جميع الفنيين)</h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -158,7 +145,6 @@ export default function TechnicianPerformance({ orders, technicians }: { orders:
         </div>
       </div>
       
-      {/* جدول تفصيلي لأداء الفنيين */}
       <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -186,4 +172,4 @@ export default function TechnicianPerformance({ orders, technicians }: { orders:
       </div>
     </div>
   );
-    }
+}
