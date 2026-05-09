@@ -51,10 +51,10 @@ export default function InvoicePageNew() {
     return cleaned;
   };
 
-  // حساب تاريخ انتهاء الضمان
+  // ✅ حساب تاريخ انتهاء الضمان (دقيق)
   const calculateWarrantyEndDate = (warrantyPeriod: string) => {
     const orderDate = new Date(invoice?.created_at || new Date());
-    let months = 6; // الافتراضي 6 أشهر
+    let months = 6;
     
     if (warrantyPeriod?.includes('سنة')) months = 12;
     else if (warrantyPeriod?.includes('شهر')) {
@@ -67,18 +67,28 @@ export default function InvoicePageNew() {
     return endDate;
   };
 
-  // حساب المتبقي من الضمان
+  // ✅ حساب المتبقي من الضمان (مُصلح)
   const getWarrantyRemaining = () => {
     const endDate = calculateWarrantyEndDate(invoice?.warranty_period);
     const today = new Date();
-    const daysRemaining = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const diffTime = endDate.getTime() - today.getTime();
+    const totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    if (daysRemaining <= 0) return "انتهى الضمان";
-    if (daysRemaining > 30) {
-      const monthsRemaining = Math.ceil(daysRemaining / 30);
-      return `${monthsRemaining} شهر`;
+    if (totalDays <= 0) return "انتهى الضمان";
+    
+    const years = Math.floor(totalDays / 365);
+    const months = Math.floor((totalDays % 365) / 30);
+    const days = totalDays % 30;
+    
+    let result = '';
+    if (years > 0) result += `${years} سنة `;
+    if (months > 0) result += `${months} شهر `;
+    if (days > 0 && years === 0) result += `${days} يوم`;
+    
+    if (!result) {
+      return months > 0 ? `${months} شهر` : `${totalDays} يوم`;
     }
-    return `${daysRemaining} يوم`;
+    return result.trim();
   };
 
   const downloadPDF = async () => {
