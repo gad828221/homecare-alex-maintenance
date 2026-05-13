@@ -3,164 +3,145 @@ import { Card } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BookingForm from "@/components/BookingForm";
-import { Star, CheckCircle, Zap } from "lucide-react";
+import { Star, CheckCircle, Zap, ShieldCheck, Clock, Award, Phone, MessageCircle } from "lucide-react";
 
 export default function ZanussiService() {
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-white overflow-x-hidden">
       <Header />
 
-      {/* Hero Section */}
-<section className="relative h-96 overflow-hidden">
-  <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-emerald-800 mix-blend-multiply" />
-  <img 
-    src="/images/brands/zanussi-hero.jpg" 
-    alt="صيانة زانوسي" 
-    className="absolute inset-0 w-full h-full object-cover"
-  />
-  <div className="absolute inset-0 flex items-center justify-center">
-    <div className="text-center text-white px-4">
-      <h1 className="text-4xl md:text-5xl font-bold mb-4">صيانة زانوسي في الإسكندرية</h1>
-      <p className="text-xl md:text-2xl mb-8">خدمة متخصصة لجميع أجهزة زانوسي - غسالات، ثلاجات، بوتاجاز</p>
-      <Button
-        size="lg"
-        className="bg-green-500 hover:bg-green-600 text-white"
-        onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
-      >
-        احجز الآن
-      </Button>
-    </div>
-  </div>
-</section>
+      {/* HERO SECTION - GOOGLE ADS OPTIMIZED */}
+      <section className="relative min-h-[70vh] flex items-center overflow-hidden bg-yellow-900">
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="/images/hero-bg-new.jpg" 
+            alt="صيانة Zanussi المعتمدة بالإسكندرية" 
+            className="w-full h-full object-cover opacity-40"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-yellow-900 via-yellow-900/60 to-transparent"></div>
+        </div>
+        
+        <div className="container mx-auto px-4 relative z-10 py-12">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 bg-yellow-500/20 border border-yellow-500/30 px-4 py-2 rounded-full mb-6">
+              <ShieldCheck className="w-4 h-4 text-yellow-400" />
+              <span className="text-yellow-400 font-bold text-sm uppercase tracking-wider">مركز صيانة Zanussi المعتمد</span>
+            </div>
+            
+            <h1 className="text-4xl md:text-6xl font-black text-white leading-tight mb-6">
+              صيانة Zanussi <br />
+              <span className="text-yellow-400">بالمنزل فوراً</span> <br />
+              <span className="text-2xl md:text-4xl">قطع غيار أصلية وضمان سنة</span>
+            </h1>
 
-      {/* About Zanussi Service */}
-      <section className="py-12 bg-gray-50">
-        <div className="container">
-          <h2 className="text-3xl font-bold text-center mb-8">عن خدمات صيانة زانوسي</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <p className="text-xl text-slate-200 mb-10 font-medium leading-relaxed">
+              نقدم خدمة صيانة احترافية لجميع أجهزة Zanussi (ثلاجات، غسالات، تكييفات) في الإسكندرية. نصلك خلال ساعة واحدة فقط.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button
+                size="lg"
+                className="bg-yellow-600 hover:bg-yellow-700 text-white text-xl font-black px-10 py-8 rounded-2xl shadow-2xl shadow-yellow-900/40 transition-all transform hover:scale-105"
+                onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+              >
+                احجز فني Zanussi
+              </Button>
+              <a
+                href="tel:+201278885772"
+                className="flex items-center justify-center gap-3 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 text-white text-xl font-black px-10 py-4 rounded-2xl transition-all"
+              >
+                <Phone className="w-6 h-6" />
+                01278885772
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* TRUST SIGNALS */}
+      <div className="bg-white py-12 border-b border-slate-100">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="flex items-center gap-4 p-6 bg-yellow-50 rounded-2xl">
+              <div className="w-12 h-12 bg-yellow-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                <Clock className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h4 className="font-black text-yellow-900">سرعة في الوصول</h4>
+                <p className="text-yellow-700 text-sm font-bold">نصلك خلال 60 دقيقة من طلبك</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 p-6 bg-green-50 rounded-2xl">
+              <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                <ShieldCheck className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h4 className="font-black text-green-900">قطع غيار أصلية</h4>
+                <p className="text-green-700 text-sm font-bold">ضمان حقيقي على قطع الغيار</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 p-6 bg-orange-50 rounded-2xl">
+              <div className="w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                <Award className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h4 className="font-black text-orange-900">ضمان معتمد</h4>
+                <p className="text-orange-700 text-sm font-bold">شهادة ضمان لمدة عام كامل</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CONTENT SECTION */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
-              <p className="text-gray-700 mb-4">
-                زانوسي علامة تجارية إيطالية عريقة في صناعة الأجهزة المنزلية. نحن متخصصون في صيانة جميع أجهزة زانوسي بخدمة احترافية.
+              <h2 className="text-4xl font-black text-slate-900 mb-8 leading-tight">خدمة صيانة Zanussi <br />بأعلى معايير الجودة</h2>
+              <p className="text-lg text-slate-600 mb-8 leading-relaxed font-medium">
+                نحن في مركز صيانة Zanussi الإسكندرية، ندرك مدى أهمية أجهزتك المنزلية في حياتك اليومية. لذا، نقدم فريقاً من المهندسين المتخصصين والمدربين على أحدث تقنيات صيانة Zanussi العالمية.
               </p>
-              <p className="text-gray-700 mb-4">
-                فريقنا مدرب على أحدث تقنيات إصلاح أجهزة زانوسي ويستخدم قطع غيار أصلية.
-              </p>
-              <ul className="space-y-2">
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span>فنيون معتمدون من زانوسي</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span>قطع غيار أصلية مضمونة</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span>ضمان على جميع الإصلاحات</span>
-                </li>
-              </ul>
+              
+              <div className="space-y-4 mb-10">
+                {['صيانة ثلاجات Zanussi بجميع الموديلات', 'تصليح غسالات Zanussi أوتوماتيك وفوق أوتوماتيك', 'صيانة تكييفات Zanussi سبليت وشباك', 'استخدام أجهزة فحص إلكترونية حديثة'].map((item, i) => (
+                  <div key={i} className="flex items-center gap-3 font-bold text-slate-700">
+                    <CheckCircle className="w-5 h-5 text-yellow-600" />
+                    {item}
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-yellow-600 p-8 rounded-3xl text-white">
+                <h4 className="text-2xl font-black mb-4">هل لديك استفسار؟</h4>
+                <p className="font-bold opacity-90 mb-6">تواصل مع الدعم الفني لـ Zanussi مباشرة عبر الواتساب</p>
+                <a href="https://wa.me/201558625259" className="inline-flex items-center gap-2 bg-white text-yellow-600 px-6 py-3 rounded-xl font-black transition-transform hover:scale-105">
+                  <MessageCircle className="w-5 h-5" />
+                  تحدث معنا الآن
+                </a>
+              </div>
             </div>
-            <div className="bg-green-50 p-6 rounded-lg">
-              <h3 className="text-2xl font-bold mb-4 text-green-700">أجهزة زانوسي التي نصلحها:</h3>
-              <ul className="space-y-3">
-                <li className="flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-green-700" />
-                  <span>غسالات زانوسي الأوتوماتيكية</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-green-700" />
-                  <span>ثلاجات زانوسي بجميع الموديلات</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-green-700" />
-                  <span>بوتاجازات زانوسي الغاز والكهرباء</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-green-700" />
-                  <span>غسالات أطباق زانوسي</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-green-700" />
-                  <span>سخانات زانوسي الكهربائية</span>
-                </li>
-              </ul>
+            
+            <div className="relative">
+              <img src="/images/services/washing-machine-repair-pro.jpg" alt="فني صيانة Zanussi" className="rounded-[2.5rem] shadow-2xl w-full h-[500px] object-cover" />
+              <div className="absolute -bottom-10 -left-10 bg-white p-8 rounded-3xl shadow-2xl border border-slate-100 hidden md:block">
+                <p className="text-4xl font-black text-yellow-600 mb-1">98%</p>
+                <p className="font-bold text-slate-500">نسبة رضا العملاء</p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Common Problems */}
-      <section className="py-12">
-        <div className="container">
-          <h2 className="text-3xl font-bold text-center mb-12">المشاكل الشائعة في أجهزة زانوسي</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="p-6">
-              <h3 className="text-xl font-bold mb-3">الغسالة لا تعصر</h3>
-              <p className="text-gray-600">قد تكون مشكلة في المحرك أو حساس الباب. نقوم بفحص شامل وإصلاح فوري.</p>
-            </Card>
-            <Card className="p-6">
-              <h3 className="text-xl font-bold mb-3">تسرب المياه من الغسالة</h3>
-              <p className="text-gray-600">قد يكون بسبب تلف خرطوم الصرف أو طلمبة الصرف. نقوم باستبدالها.</p>
-            </Card>
-            <Card className="p-6">
-              <h3 className="text-xl font-bold mb-3">الثلاجة لا تبرد</h3>
-              <p className="text-gray-600">قد تكون المشكلة في الضاغط أو في نظام التبريد. نقوم بفحص شامل وإصلاح سريع.</p>
-            </Card>
-            <Card className="p-6">
-              <h3 className="text-xl font-bold mb-3">تراكم ثلج في الفريزر</h3>
-              <p className="text-gray-600">قد يكون عطل في تايمر الديفروست. نقوم بتشخيص وإصلاح المشكلة.</p>
-            </Card>
-            <Card className="p-6">
-              <h3 className="text-xl font-bold mb-3">البوتاجاز لا يشعل</h3>
-              <p className="text-gray-600">قد تكون مشكلة في الشعلات أو في النظام الكهربائي. نقوم بفحص وإصلاح.</p>
-            </Card>
-            <Card className="p-6">
-              <h3 className="text-xl font-bold mb-3">أصوات غريبة</h3>
-              <p className="text-gray-600">قد تشير إلى مشكلة في المحرك أو المروحة. نقوم بفحص وإصلاح فوري.</p>
-            </Card>
+      {/* BOOKING SECTION */}
+      <section id="contact" className="py-24 bg-slate-50">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-black text-slate-900 mb-4">احجز موعد الصيانة الآن</h2>
+            <p className="text-lg text-slate-600 font-bold">نصلك في منزلك خلال ساعة واحدة فقط</p>
           </div>
-        </div>
-      </section>
-
-      {/* Booking Form */}
-      <section id="contact">
-        <BookingForm title="احجز خدمة صيانة زانوسي الآن" />
-      </section>
-
-      {/* Testimonials */}
-      <section className="py-12 bg-gray-50">
-        <div className="container">
-          <h2 className="text-3xl font-bold text-center mb-12">آراء عملائنا</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                name: "منى عبدالله",
-                text: "خدمة ممتازة جداً! الفني كان محترف وأصلح الغسالة بسرعة.",
-                rating: 5,
-              },
-              {
-                name: "خالد رشدي",
-                text: "أسعار منافسة وخدمة سريعة. شكراً لكم على الخدمة الممتازة.",
-                rating: 5,
-              },
-              {
-                name: "هند سامي",
-                text: "فنيون محترفون جداً. استخدموا قطع غيار أصلية وأعطوا ضمان على الإصلاح.",
-                rating: 5,
-              },
-            ].map((testimonial, index) => (
-              <Card key={index} className="p-6">
-                <div className="flex gap-1 mb-3">
-                  {Array(testimonial.rating)
-                    .fill(0)
-                    .map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    ))}
-                </div>
-                <p className="text-gray-600 mb-4">{testimonial.text}</p>
-                <p className="font-bold">{testimonial.name}</p>
-              </Card>
-            ))}
+          <div className="bg-white p-2 rounded-[2.5rem] shadow-2xl">
+            <BookingForm defaultService="صيانة Zanussi" />
           </div>
         </div>
       </section>

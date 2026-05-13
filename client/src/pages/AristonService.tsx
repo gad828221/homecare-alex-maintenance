@@ -3,153 +3,145 @@ import { Card } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BookingForm from "@/components/BookingForm";
-import { Star, CheckCircle, Zap } from "lucide-react";
+import { Star, CheckCircle, Zap, ShieldCheck, Clock, Award, Phone, MessageCircle } from "lucide-react";
 
 export default function AristonService() {
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-white overflow-x-hidden">
       <Header />
 
-      {/* Hero Section */}
-<section className="relative h-96 overflow-hidden">
-  <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-red-800 mix-blend-multiply" />
-  <img 
-    src="/images/brands/ariston-hero.jpg" 
-    alt="صيانة أريستون" 
-    className="absolute inset-0 w-full h-full object-cover"
-  />
-  <div className="absolute inset-0 flex items-center justify-center">
-    <div className="text-center text-white px-4">
-      <h1 className="text-4xl md:text-5xl font-bold mb-4">صيانة أريستون في الإسكندرية</h1>
-      <p className="text-xl md:text-2xl mb-8">خدمة متخصصة لجميع أجهزة أريستون - سخانات، غسالات، ثلاجات</p>
-      <Button
-        size="lg"
-        className="bg-green-500 hover:bg-green-600 text-white"
-        onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
-      >
-        احجز الآن
-      </Button>
-    </div>
-  </div>
-</section>
+      {/* HERO SECTION - GOOGLE ADS OPTIMIZED */}
+      <section className="relative min-h-[70vh] flex items-center overflow-hidden bg-slate-900">
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="/images/hero-bg-new.jpg" 
+            alt="صيانة Ariston المعتمدة بالإسكندرية" 
+            className="w-full h-full object-cover opacity-40"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/60 to-transparent"></div>
+        </div>
+        
+        <div className="container mx-auto px-4 relative z-10 py-12">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 bg-slate-500/20 border border-slate-500/30 px-4 py-2 rounded-full mb-6">
+              <ShieldCheck className="w-4 h-4 text-slate-400" />
+              <span className="text-slate-400 font-bold text-sm uppercase tracking-wider">مركز صيانة Ariston المعتمد</span>
+            </div>
+            
+            <h1 className="text-4xl md:text-6xl font-black text-white leading-tight mb-6">
+              صيانة Ariston <br />
+              <span className="text-slate-400">بالمنزل فوراً</span> <br />
+              <span className="text-2xl md:text-4xl">قطع غيار أصلية وضمان سنة</span>
+            </h1>
 
-      {/* About Ariston Service */}
-      <section className="py-12 bg-gray-50">
-        <div className="container">
-          <h2 className="text-3xl font-bold text-center mb-8">عن خدمات صيانة أريستون</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <p className="text-xl text-slate-200 mb-10 font-medium leading-relaxed">
+              نقدم خدمة صيانة احترافية لجميع أجهزة Ariston (ثلاجات، غسالات، تكييفات) في الإسكندرية. نصلك خلال ساعة واحدة فقط.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button
+                size="lg"
+                className="bg-slate-600 hover:bg-slate-700 text-white text-xl font-black px-10 py-8 rounded-2xl shadow-2xl shadow-slate-900/40 transition-all transform hover:scale-105"
+                onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+              >
+                احجز فني Ariston
+              </Button>
+              <a
+                href="tel:+201278885772"
+                className="flex items-center justify-center gap-3 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 text-white text-xl font-black px-10 py-4 rounded-2xl transition-all"
+              >
+                <Phone className="w-6 h-6" />
+                01278885772
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* TRUST SIGNALS */}
+      <div className="bg-white py-12 border-b border-slate-100">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="flex items-center gap-4 p-6 bg-slate-50 rounded-2xl">
+              <div className="w-12 h-12 bg-slate-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                <Clock className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h4 className="font-black text-slate-900">سرعة في الوصول</h4>
+                <p className="text-slate-700 text-sm font-bold">نصلك خلال 60 دقيقة من طلبك</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 p-6 bg-green-50 rounded-2xl">
+              <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                <ShieldCheck className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h4 className="font-black text-green-900">قطع غيار أصلية</h4>
+                <p className="text-green-700 text-sm font-bold">ضمان حقيقي على قطع الغيار</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 p-6 bg-orange-50 rounded-2xl">
+              <div className="w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                <Award className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h4 className="font-black text-orange-900">ضمان معتمد</h4>
+                <p className="text-orange-700 text-sm font-bold">شهادة ضمان لمدة عام كامل</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CONTENT SECTION */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
-              <p className="text-gray-700 mb-4">
-                أريستون من الشركات الرائدة في صناعة السخانات والأجهزة المنزلية. نحن متخصصون في صيانة جميع أجهزة أريستون بخدمة احترافية وسريعة.
+              <h2 className="text-4xl font-black text-slate-900 mb-8 leading-tight">خدمة صيانة Ariston <br />بأعلى معايير الجودة</h2>
+              <p className="text-lg text-slate-600 mb-8 leading-relaxed font-medium">
+                نحن في مركز صيانة Ariston الإسكندرية، ندرك مدى أهمية أجهزتك المنزلية في حياتك اليومية. لذا، نقدم فريقاً من المهندسين المتخصصين والمدربين على أحدث تقنيات صيانة Ariston العالمية.
               </p>
-              <p className="text-gray-700 mb-4">
-                فريقنا مدرب على أحدث تقنيات إصلاح أجهزة أريستون ويستخدم قطع غيار أصلية معتمدة.
-              </p>
-              <ul className="space-y-2">
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span>فنيون معتمدون من أريستون</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span>قطع غيار أصلية مضمونة</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span>ضمان على جميع الإصلاحات</span>
-                </li>
-              </ul>
+              
+              <div className="space-y-4 mb-10">
+                {['صيانة ثلاجات Ariston بجميع الموديلات', 'تصليح غسالات Ariston أوتوماتيك وفوق أوتوماتيك', 'صيانة تكييفات Ariston سبليت وشباك', 'استخدام أجهزة فحص إلكترونية حديثة'].map((item, i) => (
+                  <div key={i} className="flex items-center gap-3 font-bold text-slate-700">
+                    <CheckCircle className="w-5 h-5 text-slate-600" />
+                    {item}
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-slate-600 p-8 rounded-3xl text-white">
+                <h4 className="text-2xl font-black mb-4">هل لديك استفسار؟</h4>
+                <p className="font-bold opacity-90 mb-6">تواصل مع الدعم الفني لـ Ariston مباشرة عبر الواتساب</p>
+                <a href="https://wa.me/201558625259" className="inline-flex items-center gap-2 bg-white text-slate-600 px-6 py-3 rounded-xl font-black transition-transform hover:scale-105">
+                  <MessageCircle className="w-5 h-5" />
+                  تحدث معنا الآن
+                </a>
+              </div>
             </div>
-            <div className="bg-red-50 p-6 rounded-lg">
-              <h3 className="text-2xl font-bold mb-4 text-red-600">أجهزة أريستون التي نصلحها:</h3>
-              <ul className="space-y-3">
-                <li className="flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-red-600" />
-                  <span>سخانات أريستون الكهربائية والغازية</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-red-600" />
-                  <span>بويلرات أريستون للتدفئة</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-red-600" />
-                  <span>غسالات أريستون الأوتوماتيكية</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-red-600" />
-                  <span>ثلاجات أريستون بجميع الموديلات</span>
-                </li>
-              </ul>
+            
+            <div className="relative">
+              <img src="/images/services/washing-machine-repair-pro.jpg" alt="فني صيانة Ariston" className="rounded-[2.5rem] shadow-2xl w-full h-[500px] object-cover" />
+              <div className="absolute -bottom-10 -left-10 bg-white p-8 rounded-3xl shadow-2xl border border-slate-100 hidden md:block">
+                <p className="text-4xl font-black text-slate-600 mb-1">98%</p>
+                <p className="font-bold text-slate-500">نسبة رضا العملاء</p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Common Issues */}
-      <section className="py-12">
-        <div className="container">
-          <h2 className="text-3xl font-bold text-center mb-8">المشاكل الشائعة في أجهزة أريستون</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="p-6">
-              <h3 className="text-xl font-bold mb-3">السخان لا يسخن</h3>
-              <p className="text-gray-700">قد تكون المشكلة في العنصر الحراري أو في الثرموستات. نقوم بفحص شامل وإصلاح سريع.</p>
-            </Card>
-            <Card className="p-6">
-              <h3 className="text-xl font-bold mb-3">تسرب المياه من السخان</h3>
-              <p className="text-gray-700">قد يكون بسبب تلف الخزان أو الوصلات. نقوم باستبدالها بقطع أصلية.</p>
-            </Card>
-            <Card className="p-6">
-              <h3 className="text-xl font-bold mb-3">الغسالة لا تعصر</h3>
-              <p className="text-gray-700">قد تكون مشكلة في المحرك أو حساس الباب. نقوم بفحص شامل وإصلاح فوري.</p>
-            </Card>
-            <Card className="p-6">
-              <h3 className="text-xl font-bold mb-3">أصوات غريبة من السخان</h3>
-              <p className="text-gray-700">قد تشير إلى تراكم الرواسب. نقوم بتنظيف شامل وتطهير النظام.</p>
-            </Card>
+      {/* BOOKING SECTION */}
+      <section id="contact" className="py-24 bg-slate-50">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-black text-slate-900 mb-4">احجز موعد الصيانة الآن</h2>
+            <p className="text-lg text-slate-600 font-bold">نصلك في منزلك خلال ساعة واحدة فقط</p>
           </div>
-        </div>
-      </section>
-
-      {/* Booking Section */}
-      <section id="contact" className="py-12 bg-gradient-to-r from-slate-900 to-slate-800">
-        <div className="container">
-          <h2 className="text-3xl font-bold text-center mb-8 text-white">احجز خدمة صيانة أريستون الآن</h2>
-          <BookingForm />
-        </div>
-      </section>
-
-      {/* Reviews Section */}
-      <section className="py-12 bg-gray-50">
-        <div className="container">
-          <h2 className="text-3xl font-bold text-center mb-8">آراء عملائنا</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="p-6">
-              <div className="flex gap-1 mb-3">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                ))}
-              </div>
-              <p className="text-gray-700 mb-4">خدمة ممتازة جداً! الفني كان احترافي جداً وأصلح السخان بسرعة.</p>
-              <p className="font-bold">أحمد محمد</p>
-            </Card>
-            <Card className="p-6">
-              <div className="flex gap-1 mb-3">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                ))}
-              </div>
-              <p className="text-gray-700 mb-4">أسعار منافسة وخدمة سريعة. شكراً لكم على الخدمة الممتازة.</p>
-              <p className="font-bold">فاطمة علي</p>
-            </Card>
-            <Card className="p-6">
-              <div className="flex gap-1 mb-3">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                ))}
-              </div>
-              <p className="text-gray-700 mb-4">فنيون محترفون جداً. استخدموا قطع غيار أصلية وأعطوا ضمان على الإصلاح.</p>
-              <p className="font-bold">محمود حسن</p>
-            </Card>
+          <div className="bg-white p-2 rounded-[2.5rem] shadow-2xl">
+            <BookingForm defaultService="صيانة Ariston" />
           </div>
         </div>
       </section>

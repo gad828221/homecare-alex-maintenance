@@ -3,329 +3,269 @@ import { Card } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BookingForm from "@/components/BookingForm";
-import { Zap, Droplet, Wind, Flame, Star, Clock, Shield, Users, Phone, MessageCircle, CheckCircle, Award, Truck } from "lucide-react";
+import { 
+  Zap, Droplet, Wind, Flame, Star, Clock, Shield, Users, 
+  Phone, MessageCircle, CheckCircle, Award, Truck, 
+  Settings, Heart, MapPin, Sparkles 
+} from "lucide-react";
 import { useState } from "react";
 
 export default function Home() {
   const services = [
-    {
-      icon: Zap,
-      title: "صيانة الثلاجات",
-      description: "إصلاح وصيانة شاملة لجميع أنواع الثلاجات",
-    },
-    {
-      icon: Droplet,
-      title: "صيانة الغسالات",
-      description: "خدمات متخصصة لغسالات الملابس والأطباق",
-    },
-    {
-      icon: Wind,
-      title: "صيانة المكيفات",
-      description: "تنظيف وإصلاح أجهزة التكييف والتهوية",
-    },
-    {
-      icon: Flame,
-      title: "صيانة الأفران",
-      description: "إصلاح وتنظيف أفران الطهي والميكروويف",
-    },
+    { icon: Zap, title: "صيانة الثلاجات", description: "إصلاح فوري لجميع أنواع الثلاجات والديب فريزر بقطع غيار أصلية." },
+    { icon: Droplet, title: "صيانة الغسالات", description: "تصليح غسالات الملابس والأطباق، أوتوماتيك وفوق أوتوماتيك." },
+    { icon: Wind, title: "صيانة المكيفات", description: "تنظيف، شحن فريون، وإصلاح جميع أنواع التكييفات والسبليت." },
+    { icon: Flame, title: "صيانة الأفران", description: "صيانة شاملة للبوتاجازات والأفران الكهربائية والميكروويف." },
   ];
 
   const features = [
-    {
-      icon: Truck,
-      title: "خدمة سريعة",
-      description: "وصول الفني في أقل من ساعة",
-    },
-    {
-      icon: Award,
-      title: "ضمان معتمد",
-      description: "ضمان على جميع الإصلاحات والقطع",
-    },
-    {
-      icon: Users,
-      title: "فنيون محترفون",
-      description: "فريق مدرب بخبرة عملية عالية",
-    },
-    {
-      icon: Star,
-      title: "أسعار منافسة",
-      description: "أفضل الأسعار مع جودة عالية",
-    },
-  ];
-
-  const testimonials = [
-    {
-      text: "خدمة ممتازة وفني محترف جداً. أنصح الجميع بهم.",
-      name: "أحمد محمد",
-      rating: 5,
-    },
-    {
-      text: "سرعة في الوصول وجودة في العمل. شكراً لكم.",
-      name: "فاطمة علي",
-      rating: 5,
-    },
-    {
-      text: "أسعار منافسة وضمان على الإصلاح. ممتاز جداً.",
-      name: "محمود حسن",
-      rating: 5,
-    },
+    { icon: Truck, title: "وصول خلال ساعة", description: "نصلك في أي مكان بالإسكندرية خلال 60 دقيقة فقط." },
+    { icon: Award, title: "ضمان لمدة عام", description: "شهادة ضمان معتمدة على كافة أعمال الصيانة وقطع الغيار." },
+    { icon: Users, title: "مهندسون خبراء", description: "طاقم فني متخصص ومدرب على أعلى مستوى من الاحترافية." },
+    { icon: Shield, title: "قطع غيار أصلية", description: "نستخدم فقط قطع الغيار الأصلية لضمان كفاءة جهازك." },
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-white overflow-x-hidden">
       <Header />
 
-      {/* HERO SECTION - OPTIMIZED FOR GOOGLE ADS */}
-      <section className="relative min-h-screen md:min-h-96 overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-orange-900">
-        <img
-          src="/images/hero-bg-new.jpg"
-          alt="صيانة احترافية للأجهزة المنزلية بالإسكندرية"
-          className="absolute inset-0 w-full h-full object-cover opacity-40"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/40"></div>
+      {/* HERO SECTION - GOOGLE ADS OPTIMIZED */}
+      <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-slate-900">
+        <div className="absolute inset-0 z-0">
+          <img
+            src="/images/hero-bg-new.jpg"
+            alt="صيانة أجهزة منزلية بالإسكندرية"
+            className="w-full h-full object-cover opacity-30"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
+        </div>
         
-        <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 py-16 md:py-24">
-          <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-4xl md:text-6xl font-black mb-6 text-white leading-tight">
-              صيانة احترافية معتمدة
-              <br />
-              <span className="bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
-                لجميع الأجهزة المنزلية
-              </span>
+        <div className="container mx-auto px-4 relative z-10 py-12 md:py-24">
+          <div className="max-w-4xl">
+            <div className="inline-flex items-center gap-2 bg-orange-500/20 border border-orange-500/30 px-4 py-2 rounded-full mb-6 animate-bounce">
+              <Sparkles className="w-4 h-4 text-orange-400" />
+              <span className="text-orange-400 font-bold text-sm">أفضل خدمة صيانة في الإسكندرية 2026</span>
+            </div>
+            
+            <h1 className="text-4xl md:text-7xl font-black text-white leading-tight mb-6">
+              جهازك معطل؟ <br />
+              <span className="text-orange-500">نحن نصلحه في منزلك</span> <br />
+              <span className="text-3xl md:text-5xl">بأقل تكلفة وضمان معتمد</span>
             </h1>
 
-            <p className="text-xl md:text-2xl text-gray-200 mb-8 font-semibold">
-              صيانة متخصصة بقطع غيار أصلية • ضمان معتمد • فنيون محترفون
+            <p className="text-xl md:text-2xl text-slate-300 mb-10 max-w-2xl font-medium leading-relaxed">
+              مركز صيانة معتمد لجميع الماركات العالمية (سامسونج، LG، توشيبا، شارب، زانوسي). نصلك أينما كنت في الإسكندرية بقطع غيار أصلية.
             </p>
 
-            <div className="flex flex-wrap justify-center gap-4 mb-12">
-              <div className="flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-full">
-                <CheckCircle className="w-5 h-5 text-green-400" />
-                <span className="text-white font-medium">قطع غيار أصلية</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-full">
-                <Award className="w-5 h-5 text-yellow-400" />
-                <span className="text-white font-medium">ضمان شامل</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-full">
-                <Truck className="w-5 h-5 text-blue-400" />
-                <span className="text-white font-medium">وصول سريع</span>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+            <div className="flex flex-col sm:flex-row gap-4 mb-12">
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-lg font-bold px-8 py-6 rounded-lg shadow-lg hover:shadow-2xl transition-all transform hover:scale-105"
-                onClick={() => document.getElementById("booking-form")?.scrollIntoView({ behavior: "smooth" })}
+                className="bg-orange-600 hover:bg-orange-700 text-white text-xl font-black px-10 py-8 rounded-2xl shadow-2xl shadow-orange-900/40 transition-all transform hover:scale-105"
+                onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
               >
-                <MessageCircle className="w-6 h-6 ml-2" />
-                احجز خدمتك الآن
+                <MessageCircle className="w-6 h-6 ml-3" />
+                احجز موعدك الآن
               </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-2 border-white text-white hover:bg-white/10 text-lg font-bold px-8 py-6 rounded-lg"
-                onClick={() => window.location.href = "tel:+201278885772"}
+              
+              <a
+                href="tel:+201278885772"
+                className="flex items-center justify-center gap-3 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 text-white text-xl font-black px-10 py-4 rounded-2xl transition-all"
               >
-                <Phone className="w-6 h-6 ml-2" />
-                اتصل بنا: 01278885772
-              </Button>
+                <Phone className="w-6 h-6" />
+                01278885772
+              </a>
             </div>
 
-            <p className="text-gray-300 text-sm">
-              ✓ خدمة 24/7 • ✓ بدون تكاليف إضافية • ✓ ضمان 100%
-            </p>
+            <div className="flex flex-wrap gap-6">
+              <div className="flex items-center gap-2 text-slate-300 font-bold">
+                <CheckCircle className="w-5 h-5 text-green-500" />
+                قطع غيار أصلية
+              </div>
+              <div className="flex items-center gap-2 text-slate-300 font-bold">
+                <CheckCircle className="w-5 h-5 text-green-500" />
+                ضمان سنة كاملة
+              </div>
+              <div className="flex items-center gap-2 text-slate-300 font-bold">
+                <CheckCircle className="w-5 h-5 text-green-500" />
+                كشف فوري بالمنزل
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
+      {/* QUICK STATS / TRUST SIGNALS */}
+      <div className="bg-orange-600 py-6 relative z-20 -mt-8 mx-4 md:mx-auto max-w-6xl rounded-3xl shadow-2xl">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center divide-x divide-x-reverse divide-orange-500/50">
+            <div>
+              <p className="text-3xl md:text-4xl font-black text-white">15+</p>
+              <p className="text-orange-100 text-sm font-bold">عام من الخبرة</p>
+            </div>
+            <div>
+              <p className="text-3xl md:text-4xl font-black text-white">50k+</p>
+              <p className="text-orange-100 text-sm font-bold">عميل سعيد</p>
+            </div>
+            <div>
+              <p className="text-3xl md:text-4xl font-black text-white">100%</p>
+              <p className="text-orange-100 text-sm font-bold">قطع غيار أصلية</p>
+            </div>
+            <div>
+              <p className="text-3xl md:text-4xl font-black text-white">24h</p>
+              <p className="text-orange-100 text-sm font-bold">خدمة طوارئ</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* BOOKING FORM SECTION */}
-      <section id="booking-form" className="py-8 md:py-12 bg-gray-50">
-        <BookingForm />
+      <section id="contact" className="py-20 bg-slate-50">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+            <div>
+              <h2 className="text-4xl font-black text-slate-900 mb-6">اطلب الخدمة الآن</h2>
+              <p className="text-lg text-slate-600 mb-10 leading-relaxed font-medium">
+                املأ النموذج وسيقوم فريقنا بالتواصل معك خلال دقائق لتحديد موعد الزيارة المنزلية. نضمن لك أفضل سعر وأعلى جودة في الإسكندرية.
+              </p>
+              
+              <div className="space-y-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                    <MapPin className="w-6 h-6 text-orange-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-black text-slate-900">نغطي كافة مناطق الإسكندرية</h4>
+                    <p className="text-slate-500">سموحة، سيدي جابر، لوران، العجمي، السيوف، المنتزه، وكافة المناطق.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                    <Clock className="w-6 h-6 text-green-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-black text-slate-900">مواعيد دقيقة واحترافية</h4>
+                    <p className="text-slate-500">نحترم وقتك ونلتزم بالمواعيد المحددة بدقة تامة.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                    <Settings className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-black text-slate-900">أحدث أجهزة الفحص</h4>
+                    <p className="text-slate-500">نستخدم أجهزة فحص إلكترونية حديثة لتحديد العطل بدقة دون تخمين.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white p-2 rounded-[2.5rem] shadow-2xl border border-slate-100">
+              <BookingForm />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* BRANDS SLIDER / LOGOS */}
+      <section className="py-16 bg-white border-y border-slate-100 overflow-hidden">
+        <div className="container mx-auto px-4 mb-10 text-center">
+          <h3 className="text-2xl font-black text-slate-400 uppercase tracking-widest">نحن خبراء صيانة كافة الماركات</h3>
+        </div>
+        <div className="flex flex-wrap justify-center gap-8 md:gap-16 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
+          {['Samsung', 'LG', 'Sharp', 'Toshiba', 'Zanussi', 'Fresh', 'Ariston', 'Beko'].map(brand => (
+            <span key={brand} className="text-3xl font-black text-slate-800">{brand}</span>
+          ))}
+        </div>
       </section>
 
       {/* FEATURES SECTION */}
-      <section className="py-16 bg-white">
+      <section className="py-24 bg-white">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 text-slate-900">لماذا تختارنا؟</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              نقدم خدمات صيانة احترافية معتمدة بأسعار منافسة مع ضمان الجودة والاحترافية
-            </p>
-            <div className="w-24 h-1 bg-gradient-to-r from-orange-400 to-orange-600 mx-auto rounded-full mt-6"></div>
+          <div className="text-center mb-20">
+            <h2 className="text-5xl font-black text-slate-900 mb-6">لماذا يثق بنا الآلاف؟</h2>
+            <div className="w-24 h-2 bg-orange-500 mx-auto rounded-full"></div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature, index) => {
-              const IconComponent = feature.icon;
-              return (
-                <Card key={index} className="p-6 hover:shadow-lg transition-all transform hover:-translate-y-1 border border-gray-200 bg-gradient-to-br from-white to-gray-50">
-                  <div className="w-14 h-14 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center mb-4">
-                    <IconComponent className="w-7 h-7 text-white" />
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-900 mb-2">{feature.title}</h3>
-                  <p className="text-gray-600">{feature.description}</p>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* SERVICES OVERVIEW */}
-      <section className="py-16 bg-gradient-to-b from-gray-50 to-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-12 text-slate-900">خدماتنا المتخصصة</h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-            {services.map((service, index) => {
-              const IconComponent = service.icon;
-              return (
-                <Card key={index} className="p-6 hover:shadow-xl transition-all transform hover:-translate-y-2 border-0 bg-white shadow-md">
-                  <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center mb-4">
-                    <IconComponent className="w-8 h-8 text-orange-600" />
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">{service.title}</h3>
-                  <p className="text-gray-600">{service.description}</p>
-                </Card>
-              );
-            })}
-          </div>
-
-          {/* Detailed Services Grid */}
-          <div className="space-y-12">
-            {/* Refrigerators */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-              <div>
-                <h3 className="text-3xl font-bold text-orange-600 mb-4">صيانة الثلاجات والفريزرات</h3>
-                <p className="text-gray-700 mb-6 leading-relaxed">
-                  نوفر خدمات صيانة متخصصة لجميع ماركات الثلاجات والفريزرات المشهورة. فريقنا مدرب على إصلاح جميع الأعطال الشائعة مثل عدم التبريد، تسرب المياه، وأعطال الضاغط.
-                </p>
-                <ul className="space-y-3 text-gray-700">
-                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" /> صيانة جميع الماركات والموديلات</li>
-                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" /> إصلاح أعطال التبريد والضاغط</li>
-                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" /> تنظيف شامل وصيانة دورية</li>
-                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" /> استبدال قطع الغيار الأصلية</li>
-                </ul>
-              </div>
-              <img src="/images/services/refrigerator-repair-pro.jpg" alt="صيانة الثلاجات والفريزرات" className="rounded-lg shadow-lg w-full h-80 object-cover" />
-            </div>
-
-            {/* Washing Machines */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-              <img src="/images/services/washing-machine-repair-pro.jpg" alt="صيانة الغسالات" className="rounded-lg shadow-lg w-full h-80 object-cover order-2 md:order-1" />
-              <div className="order-1 md:order-2">
-                <h3 className="text-3xl font-bold text-orange-600 mb-4">صيانة الغسالات (ملابس وأطباق)</h3>
-                <p className="text-gray-700 mb-6 leading-relaxed">
-                  متخصصون في صيانة غسالات الملابس الأوتوماتيكية والعادية وغسالات الأطباق. نقدم حلول سريعة وفعالة لجميع الأعطال.
-                </p>
-                <ul className="space-y-3 text-gray-700">
-                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" /> إصلاح أعطال الدوران والعصر</li>
-                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" /> تصليح تسرب المياه</li>
-                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" /> استبدال المحركات والمضخات</li>
-                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" /> صيانة دورية وتنظيف شامل</li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Air Conditioners */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-              <div>
-                <h3 className="text-3xl font-bold text-orange-600 mb-4">صيانة المكيفات والتكييفات</h3>
-                <p className="text-gray-700 mb-6 leading-relaxed">
-                  خدمات متكاملة لصيانة جميع أنواع المكيفات والتكييفات. نوفر تنظيف شامل وإصلاح سريع لجميع الأعطال.
-                </p>
-                <ul className="space-y-3 text-gray-700">
-                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" /> تنظيف الفلاتر والمكثفات</li>
-                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" /> إصلاح أعطال التبريد</li>
-                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" /> شحن الفريون والغاز</li>
-                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" /> صيانة الوحدات الداخلية والخارجية</li>
-                </ul>
-              </div>
-              <img src="/images/services/ac-repair-pro.jpg" alt="صيانة المكيفات والتكييفات" className="rounded-lg shadow-lg w-full h-80 object-cover" />
-            </div>
-
-            {/* Stoves and Ovens */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-              <img src="/images/services/stove-repair-pro.jpg" alt="صيانة البوتاجاز والأفران" className="rounded-lg shadow-lg w-full h-80 object-cover order-2 md:order-1" />
-              <div className="order-1 md:order-2">
-                <h3 className="text-3xl font-bold text-orange-600 mb-4">صيانة البوتاجاز والأفران</h3>
-                <p className="text-gray-700 mb-6 leading-relaxed">
-                  متخصصون في إصلاح وصيانة البوتاجاز والأفران الكهربائية والغازية. نقدم خدمات تنظيف شاملة وإصلاح سريع.
-                </p>
-                <ul className="space-y-3 text-gray-700">
-                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" /> إصلاح الشعلات والفرن</li>
-                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" /> تنظيف عميق من الدهون والأوساخ</li>
-                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" /> استبدال القطع التالفة</li>
-                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" /> صيانة الفرن الكهربائي والميكروويف</li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Water Heaters */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-              <div>
-                <h3 className="text-3xl font-bold text-orange-600 mb-4">صيانة السخانات والبويلرات</h3>
-                <p className="text-gray-700 mb-6 leading-relaxed">
-                  خدمات متخصصة لصيانة السخانات الكهربائية والغازية والبويلرات. نوفر صيانة دورية وإصلاح سريع.
-                </p>
-                <ul className="space-y-3 text-gray-700">
-                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" /> إصلاح أعطال التسخين</li>
-                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" /> تنظيف وإزالة الترسبات</li>
-                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" /> استبدال المحاريك والمكونات</li>
-                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" /> صيانة دورية وفحص شامل</li>
-                </ul>
-              </div>
-              <img src="/images/hero-bg.jpg" alt="صيانة السخانات والبويلرات" className="rounded-lg shadow-lg w-full h-80 object-cover" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* TESTIMONIALS SECTION */}
-      <section className="py-16 bg-gradient-to-b from-white to-gray-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-12 text-slate-900">آراء عملائنا</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index} className="p-8 border border-gray-200 hover:shadow-lg transition-all">
-                <div className="flex mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                  ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((feature, index) => (
+              <Card key={index} className="p-8 hover:shadow-2xl transition-all border-none bg-slate-50 rounded-3xl group">
+                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-sm group-hover:bg-orange-500 transition-colors duration-300">
+                  <feature.icon className="w-8 h-8 text-orange-600 group-hover:text-white transition-colors duration-300" />
                 </div>
-                <p className="text-gray-700 mb-6 italic">"{testimonial.text}"</p>
-                <p className="font-bold text-slate-900">{testimonial.name}</p>
+                <h3 className="text-xl font-black text-slate-900 mb-3">{feature.title}</h3>
+                <p className="text-slate-500 font-medium leading-relaxed">{feature.description}</p>
               </Card>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA SECTION */}
-      <section className="py-16 bg-gradient-to-r from-orange-500 to-orange-600">
+      {/* SERVICES GRID */}
+      <section className="py-24 bg-slate-900 text-white rounded-[3rem] md:rounded-[5rem] mx-2 md:mx-6 my-10">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+            <div className="max-w-2xl">
+              <h2 className="text-5xl font-black mb-6">خدماتنا المتخصصة</h2>
+              <p className="text-slate-400 text-xl font-medium leading-relaxed">
+                نقدم حلولاً هندسية متكاملة لصيانة وإصلاح كافة الأجهزة المنزلية بأحدث التقنيات العالمية.
+              </p>
+            </div>
+            <Button 
+              className="bg-orange-600 hover:bg-orange-700 text-white font-black px-8 py-6 rounded-2xl"
+              onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+            >
+              اطلب فني الآن
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {services.map((service, index) => (
+              <div key={index} className="bg-slate-800/50 p-8 rounded-3xl border border-slate-700 hover:border-orange-500 transition-all group">
+                <div className="w-14 h-14 bg-orange-500/10 rounded-xl flex items-center justify-center mb-6">
+                  <service.icon className="w-7 h-7 text-orange-500" />
+                </div>
+                <h3 className="text-2xl font-black mb-4">{service.title}</h3>
+                <p className="text-slate-400 font-medium mb-6">{service.description}</p>
+                <div className="h-1 w-0 bg-orange-500 group-hover:w-full transition-all duration-500"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* TESTIMONIALS */}
+      <section className="py-24 bg-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl font-bold text-white mb-6">هل أنت مستعد للحصول على خدمة احترافية؟</h2>
-          <p className="text-xl text-orange-100 mb-8 max-w-2xl mx-auto">
-            احجز موعد صيانتك الآن وتمتع بخدمة سريعة واحترافية مع ضمان معتمد
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              size="lg"
-              className="bg-white text-orange-600 hover:bg-gray-100 font-bold text-lg px-8 py-6"
-              onClick={() => document.getElementById("booking-form")?.scrollIntoView({ behavior: "smooth" })}
-            >
-              احجز الآن
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-2 border-white text-white hover:bg-white/10 font-bold text-lg px-8 py-6"
-              onClick={() => window.location.href = "tel:+201278885772"}
-            >
-              اتصل بنا
-            </Button>
+          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-full mb-6 font-bold text-sm">
+            <Heart className="w-4 h-4" />
+            ثقة العملاء هي رأس مالنا
+          </div>
+          <h2 className="text-5xl font-black text-slate-900 mb-16">ماذا يقول عملاؤنا؟</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              { name: "أحمد إبراهيم", text: "بصراحة سرعة في الاستجابة واحترافية عالية جداً. الثلاجة رجعت زي الجديدة في أقل من ساعة.", role: "عميل بزيزينيا" },
+              { name: "سارة محمود", text: "أفضل مركز صيانة تعاملت معه في الإسكندرية. المواعيد دقيقة والفني كان مهذب ومحترف جداً.", role: "عميلة بسموحة" },
+              { name: "محمد علي", text: "الضمان حقيقي وخدمة ما بعد الصيانة ممتازة. شكراً لفريق العمل على المجهود الرائع.", role: "عميل بالعجمي" }
+            ].map((t, i) => (
+              <Card key={i} className="p-10 rounded-[2rem] border-none bg-slate-50 text-right shadow-sm">
+                <div className="flex gap-1 mb-6">
+                  {[1,2,3,4,5].map(s => <Star key={s} className="w-5 h-5 fill-orange-500 text-orange-500" />)}
+                </div>
+                <p className="text-slate-600 text-lg font-medium italic mb-8 leading-relaxed">"{t.text}"</p>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-orange-200 rounded-full flex items-center justify-center font-black text-orange-700">
+                    {t.name[0]}
+                  </div>
+                  <div className="text-right">
+                    <h4 className="font-black text-slate-900">{t.name}</h4>
+                    <p className="text-slate-400 text-xs font-bold">{t.role}</p>
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
