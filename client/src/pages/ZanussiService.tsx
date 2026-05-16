@@ -38,7 +38,10 @@ export default function ZanussiService() {
     script.innerHTML = JSON.stringify(schema);
     document.head.appendChild(script);
     
-    return () => { document.head.removeChild(script); };
+    return () => { 
+      const existingScript = document.querySelector('script[type="application/ld+json"]');
+      if (existingScript) document.head.removeChild(existingScript); 
+    };
   }, []);
 
   return (
@@ -160,7 +163,7 @@ export default function ZanussiService() {
                 <p className="font-bold opacity-90 mb-8 text-lg">تحدث مع مهندس الصيانة الآن واعرف تكلفة الإصلاح التقريبية مجاناً.</p>
                 <div className="flex flex-wrap gap-4">
                   <a href="https://wa.me/201558625259" className="inline-flex items-center gap-2 bg-white text-yellow-600 px-8 py-4 rounded-2xl font-black transition-transform hover:scale-105">
-                    <MessageCircle className="w-6 h-6" />
+                    <MessageCircle className="w-5 h-5" />
                     واتساب
                   </a>
                   <a href="tel:+201278885772" className="inline-flex items-center gap-2 bg-yellow-800 text-white px-8 py-4 rounded-2xl font-black transition-transform hover:scale-105 border border-yellow-400/30">
