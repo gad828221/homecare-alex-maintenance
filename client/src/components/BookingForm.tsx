@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { MessageCircle, CheckCircle, User, Phone, Wrench, MapPin, AlertCircle, Star } from "lucide-react";
+import { useState, useEffect } from "react";
+import { MessageCircle, CheckCircle, User, Phone, Wrench, MapPin, AlertCircle, Star, ShieldCheck } from "lucide-react";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -7,7 +7,12 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const DEVICE_TYPES = ['غسالة', 'ثلاجة', 'بوتاجاز', 'سخان', 'تكييف', 'ميكروويف', 'غسالة أطباق'];
 const BRANDS = ['سامسونج', 'LG', 'شارب', 'توشيبا', 'زانوسي', 'يونيون إير', 'فريش', 'وايت ويل', 'أريستون', 'بيكو', 'هوفر', 'إنديست'];
 
-export default function BookingForm() {
+interface BookingFormProps {
+  defaultService?: string;
+  title?: string;
+}
+
+export default function BookingForm({ defaultService, title }: BookingFormProps) {
   const [formData, setFormData] = useState({
     customer_name: "",
     phone: "",
@@ -17,6 +22,14 @@ export default function BookingForm() {
     problem_description: "",
   });
   
+  useEffect(() => {
+    if (defaultService) {
+      // Extract brand if defaultService contains it
+      const foundBrand = BRANDS.find(b => defaultService.includes(b));
+      if (foundBrand) setFormData(prev => ({ ...prev, brand: foundBrand }));
+    }
+  }, [defaultService]);
+
   const [isOtherDevice, setIsOtherDevice] = useState(false);
   const [customDevice, setCustomDevice] = useState("");
   const [isOtherBrand, setIsOtherBrand] = useState(false);
@@ -59,7 +72,7 @@ export default function BookingForm() {
       });
 
       if (response.ok) {
-        setSubmitMessage("✅ تم استلام طلبك بنجاح! سنتواصل معك قريباً.");
+        setSubmitMessage("✅ تم استلام طلبك بنجاح! سنتواصل معك خلال 5 دقائق.");
         setFormData({
           customer_name: "",
           phone: "",
@@ -95,46 +108,49 @@ export default function BookingForm() {
   };
 
   return (
-    <div className="bg-white rounded-3xl shadow-2xl p-8 border border-slate-100 max-w-2xl mx-auto my-12" dir="rtl">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-slate-900 mb-2">احجز موعد صيانة الآن</h2>
-        <p className="text-slate-500">سجل بياناتك وسيتواصل معك فني متخصص خلال دقائق</p>
+    <div className="bg-white rounded-[2.5rem] shadow-2xl p-6 md:p-10 border border-slate-100 w-full" dir="rtl">
+      <div className="text-center mb-10">
+        <div className="inline-flex items-center gap-2 bg-green-50 text-green-600 px-4 py-1.5 rounded-full mb-4 text-xs font-black">
+          <ShieldCheck className="w-4 h-4" /> اتصال آمن ومشفر
+        </div>
+        <h2 className="text-3xl font-black text-slate-900 mb-2">{title || "احجز موعد الصيانة"}</h2>
+        <p className="text-slate-500 font-bold">نصلك في منزلك بالإسكندرية خلال ساعة واحدة</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-              <User className="w-4 h-4 text-orange-600" /> اسم العميل
+          <div className="space-y-2">
+            <label className="text-sm font-black text-slate-700 flex items-center gap-2 mr-1">
+              <User className="w-4 h-4 text-orange-600" /> الاسم بالكامل
             </label>
             <input
               type="text"
               required
               value={formData.customer_name}
               onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-all"
-              placeholder="الاسم بالكامل"
+              className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 outline-none focus:border-orange-500 focus:bg-white transition-all font-bold"
+              placeholder="مثال: أحمد محمد"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-              <Phone className="w-4 h-4 text-orange-600" /> رقم الهاتف
+          <div className="space-y-2">
+            <label className="text-sm font-black text-slate-700 flex items-center gap-2 mr-1">
+              <Phone className="w-4 h-4 text-orange-600" /> رقم الموبايل
             </label>
             <input
               type="tel"
               required
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-all"
-              placeholder="رقم الموبايل"
+              className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 outline-none focus:border-orange-500 focus:bg-white transition-all font-bold"
+              placeholder="01xxxxxxxxx"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+          <div className="space-y-2">
+            <label className="text-sm font-black text-slate-700 flex items-center gap-2 mr-1">
               <Wrench className="w-4 h-4 text-orange-600" /> نوع الجهاز
             </label>
             <select
@@ -149,9 +165,9 @@ export default function BookingForm() {
                   setFormData({ ...formData, device_type: e.target.value });
                 }
               }}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-all"
+              className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 outline-none focus:border-orange-500 focus:bg-white transition-all font-bold appearance-none cursor-pointer"
             >
-              <option value="">اختر نوع الجهاز</option>
+              <option value="">اختر الجهاز</option>
               {DEVICE_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
               <option value="other">أخرى...</option>
             </select>
@@ -161,14 +177,14 @@ export default function BookingForm() {
                 required
                 value={customDevice}
                 onChange={(e) => setCustomDevice(e.target.value)}
-                className="w-full mt-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-all"
+                className="w-full mt-2 bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 outline-none focus:border-orange-500 transition-all font-bold"
                 placeholder="اكتب نوع الجهاز"
               />
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+          <div className="space-y-2">
+            <label className="text-sm font-black text-slate-700 flex items-center gap-2 mr-1">
               <Star className="w-4 h-4 text-orange-600" /> الماركة
             </label>
             <select
@@ -183,7 +199,7 @@ export default function BookingForm() {
                   setFormData({ ...formData, brand: e.target.value });
                 }
               }}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-all"
+              className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 outline-none focus:border-orange-500 focus:bg-white transition-all font-bold appearance-none cursor-pointer"
             >
               <option value="">اختر الماركة</option>
               {BRANDS.map(brand => <option key={brand} value={brand}>{brand}</option>)}
@@ -195,57 +211,61 @@ export default function BookingForm() {
                 required
                 value={customBrand}
                 onChange={(e) => setCustomBrand(e.target.value)}
-                className="w-full mt-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-all"
+                className="w-full mt-2 bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 outline-none focus:border-orange-500 transition-all font-bold"
                 placeholder="اكتب الماركة"
               />
             )}
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-orange-600" /> العنوان بالتفصيل
+        <div className="space-y-2">
+          <label className="text-sm font-black text-slate-700 flex items-center gap-2 mr-1">
+            <MapPin className="w-4 h-4 text-orange-600" /> العنوان بالإسكندرية
           </label>
           <input
             type="text"
             required
             value={formData.address}
             onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-all"
-            placeholder="المنطقة - الشارع - رقم العقار"
+            className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 outline-none focus:border-orange-500 focus:bg-white transition-all font-bold"
+            placeholder="مثال: سموحة - شارع فوزي معاذ"
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-            <MessageCircle className="w-4 h-4 text-orange-600" /> وصف المشكلة
+        <div className="space-y-2">
+          <label className="text-sm font-black text-slate-700 flex items-center gap-2 mr-1">
+            <MessageCircle className="w-4 h-4 text-orange-600" /> وصف العطل (اختياري)
           </label>
           <textarea
             value={formData.problem_description}
             onChange={(e) => setFormData({ ...formData, problem_description: e.target.value })}
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-all h-24 resize-none"
-            placeholder="اشرح العطل باختصار..."
+            className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 outline-none focus:border-orange-500 focus:bg-white transition-all h-24 resize-none font-bold"
+            placeholder="اشرح المشكلة باختصار..."
           ></textarea>
         </div>
 
         {submitMessage && (
-          <div className={`p-4 rounded-xl flex items-center gap-3 ${submitMessage.includes('✅') ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
-            {submitMessage.includes('✅') ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-            <span className="font-bold">{submitMessage}</span>
+          <div className={`p-5 rounded-2xl flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2 ${submitMessage.includes('✅') ? 'bg-green-50 text-green-700 border-2 border-green-100' : 'bg-red-50 text-red-700 border-2 border-red-100'}`}>
+            {submitMessage.includes('✅') ? <CheckCircle className="w-6 h-6 flex-shrink-0" /> : <AlertCircle className="w-6 h-6 flex-shrink-0" />}
+            <span className="font-black text-sm">{submitMessage}</span>
           </div>
         )}
 
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-bold py-4 rounded-xl transition-all active:scale-95 shadow-xl shadow-orange-900/20 disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
+          className="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white font-black py-5 rounded-2xl transition-all active:scale-95 shadow-2xl shadow-orange-900/20 disabled:opacity-50 flex items-center justify-center gap-3 text-xl"
         >
           {isSubmitting ? (
-            <>جاري الإرسال...</>
+            <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
           ) : (
-            <>تأكيد طلب الصيانة الآن</>
+            <>تأكيد الحجز الآن</>
           )}
         </button>
+        
+        <p className="text-center text-xs text-slate-400 font-bold">
+          ✓ ضمان معتمد • ✓ قطع غيار أصلية • ✓ فنيين محترفين
+        </p>
       </form>
     </div>
   );
