@@ -1,0 +1,283 @@
+import { useState, useEffect, useRef } from "react";
+import jsPDF from "jspdf";
+import { Download, Printer, Send, Copy, Check, MapPin, Phone, MessageCircle, Clock, ShieldCheck, User, Wrench, AlertCircle } from "lucide-react";
+
+const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
+
+export default function PickupReceiptPage() {
+  const [order, setOrder] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+  const receiptRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const orderId = params.get("id");
+    if (!orderId) {
+      setError("رقم الأوردر غير موجود");
+      setLoading(false);
+      return;
+    }
+
+    const fetchOrder = async () => {
+      try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${orderId}`, {
+          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
+        });
+        const data = await response.json();
+        if (data && data.length > 0) {
+          setOrder(data[0]);
+        } else {
+          setError("الأوردر غير موجود");
+        }
+      } catch (err) {
+        console.error(err);
+        setError("حدث خطأ في الاتصال بقاعدة البيانات");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrder();
+  }, []);
+
+  const formatPhoneForWhatsApp = (phone: string) => {
+    if (!phone) return '';
+    let cleaned = phone.toString().replace(/[^\d]/g, '');
+    if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
+    if (cleaned.length === 10) cleaned = '20' + cleaned;
+    return cleaned;
+  };
+
+  const downloadPDF = async () => {
+    if (!receiptRef.current) return;
+    try {
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      let yPosition = 10;
+
+      pdf.setFillColor(147, 51, 234); // Purple color for Pickup
+      pdf.rect(0, 0, pageWidth, 35, "F");
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(20);
+      pdf.text("🔧 Maintenance Guide", pageWidth / 2, 12, { align: "center" });
+      pdf.setFontSize(12);
+      pdf.text("إيصال سحب جهاز للصيانة", pageWidth / 2, 22, { align: "center" });
+      pdf.setFontSize(10);
+      pdf.text("خدمة صيانة 24 ساعة بالمنزل | 01278885772 | 01558625259", pageWidth / 2, 30, { align: "center" });
+      yPosition = 40;
+
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(14);
+      pdf.setFont(undefined, "bold");
+      pdf.text("📄 إيصال سحب جهاز", pageWidth / 2, yPosition, { align: "center" });
+      yPosition += 8;
+
+      pdf.setFontSize(10);
+      pdf.setFont(undefined, "normal");
+      pdf.text(`رقم الإيصال: ${order?.order_number || order?.id}`, 15, yPosition);
+      pdf.text(`التاريخ: ${new Date(order?.created_at || new Date()).toLocaleDateString('ar-EG')}`, pageWidth - 15, yPosition, { align: "right" });
+      yPosition += 10;
+
+      pdf.setFont(undefined, "bold");
+      pdf.text("👤 بيانات العميل", 15, yPosition);
+      yPosition += 7;
+      pdf.setFont(undefined, "normal");
+      pdf.text(`الاسم: ${order?.customer_name || '-'}`, 20, yPosition);
+      yPosition += 5;
+      pdf.text(`الهاتف: ${order?.phone || '-'}`, 20, yPosition);
+      yPosition += 5;
+      pdf.text(`العنوان: ${order?.address || '-'}`, 20, yPosition);
+      yPosition += 10;
+
+      pdf.setFont(undefined, "bold");
+      pdf.text("🔧 بيانات الجهاز المسحوب", 15, yPosition);
+      yPosition += 7;
+      pdf.setFont(undefined, "normal");
+      pdf.text(`الجهاز: ${order?.device_type || '-'}`, 20, yPosition);
+      yPosition += 5;
+      pdf.text(`الماركة: ${order?.brand || '-'}`, 20, yPosition);
+      yPosition += 5;
+      pdf.text(`وصف العطل: ${order?.problem_description || '-'}`, 20, yPosition);
+      yPosition += 10;
+
+      pdf.setFont(undefined, "bold");
+      pdf.text("📝 حالة الجهاز عند الاستلام", 15, yPosition);
+      yPosition += 7;
+      pdf.setFont(undefined, "normal");
+      pdf.text("تم سحب الجهاز لإجراء الفحص الشامل والإصلاح في المركز.", 20, yPosition);
+      yPosition += 10;
+
+      pdf.setFont(undefined, "bold");
+      pdf.text("📋 ملاحظات هامة", 15, yPosition);
+      yPosition += 7;
+      pdf.setFont(undefined, "normal");
+      const terms = [
+        "يتم التواصل مع العميل لتحديد التكلفة قبل البدء في الإصلاح",
+        "المركز مسؤول عن الجهاز طوال فترة تواجده لديه",
+        "يرجى الاحتفاظ بهذا الإيصال لاستلام الجهاز",
+        "خدمة الصيانة متاحة 24 ساعة طوال أيام الأسبوع"
+      ];
+      terms.forEach(term => {
+        pdf.text(`• ${term}`, 20, yPosition);
+        yPosition += 5;
+      });
+      yPosition += 10;
+
+      pdf.setFont(undefined, "bold");
+      pdf.text("✨ شكراً لثقتك بنا ✨", pageWidth / 2, yPosition, { align: "center" });
+      yPosition += 7;
+      pdf.setFont(undefined, "normal");
+      pdf.text("للاستفسار والدعم الفني: 01278885772", pageWidth / 2, yPosition, { align: "center" });
+      
+      pdf.save(`إيصال_سحب_${order?.order_number || "order"}.pdf`);
+    } catch (err) {
+      alert("❌ حدث خطأ في تحميل PDF");
+    }
+  };
+
+  const sendViaWhatsApp = () => {
+    if (!order.phone) {
+      alert("❌ رقم الهاتف غير موجود");
+      return;
+    }
+
+    const phone = formatPhoneForWhatsApp(order.phone);
+    const message = `📋 *إيصال سحب جهاز للصيانة* 📋\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `✅ تم استلام جهازك بنجاح للفحص\n\n` +
+      `🔢 *رقم الإيصال:* ${order.order_number || order.id}\n` +
+      `📅 *تاريخ الاستلام:* ${new Date(order?.created_at || new Date()).toLocaleDateString('ar-EG')}\n\n` +
+      `👤 *بيانات العميل:*\n` +
+      `  • الاسم: ${order.customer_name}\n` +
+      `  • الهاتف: ${order.phone}\n` +
+      `  • العنوان: ${order.address || 'غير محدد'}\n\n` +
+      `🔧 *بيانات الجهاز:*\n` +
+      `  • الجهاز: ${order.device_type}\n` +
+      `  • الماركة: ${order.brand}\n` +
+      `  • المشكلة: ${order.problem_description || 'غير محددة'}\n\n` +
+      `📝 *ملاحظة:* سيتم التواصل معك بعد الفحص لتحديد تكلفة الإصلاح.\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `📞 للاستفسار والدعم الفني:\n` +
+      `  📱 01278885772\n` +
+      `  📲 01558625259\n\n` +
+      `✨ شكراً لثقتك بنا - Maintenance Guide`;
+
+    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  if (loading) return <div className="p-8 text-center">جاري تحميل الإيصال...</div>;
+  if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
+  if (!order) return <div className="p-8 text-center">لا توجد بيانات</div>;
+
+  return (
+    <div className="min-h-screen bg-slate-50 p-4 md:p-8" dir="rtl">
+      <div className="max-w-3xl mx-auto">
+        {/* Receipt Card */}
+        <div ref={receiptRef} className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200 mb-8">
+          <div className="bg-purple-600 p-8 text-white text-center relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20"></div>
+            <div className="relative z-10">
+              <h1 className="text-3xl font-black mb-2">🔧 Maintenance Guide</h1>
+              <p className="text-purple-100 font-bold">إيصال سحب جهاز للصيانة</p>
+            </div>
+          </div>
+
+          <div className="p-8">
+            <div className="flex justify-between items-start mb-10 border-b border-slate-100 pb-6">
+              <div>
+                <p className="text-slate-400 text-xs font-bold mb-1">رقم الإيصال</p>
+                <p className="text-xl font-black text-slate-900">{order.order_number || order.id}</p>
+              </div>
+              <div className="text-left">
+                <p className="text-slate-400 text-xs font-bold mb-1">التاريخ</p>
+                <p className="text-lg font-black text-slate-900">{new Date(order.created_at || new Date()).toLocaleDateString('ar-EG')}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-10">
+              <div className="space-y-4">
+                <h3 className="flex items-center gap-2 text-purple-600 font-black border-b border-purple-50 pb-2">
+                  <User className="w-5 h-5" /> بيانات العميل
+                </h3>
+                <div className="space-y-2">
+                  <p className="text-sm font-bold text-slate-600">الاسم: <span className="text-slate-900">{order.customer_name}</span></p>
+                  <p className="text-sm font-bold text-slate-600">الهاتف: <span className="text-slate-900">{order.phone}</span></p>
+                  <p className="text-sm font-bold text-slate-600">العنوان: <span className="text-slate-900">{order.address}</span></p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <h3 className="flex items-center gap-2 text-purple-600 font-black border-b border-purple-50 pb-2">
+                  <Wrench className="w-5 h-5" /> بيانات الجهاز
+                </h3>
+                <div className="space-y-2">
+                  <p className="text-sm font-bold text-slate-600">الجهاز: <span className="text-slate-900">{order.device_type}</span></p>
+                  <p className="text-sm font-bold text-slate-600">الماركة: <span className="text-slate-900">{order.brand}</span></p>
+                  <p className="text-sm font-bold text-slate-600">العطل: <span className="text-slate-900">{order.problem_description || 'غير محدد'}</span></p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-purple-50 p-6 rounded-2xl mb-10 border border-purple-100">
+              <h4 className="flex items-center gap-2 text-purple-700 font-black mb-3">
+                <AlertCircle className="w-5 h-5" /> ملاحظات هامة:
+              </h4>
+              <ul className="space-y-2 text-sm text-purple-800 font-bold">
+                <li className="flex items-center gap-2">• سيتم الفحص وإبلاغكم بالتكلفة قبل الإصلاح.</li>
+                <li className="flex items-center gap-2">• المركز مسؤول عن الجهاز طوال فترة تواجده لديه.</li>
+                <li className="flex items-center gap-2">• يرجى إبراز هذا الإيصال عند الاستلام.</li>
+              </ul>
+            </div>
+
+            <div className="text-center pt-6 border-t border-slate-100">
+              <p className="text-slate-400 text-xs font-bold mb-2">Maintenance Guide - خدمة صيانة 24 ساعة بالمنزل</p>
+              <div className="flex justify-center gap-6 text-slate-900 font-black">
+                <span>📞 01278885772</span>
+                <span>📲 01558625259</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 no-print">
+          <button onClick={downloadPDF} className="flex flex-col items-center gap-2 bg-white p-4 rounded-2xl shadow-lg border border-slate-200 hover:bg-slate-50 transition-all">
+            <Download className="w-6 h-6 text-purple-600" />
+            <span className="text-xs font-black">تحميل PDF</span>
+          </button>
+          <button onClick={() => window.print()} className="flex flex-col items-center gap-2 bg-white p-4 rounded-2xl shadow-lg border border-slate-200 hover:bg-slate-50 transition-all">
+            <Printer className="w-6 h-6 text-blue-600" />
+            <span className="text-xs font-black">طباعة</span>
+          </button>
+          <button onClick={sendViaWhatsApp} className="flex flex-col items-center gap-2 bg-white p-4 rounded-2xl shadow-lg border border-slate-200 hover:bg-slate-50 transition-all">
+            <MessageCircle className="w-6 h-6 text-green-600" />
+            <span className="text-xs font-black">واتساب</span>
+          </button>
+          <button 
+            onClick={() => {
+              navigator.clipboard.writeText(window.location.href);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            }} 
+            className="flex flex-col items-center gap-2 bg-white p-4 rounded-2xl shadow-lg border border-slate-200 hover:bg-slate-50 transition-all"
+          >
+            {copied ? <Check className="w-6 h-6 text-green-600" /> : <Copy className="w-6 h-6 text-slate-600" />}
+            <span className="text-xs font-black">{copied ? 'تم النسخ' : 'نسخ الرابط'}</span>
+          </button>
+        </div>
+      </div>
+
+      <style>{`
+        @media print {
+          .no-print { display: none; }
+          body { background: white; padding: 0; }
+          .min-h-screen { background: white; }
+          .shadow-2xl { shadow: none; }
+          .rounded-3xl { border-radius: 0; }
+        }
+      `}</style>
+    </div>
+  );
+}

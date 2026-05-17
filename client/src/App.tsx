@@ -24,6 +24,7 @@ import HooverService from "./pages/HooverService";
 import IndesitService from "./pages/IndesitService";
 import ProtectedOrders from "./components/ProtectedOrders";
 import InvoicePage from "./pages/InvoicePage";
+import PickupReceiptPage from "./pages/PickupReceiptPage";
 import { Phone, MessageCircle } from "lucide-react";
 
 
@@ -48,6 +49,7 @@ function Router() {
       <Route path="/tech-portal" component={TechPortal} />
       <Route path="/data-entry" component={DataEntry} />
       <Route path="/invoice" component={InvoicePage} />
+      <Route path="/pickup-receipt" component={PickupReceiptPage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
@@ -79,7 +81,7 @@ function AppContent() {
 function App() {
   useEffect(() => {
     const publicPaths = [
-      "/", "/login", "/invoice",
+      "/", "/login", "/invoice", "/pickup-receipt",
       "/samsung-service", "/lg-service", "/sharp-service",
       "/toshiba-service", "/zanussi-service", "/unionaire-service",
       "/fresh-service", "/white-whale-service", "/ariston-service",

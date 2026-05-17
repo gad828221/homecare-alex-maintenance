@@ -38,7 +38,7 @@ export default function Header() {
             <div className="flex flex-col">
               <span className="font-black text-lg text-white leading-none group-hover:text-orange-400 transition-colors">Maintenance Guide</span>
               <span className="text-[10px] text-orange-500 font-bold uppercase tracking-tighter flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3" /> مركز صيانة معتمد
+                <ShieldCheck className="w-3 h-3" /> مركز خدمة متخصص
               </span>
             </div>
           </Link>

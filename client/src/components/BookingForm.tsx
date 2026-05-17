@@ -263,9 +263,13 @@ export default function BookingForm({ defaultService, title }: BookingFormProps)
           )}
         </button>
         
-        <p className="text-center text-xs text-slate-400 font-bold">
-          ✓ ضمان معتمد • ✓ قطع غيار أصلية • ✓ فنيين محترفين
-        </p>
+        <div className="flex justify-center gap-4 text-[10px] text-slate-400 font-bold">
+          <span>✓ ضمان شامل</span>
+          <span>•</span>
+          <span>✓ قطع غيار أصلية</span>
+          <span>•</span>
+          <span>✓ فنيين متخصصين</span>
+        </div>
       </form>
     </div>
   );

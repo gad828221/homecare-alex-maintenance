@@ -20,7 +20,7 @@ export default function Home() {
 
   const features = [
     { icon: Truck, title: "وصول خلال ساعة", description: "نصلك في أي مكان بالإسكندرية خلال 60 دقيقة فقط." },
-    { icon: Award, title: "ضمان لمدة عام", description: "شهادة ضمان معتمدة على كافة أعمال الصيانة وقطع الغيار." },
+    { icon: Award, title: "ضمان لمدة عام", description: "شهادة ضمان شاملة على كافة أعمال الصيانة وقطع الغيار." },
     { icon: Users, title: "مهندسون خبراء", description: "طاقم فني متخصص ومدرب على أعلى مستوى من الاحترافية." },
     { icon: Shield, title: "قطع غيار أصلية", description: "نستخدم فقط قطع الغيار الأصلية لضمان كفاءة جهازك." },
   ];
@@ -50,11 +50,11 @@ export default function Home() {
             <h1 className="text-4xl md:text-7xl font-black text-white leading-tight mb-6">
               جهازك معطل؟ <br />
               <span className="text-orange-500">نحن نصلحه في منزلك</span> <br />
-              <span className="text-3xl md:text-5xl">بأقل تكلفة وضمان معتمد</span>
+              <span className="text-3xl md:text-5xl">بأقل تكلفة وضمان شامل</span>
             </h1>
 
             <p className="text-xl md:text-2xl text-slate-300 mb-10 max-w-2xl font-medium leading-relaxed">
-              مركز صيانة معتمد لجميع الماركات العالمية (سامسونج، LG، توشيبا، شارب، زانوسي). نصلك أينما كنت في الإسكندرية بقطع غيار أصلية.
+              مركز خدمة متخصص لجميع الماركات العالمية (سامسونج، LG، توشيبا، شارب، زانوسي). نصلك أينما كنت في الإسكندرية بقطع غيار أصلية.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 mb-12">
@@ -230,41 +230,6 @@ export default function Home() {
                 <p className="text-slate-400 font-medium mb-6">{service.description}</p>
                 <div className="h-1 w-0 bg-orange-500 group-hover:w-full transition-all duration-500"></div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* TESTIMONIALS */}
-      <section className="py-24 bg-white">
-        <div className="container mx-auto px-4 text-center">
-          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-full mb-6 font-bold text-sm">
-            <Heart className="w-4 h-4" />
-            ثقة العملاء هي رأس مالنا
-          </div>
-          <h2 className="text-5xl font-black text-slate-900 mb-16">ماذا يقول عملاؤنا؟</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              { name: "أحمد إبراهيم", text: "بصراحة سرعة في الاستجابة واحترافية عالية جداً. الثلاجة رجعت زي الجديدة في أقل من ساعة.", role: "عميل بزيزينيا" },
-              { name: "سارة محمود", text: "أفضل مركز صيانة تعاملت معه في الإسكندرية. المواعيد دقيقة والفني كان مهذب ومحترف جداً.", role: "عميلة بسموحة" },
-              { name: "محمد علي", text: "الضمان حقيقي وخدمة ما بعد الصيانة ممتازة. شكراً لفريق العمل على المجهود الرائع.", role: "عميل بالعجمي" }
-            ].map((t, i) => (
-              <Card key={i} className="p-10 rounded-[2rem] border-none bg-slate-50 text-right shadow-sm">
-                <div className="flex gap-1 mb-6">
-                  {[1,2,3,4,5].map(s => <Star key={s} className="w-5 h-5 fill-orange-500 text-orange-500" />)}
-                </div>
-                <p className="text-slate-600 text-lg font-medium italic mb-8 leading-relaxed">"{t.text}"</p>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-orange-200 rounded-full flex items-center justify-center font-black text-orange-700">
-                    {t.name[0]}
-                  </div>
-                  <div className="text-right">
-                    <h4 className="font-black text-slate-900">{t.name}</h4>
-                    <p className="text-slate-400 text-xs font-bold">{t.role}</p>
-                  </div>
-                </div>
-              </Card>
             ))}
           </div>
         </div>

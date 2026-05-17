@@ -8,10 +8,10 @@ import { Star, CheckCircle, Zap, ShieldCheck, Clock, Award, Phone, MessageCircle
 
 export default function WhiteWhaleService() {
   useEffect(() => {
-    // Dynamic SEO Update
-    document.title = "صيانة وايت ويل الإسكندرية | رقم صيانة White Whale المعتمد 01278885772";
+    // Dynamic SEO Update - Policy Compliant
+    document.title = "صيانة وايت ويل الإسكندرية | مركز خدمة White Whale المتخصص 01278885772";
     const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute("content", "هل تبحث عن صيانة وايت ويل بالإسكندرية؟ نحن مركز معتمد لصيانة كافة أجهزة White Whale (ثلاجات، غسالات، تكييفات) بالمنزل بقطع غيار أصلية وضمان سنة.");
+    if (metaDesc) metaDesc.setAttribute("content", "خدمة صيانة وايت ويل بالإسكندرية. نحن مركز خدمة متخصص لصيانة كافة أجهزة White Whale (ثلاجات، غسالات، تكييفات) بالمنزل بقطع غيار أصلية وضمان سنة.");
     
     // Schema Markup for Google Ads Quality Score
     const schema = {
@@ -30,7 +30,7 @@ export default function WhiteWhaleService() {
         }
       },
       "areaServed": "Alexandria",
-      "description": "خدمة صيانة وايت ويل المعتمدة في الإسكندرية بقطع غيار أصلية."
+      "description": "خدمة صيانة وايت ويل المتخصصة في الإسكندرية بقطع غيار أصلية."
     };
     
     const script = document.createElement("script");
@@ -53,7 +53,7 @@ export default function WhiteWhaleService() {
         <div className="absolute inset-0 z-0">
           <img 
             src="/images/hero-bg-new.jpg" 
-            alt="صيانة وايت ويل المعتمدة بالإسكندرية" 
+            alt="صيانة وايت ويل المتخصصة بالإسكندرية" 
             className="w-full h-full object-cover opacity-30"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/70 to-transparent"></div>
@@ -63,7 +63,7 @@ export default function WhiteWhaleService() {
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 bg-slate-500/20 border border-slate-500/30 px-4 py-2 rounded-full mb-6 animate-pulse">
               <ShieldCheck className="w-4 h-4 text-slate-400" />
-              <span className="text-slate-400 font-bold text-sm uppercase tracking-wider">مركز صيانة White Whale المعتمد - الإسكندرية</span>
+              <span className="text-slate-400 font-bold text-sm uppercase tracking-wider">مركز خدمة White Whale المتخصص - الإسكندرية</span>
             </div>
             
             <h1 className="text-4xl md:text-7xl font-black text-white leading-tight mb-6">
@@ -95,7 +95,7 @@ export default function WhiteWhaleService() {
             
             <div className="flex flex-wrap gap-4 text-white/80 font-bold text-sm">
               <div className="flex items-center gap-1"><CheckCircle className="w-4 h-4 text-green-400" /> كشف فوري</div>
-              <div className="flex items-center gap-1"><CheckCircle className="w-4 h-4 text-green-400" /> فاتورة معتمدة</div>
+              <div className="flex items-center gap-1"><CheckCircle className="w-4 h-4 text-green-400" /> فاتورة رسمية</div>
               <div className="flex items-center gap-1"><CheckCircle className="w-4 h-4 text-green-400" /> أرخص سعر</div>
             </div>
           </div>
@@ -114,7 +114,7 @@ export default function WhiteWhaleService() {
             <div className="p-6 bg-slate-50 rounded-3xl text-center group hover:bg-slate-600 transition-all duration-300">
               <ShieldCheck className="w-10 h-10 text-slate-600 mx-auto mb-4 group-hover:text-white" />
               <h4 className="font-black text-slate-900 mb-1 group-hover:text-white">قطع أصلية</h4>
-              <p className="text-slate-500 text-xs font-bold group-hover:text-white/80">بالضمان المعتمد</p>
+              <p className="text-slate-500 text-xs font-bold group-hover:text-white/80">بالضمان الشامل</p>
             </div>
             <div className="p-6 bg-slate-50 rounded-3xl text-center group hover:bg-slate-600 transition-all duration-300">
               <Award className="w-10 h-10 text-slate-600 mx-auto mb-4 group-hover:text-white" />
@@ -136,7 +136,7 @@ export default function WhiteWhaleService() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
             <div>
               <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-8 leading-tight">
-                أفضل مركز صيانة <span className="text-slate-600">وايت ويل</span> <br />في الإسكندرية
+                أفضل مركز خدمة <span className="text-slate-600">وايت ويل</span> <br />في الإسكندرية
               </h2>
               <p className="text-xl text-slate-600 mb-8 leading-relaxed font-medium">
                 هل تعاني من أعطال في أجهزة White Whale؟ لا داعي للقلق. نحن نوفر لك خدمة صيانة منزلية فورية باستخدام أحدث معدات الفحص الإلكتروني لتحديد العطل بدقة متناهية وتوفير التكلفة.
@@ -148,7 +148,7 @@ export default function WhiteWhaleService() {
                   'تصليح غسالات وايت ويل',
                   'صيانة تكييفات وايت ويل',
                   'صيانة بوتاجازات وايت ويل',
-                  'فنيين معتمدين وخبراء',
+                  'فنيين متخصصين وخبراء',
                   'دعم فني 24 ساعة'
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3 font-black text-slate-700 bg-slate-50 p-4 rounded-2xl">
@@ -163,7 +163,7 @@ export default function WhiteWhaleService() {
                 <p className="font-bold opacity-90 mb-8 text-lg">تحدث مع مهندس الصيانة الآن واعرف تكلفة الإصلاح التقريبية مجاناً.</p>
                 <div className="flex flex-wrap gap-4">
                   <a href="https://wa.me/201558625259" className="inline-flex items-center gap-2 bg-white text-slate-600 px-8 py-4 rounded-2xl font-black transition-transform hover:scale-105">
-                    <MessageCircle className="w-5 h-5" />
+                    <MessageCircle className="w-6 h-6" />
                     واتساب
                   </a>
                   <a href="tel:+201278885772" className="inline-flex items-center gap-2 bg-slate-800 text-white px-8 py-4 rounded-2xl font-black transition-transform hover:scale-105 border border-slate-400/30">
