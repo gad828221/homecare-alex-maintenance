@@ -388,83 +388,82 @@ export default function ProtectedOrders() {
     }
   };
 
+  // دالة إرسال التقرير اليومي للشركاء (رصيد افتتاحي، مصاريف، أرباح، رصيد ختامي)
   const sendDailyReportToPartners = async (targetDate: string) => {
     try {
-      const entries = await fetchAPI(`cash_ledger?select=*&date=eq.${targetDate}&order=created_at.desc`);
+      // 1. حساب رصيد افتتاح الخزنة (جميع الحركات قبل تاريخ اليوم)
+      const allEntriesBefore = await fetchAPI(`cash_ledger?select=*&date=lt.${targetDate}`);
+      const openingBalance = (allEntriesBefore || []).reduce((acc: number, entry: any) => {
+        const amount = Number(entry.amount) || 0;
+        if (entry.type === 'income') return Number((acc + amount).toFixed(2));
+        if (entry.type === 'reserve') return Number((acc + amount).toFixed(2));
+        if (entry.type === 'expense') return Number((acc - amount).toFixed(2));
+        if (entry.type === 'profit_distribution') return Number((acc - amount).toFixed(2));
+        return acc;
+      }, 0);
+
+      // 2. جلب حركات اليوم المحدد
+      const entries = await fetchAPI(`cash_ledger?select=*&date=eq.${targetDate}`);
       if (!entries || entries.length === 0) {
         alert(`⚠️ لا توجد حركات خزنة ليوم ${targetDate}`);
-        return false;
+        return;
       }
 
-      let totalIncome = 0, totalExpense = 0, totalProfitDist = 0;
-      const profitDetails = [];
-      for (const entry of entries) {
-        if (entry.type === 'income') totalIncome += entry.amount;
-        else if (entry.type === 'expense') totalExpense += entry.amount;
-        else if (entry.type === 'profit_distribution') {
-          totalProfitDist += entry.amount;
-          profitDetails.push(`• ${entry.description} : ${entry.amount} ج.م`);
-        }
+      let totalIncome = 0;
+      let totalExpense = 0;
+      entries.forEach((entry: any) => {
+        const amt = Number(entry.amount) || 0;
+        if (entry.type === 'income') totalIncome += amt;
+        else if (entry.type === 'expense') totalExpense += amt;
+      });
+
+      // 3. حساب الرصيد الختامي
+      const closingBalance = openingBalance + totalIncome - totalExpense;
+
+      // 4. بناء نص التقرير
+      const reportText = `📊 *تقرير الخزنة اليومي* 📊\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📅 *التاريخ:* ${targetDate}\n\n💰 *رصيد افتتاح الخزنة:* ${openingBalance.toLocaleString()} ج.م\n💸 *مصاريف اليوم:* ${totalExpense.toLocaleString()} ج.م\n📈 *أرباح اليوم:* ${totalIncome.toLocaleString()} ج.م\n✅ *رصيد ختامي:* ${closingBalance.toLocaleString()} ج.م\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📞 للاستفسار: 01278885772\n✨ نظام إدارة الصيانة - تقرير يومي`;
+
+      const activePartners = partners.filter(p => p.is_active && p.phone);
+      if (activePartners.length === 0) {
+        alert("⚠️ لا يوجد شركاء نشطون بأرقام هواتف");
+        return;
       }
-      // دالة إرسال التقرير اليومي للشركاء (رصيد افتتاحي، مصاريف، أرباح، رصيد ختامي)
-const sendDailyReportToPartners = async (targetDate: string) => {
-  try {
-    // 1. حساب رصيد افتتاح الخزنة (جميع الحركات قبل تاريخ اليوم)
-    const allEntriesBefore = await fetchAPI(`cash_ledger?select=*&date=lt.${targetDate}`);
-    const openingBalance = (allEntriesBefore || []).reduce((acc: number, entry: any) => {
-      const amount = Number(entry.amount) || 0;
-      if (entry.type === 'income') return Number((acc + amount).toFixed(2));
-      if (entry.type === 'reserve') return Number((acc + amount).toFixed(2));
-      if (entry.type === 'expense') return Number((acc - amount).toFixed(2));
-      if (entry.type === 'profit_distribution') return Number((acc - amount).toFixed(2));
-      return acc;
-    }, 0);
 
-    // 2. جلب حركات اليوم المحدد
-    const entries = await fetchAPI(`cash_ledger?select=*&date=eq.${targetDate}`);
-    if (!entries || entries.length === 0) {
-      alert(`⚠️ لا توجد حركات خزنة ليوم ${targetDate}`);
+      const userChoice = confirm(`📋 التقرير جاهز للإرسال ليوم ${targetDate}.\n\n${reportText}\n\nهل تريد فتح واتساب لإرسال التقرير لكل شريك على حدة؟`);
+      if (!userChoice) return;
+
+      for (const partner of activePartners) {
+        let phone = partner.phone.replace(/\D/g, '');
+        if (phone.startsWith('0')) phone = phone.substring(1);
+        if (!phone.startsWith('20')) phone = '20' + phone;
+        const url = `https://wa.me/${phone}?text=${encodeURIComponent(reportText)}`;
+        window.open(url, '_blank');
+      }
+      alert('✅ تم فتح WhatsApp لإرسال التقرير لكل شريك');
+    } catch (err) {
+      console.error(err);
+      alert("❌ حدث خطأ أثناء إرسال التقرير");
+    }
+  };
+
+  // دالة مساعدة لزر إرسال التقرير
+  const handleSendReportForDate = () => {
+    if (!reportDate) {
+      alert("⚠️ يرجى اختيار التاريخ أولاً.");
       return;
     }
+    sendDailyReportToPartners(reportDate);
+  };
 
-    let totalIncome = 0;
-    let totalExpense = 0;
-    entries.forEach((entry: any) => {
-      const amt = Number(entry.amount) || 0;
-      if (entry.type === 'income') totalIncome += amt;
-      else if (entry.type === 'expense') totalExpense += amt;
-    });
-
-    // 3. حساب الرصيد الختامي
-    const closingBalance = openingBalance + totalIncome - totalExpense;
-
-    // 4. بناء نص التقرير
-    const reportText = `📊 *تقرير الخزنة اليومي* 📊\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📅 *التاريخ:* ${targetDate}\n\n💰 *رصيد افتتاح الخزنة:* ${openingBalance.toLocaleString()} ج.م\n💸 *مصاريف اليوم:* ${totalExpense.toLocaleString()} ج.م\n📈 *أرباح اليوم:* ${totalIncome.toLocaleString()} ج.م\n✅ *رصيد ختامي:* ${closingBalance.toLocaleString()} ج.م\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📞 للاستفسار: 01278885772\n✨ نظام إدارة الصيانة - تقرير يومي`;
-
-    const activePartners = partners.filter(p => p.is_active && p.phone);
-    if (activePartners.length === 0) {
-      alert("⚠️ لا يوجد شركاء نشطون بأرقام هواتف");
+  // دالة توزيع الأرباح للزر
+  const handleDistributeSelectedProfit = async () => {
+    if (!selectedProfitDate) {
+      alert("⚠️ يرجى اختيار التاريخ أولاً.");
       return;
     }
+    await distributeProfitForDate(selectedProfitDate);
+  };
 
-    const userChoice = confirm(`📋 التقرير جاهز للإرسال ليوم ${targetDate}.\n\n${reportText}\n\nهل تريد فتح واتساب لإرسال التقرير لكل شريك على حدة؟`);
-    if (!userChoice) return;
-
-    for (const partner of activePartners) {
-      let phone = partner.phone.replace(/\D/g, '');
-      if (phone.startsWith('0')) phone = phone.substring(1);
-      if (!phone.startsWith('20')) phone = '20' + phone;
-      const url = `https://wa.me/${phone}?text=${encodeURIComponent(reportText)}`;
-      window.open(url, '_blank');
-    }
-    alert('✅ تم فتح WhatsApp لإرسال التقرير لكل شريك');
-  } catch (err) {
-    console.error(err);
-    alert("❌ حدث خطأ أثناء إرسال التقرير");
-  }
-}
-
-      
   // ========== دالة fetchData الآمنة (بدون فلترة deleted_at) ==========
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -1244,7 +1243,7 @@ const sendDailyReportToPartners = async (targetDate: string) => {
             {reportLoading && <div className="text-center py-8 text-slate-400">جاري تحميل البيانات...</div>}
             {!reportLoading && reportData.length === 0 && <div className="text-center py-8 text-slate-400">لا توجد بيانات للفترة المحددة</div>}
             {!reportLoading && reportData.length > 0 && (
-              <div className="overflow-x-auto"><table className="w-full text-sm border-collapse"><thead className="bg-slate-800"><tr>{reportColumns.map((col, idx) => <th key={idx} className="p-3 text-right border border-slate-700">{col}</th>)}</tr></thead>
+              <div className="overflow-x-auto"><table className="w-full text-sm border-collapse"><thead className="bg-slate-800"><tr>{reportColumns.map((col, idx) => <th key={idx} className="p-3 text-right border border-slate-700">{col}</th>)}</thead>
               <tbody>{reportData.map((row, idx) => (<tr key={idx} className="border-b border-slate-800">{reportColumns.map((col, colIdx) => {
                 let val = '';
                 if (col === 'التاريخ') val = row.date || '';
@@ -1270,7 +1269,7 @@ const sendDailyReportToPartners = async (targetDate: string) => {
                 else if (col === 'ملغي') val = row.cancelled || '';
                 else if (col === 'متوسط الوقت (ساعات)') val = row.avg_hours || '';
                 return <td key={colIdx} className="p-3 border border-slate-800">{val}</td>;
-              })}</tr>))}</tbody></table></div>
+              }))}</tbody></table></div>
             )}
           </div>
         )}
