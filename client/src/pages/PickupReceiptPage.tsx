@@ -224,36 +224,20 @@ export default function PickupReceiptPage() {
     }
   };
 
+  // تعديل دالة إرسال الواتساب: إرسال رابط فقط قابل للنسخ
   const sendViaWhatsApp = () => {
     if (!order.phone) {
       alert("❌ رقم الهاتف غير موجود");
       return;
     }
 
-    const phone = formatPhoneForWhatsApp(order.phone);
-    const message = `📋 *إيصال سحب جهاز للصيانة* 📋\n\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `✅ تم استلام جهازك بنجاح للفحص\n\n` +
-      `🔢 *رقم الإيصال:* ${order.order_number || order.id}\n` +
-      `📅 *تاريخ الاستلام:* ${new Date(order?.created_at || new Date()).toLocaleDateString('ar-EG')}\n\n` +
-      `👤 *بيانات العميل:*\n` +
-      `  • الاسم: ${order.customer_name}\n` +
-      `  • الهاتف: ${order.phone}\n` +
-      `  • العنوان: ${order.address || 'غير محدد'}\n\n` +
-      `🔧 *بيانات الجهاز:*\n` +
-      `  • الجهاز: ${order.device_type}\n` +
-      `  • الماركة: ${order.brand}\n` +
-      `  • المشكلة: ${order.problem_description || 'غير محددة'}\n\n` +
-      `💰 *العربون المدفوع:* ${order.deposit_amount || 0} ج.م\n\n` +
-      (order.technician_notes ? `📝 *ملاحظات الفني:*\n${order.technician_notes}\n\n` : '') +
-      (order.admin_notes ? `📋 *ملاحظات الإدارة:*\n${order.admin_notes}\n\n` : '') +
-      `📝 *ملاحظة:* سيتم التواصل معك بعد الفحص لتحديد تكلفة الإصلاح.\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `📞 للاستفسار والدعم الفني:\n` +
-      `  📱 01278885772\n` +
-      `  📲 01558625259\n\n` +
-      `✨ شكراً لثقتك بنا - Maintenance Guide`;
+    // بناء رابط الإيصال الحالي
+    const receiptUrl = window.location.href;
+    
+    // رسالة تحتوي فقط على الرابط مع نص بسيط (قابل للنسخ)
+    const message = `📄 *إيصال سحب جهاز - Maintenance Guide*\n\n🔗 رابط الإيصال:\n${receiptUrl}\n\n✨ شكراً لثقتك بنا`;
 
+    const phone = formatPhoneForWhatsApp(order.phone);
     const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -432,7 +416,7 @@ export default function PickupReceiptPage() {
             className="flex flex-col items-center gap-2 bg-white p-4 rounded-2xl shadow-lg border border-slate-200 hover:bg-slate-50 transition-all"
           >
             {copied ? <Check className="w-6 h-6 text-green-600" /> : <Copy className="w-6 h-6 text-slate-600" />}
-            <span className="text-xs font-black">{copied ? 'تم النسخ' : 'نسخ الرابط'}</span>
+            <span className="text-xs font-black">{copied ? 'تم النسخ' : 'نسخ رابط الإيصال'}</span>
           </button>
         </div>
       </div>
