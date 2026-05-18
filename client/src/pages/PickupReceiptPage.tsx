@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import jsPDF from "jspdf";
-import { Download, Printer, Send, Copy, Check, MapPin, Phone, MessageCircle, Clock, ShieldCheck, User, Wrench, AlertCircle } from "lucide-react";
+import { Download, Printer, Send, Copy, Check, MapPin, Phone, MessageCircle, Clock, ShieldCheck, User, Wrench, AlertCircle, Edit2, Save, X } from "lucide-react";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -10,8 +10,25 @@ export default function PickupReceiptPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    deposit_amount: 0,
+    technician_notes: "",
+    admin_notes: ""
+  });
+  const [saving, setSaving] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
 
+  // جلب المستخدم الحالي من localStorage
+  useEffect(() => {
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  // جلب بيانات الأوردر من الرابط
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const orderId = params.get("id");
@@ -28,7 +45,13 @@ export default function PickupReceiptPage() {
         });
         const data = await response.json();
         if (data && data.length > 0) {
-          setOrder(data[0]);
+          const orderData = data[0];
+          setOrder(orderData);
+          setEditForm({
+            deposit_amount: orderData.deposit_amount || 0,
+            technician_notes: orderData.technician_notes || "",
+            admin_notes: orderData.admin_notes || ""
+          });
         } else {
           setError("الأوردر غير موجود");
         }
@@ -41,6 +64,47 @@ export default function PickupReceiptPage() {
     };
     fetchOrder();
   }, []);
+
+  // التحقق من صلاحية التعديل (مدير أو فني)
+  const canEdit = () => {
+    if (!currentUser) return false;
+    const role = currentUser.role;
+    return role === 'admin' || role === 'tech';
+  };
+
+  // حفظ التعديلات
+  const saveChanges = async () => {
+    if (!order) return;
+    setSaving(true);
+    try {
+      const updatedFields = {
+        deposit_amount: editForm.deposit_amount,
+        technician_notes: editForm.technician_notes,
+        admin_notes: editForm.admin_notes,
+        receipt_updated_by: currentUser?.name || currentUser?.username || 'غير معروف',
+        receipt_updated_at: new Date().toISOString()
+      };
+
+      const response = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${order.id}`, {
+        method: 'PATCH',
+        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedFields)
+      });
+
+      if (response.ok) {
+        setOrder({ ...order, ...updatedFields });
+        setIsEditing(false);
+        alert("✅ تم حفظ التعديلات بنجاح");
+      } else {
+        alert("❌ فشل حفظ التعديلات");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("❌ حدث خطأ أثناء الحفظ");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const formatPhoneForWhatsApp = (phone: string) => {
     if (!phone) return '';
@@ -57,7 +121,7 @@ export default function PickupReceiptPage() {
       const pageWidth = pdf.internal.pageSize.getWidth();
       let yPosition = 10;
 
-      pdf.setFillColor(147, 51, 234); // Purple color for Pickup
+      pdf.setFillColor(147, 51, 234);
       pdf.rect(0, 0, pageWidth, 35, "F");
       pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(20);
@@ -102,6 +166,29 @@ export default function PickupReceiptPage() {
       pdf.text(`وصف العطل: ${order?.problem_description || '-'}`, 20, yPosition);
       yPosition += 10;
 
+      // إضافة العربون
+      pdf.setFont(undefined, "bold");
+      pdf.text(`💰 العربون المدفوع: ${order?.deposit_amount || 0} ج.م`, 15, yPosition);
+      yPosition += 10;
+
+      // ملاحظات الفني والمدير
+      if (order?.technician_notes) {
+        pdf.setFont(undefined, "bold");
+        pdf.text("📝 ملاحظات الفني:", 15, yPosition);
+        yPosition += 6;
+        pdf.setFont(undefined, "normal");
+        pdf.text(order.technician_notes, 20, yPosition);
+        yPosition += 8;
+      }
+      if (order?.admin_notes) {
+        pdf.setFont(undefined, "bold");
+        pdf.text("📋 ملاحظات الإدارة:", 15, yPosition);
+        yPosition += 6;
+        pdf.setFont(undefined, "normal");
+        pdf.text(order.admin_notes, 20, yPosition);
+        yPosition += 8;
+      }
+
       pdf.setFont(undefined, "bold");
       pdf.text("📝 حالة الجهاز عند الاستلام", 15, yPosition);
       yPosition += 7;
@@ -125,12 +212,12 @@ export default function PickupReceiptPage() {
       });
       yPosition += 10;
 
-      pdf.setFont(undefined, "bold");
-      pdf.text("✨ شكراً لثقتك بنا ✨", pageWidth / 2, yPosition, { align: "center" });
-      yPosition += 7;
-      pdf.setFont(undefined, "normal");
-      pdf.text("للاستفسار والدعم الفني: 01278885772", pageWidth / 2, yPosition, { align: "center" });
-      
+      if (order?.receipt_updated_at) {
+        pdf.setFontSize(8);
+        pdf.setTextColor(100);
+        pdf.text(`آخر تحديث: ${new Date(order.receipt_updated_at).toLocaleString('ar-EG')} بواسطة ${order.receipt_updated_by || ''}`, pageWidth / 2, yPosition, { align: "center" });
+      }
+
       pdf.save(`إيصال_سحب_${order?.order_number || "order"}.pdf`);
     } catch (err) {
       alert("❌ حدث خطأ في تحميل PDF");
@@ -157,6 +244,9 @@ export default function PickupReceiptPage() {
       `  • الجهاز: ${order.device_type}\n` +
       `  • الماركة: ${order.brand}\n` +
       `  • المشكلة: ${order.problem_description || 'غير محددة'}\n\n` +
+      `💰 *العربون المدفوع:* ${order.deposit_amount || 0} ج.م\n\n` +
+      (order.technician_notes ? `📝 *ملاحظات الفني:*\n${order.technician_notes}\n\n` : '') +
+      (order.admin_notes ? `📋 *ملاحظات الإدارة:*\n${order.admin_notes}\n\n` : '') +
       `📝 *ملاحظة:* سيتم التواصل معك بعد الفحص لتحديد تكلفة الإصلاح.\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
       `📞 للاستفسار والدعم الفني:\n` +
@@ -220,6 +310,78 @@ export default function PickupReceiptPage() {
               </div>
             </div>
 
+            {/* قسم العربون والملاحظات القابلة للتعديل */}
+            <div className="border-t border-b border-purple-100 py-6 mb-10">
+              {isEditing && canEdit() ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">💰 قيمة العربون (ج.م)</label>
+                    <input
+                      type="number"
+                      value={editForm.deposit_amount}
+                      onChange={(e) => setEditForm({ ...editForm, deposit_amount: Number(e.target.value) })}
+                      className="w-full p-2 border rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">📝 ملاحظات الفني</label>
+                    <textarea
+                      rows={3}
+                      value={editForm.technician_notes}
+                      onChange={(e) => setEditForm({ ...editForm, technician_notes: e.target.value })}
+                      className="w-full p-2 border rounded-lg"
+                      placeholder="أضف ملاحظاتك هنا..."
+                    />
+                  </div>
+                  {currentUser?.role === 'admin' && (
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">📋 ملاحظات المدير</label>
+                      <textarea
+                        rows={3}
+                        value={editForm.admin_notes}
+                        onChange={(e) => setEditForm({ ...editForm, admin_notes: e.target.value })}
+                        className="w-full p-2 border rounded-lg"
+                        placeholder="أضف ملاحظات الإدارة..."
+                      />
+                    </div>
+                  )}
+                  <div className="flex gap-3 pt-2">
+                    <button onClick={saveChanges} disabled={saving} className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                      <Save className="w-4 h-4" /> {saving ? 'جاري الحفظ...' : 'حفظ التعديلات'}
+                    </button>
+                    <button onClick={() => setIsEditing(false)} className="flex items-center gap-2 bg-gray-300 px-4 py-2 rounded-lg hover:bg-gray-400">
+                      <X className="w-4 h-4" /> إلغاء
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="font-black text-purple-600">💰 العربون المدفوع</h3>
+                    {canEdit() && (
+                      <button onClick={() => setIsEditing(true)} className="flex items-center gap-1 text-sm bg-purple-100 text-purple-700 px-3 py-1 rounded-full hover:bg-purple-200">
+                        <Edit2 className="w-3 h-3" /> تعديل
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-2xl font-black text-green-600 mb-6">{order.deposit_amount || 0} ج.م</p>
+
+                  {order.technician_notes && (
+                    <div className="mb-4">
+                      <h4 className="font-bold text-slate-700 flex items-center gap-1">📝 ملاحظات الفني</h4>
+                      <p className="text-slate-600 bg-slate-50 p-3 rounded-lg mt-1">{order.technician_notes}</p>
+                    </div>
+                  )}
+                  {order.admin_notes && (
+                    <div className="mb-4">
+                      <h4 className="font-bold text-slate-700 flex items-center gap-1">📋 ملاحظات الإدارة</h4>
+                      <p className="text-slate-600 bg-slate-50 p-3 rounded-lg mt-1">{order.admin_notes}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="bg-purple-50 p-6 rounded-2xl mb-10 border border-purple-100">
               <h4 className="flex items-center gap-2 text-purple-700 font-black mb-3">
                 <AlertCircle className="w-5 h-5" /> ملاحظات هامة:
@@ -230,6 +392,12 @@ export default function PickupReceiptPage() {
                 <li className="flex items-center gap-2">• يرجى إبراز هذا الإيصال عند الاستلام.</li>
               </ul>
             </div>
+
+            {order.receipt_updated_at && (
+              <div className="text-center text-xs text-slate-400 mt-4">
+                آخر تحديث: {new Date(order.receipt_updated_at).toLocaleString('ar-EG')} بواسطة {order.receipt_updated_by || ''}
+              </div>
+            )}
 
             <div className="text-center pt-6 border-t border-slate-100">
               <p className="text-slate-400 text-xs font-bold mb-2">Maintenance Guide - خدمة صيانة 24 ساعة بالمنزل</p>
