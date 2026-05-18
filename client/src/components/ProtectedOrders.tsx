@@ -1243,36 +1243,50 @@ export default function ProtectedOrders() {
             {reportLoading && <div className="text-center py-8 text-slate-400">جاري تحميل البيانات...</div>}
             {!reportLoading && reportData.length === 0 && <div className="text-center py-8 text-slate-400">لا توجد بيانات للفترة المحددة</div>}
             {!reportLoading && reportData.length > 0 && (
-              <div className="overflow-x-auto"><table className="w-full text-sm border-collapse"><thead className="bg-slate-800"><tr>{reportColumns.map((col, idx) => <th key={idx} className="p-3 text-right border border-slate-700">{col}</th>)}</thead>
-              <tbody>{reportData.map((row, idx) => (<tr key={idx} className="border-b border-slate-800">{reportColumns.map((col, colIdx) => {
-                let val = '';
-                if (col === 'التاريخ') val = row.date || '';
-                else if (col === 'النوع') val = row.type==='income'?'دخل':row.type==='expense'?'مصروف':row.type==='profit_distribution'?'توزيع أرباح':row.type||'';
-                else if (col === 'المبلغ (ج.م)') val = row.amount || '';
-                else if (col === 'الوصف') val = row.description || '';
-                else if (col === 'رقم الأوردر') val = row.order_number || '';
-                else if (col === 'العميل') val = row.customer_name || '';
-                else if (col === 'الهاتف') val = row.phone || '';
-                else if (col === 'الجهاز') val = row.device_type || '';
-                else if (col === 'الماركة') val = row.brand || '';
-                else if (col === 'الفني') val = row.technician || '';
-                else if (col === 'الحالة') val = row.status || '';
-                else if (col === 'سبب الإلغاء') val = row.technician_note || '';
-                else if (col === 'الشريك') val = row.name || '';
-                else if (col === 'إجمالي الأرباح (ج.م)') val = row.total || '';
-                else if (col === 'الإيرادات (ج.م)') val = row.الإيرادات || '';
-                else if (col === 'المصروفات (ج.م)') val = row.المصروفات || '';
-                else if (col === 'توزيع الأرباح (ج.م)') val = row.توزيع_الأرباح || '';
-                else if (col === 'صافي الربح (ج.م)') val = row.صافي_الربح || '';
-                else if (col === 'إجمالي الأوردرات') val = row.total_orders || '';
-                else if (col === 'مكتمل') val = row.completed || '';
-                else if (col === 'ملغي') val = row.cancelled || '';
-                else if (col === 'متوسط الوقت (ساعات)') val = row.avg_hours || '';
-                return <td key={colIdx} className="p-3 border border-slate-800">{val}</td>;
-              }))}</tbody></table></div>
-            )}
-          </div>
-        )}
+  <div className="overflow-x-auto">
+    <table className="w-full text-sm border-collapse">
+      <thead className="bg-slate-800">
+        <tr>
+          {reportColumns.map((col, idx) => (
+            <th key={idx} className="p-3 text-right border border-slate-700">{col}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {reportData.map((row, idx) => (
+          <tr key={idx} className="border-b border-slate-800">
+            {reportColumns.map((col, colIdx) => {
+              let val = '';
+              if (col === 'التاريخ') val = row.date || '';
+              else if (col === 'النوع') val = row.type === 'income' ? 'دخل' : row.type === 'expense' ? 'مصروف' : row.type === 'profit_distribution' ? 'توزيع أرباح' : row.type || '';
+              else if (col === 'المبلغ (ج.م)') val = row.amount || '';
+              else if (col === 'الوصف') val = row.description || '';
+              else if (col === 'رقم الأوردر') val = row.order_number || '';
+              else if (col === 'العميل') val = row.customer_name || '';
+              else if (col === 'الهاتف') val = row.phone || '';
+              else if (col === 'الجهاز') val = row.device_type || '';
+              else if (col === 'الماركة') val = row.brand || '';
+              else if (col === 'الفني') val = row.technician || '';
+              else if (col === 'الحالة') val = row.status || '';
+              else if (col === 'سبب الإلغاء') val = row.technician_note || '';
+              else if (col === 'الشريك') val = row.name || '';
+              else if (col === 'إجمالي الأرباح (ج.م)') val = row.total || '';
+              else if (col === 'الإيرادات (ج.م)') val = row.الإيرادات || '';
+              else if (col === 'المصروفات (ج.م)') val = row.المصروفات || '';
+              else if (col === 'توزيع الأرباح (ج.م)') val = row.توزيع_الأرباح || '';
+              else if (col === 'صافي الربح (ج.م)') val = row.صافي_الربح || '';
+              else if (col === 'إجمالي الأوردرات') val = row.total_orders || '';
+              else if (col === 'مكتمل') val = row.completed || '';
+              else if (col === 'ملغي') val = row.cancelled || '';
+              else if (col === 'متوسط الوقت (ساعات)') val = row.avg_hours || '';
+              return <td key={colIdx} className="p-3 border border-slate-800">{val}</td>;
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}
 
         {activeTab === 'invoicesReview' && (
           <div className="space-y-3">
