@@ -391,7 +391,6 @@ export default function ProtectedOrders() {
   // دالة إرسال التقرير اليومي للشركاء (رصيد افتتاحي، مصاريف، أرباح، رصيد ختامي)
   const sendDailyReportToPartners = async (targetDate: string) => {
     try {
-      // 1. حساب رصيد افتتاح الخزنة (جميع الحركات قبل تاريخ اليوم)
       const allEntriesBefore = await fetchAPI(`cash_ledger?select=*&date=lt.${targetDate}`);
       const openingBalance = (allEntriesBefore || []).reduce((acc: number, entry: any) => {
         const amount = Number(entry.amount) || 0;
@@ -402,25 +401,20 @@ export default function ProtectedOrders() {
         return acc;
       }, 0);
 
-      // 2. جلب حركات اليوم المحدد
       const entries = await fetchAPI(`cash_ledger?select=*&date=eq.${targetDate}`);
       if (!entries || entries.length === 0) {
         alert(`⚠️ لا توجد حركات خزنة ليوم ${targetDate}`);
         return;
       }
 
-      let totalIncome = 0;
-      let totalExpense = 0;
+      let totalIncome = 0, totalExpense = 0;
       entries.forEach((entry: any) => {
         const amt = Number(entry.amount) || 0;
         if (entry.type === 'income') totalIncome += amt;
         else if (entry.type === 'expense') totalExpense += amt;
       });
 
-      // 3. حساب الرصيد الختامي
       const closingBalance = openingBalance + totalIncome - totalExpense;
-
-      // 4. بناء نص التقرير
       const reportText = `📊 *تقرير الخزنة اليومي* 📊\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📅 *التاريخ:* ${targetDate}\n\n💰 *رصيد افتتاح الخزنة:* ${openingBalance.toLocaleString()} ج.م\n💸 *مصاريف اليوم:* ${totalExpense.toLocaleString()} ج.م\n📈 *أرباح اليوم:* ${totalIncome.toLocaleString()} ج.م\n✅ *رصيد ختامي:* ${closingBalance.toLocaleString()} ج.م\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📞 للاستفسار: 01278885772\n✨ نظام إدارة الصيانة - تقرير يومي`;
 
       const activePartners = partners.filter(p => p.is_active && p.phone);
@@ -428,7 +422,6 @@ export default function ProtectedOrders() {
         alert("⚠️ لا يوجد شركاء نشطون بأرقام هواتف");
         return;
       }
-
       const userChoice = confirm(`📋 التقرير جاهز للإرسال ليوم ${targetDate}.\n\n${reportText}\n\nهل تريد فتح واتساب لإرسال التقرير لكل شريك على حدة؟`);
       if (!userChoice) return;
 
@@ -446,7 +439,6 @@ export default function ProtectedOrders() {
     }
   };
 
-  // دالة مساعدة لزر إرسال التقرير
   const handleSendReportForDate = () => {
     if (!reportDate) {
       alert("⚠️ يرجى اختيار التاريخ أولاً.");
@@ -455,7 +447,6 @@ export default function ProtectedOrders() {
     sendDailyReportToPartners(reportDate);
   };
 
-  // دالة توزيع الأرباح للزر
   const handleDistributeSelectedProfit = async () => {
     if (!selectedProfitDate) {
       alert("⚠️ يرجى اختيار التاريخ أولاً.");
@@ -464,7 +455,6 @@ export default function ProtectedOrders() {
     await distributeProfitForDate(selectedProfitDate);
   };
 
-  // ========== دالة fetchData الآمنة (بدون فلترة deleted_at) ==========
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -1156,14 +1146,12 @@ export default function ProtectedOrders() {
                       </div>
                       {order.technician_note && <div className="mt-2 text-xs text-slate-400">📝 ملاحظة الفني: {order.technician_note}</div>}
                       {order.status === 'in-progress' && canEditDelete() && (<button onClick={() => { setSelectedOrder(order); setSettleForm({ total_amount: order.total_amount || 0, parts_cost: order.parts_cost || 0, transport_cost: order.transport_cost || 0, net_amount: order.net_amount || 0, technician_share: order.technician_share || 0, company_share: order.company_share || 0 }); setShowSettleModal(true); }} className="mt-2 w-full bg-orange-600 hover:bg-orange-700 text-white py-1 rounded-lg text-sm font-bold">تصفية الأوردر</button>)}
-                      {/* إيصال السحب متاح لجميع الأوردرات النشطة - مع زر إرسال واتساب */}
                       {(order.status === 'pending' || order.status === 'in-progress' || order.status === 'inspected') && (
                         <div className="flex gap-2 mt-2">
                           <button onClick={() => window.open(`/pickup-receipt?id=${order.id}`, '_blank')} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-1 rounded-lg text-sm font-bold">📋 فتح الإيصال</button>
                           <button onClick={() => sendWhatsApp(order.phone, `📋 إيصال سحب الجهاز\n\nالعميل: ${order.customer_name}\nالجهاز: ${order.device_type}\nالرابط: ${window.location.origin}/pickup-receipt?id=${order.id}`)} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-1 rounded-lg text-sm font-bold">📱 إرسال واتساب</button>
                         </div>
                       )}
-                      {/* الفاتورة متاحة فقط للأوردرات المكتملة - مع زر إرسال واتساب */}
                       {order.status === 'completed' && (
                         <div className="flex gap-2 mt-2">
                           <button onClick={() => window.open(`/invoice?id=${order.id}`, '_blank')} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1 rounded-lg text-sm font-bold">📄 فتح الفاتورة</button>
@@ -1243,50 +1231,52 @@ export default function ProtectedOrders() {
             {reportLoading && <div className="text-center py-8 text-slate-400">جاري تحميل البيانات...</div>}
             {!reportLoading && reportData.length === 0 && <div className="text-center py-8 text-slate-400">لا توجد بيانات للفترة المحددة</div>}
             {!reportLoading && reportData.length > 0 && (
-  <div className="overflow-x-auto">
-    <table className="w-full text-sm border-collapse">
-      <thead className="bg-slate-800">
-        <tr>
-          {reportColumns.map((col, idx) => (
-            <th key={idx} className="p-3 text-right border border-slate-700">{col}</th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {reportData.map((row, idx) => (
-          <tr key={idx} className="border-b border-slate-800">
-            {reportColumns.map((col, colIdx) => {
-              let val = '';
-              if (col === 'التاريخ') val = row.date || '';
-              else if (col === 'النوع') val = row.type === 'income' ? 'دخل' : row.type === 'expense' ? 'مصروف' : row.type === 'profit_distribution' ? 'توزيع أرباح' : row.type || '';
-              else if (col === 'المبلغ (ج.م)') val = row.amount || '';
-              else if (col === 'الوصف') val = row.description || '';
-              else if (col === 'رقم الأوردر') val = row.order_number || '';
-              else if (col === 'العميل') val = row.customer_name || '';
-              else if (col === 'الهاتف') val = row.phone || '';
-              else if (col === 'الجهاز') val = row.device_type || '';
-              else if (col === 'الماركة') val = row.brand || '';
-              else if (col === 'الفني') val = row.technician || '';
-              else if (col === 'الحالة') val = row.status || '';
-              else if (col === 'سبب الإلغاء') val = row.technician_note || '';
-              else if (col === 'الشريك') val = row.name || '';
-              else if (col === 'إجمالي الأرباح (ج.م)') val = row.total || '';
-              else if (col === 'الإيرادات (ج.م)') val = row.الإيرادات || '';
-              else if (col === 'المصروفات (ج.م)') val = row.المصروفات || '';
-              else if (col === 'توزيع الأرباح (ج.م)') val = row.توزيع_الأرباح || '';
-              else if (col === 'صافي الربح (ج.م)') val = row.صافي_الربح || '';
-              else if (col === 'إجمالي الأوردرات') val = row.total_orders || '';
-              else if (col === 'مكتمل') val = row.completed || '';
-              else if (col === 'ملغي') val = row.cancelled || '';
-              else if (col === 'متوسط الوقت (ساعات)') val = row.avg_hours || '';
-              return <td key={colIdx} className="p-3 border border-slate-800">{val}</td>;
-            })}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-})
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead className="bg-slate-800">
+                    <tr>
+                      {reportColumns.map((col, idx) => (
+                        <th key={idx} className="p-3 text-right border border-slate-700">{col}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reportData.map((row, idx) => (
+                      <tr key={idx} className="border-b border-slate-800">
+                        {reportColumns.map((col, colIdx) => {
+                          let val = '';
+                          if (col === 'التاريخ') val = row.date || '';
+                          else if (col === 'النوع') val = row.type === 'income' ? 'دخل' : row.type === 'expense' ? 'مصروف' : row.type === 'profit_distribution' ? 'توزيع أرباح' : row.type || '';
+                          else if (col === 'المبلغ (ج.م)') val = row.amount || '';
+                          else if (col === 'الوصف') val = row.description || '';
+                          else if (col === 'رقم الأوردر') val = row.order_number || '';
+                          else if (col === 'العميل') val = row.customer_name || '';
+                          else if (col === 'الهاتف') val = row.phone || '';
+                          else if (col === 'الجهاز') val = row.device_type || '';
+                          else if (col === 'الماركة') val = row.brand || '';
+                          else if (col === 'الفني') val = row.technician || '';
+                          else if (col === 'الحالة') val = row.status || '';
+                          else if (col === 'سبب الإلغاء') val = row.technician_note || '';
+                          else if (col === 'الشريك') val = row.name || '';
+                          else if (col === 'إجمالي الأرباح (ج.م)') val = row.total || '';
+                          else if (col === 'الإيرادات (ج.م)') val = row.الإيرادات || '';
+                          else if (col === 'المصروفات (ج.م)') val = row.المصروفات || '';
+                          else if (col === 'توزيع الأرباح (ج.م)') val = row.توزيع_الأرباح || '';
+                          else if (col === 'صافي الربح (ج.م)') val = row.صافي_الربح || '';
+                          else if (col === 'إجمالي الأوردرات') val = row.total_orders || '';
+                          else if (col === 'مكتمل') val = row.completed || '';
+                          else if (col === 'ملغي') val = row.cancelled || '';
+                          else if (col === 'متوسط الوقت (ساعات)') val = row.avg_hours || '';
+                          return <td key={colIdx} className="p-3 border border-slate-800">{val}</td>;
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
 
         {activeTab === 'invoicesReview' && (
           <div className="space-y-3">
@@ -1365,7 +1355,7 @@ export default function ProtectedOrders() {
         {activeTab === 'performance' && <TechnicianPerformance orders={orders} technicians={technicians} />}
         {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions currentUser={currentUser} />}
       </div>
-})
+
       {showOrderModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl shadow-xl">
