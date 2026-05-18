@@ -1286,7 +1286,7 @@ export default function ProtectedOrders() {
       </tbody>
     </table>
   </div>
-)}
+})
 
         {activeTab === 'invoicesReview' && (
           <div className="space-y-3">
@@ -1365,7 +1365,7 @@ export default function ProtectedOrders() {
         {activeTab === 'performance' && <TechnicianPerformance orders={orders} technicians={technicians} />}
         {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions currentUser={currentUser} />}
       </div>
-
+})
       {showOrderModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl shadow-xl">
