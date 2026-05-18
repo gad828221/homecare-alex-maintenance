@@ -406,67 +406,65 @@ export default function ProtectedOrders() {
           profitDetails.push(`• ${entry.description} : ${entry.amount} ج.م`);
         }
       }
+      // دالة إرسال التقرير اليومي للشركاء (رصيد افتتاحي، مصاريف، أرباح، رصيد ختامي)
+const sendDailyReportToPartners = async (targetDate: string) => {
+  try {
+    // 1. حساب رصيد افتتاح الخزنة (جميع الحركات قبل تاريخ اليوم)
+    const allEntriesBefore = await fetchAPI(`cash_ledger?select=*&date=lt.${targetDate}`);
+    const openingBalance = (allEntriesBefore || []).reduce((acc: number, entry: any) => {
+      const amount = Number(entry.amount) || 0;
+      if (entry.type === 'income') return Number((acc + amount).toFixed(2));
+      if (entry.type === 'reserve') return Number((acc + amount).toFixed(2));
+      if (entry.type === 'expense') return Number((acc - amount).toFixed(2));
+      if (entry.type === 'profit_distribution') return Number((acc - amount).toFixed(2));
+      return acc;
+    }, 0);
 
-      const reportText = `📊 *تقرير الخزنة اليومي* 📊
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📅 *التاريخ:* ${targetDate}
-
-💰 *الإيرادات (ربح اليوم):* ${totalIncome.toLocaleString()} ج.م
-💸 *المصروفات (تخصم من الرصيد فقط):* ${totalExpense.toLocaleString()} ج.م
-📤 *توزيع أرباح الشركاء:* ${totalProfitDist.toLocaleString()} ج.م
-✅ *صافي الربح الموزع:* ${(totalIncome - totalExpense - totalProfitDist).toLocaleString()} ج.م
-💰 *رصيد الخزنة الحالي:* ${cashBalance.toLocaleString()} ج.م
-
-👥 *تفاصيل توزيع الأرباح:*
-${profitDetails.length ? profitDetails.join('\n') : 'لا توجد توزيعات'}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📞 للاستفسار: 01278885772
-✨ نظام إدارة الصيانة - تقرير يومي`;
-
-      const activePartners = partners.filter(p => p.is_active && p.phone);
-      if (activePartners.length === 0) {
-        alert("⚠️ لا يوجد شركاء نشطون بأرقام هواتف");
-        return false;
-      }
-
-      if (!confirm(`📋 التقرير التالي سيتم إرساله للشركاء:\n\n${reportText}\n\nهل تريد المتابعة؟`)) return false;
-
-      for (const partner of activePartners) {
-        let phone = partner.phone.toString().replace(/[^\d]/g, '');
-        if (phone.startsWith('0')) phone = phone.substring(1);
-        if (phone.length === 10) phone = '20' + phone;
-        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(reportText)}`, '_blank');
-        await new Promise(resolve => setTimeout(resolve, 800));
-      }
-
-      alert(`✅ تم فتح واتساب لإرسال التقرير إلى ${activePartners.length} شريك`);
-      showToast(`تم إرسال التقرير إلى ${activePartners.length} شريك`, 'info');
-      await addNotification('تقرير الخزنة', `تم إرسال تقرير يوم ${targetDate}`);
-      return true;
-    } catch (err) {
-      console.error(err);
-      alert("❌ حدث خطأ أثناء إرسال التقرير");
-      return false;
-    }
-  };
-
-  const handleDistributeSelectedProfit = async () => {
-    if (!selectedProfitDate) {
-      alert("⚠️ يرجى اختيار التاريخ أولاً.");
+    // 2. جلب حركات اليوم المحدد
+    const entries = await fetchAPI(`cash_ledger?select=*&date=eq.${targetDate}`);
+    if (!entries || entries.length === 0) {
+      alert(`⚠️ لا توجد حركات خزنة ليوم ${targetDate}`);
       return;
     }
-    await distributeProfitForDate(selectedProfitDate);
-  };
 
-  const handleSendReportForDate = async () => {
-    if (!reportDate) {
-      alert("⚠️ يرجى اختيار التاريخ أولاً.");
+    let totalIncome = 0;
+    let totalExpense = 0;
+    entries.forEach((entry: any) => {
+      const amt = Number(entry.amount) || 0;
+      if (entry.type === 'income') totalIncome += amt;
+      else if (entry.type === 'expense') totalExpense += amt;
+    });
+
+    // 3. حساب الرصيد الختامي
+    const closingBalance = openingBalance + totalIncome - totalExpense;
+
+    // 4. بناء نص التقرير
+    const reportText = `📊 *تقرير الخزنة اليومي* 📊\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📅 *التاريخ:* ${targetDate}\n\n💰 *رصيد افتتاح الخزنة:* ${openingBalance.toLocaleString()} ج.م\n💸 *مصاريف اليوم:* ${totalExpense.toLocaleString()} ج.م\n📈 *أرباح اليوم:* ${totalIncome.toLocaleString()} ج.م\n✅ *رصيد ختامي:* ${closingBalance.toLocaleString()} ج.م\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📞 للاستفسار: 01278885772\n✨ نظام إدارة الصيانة - تقرير يومي`;
+
+    const activePartners = partners.filter(p => p.is_active && p.phone);
+    if (activePartners.length === 0) {
+      alert("⚠️ لا يوجد شركاء نشطون بأرقام هواتف");
       return;
     }
-    await sendDailyReportToPartners(reportDate);
-  };
 
+    const userChoice = confirm(`📋 التقرير جاهز للإرسال ليوم ${targetDate}.\n\n${reportText}\n\nهل تريد فتح واتساب لإرسال التقرير لكل شريك على حدة؟`);
+    if (!userChoice) return;
+
+    for (const partner of activePartners) {
+      let phone = partner.phone.replace(/\D/g, '');
+      if (phone.startsWith('0')) phone = phone.substring(1);
+      if (!phone.startsWith('20')) phone = '20' + phone;
+      const url = `https://wa.me/${phone}?text=${encodeURIComponent(reportText)}`;
+      window.open(url, '_blank');
+    }
+    alert('✅ تم فتح WhatsApp لإرسال التقرير لكل شريك');
+  } catch (err) {
+    console.error(err);
+    alert("❌ حدث خطأ أثناء إرسال التقرير");
+  }
+}
+
+      
   // ========== دالة fetchData الآمنة (بدون فلترة deleted_at) ==========
   const fetchData = useCallback(async () => {
     setLoading(true);
