@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import jsPDF from "jspdf";
-import { Download, Printer, Send, Copy, Check } from "lucide-react";
-import { invoiceDownloadService } from "../services/invoiceDownload";
+import { Download, Printer, Send, Copy, Check, Link } from "lucide-react";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -11,6 +10,7 @@ export default function InvoicePageNew() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -186,42 +186,22 @@ export default function InvoicePageNew() {
     }
   };
 
+  // ✅ تعديل دالة إرسال الواتساب: إرسال رابط فقط قابل للنسخ
   const sendViaWhatsApp = () => {
     if (!invoice.phone) {
       alert("❌ رقم الهاتف غير موجود");
       return;
     }
 
-    const phone = formatPhoneForWhatsApp(invoice.phone);
-    const warrantyEndDate = calculateWarrantyEndDate(invoice?.warranty_period).toLocaleDateString('ar-EG');
-    const message = `📄 *فاتورة الصيانة والضمان* 📄\n\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `✅ شكراً لثقتك بنا\n\n` +
-      `🔢 *رقم الفاتورة:* ${invoice.order_number || invoice.id}\n` +
-      `📅 *تاريخ الخدمة:* ${new Date(invoice?.created_at || new Date()).toLocaleDateString('ar-EG')}\n\n` +
-      `👤 *بيانات العميل:*\n` +
-      `  • الاسم: ${invoice.customer_name}\n` +
-      `  • الهاتف: ${invoice.phone}\n` +
-      `  • العنوان: ${invoice.address || 'غير محدد'}\n\n` +
-      `🔧 *تفاصيل الخدمة:*\n` +
-      `  • الجهاز: ${invoice.device_type || invoice.device} - ${invoice.brand}\n` +
-      `  • المشكلة: ${invoice.problem_description || invoice.problem || 'غير محددة'}\n` +
-      `  • قطع الغيار: ${invoice.parts_used || 'لا توجد'}\n\n` +
-      `💰 *المبلغ والضمان:*\n` +
-      `  • المبلغ: ${invoice.total_amount || 0} ج.م\n` +
-      `  • الضمان: 🛡️ ${invoice.warranty_period || '6 أشهر'}\n` +
-      `  • تاريخ انتهاء الضمان: ${warrantyEndDate}\n` +
-      `  • المتبقي من الضمان: ${getWarrantyRemaining()}\n\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `📞 للاستفسار والدعم الفني:\n` +
-      `  📱 01278885772\n` +
-      `  📲 01558625259\n\n` +
-      `✨ شكراً لثقتك بنا - خدمة صيانة 24 ساعة بالمنزل`;
+    const receiptUrl = window.location.href;
+    const message = `📄 *فاتورة الصيانة والضمان - Maintenance Guide*\n\n🔗 رابط الفاتورة:\n${receiptUrl}\n\n✨ شكراً لثقتك بنا`;
 
+    const phone = formatPhoneForWhatsApp(invoice.phone);
     const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
+  // نسخ نص الفاتورة (كما هو)
   const copyToClipboard = async () => {
     if (!invoiceRef.current) return;
     try {
@@ -232,6 +212,13 @@ export default function InvoicePageNew() {
     } catch (err) {
       alert("فشل نسخ الفاتورة");
     }
+  };
+
+  // نسخ رابط الصفحة
+  const copyLinkToClipboard = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
   };
 
   if (loading) return <div className="p-8 text-center">جاري تحميل الفاتورة...</div>;
@@ -364,7 +351,10 @@ export default function InvoicePageNew() {
             <Send className="w-5 h-5" /> إرسال واتساب
           </button>
           <button onClick={copyToClipboard} className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-all">
-            {copied ? ( <><Check className="w-5 h-5" /> تم النسخ</> ) : ( <><Copy className="w-5 h-5" /> نسخ</> )}
+            {copied ? ( <><Check className="w-5 h-5" /> تم النسخ</> ) : ( <><Copy className="w-5 h-5" /> نسخ النص</> )}
+          </button>
+          <button onClick={copyLinkToClipboard} className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-all">
+            {linkCopied ? ( <><Check className="w-5 h-5" /> تم نسخ الرابط</> ) : ( <><Link className="w-5 h-5" /> نسخ الرابط</> )}
           </button>
         </div>
       </div>
