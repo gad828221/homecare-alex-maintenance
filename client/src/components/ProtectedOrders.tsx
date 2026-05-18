@@ -388,40 +388,46 @@ export default function ProtectedOrders() {
     }
   };
 
-  // دالة إرسال التقرير اليومي للشركاء (رصيد افتتاحي، مصاريف، أرباح، رصيد ختامي)
+  // دالة إرسال التقرير اليومي للشركاء (مع احتساب توزيعات الأرباح بشكل صحيح)
   const sendDailyReportToPartners = async (targetDate: string) => {
     try {
+      // 1. حساب الرصيد الافتتاحي (جميع الحركات قبل التاريخ)
       const allEntriesBefore = await fetchAPI(`cash_ledger?select=*&date=lt.${targetDate}`);
       const openingBalance = (allEntriesBefore || []).reduce((acc: number, entry: any) => {
         const amount = Number(entry.amount) || 0;
         if (entry.type === 'income') return Number((acc + amount).toFixed(2));
-        if (entry.type === 'reserve') return Number((acc + amount).toFixed(2));
         if (entry.type === 'expense') return Number((acc - amount).toFixed(2));
         if (entry.type === 'profit_distribution') return Number((acc - amount).toFixed(2));
         return acc;
       }, 0);
 
+      // 2. جلب حركات اليوم المحدد
       const entries = await fetchAPI(`cash_ledger?select=*&date=eq.${targetDate}`);
       if (!entries || entries.length === 0) {
         alert(`⚠️ لا توجد حركات خزنة ليوم ${targetDate}`);
         return;
       }
 
-      let totalIncome = 0, totalExpense = 0;
+      let totalIncome = 0, totalExpense = 0, totalProfitDist = 0;
       entries.forEach((entry: any) => {
         const amt = Number(entry.amount) || 0;
         if (entry.type === 'income') totalIncome += amt;
         else if (entry.type === 'expense') totalExpense += amt;
+        else if (entry.type === 'profit_distribution') totalProfitDist += amt;
       });
 
-      const closingBalance = openingBalance + totalIncome - totalExpense;
-      const reportText = `📊 *تقرير الخزنة اليومي* 📊\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📅 *التاريخ:* ${targetDate}\n\n💰 *رصيد افتتاح الخزنة:* ${openingBalance.toLocaleString()} ج.م\n💸 *مصاريف اليوم:* ${totalExpense.toLocaleString()} ج.م\n📈 *أرباح اليوم:* ${totalIncome.toLocaleString()} ج.م\n✅ *رصيد ختامي:* ${closingBalance.toLocaleString()} ج.م\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📞 للاستفسار: 01278885772\n✨ نظام إدارة الصيانة - تقرير يومي`;
+      // 3. الرصيد الختامي (نفس معادلة الخزنة الأساسية)
+      const closingBalance = openingBalance + totalIncome - totalExpense - totalProfitDist;
+
+      // 4. بناء نص التقرير
+      const reportText = `📊 *تقرير الخزنة اليومي* 📊\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📅 *التاريخ:* ${targetDate}\n\n💰 *رصيد افتتاح الخزنة:* ${openingBalance.toLocaleString()} ج.م\n💸 *مصاريف اليوم:* ${totalExpense.toLocaleString()} ج.م\n📈 *أرباح اليوم:* ${totalIncome.toLocaleString()} ج.م\n📤 *توزيعات الأرباح:* ${totalProfitDist.toLocaleString()} ج.م\n✅ *رصيد ختامي:* ${closingBalance.toLocaleString()} ج.م\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📞 للاستفسار: 01278885772\n✨ نظام إدارة الصيانة - تقرير يومي`;
 
       const activePartners = partners.filter(p => p.is_active && p.phone);
       if (activePartners.length === 0) {
         alert("⚠️ لا يوجد شركاء نشطون بأرقام هواتف");
         return;
       }
+
       const userChoice = confirm(`📋 التقرير جاهز للإرسال ليوم ${targetDate}.\n\n${reportText}\n\nهل تريد فتح واتساب لإرسال التقرير لكل شريك على حدة؟`);
       if (!userChoice) return;
 
@@ -455,6 +461,7 @@ export default function ProtectedOrders() {
     await distributeProfitForDate(selectedProfitDate);
   };
 
+  // ========== دالة fetchData الآمنة ==========
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
