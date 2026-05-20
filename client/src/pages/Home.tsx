@@ -29,7 +29,7 @@ export default function Home() {
     <div className="min-h-screen flex flex-col bg-white overflow-x-hidden">
       <Header />
 
-      {/* HERO SECTION - GOOGLE ADS OPTIMIZED */}
+      {/* HERO SECTION */}
       <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-slate-900">
         <div className="absolute inset-0 z-0">
           <img
@@ -118,50 +118,52 @@ export default function Home() {
         </div>
       </div>
 
-      {/* BOOKING FORM SECTION */}
-      <section id="contact" className="py-20 bg-slate-50">
+      {/* BOOKING FORM SECTION - تم توسيعه وجعله أكثر وضوحاً */}
+      <section id="contact" className="py-24 bg-gradient-to-br from-slate-50 to-white">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
-            <div>
-              <h2 className="text-4xl font-black text-slate-900 mb-6">اطلب الخدمة الآن</h2>
-              <p className="text-lg text-slate-600 mb-10 leading-relaxed font-medium">
+            {/* النصوص الجانبية */}
+            <div className="text-center lg:text-right">
+              <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-6">اطلب الخدمة الآن</h2>
+              <p className="text-lg md:text-xl text-slate-600 mb-12 leading-relaxed max-w-lg mx-auto lg:mx-0">
                 املأ النموذج وسيقوم فريقنا بالتواصل معك خلال دقائق لتحديد موعد الزيارة المنزلية. نضمن لك أفضل سعر وأعلى جودة في الإسكندرية.
               </p>
               
-              <div className="space-y-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-6 h-6 text-orange-600" />
+              <div className="space-y-8 max-w-md mx-auto lg:mx-0">
+                <div className="flex items-center gap-5 p-4 bg-white rounded-2xl shadow-md border border-slate-100">
+                  <div className="w-14 h-14 bg-orange-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                    <MapPin className="w-7 h-7 text-orange-600" />
                   </div>
-                  <div>
-                    <h4 className="font-black text-slate-900">نغطي كافة مناطق الإسكندرية</h4>
+                  <div className="text-right">
+                    <h4 className="font-black text-slate-900 text-lg">نغطي كافة مناطق الإسكندرية</h4>
                     <p className="text-slate-500">سموحة، سيدي جابر، لوران، العجمي، السيوف، المنتزه، وكافة المناطق.</p>
                   </div>
                 </div>
                 
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center flex-shrink-0">
-                    <Clock className="w-6 h-6 text-green-600" />
+                <div className="flex items-center gap-5 p-4 bg-white rounded-2xl shadow-md border border-slate-100">
+                  <div className="w-14 h-14 bg-green-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                    <Clock className="w-7 h-7 text-green-600" />
                   </div>
-                  <div>
-                    <h4 className="font-black text-slate-900">مواعيد دقيقة واحترافية</h4>
+                  <div className="text-right">
+                    <h4 className="font-black text-slate-900 text-lg">مواعيد دقيقة واحترافية</h4>
                     <p className="text-slate-500">نحترم وقتك ونلتزم بالمواعيد المحددة بدقة تامة.</p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center flex-shrink-0">
-                    <Settings className="w-6 h-6 text-blue-600" />
+                <div className="flex items-center gap-5 p-4 bg-white rounded-2xl shadow-md border border-slate-100">
+                  <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                    <Settings className="w-7 h-7 text-blue-600" />
                   </div>
-                  <div>
-                    <h4 className="font-black text-slate-900">أحدث أجهزة الفحص</h4>
+                  <div className="text-right">
+                    <h4 className="font-black text-slate-900 text-lg">أحدث أجهزة الفحص</h4>
                     <p className="text-slate-500">نستخدم أجهزة فحص إلكترونية حديثة لتحديد العطل بدقة دون تخمين.</p>
                   </div>
                 </div>
               </div>
             </div>
             
-            <div className="bg-white p-2 rounded-[2.5rem] shadow-2xl border border-slate-100">
+            {/* النموذج - موسع وبارز */}
+            <div className="bg-white p-4 md:p-6 rounded-3xl shadow-2xl border border-slate-100 max-w-2xl mx-auto w-full">
               <BookingForm />
             </div>
           </div>
