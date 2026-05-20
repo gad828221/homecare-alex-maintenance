@@ -8,7 +8,6 @@ import {
   Phone, MessageCircle, CheckCircle, Award, Truck, 
   Settings, Heart, MapPin, Sparkles 
 } from "lucide-react";
-import { useState } from "react";
 
 export default function Home() {
   const services = [
@@ -94,7 +93,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* QUICK STATS / TRUST SIGNALS */}
+      {/* إحصائيات سريعة */}
       <div className="bg-orange-600 py-6 relative z-20 -mt-8 mx-4 md:mx-auto max-w-6xl rounded-3xl shadow-2xl">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center divide-x divide-x-reverse divide-orange-500/50">
@@ -118,11 +117,10 @@ export default function Home() {
         </div>
       </div>
 
-      {/* BOOKING FORM SECTION - تم توسيعه وجعله أكثر وضوحاً */}
+      {/* قسم النموذج البارز */}
       <section id="contact" className="py-24 bg-gradient-to-br from-slate-50 to-white">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
-            {/* النصوص الجانبية */}
             <div className="text-center lg:text-right">
               <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-6">اطلب الخدمة الآن</h2>
               <p className="text-lg md:text-xl text-slate-600 mb-12 leading-relaxed max-w-lg mx-auto lg:mx-0">
@@ -162,7 +160,6 @@ export default function Home() {
               </div>
             </div>
             
-            {/* النموذج - موسع وبارز */}
             <div className="bg-white p-4 md:p-6 rounded-3xl shadow-2xl border border-slate-100 max-w-2xl mx-auto w-full">
               <BookingForm />
             </div>
@@ -170,7 +167,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* BRANDS SLIDER / LOGOS */}
+      {/* الشعارات / الماركات */}
       <section className="py-16 bg-white border-y border-slate-100 overflow-hidden">
         <div className="container mx-auto px-4 mb-10 text-center">
           <h3 className="text-2xl font-black text-slate-400 uppercase tracking-widest">نحن خبراء صيانة كافة الماركات</h3>
@@ -182,14 +179,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FEATURES SECTION */}
+      {/* المميزات */}
       <section className="py-24 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-20">
             <h2 className="text-5xl font-black text-slate-900 mb-6">لماذا يثق بنا الآلاف؟</h2>
             <div className="w-24 h-2 bg-orange-500 mx-auto rounded-full"></div>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
               <Card key={index} className="p-8 hover:shadow-2xl transition-all border-none bg-slate-50 rounded-3xl group">
@@ -204,30 +200,20 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SERVICES GRID */}
+      {/* الخدمات */}
       <section className="py-24 bg-slate-900 text-white rounded-[3rem] md:rounded-[5rem] mx-2 md:mx-6 my-10">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
             <div className="max-w-2xl">
               <h2 className="text-5xl font-black mb-6">خدماتنا المتخصصة</h2>
-              <p className="text-slate-400 text-xl font-medium leading-relaxed">
-                نقدم حلولاً هندسية متكاملة لصيانة وإصلاح كافة الأجهزة المنزلية بأحدث التقنيات العالمية.
-              </p>
+              <p className="text-slate-400 text-xl font-medium leading-relaxed">نقدم حلولاً هندسية متكاملة لصيانة وإصلاح كافة الأجهزة المنزلية بأحدث التقنيات العالمية.</p>
             </div>
-            <Button 
-              className="bg-orange-600 hover:bg-orange-700 text-white font-black px-8 py-6 rounded-2xl"
-              onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
-            >
-              اطلب فني الآن
-            </Button>
+            <Button className="bg-orange-600 hover:bg-orange-700 text-white font-black px-8 py-6 rounded-2xl" onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}>اطلب فني الآن</Button>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {services.map((service, index) => (
               <div key={index} className="bg-slate-800/50 p-8 rounded-3xl border border-slate-700 hover:border-orange-500 transition-all group">
-                <div className="w-14 h-14 bg-orange-500/10 rounded-xl flex items-center justify-center mb-6">
-                  <service.icon className="w-7 h-7 text-orange-500" />
-                </div>
+                <div className="w-14 h-14 bg-orange-500/10 rounded-xl flex items-center justify-center mb-6"><service.icon className="w-7 h-7 text-orange-500" /></div>
                 <h3 className="text-2xl font-black mb-4">{service.title}</h3>
                 <p className="text-slate-400 font-medium mb-6">{service.description}</p>
                 <div className="h-1 w-0 bg-orange-500 group-hover:w-full transition-all duration-500"></div>
