@@ -66,18 +66,17 @@ export default function BookingForm() {
           brand: "",
           problem_description: "",
         });
-        // إشعار للمدير
+        // إشعار للمدير عبر Netlify Function
         try {
-          await fetch('/.netlify/functions/send-push', {
+          await fetch('/.netlify/functions/send-notification', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               title: '📋 أوردر جديد من الموقع',
-              message: `عميل جديد: ${formData.customer_name} - جهاز: ${finalDeviceType}`,
-              tags: true
+              message: `عميل جديد: ${formData.customer_name}\nالجهاز: ${finalDeviceType}\nالعنوان: ${formData.address}\nالرقم: ${orderNumber}`
             })
           });
-        } catch (err) { console.error('Push Error:', err); }
+        } catch (err) { console.error('Notification Error:', err); }
         const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(`أوردر جديد: ${orderNumber}\nالاسم: ${formData.customer_name}\nالجهاز: ${finalDeviceType}\nالعنوان: ${formData.address}`)}`;
         window.open(whatsappUrl, "_blank");
       } else {
