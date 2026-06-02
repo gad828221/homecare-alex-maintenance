@@ -30,6 +30,12 @@ export default function Login() {
         const data = await res.json();
         if (data && data.length > 0 && data[0].password === password) {
           const user = data[0];
+          // فحص أماني: منع الفنيين من الدخول كمدير
+          if (user.role === 'tech') {
+            setError('❌ لا يمكن للفنيين الدخول كمدير. يرجى التواصل مع الإدارة.');
+            setLoading(false);
+            return;
+          }
           if (user.is_active === false) {
             setError('❌ الحساب غير نشط. يرجى التواصل مع الإدارة.');
             setLoading(false);
