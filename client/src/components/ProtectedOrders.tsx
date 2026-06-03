@@ -1155,8 +1155,8 @@ export default function ProtectedOrders() {
                       {order.status === 'in-progress' && canEditDelete() && (<button onClick={() => { setSelectedOrder(order); setSettleForm({ total_amount: order.total_amount || 0, parts_cost: order.parts_cost || 0, transport_cost: order.transport_cost || 0, net_amount: order.net_amount || 0, technician_share: order.technician_share || 0, company_share: order.company_share || 0 }); setShowSettleModal(true); }} className="mt-2 w-full bg-orange-600 hover:bg-orange-700 text-white py-1 rounded-lg text-sm font-bold">تصفية الأوردر</button>)}
                       {(order.status === 'pending' || order.status === 'in-progress' || order.status === 'inspected') && (
                         <div className="flex gap-2 mt-2">
-                          <button onClick={() => window.open(`/pickup-receipt?id=${order.id}`, '_blank')} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-1 rounded-lg text-sm font-bold">📋 فتح الإيصال</button>
-                          <button onClick={() => sendWhatsApp(order.phone, `📋 إيصال سحب الجهاز\n\nالعميل: ${order.customer_name}\nالجهاز: ${order.device_type}\nالرابط: ${window.location.origin}/pickup-receipt?id=${order.id}`)} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-1 rounded-lg text-sm font-bold">📱 إرسال واتساب</button>
+                          <button onClick={() => window.open(`/receipt/${order.id}`, '_blank')} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-1 rounded-lg text-sm font-bold">📋 فتح الإيصال</button>
+                          <button onClick={() => sendWhatsApp(order.phone, `📋 إيصال سحب الجهاز\n\nالعميل: ${order.customer_name}\nالجهاز: ${order.device_type}\nالرابط: ${window.location.origin}/receipt/${order.id}`)} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-1 rounded-lg text-sm font-bold">📱 إرسال واتساب</button>
                         </div>
                       )}
                       {order.status === 'completed' && (

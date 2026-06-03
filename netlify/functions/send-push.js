@@ -1,6 +1,4 @@
-const axios = require('axios');
-
-exports.handler = async (event, context) => {
+export const handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
@@ -34,19 +32,23 @@ exports.handler = async (event, context) => {
       notificationData.include_external_user_ids = external_ids;
     }
 
-    const response = await axios.post('https://onesignal.com/api/v1/notifications', notificationData, {
+    const response = await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Basic ${ONESIGNAL_REST_API_KEY}`
-      }
+      },
+      body: JSON.stringify(notificationData)
     });
+
+    const data = await response.json();
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true, data: response.data })
+      body: JSON.stringify({ success: true, data })
     };
   } catch (error) {
-    console.error('OneSignal Error:', error.response ? error.response.data : error.message);
+    console.error('OneSignal Error:', error.message);
     return {
       statusCode: 500,
       body: JSON.stringify({ success: false, error: error.message })

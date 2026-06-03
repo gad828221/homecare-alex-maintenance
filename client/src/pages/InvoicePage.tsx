@@ -1,363 +1,315 @@
-import { useState, useEffect, useRef } from "react";
-import jsPDF from "jspdf";
-import { Download, Printer, Send, Copy, Check, Link } from "lucide-react";
+import { useEffect, useState, useRef } from 'react';
+import { useLocation } from 'wouter';
+import { supabase } from '@/lib/supabase';
+import { Download, Printer, Send, Copy, Check, Link, Home, Phone, ArrowRight } from 'lucide-react';
+import { invoiceDownloadService } from '@/services/invoiceDownloadService';
 
-const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
-
-export default function InvoicePageNew() {
+export default function InvoicePage() {
+  const [location] = useLocation();
+  const searchParams = new URLSearchParams(window.location.search);
+  const orderId = searchParams.get('id');
   const [invoice, setInvoice] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const orderId = params.get("id");
-    if (!orderId) {
-      setError("رقم الأوردر غير موجود");
-      setLoading(false);
-      return;
-    }
+    async function fetchInvoice() {
+      if (!orderId) {
+        setLoading(false);
+        return;
+      }
 
-    const fetchInvoice = async () => {
       try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${orderId}`, {
-          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
-        });
-        const data = await response.json();
-        if (data && data.length > 0) {
-          setInvoice(data[0]);
-        } else {
-          setError("الفاتورة غير موجودة");
-        }
+        const { data, error } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('id', orderId)
+          .single();
+
+        if (error) throw error;
+        setInvoice(data);
       } catch (err) {
-        console.error(err);
-        setError("حدث خطأ في الاتصال بقاعدة البيانات");
+        console.error('Error fetching invoice:', err);
       } finally {
         setLoading(false);
       }
-    };
+    }
+
     fetchInvoice();
-  }, []);
-
-  const formatPhoneForWhatsApp = (phone: string) => {
-    if (!phone) return '';
-    let cleaned = phone.toString().replace(/[^\d]/g, '');
-    if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
-    if (cleaned.length === 10) cleaned = '20' + cleaned;
-    return cleaned;
-  };
-
-  const calculateWarrantyEndDate = (warrantyPeriod: string) => {
-    const orderDate = new Date(invoice?.created_at || new Date());
-    let months = 6;
-    
-    if (warrantyPeriod?.includes('سنة')) months = 12;
-    else if (warrantyPeriod?.includes('شهر')) {
-      const match = warrantyPeriod.match(/(\d+)/);
-      if (match) months = parseInt(match[1]);
-    }
-    
-    const endDate = new Date(orderDate);
-    endDate.setMonth(endDate.getMonth() + months);
-    return endDate;
-  };
-
-  const getWarrantyRemaining = () => {
-    const endDate = calculateWarrantyEndDate(invoice?.warranty_period);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
-
-    if (today > end) return "انتهى الضمان";
-
-    let months = (end.getFullYear() - today.getFullYear()) * 12;
-    months += end.getMonth() - today.getMonth();
-    let days = end.getDate() - today.getDate();
-
-    if (days < 0) {
-        months--;
-        const prevMonthDate = new Date(end.getFullYear(), end.getMonth(), 0);
-        days = prevMonthDate.getDate() + days;
-    }
-
-    if (months === 0 && days === 0) return "ينتهي اليوم";
-    if (months === 0) return `${days} يوم`;
-    if (days === 0) return `${months} شهر`;
-    return `${months} شهر و ${days} يوم`;
-  };
+  }, [orderId]);
 
   const downloadPDF = async () => {
-    if (!invoiceRef.current) return;
-    try {
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      let yPosition = 10;
-
-      pdf.setFillColor(230, 100, 50);
-      pdf.rect(0, 0, pageWidth, 35, "F");
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(20);
-      pdf.text("🔧 Maintenance Guide", pageWidth / 2, 12, { align: "center" });
-      pdf.setFontSize(12);
-      pdf.text("فاتورة صيانة وضمان الأجهزة المنزلية", pageWidth / 2, 22, { align: "center" });
-      pdf.setFontSize(10);
-      pdf.text("خدمة صيانة 24 ساعة بالمنزل | 01278885772 | 01558625259", pageWidth / 2, 30, { align: "center" });
-      yPosition = 40;
-
-      pdf.setTextColor(0, 0, 0);
-      pdf.setFontSize(14);
-      pdf.setFont(undefined, "bold");
-      pdf.text("📄 فاتورة الصيانة والضمان", pageWidth / 2, yPosition, { align: "center" });
-      yPosition += 8;
-
-      pdf.setFontSize(10);
-      pdf.setFont(undefined, "normal");
-      pdf.text(`رقم الفاتورة: ${invoice?.order_number || invoice?.id}`, 15, yPosition);
-      pdf.text(`التاريخ: ${new Date(invoice?.created_at || new Date()).toLocaleDateString('ar-EG')}`, pageWidth - 15, yPosition, { align: "right" });
-      yPosition += 10;
-
-      pdf.setFont(undefined, "bold");
-      pdf.text("👤 بيانات العميل", 15, yPosition);
-      yPosition += 7;
-      pdf.setFont(undefined, "normal");
-      pdf.text(`الاسم: ${invoice?.customer_name || '-'}`, 20, yPosition);
-      yPosition += 5;
-      pdf.text(`الهاتف: ${invoice?.phone || '-'}`, 20, yPosition);
-      yPosition += 5;
-      pdf.text(`العنوان: ${invoice?.address || '-'}`, 20, yPosition);
-      yPosition += 10;
-
-      pdf.setFont(undefined, "bold");
-      pdf.text("🔧 تفاصيل الخدمة", 15, yPosition);
-      yPosition += 7;
-      pdf.setFont(undefined, "normal");
-      pdf.text(`الجهاز: ${invoice?.device_type || invoice?.device || '-'} - ${invoice?.brand || '-'}`, 20, yPosition);
-      yPosition += 5;
-      pdf.text(`المشكلة: ${invoice?.problem_description || invoice?.problem || '-'}`, 20, yPosition);
-      yPosition += 5;
-      pdf.text(`قطع الغيار: ${invoice?.parts_used || 'لا توجد'}`, 20, yPosition);
-      yPosition += 10;
-
-      pdf.setFont(undefined, "bold");
-      pdf.text("💰 المبلغ والضمان", 15, yPosition);
-      yPosition += 7;
-      pdf.setFont(undefined, "normal");
-      pdf.text(`المبلغ الإجمالي: ${invoice?.total_amount || 0} ج.م`, 20, yPosition);
-      yPosition += 5;
-      pdf.text(`فترة الضمان: 🛡️ ${invoice?.warranty_period || '6 أشهر'}`, 20, yPosition);
-      yPosition += 5;
-      pdf.text(`تاريخ انتهاء الضمان: ${calculateWarrantyEndDate(invoice?.warranty_period).toLocaleDateString('ar-EG')}`, 20, yPosition);
-      yPosition += 5;
-      pdf.text(`المتبقي من الضمان: ${getWarrantyRemaining()}`, 20, yPosition);
-      yPosition += 10;
-
-      pdf.setFont(undefined, "bold");
-      pdf.text("📋 شروط الضمان", 15, yPosition);
-      yPosition += 7;
-      pdf.setFont(undefined, "normal");
-      const warrantyTerms = [
-        "الضمان يغطي جميع الأعطال المفاجئة والعيوب الصناعية",
-        "الضمان لا يغطي الأعطال الناتجة عن الاستخدام الخاطئ",
-        "خدمة الصيانة متاحة 24 ساعة طوال أيام الأسبوع",
-        "يرجى الاتصال بنا فوراً عند ظهور أي مشكلة"
-      ];
-      warrantyTerms.forEach(term => {
-        pdf.text(`• ${term}`, 20, yPosition);
-        yPosition += 5;
-      });
-      yPosition += 5;
-
-      pdf.setFont(undefined, "bold");
-      pdf.text("✨ شكراً لثقتك بنا ✨", pageWidth / 2, yPosition, { align: "center" });
-      yPosition += 7;
-      pdf.setFont(undefined, "normal");
-      pdf.text("للاستفسار والدعم الفني: 01278885772", pageWidth / 2, yPosition, { align: "center" });
-      yPosition += 5;
-      pdf.text("خدمة صيانة 24 ساعة بالمنزل - Maintenance Guide", pageWidth / 2, yPosition, { align: "center" });
-
-      pdf.save(`فاتورة_${invoice?.order_number || "order"}.pdf`);
-    } catch (err) {
-      alert("❌ حدث خطأ في تحميل PDF");
-    }
+    if (!invoice) return;
+    await invoiceDownloadService.downloadPDF(invoice, invoice.order_number || orderId);
   };
 
-  // ✅ تعديل دالة إرسال الواتساب: إرسال رابط فقط قابل للنسخ
+  const downloadAsImage = async () => {
+    if (!invoice || !invoiceRef.current) return;
+    await invoiceDownloadService.downloadAsImage(invoiceRef.current, invoice.order_number || orderId);
+  };
+
   const sendViaWhatsApp = () => {
-    if (!invoice.phone) {
-      alert("❌ رقم الهاتف غير موجود");
-      return;
-    }
-
-    const receiptUrl = window.location.href;
-    const message = `📄 *فاتورة الصيانة والضمان - Maintenance Guide*\n\n🔗 رابط الفاتورة:\n${receiptUrl}\n\n✨ شكراً لثقتك بنا`;
-
-    const phone = formatPhoneForWhatsApp(invoice.phone);
-    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    if (!invoice) return;
+    const currentUrl = window.location.href;
+    invoiceDownloadService.shareViaWhatsApp(
+      invoice.phone,
+      currentUrl,
+      invoice.customer_name,
+      invoice.order_number || orderId
+    );
   };
 
-  // نسخ نص الفاتورة (كما هو)
-  const copyToClipboard = async () => {
-    if (!invoiceRef.current) return;
-    try {
-      const text = invoiceRef.current.innerText;
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      alert("فشل نسخ الفاتورة");
-    }
+  const copyToClipboard = () => {
+    if (!invoice) return;
+    const text = `📄 فاتورة صيانة - Maintenance Guide\n👤 العميل: ${invoice.customer_name}\n🔢 رقم الفاتورة: ${invoice.order_number || orderId}\n💰 المبلغ: ${invoice.total_amount} ج.م\n🛡️ الضمان: ${invoice.warranty_period || '6 أشهر'}\n📞 للاستفسار: 01278885772`;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  // نسخ رابط الصفحة
   const copyLinkToClipboard = () => {
     navigator.clipboard.writeText(window.location.href);
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 2000);
   };
 
-  if (loading) return <div className="p-8 text-center">جاري تحميل الفاتورة...</div>;
-  if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
-  if (!invoice) return <div className="p-8 text-center">لا توجد بيانات</div>;
+  const calculateWarrantyEndDate = (period: string) => {
+    const months = parseInt(period) || 6;
+    const date = new Date(invoice?.created_at || new Date());
+    date.setMonth(date.getMonth() + months);
+    return date;
+  };
+
+  const getWarrantyRemaining = () => {
+    if (!invoice) return '';
+    const end = calculateWarrantyEndDate(invoice.warranty_period);
+    const now = new Date();
+    const diffTime = end.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) return 'منتهي';
+    if (diffDays < 30) return `${diffDays} يوم`;
+    const months = Math.floor(diffDays / 30);
+    return `${months} شهر و ${diffDays % 30} يوم`;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
+        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-slate-600 font-bold">جاري تحميل الفاتورة...</p>
+      </div>
+    );
+  }
+
+  if (!invoice) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4 text-center">
+        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-slate-800 mb-2">الفاتورة غير موجودة</h2>
+          <p className="text-slate-600 mb-6">عذراً، لم نتمكن من العثور على بيانات هذه الفاتورة. يرجى التأكد من الرابط أو التواصل مع الدعم الفني.</p>
+          <a href="/" className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all">
+            <Home className="w-5 h-5" /> العودة للرئيسية
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4 md:p-8" dir="rtl">
-      <div className="max-w-4xl mx-auto">
-        <div ref={invoiceRef} className="bg-white rounded-3xl shadow-2xl overflow-hidden" style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}>
-          
-          <div className="bg-gradient-to-r from-orange-600 via-red-600 to-orange-700 p-8 text-white text-center relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20"></div>
-            <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/10 rounded-full -ml-20 -mb-20"></div>
-            <div className="relative z-10">
-              <h1 className="text-4xl font-bold mb-2">🔧 Maintenance Guide</h1>
-              <p className="text-orange-100 text-lg mb-1">فاتورة صيانة وضمان الأجهزة المنزلية</p>
-              <p className="text-orange-100 text-sm mb-4">خدمة صيانة 24 ساعة بالمنزل</p>
-              <div className="flex justify-center gap-8 mt-4 text-sm border-t border-orange-400 pt-4">
-                <span className="flex items-center gap-1">📞 01278885772</span>
-                <span className="flex items-center gap-1">📲 01558625259</span>
-                <span className="flex items-center gap-1">📍 الإسكندرية</span>
-              </div>
+    <div className="min-h-screen bg-slate-100 py-8 px-4 sm:px-6 lg:px-8 font-arabic" dir="rtl">
+      <div className="max-w-3xl mx-auto">
+        {/* شريط علوي */}
+        <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-600 p-2 rounded-lg text-white">
+              <Phone className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">للمساعدة اتصل بنا</p>
+              <p className="font-bold text-slate-800">01278885772</p>
             </div>
           </div>
-          
-          <div className="text-center py-8 border-b-4 border-orange-200 bg-gradient-to-b from-orange-50 to-white">
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">📄 فاتورة الصيانة والضمان</h2>
-            <div className="flex justify-center gap-12 text-sm text-gray-700 mt-4">
-              <div className="bg-orange-100 px-4 py-2 rounded-lg">
-                <span className="text-gray-600">رقم الفاتورة:</span>
-                <p className="font-bold text-orange-600 text-lg">{invoice.order_number || invoice.id}</p>
-              </div>
-                <div className="bg-blue-100 px-4 py-2 rounded-lg">
-                <span className="text-gray-600">التاريخ:</span>
-                <p className="font-bold text-blue-600">{new Date(invoice?.created_at || new Date()).toLocaleDateString('ar-EG')}</p>
-              </div>
+          <a href="/" className="text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1 text-sm">
+            الرئيسية <ArrowRight className="w-4 h-4 rotate-180" />
+          </a>
+        </div>
+
+        {/* جسم الفاتورة */}
+        <div ref={invoiceRef} className="bg-white shadow-2xl rounded-3xl overflow-hidden border border-slate-200">
+          {/* رأس الفاتورة */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-8 text-white text-center relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-400/20 rounded-full -ml-12 -mb-12 blur-xl"></div>
+            
+            <h1 className="text-3xl font-black mb-2 tracking-tight">MAINTENANCE GUIDE</h1>
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <div className="h-px w-8 bg-blue-300"></div>
+              <p className="text-blue-100 font-bold text-sm">فاتورة صيانة وضمان معتمدة</p>
+              <div className="h-px w-8 bg-blue-300"></div>
+            </div>
+            
+            <div className="bg-white/20 backdrop-blur-sm inline-block px-4 py-1 rounded-full text-xs font-bold border border-white/30">
+              رقم الفاتورة: {invoice.order_number || orderId}
             </div>
           </div>
-          
-          <div className="p-8 space-y-6">
-            <div className="border-r-4 border-orange-500 bg-gradient-to-l from-orange-50 to-white p-4 rounded-lg">
-              <h3 className="font-bold text-orange-700 mb-3 text-lg">👤 بيانات العميل</h3>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="bg-white p-2 rounded">
-                  <span className="text-gray-500 text-xs">الاسم</span>
-                  <p className="font-bold text-gray-800">{invoice.customer_name}</p>
+
+          <div className="p-6 md:p-8 space-y-6">
+            {/* بيانات العميل */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <h3 className="text-blue-700 font-bold text-sm mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-blue-600 rounded-full"></span> بيانات العميل
+                </h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500 text-xs">الاسم:</span>
+                    <span className="font-bold text-slate-800">{invoice.customer_name}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500 text-xs">الهاتف:</span>
+                    <span className="font-bold text-slate-800" dir="ltr">{invoice.phone}</span>
+                  </div>
+                  <div className="flex justify-between items-start">
+                    <span className="text-slate-500 text-xs">العنوان:</span>
+                    <span className="font-bold text-slate-800 text-left text-xs max-w-[180px]">{invoice.address || 'الإسكندرية'}</span>
+                  </div>
                 </div>
-                <div className="bg-white p-2 rounded">
-                  <span className="text-gray-500 text-xs">الهاتف</span>
-                  <p className="font-bold text-gray-800">{invoice.phone}</p>
-                </div>
-                <div className="col-span-2 bg-white p-2 rounded">
-                  <span className="text-gray-500 text-xs">العنوان</span>
-                  <p className="font-bold text-gray-800">{invoice.address || 'غير محدد'}</p>
+              </div>
+
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <h3 className="text-blue-700 font-bold text-sm mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-blue-600 rounded-full"></span> تفاصيل الجهاز
+                </h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500 text-xs">نوع الجهاز:</span>
+                    <span className="font-bold text-slate-800">{invoice.device_type || invoice.device}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500 text-xs">الماركة:</span>
+                    <span className="font-bold text-slate-800">{invoice.brand}</span>
+                  </div>
+                  <div className="flex justify-between items-start">
+                    <span className="text-slate-500 text-xs">العطل:</span>
+                    <span className="font-bold text-slate-800 text-left text-xs max-w-[180px]">{invoice.problem_description || invoice.problem}</span>
+                  </div>
                 </div>
               </div>
             </div>
-            
-            <div className="border-r-4 border-green-500 bg-gradient-to-l from-green-50 to-white p-4 rounded-lg">
-              <h3 className="font-bold text-green-700 mb-3 text-lg">🔧 تفاصيل الخدمة</h3>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="bg-white p-2 rounded">
-                  <span className="text-gray-500 text-xs">الجهاز</span>
-                  <p className="font-bold text-gray-800">{invoice.device_type || invoice.device}</p>
-                </div>
-                <div className="bg-white p-2 rounded">
-                  <span className="text-gray-500 text-xs">الماركة</span>
-                  <p className="font-bold text-gray-800">{invoice.brand}</p>
-                </div>
-                <div className="col-span-2 bg-white p-2 rounded">
-                  <span className="text-gray-500 text-xs">المشكلة</span>
-                  <p className="font-bold text-gray-800">{invoice.problem_description || invoice.problem || '-'}</p>
-                </div>
-                <div className="col-span-2 bg-white p-2 rounded">
-                  <span className="text-gray-500 text-xs">قطع الغيار المستخدمة</span>
-                  <p className="font-bold text-gray-800">{invoice.parts_used || 'لا توجد'}</p>
-                </div>
+
+            {/* قطع الغيار */}
+            <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
+              <h3 className="text-blue-700 font-bold text-sm mb-2 flex items-center gap-2">
+                <span className="w-2 h-2 bg-blue-600 rounded-full"></span> قطع الغيار المستخدمة
+              </h3>
+              <p className="text-slate-700 font-bold text-sm">{invoice.parts_used || 'تمت الصيانة بدون قطع غيار خارجية'}</p>
+            </div>
+
+            {/* الحساب والضمان */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-green-50 p-5 rounded-2xl border border-green-100 text-center">
+                <span className="text-green-700 text-xs font-bold block mb-1">المبلغ الإجمالي</span>
+                <p className="text-3xl font-black text-green-600">{invoice.total_amount || 0} <span className="text-sm">ج.م</span></p>
+              </div>
+              <div className="bg-orange-50 p-5 rounded-2xl border border-orange-100 text-center">
+                <span className="text-orange-700 text-xs font-bold block mb-1">فترة الضمان</span>
+                <p className="text-2xl font-black text-orange-600">{invoice.warranty_period || '6 أشهر'}</p>
               </div>
             </div>
-            
-            <div className="border-r-4 border-blue-500 bg-gradient-to-l from-blue-50 to-white p-4 rounded-lg">
-              <h3 className="font-bold text-blue-700 mb-3 text-lg">💰 المبلغ والضمان</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white p-4 rounded-lg text-center">
-                  <span className="text-gray-500 text-xs block mb-1">المبلغ الإجمالي</span>
-                  <p className="text-3xl font-bold text-green-600">{invoice.total_amount || 0} ج.م</p>
+
+            {/* الضمان */}
+            <div className="bg-slate-900 text-white p-5 rounded-2xl shadow-lg relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-purple-500"></div>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold text-blue-400 flex items-center gap-2">
+                  🛡️ تفاصيل الضمان
+                </h3>
+                <span className="bg-blue-500/20 text-blue-300 text-[10px] px-2 py-0.5 rounded-full border border-blue-500/30">معتمد</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p className="text-slate-400 text-[10px] mb-1">تاريخ الانتهاء</p>
+                  <p className="font-bold text-sm">{calculateWarrantyEndDate(invoice.warranty_period).toLocaleDateString('ar-EG')}</p>
                 </div>
-                <div className="bg-white p-4 rounded-lg text-center">
-                  <span className="text-gray-500 text-xs block mb-1">فترة الضمان</span>
-                  <p className="text-2xl font-bold text-blue-600">🛡️ {invoice.warranty_period || '6 أشهر'}</p>
-                </div>
-                <div className="bg-white p-4 rounded-lg text-center col-span-2">
-                  <span className="text-gray-500 text-xs block mb-1">تاريخ انتهاء الضمان</span>
-                  <p className="text-xl font-bold text-red-600">{calculateWarrantyEndDate(invoice?.warranty_period).toLocaleDateString('ar-EG')}</p>
-                </div>
-                <div className="bg-white p-4 rounded-lg text-center col-span-2">
-                  <span className="text-gray-500 text-xs block mb-1">المتبقي من الضمان</span>
-                  <p className="text-xl font-bold text-purple-600">{getWarrantyRemaining()}</p>
+                <div>
+                  <p className="text-slate-400 text-[10px] mb-1">المتبقي</p>
+                  <p className="font-bold text-sm text-green-400">{getWarrantyRemaining()}</p>
                 </div>
               </div>
+              <div className="text-[10px] text-slate-400 space-y-1 border-t border-slate-800 pt-3">
+                <p>• الضمان يغطي جميع عيوب الصناعة وقطع الغيار المستبدلة.</p>
+                <p>• الضمان لا يغطي سوء الاستخدام أو الكسر أو الحريق.</p>
+              </div>
             </div>
-            
-            <div className="bg-gradient-to-l from-purple-50 to-white p-4 rounded-lg border-r-4 border-purple-500">
-              <h3 className="font-bold text-purple-700 mb-2 text-lg">📋 شروط الضمان</h3>
-              <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
-                <li>الضمان يغطي جميع الأعطال المفاجئة والعيوب الصناعية</li>
-                <li>الضمان لا يغطي الأعطال الناتجة عن الاستخدام الخاطئ</li>
-                <li>خدمة الصيانة متاحة 24 ساعة طوال أيام الأسبوع</li>
-                <li>يرجى الاتصال بنا فوراً عند ظهور أي مشكلة</li>
-              </ul>
-            </div>
-            
-            <div className="text-center pt-6 text-gray-600 text-sm border-t-2 border-gray-200">
-              <p className="font-bold mb-2">✨ شكراً لثقتك بنا ✨</p>
-              <p>للاستفسار والدعم الفني: 01278885772</p>
-              <p className="text-xs text-gray-500 mt-2">خدمة صيانة 24 ساعة بالمنزل - Maintenance Guide</p>
+
+            {/* التذييل */}
+            <div className="text-center pt-4">
+              <p className="text-slate-400 text-[10px] mb-2">تم إصدار هذه الفاتورة إلكترونياً وهي معتمدة لدى الشركة</p>
+              <div className="flex justify-center gap-8 text-slate-300 text-[10px]">
+                <div className="text-center">
+                  <div className="w-12 h-12 border border-slate-200 rounded-lg mx-auto mb-1 flex items-center justify-center text-slate-100 font-black opacity-20 italic text-xl">ختم</div>
+                  <span>الشركة</span>
+                </div>
+                <div className="text-center">
+                  <div className="w-12 h-12 border-b border-slate-200 mx-auto mb-1"></div>
+                  <span>الفني</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* أزرار الإجراءات */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-8 no-print">
+          <button onClick={downloadAsImage} className="flex flex-col items-center justify-center bg-white hover:bg-slate-50 p-4 rounded-2xl shadow-sm border border-slate-200 transition-all group">
+            <div className="bg-yellow-100 p-3 rounded-xl text-yellow-600 mb-2 group-hover:scale-110 transition-transform">
+              <Download className="w-6 h-6" />
+            </div>
+            <span className="text-xs font-bold text-slate-700">تحميل صورة</span>
+          </button>
+          
+          <button onClick={downloadPDF} className="flex flex-col items-center justify-center bg-white hover:bg-slate-50 p-4 rounded-2xl shadow-sm border border-slate-200 transition-all group">
+            <div className="bg-orange-100 p-3 rounded-xl text-orange-600 mb-2 group-hover:scale-110 transition-transform">
+              <Download className="w-6 h-6" />
+            </div>
+            <span className="text-xs font-bold text-slate-700">تحميل PDF</span>
+          </button>
+
+          <button onClick={sendViaWhatsApp} className="flex flex-col items-center justify-center bg-white hover:bg-slate-50 p-4 rounded-2xl shadow-sm border border-slate-200 transition-all group">
+            <div className="bg-green-100 p-3 rounded-xl text-green-600 mb-2 group-hover:scale-110 transition-transform">
+              <Send className="w-6 h-6" />
+            </div>
+            <span className="text-xs font-bold text-slate-700">إرسال واتساب</span>
+          </button>
+
+          <button onClick={copyLinkToClipboard} className="flex flex-col items-center justify-center bg-white hover:bg-slate-50 p-4 rounded-2xl shadow-sm border border-slate-200 transition-all group">
+            <div className={`p-3 rounded-xl mb-2 group-hover:scale-110 transition-transform ${linkCopied ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-600'}`}>
+              {linkCopied ? <Check className="w-6 h-6" /> : <Link className="w-6 h-6" />}
+            </div>
+            <span className="text-xs font-bold text-slate-700">{linkCopied ? 'تم النسخ' : 'نسخ الرابط'}</span>
+          </button>
+        </div>
         
-        <div className="flex flex-wrap justify-center gap-3 mt-8">
-          <button onClick={downloadPDF} className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-all">
-            <Download className="w-5 h-5" /> تحميل PDF
-          </button>
-          <button onClick={() => window.print()} className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-all">
-            <Printer className="w-5 h-5" /> طباعة
-          </button>
-          <button onClick={sendViaWhatsApp} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-all">
-            <Send className="w-5 h-5" /> إرسال واتساب
-          </button>
-          <button onClick={copyToClipboard} className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-all">
-            {copied ? ( <><Check className="w-5 h-5" /> تم النسخ</> ) : ( <><Copy className="w-5 h-5" /> نسخ النص</> )}
-          </button>
-          <button onClick={copyLinkToClipboard} className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-all">
-            {linkCopied ? ( <><Check className="w-5 h-5" /> تم نسخ الرابط</> ) : ( <><Link className="w-5 h-5" /> نسخ الرابط</> )}
+        <div className="mt-6 text-center">
+          <button onClick={() => window.print()} className="text-slate-500 hover:text-slate-800 text-xs font-bold flex items-center gap-1 mx-auto">
+            <Printer className="w-4 h-4" /> طباعة الفاتورة يدوياً
           </button>
         </div>
       </div>
+      
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          body { background: white; padding: 0; }
+          .min-h-screen { min-h-0; padding: 0; }
+          .shadow-2xl { shadow: none; }
+          .rounded-3xl { border-radius: 0; }
+        }
+      `}</style>
     </div>
   );
 }
