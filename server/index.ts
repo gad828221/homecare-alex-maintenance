@@ -2,45 +2,45 @@ import express from "express";
 import { createServer } from "http";
 import path from "path";
 import { fileURLToPath } from "url";
+import { sendFCMNotification } from "./fcmService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const ONESIGNAL_APP_ID = "4e110360-2a24-4aa3-be39-050c0ed9a3e0";
-const ONESIGNAL_REST_API_KEY = "NDI3MjM0MDItYTY5OS00ODQyLTljYmItNmI5YmNlYmE1Zjg5";
-
-// دالة لإرسال إشعارات OneSignal من الخادم
-async function sendPushNotification(userIds: string[], title: string, message: string) {
+// دالة للحصول على جميع توكنات FCM للمديرين أو الفنيين
+async function getDeviceTokens(userIds: string[]) {
   try {
-    console.log(`[Server] Sending push notification to: ${userIds.join(", ")}`);
+    const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // Use env var
     
-    const response = await fetch("https://onesignal.com/api/v1/notifications", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": `Basic ${ONESIGNAL_REST_API_KEY}`
-      },
-      body: JSON.stringify({
-        app_id: ONESIGNAL_APP_ID,
-        include_external_user_ids: userIds,
-        headings: { en: title, ar: title },
-        contents: { en: message, ar: message },
-        android_accent_color: "FFEA580C",
-        small_icon: "ic_stat_onesignal_default",
-        ios_badgeType: "Increase",
-        ios_badgeCount: 1,
-        priority: 10,
-        android_priority: "high",
-        android_channel_id: "4e110360-2a24-4aa3-be39-050c0ed9a3e0",
-        big_picture: "https://maintenanceguide.life/logo.png",
-        android_big_picture: "https://maintenanceguide.life/logo.png",
-        send_after: Math.floor(Date.now() / 1000),
-      })
+    // البحث عن التوكنات في جدول device_tokens (سنقوم بإنشائه)
+    const res = await fetch(`${supabaseUrl}/rest/v1/device_tokens?user_id=in.(${userIds.join(',')})&select=token`, {
+      headers: { 
+        'apikey': supabaseKey, 
+        'Authorization': `Bearer ${supabaseKey}`
+      }
     });
     
-    const data = await response.json();
-    console.log("[Server] OneSignal response:", data);
-    return data;
+    const data = await res.json();
+    return data.map((d: any) => d.token);
+  } catch (error) {
+    console.error("[Server] Error getting device tokens:", error);
+    return [];
+  }
+}
+
+// دالة لإرسال إشعارات FCM من الخادم
+async function sendPushNotification(userIds: string[], title: string, message: string) {
+  try {
+    console.log(`[Server] Sending FCM notification to: ${userIds.join(", ")}`);
+    const tokens = await getDeviceTokens(userIds);
+    
+    if (tokens.length === 0) {
+      console.warn("[Server] No device tokens found for users:", userIds);
+      return { success: false, error: "No tokens" };
+    }
+
+    return await sendFCMNotification(tokens, title, message);
   } catch (error) {
     console.error("[Server] Error sending push notification:", error);
     throw error;

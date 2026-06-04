@@ -103,6 +103,29 @@ export default function ProtectedOrders() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'orders' | 'technicians' | 'reports' | 'invoicesReview' | 'cash' | 'partners' | 'notifications' | 'permissions' | 'performance'>('orders');
   const [showOrderModal, setShowOrderModal] = useState(false);
+  const [fcmToken, setFcmToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const setupFCM = async () => {
+      const token = await requestNotificationPermission();
+      if (token) {
+        setFcmToken(token);
+        // حفظ التوكن في Supabase
+        if (currentUser) {
+          await supabase.from('device_tokens').upsert({ 
+            user_id: currentUser.id, 
+            token: token,
+            updated_at: new Date().toISOString()
+          });
+        }
+      }
+    };
+    setupFCM();
+    
+    onMessageListener().then((payload: any) => {
+      console.log("إشعار جديد:", payload);
+    });
+  }, [currentUser]);
   const [showTechModal, setShowTechModal] = useState(false);
   const [showPartnerModal, setShowPartnerModal] = useState(false);
   const [showCashModal, setShowCashModal] = useState(false);
