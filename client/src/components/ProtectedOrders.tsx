@@ -7,6 +7,7 @@ import {
   RotateCcw
 } from "lucide-react";
 import { createClient } from '@supabase/supabase-js';
+import { requestNotificationPermission, onMessageListener } from "../utils/fcm";
 
 // ==================== الإعدادات الأساسية ====================
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
