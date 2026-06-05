@@ -8,6 +8,8 @@ import {
   Phone, MessageCircle, CheckCircle, Award, Truck, 
   Settings, Heart, MapPin, Sparkles 
 } from "lucide-react";
+import { useEffect } from "react";
+import { requestNotificationPermission, onForegroundMessage } from "../lib/firebase";
 
 export default function Home() {
   const services = [
@@ -23,6 +25,21 @@ export default function Home() {
     { icon: Users, title: "مهندسون خبراء", description: "طاقم فني متخصص ومدرب على أعلى مستوى من الاحترافية." },
     { icon: Shield, title: "قطع غيار أصلية", description: "نستخدم فقط قطع الغيار الأصلية لضمان كفاءة جهازك." },
   ];
+
+  // تفعيل الإشعارات الخارجية
+  useEffect(() => {
+    // نطلب الإذن بعد 3 ثوانٍ (لا نزعج المستخدم فوراً)
+    const timer = setTimeout(() => {
+      requestNotificationPermission().catch(console.error);
+    }, 3000);
+
+    // استقبال الإشعارات أثناء فتح التطبيق
+    onForegroundMessage((payload) => {
+      alert(`${payload.notification.title}\n${payload.notification.body}`);
+    });
+
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-white overflow-x-hidden">
