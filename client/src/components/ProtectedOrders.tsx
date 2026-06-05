@@ -104,28 +104,6 @@ export default function ProtectedOrders() {
   const [activeTab, setActiveTab] = useState<'orders' | 'technicians' | 'reports' | 'invoicesReview' | 'cash' | 'partners' | 'notifications' | 'permissions' | 'performance'>('orders');
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [fcmToken, setFcmToken] = useState<string | null>(null);
-
-  useEffect(() => {
-    const setupFCM = async () => {
-      const token = await requestNotificationPermission();
-      if (token) {
-        setFcmToken(token);
-        // حفظ التوكن في Supabase
-        if (currentUser) {
-          await supabase.from('device_tokens').upsert({ 
-            user_id: currentUser.id, 
-            token: token,
-            updated_at: new Date().toISOString()
-          });
-        }
-      }
-    };
-    setupFCM();
-    
-    onMessageListener().then((payload: any) => {
-      console.log("إشعار جديد:", payload);
-    });
-  }, [currentUser]);
   const [showTechModal, setShowTechModal] = useState(false);
   const [showPartnerModal, setShowPartnerModal] = useState(false);
   const [showCashModal, setShowCashModal] = useState(false);
@@ -163,6 +141,32 @@ export default function ProtectedOrders() {
   });
   const [stats, setStats] = useState({ pending: 0, inProgress: 0, completed: 0, cancelled: 0, totalIncome: 0 });
   const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    const setupFCM = async () => {
+      try {
+        const token = await requestNotificationPermission();
+        if (token) {
+          setFcmToken(token);
+          await supabase.from('device_tokens').upsert({ 
+            user_id: currentUser.id, 
+            token: token,
+            updated_at: new Date().toISOString()
+          });
+        }
+      } catch (err) {
+        console.error("FCM Setup Error:", err);
+      }
+    };
+    
+    setupFCM();
+    
+    onMessageListener().then((payload: any) => {
+      console.log("إشعار جديد:", payload);
+    }).catch(err => console.error("FCM Listener Error:", err));
+  }, [currentUser]);
   const [userRole, setUserRole] = useState<string>('');
   
   const [showSettleModal, setShowSettleModal] = useState(false);
