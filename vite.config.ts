@@ -3,15 +3,12 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import path from "node:path";
 import { defineConfig } from "vite";
-import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    jsxLocPlugin(),
-    vitePluginManusRuntime(),
-    // تم إزالة vitePluginManusDebugCollector لأنه يسبب خطأ في البناء
+    // jsxLocPlugin(), // معلق مؤقتاً لحل مشكلة الصفحة البيضاء
   ],
   resolve: {
     alias: {
@@ -29,7 +26,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         assetFileNames: (assetInfo) => {
-          // الحفاظ على اسم ملف Service Worker كما هو
           if (assetInfo.name === 'firebase-messaging-sw.js') {
             return 'firebase-messaging-sw.js';
           }
