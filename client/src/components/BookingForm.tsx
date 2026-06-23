@@ -73,9 +73,8 @@ export default function BookingForm() {
 
       if (response.ok) {
         setSubmitMessage("✅ تم استلام طلبك بنجاح! سنتواصل معك خلال 5 دقائق.");
-        setStep(4); // Success step
+        setStep(4);
         
-        // Notification to Admin
         try {
           await fetch('/.netlify/functions/send-notification', {
             method: 'POST',
@@ -101,7 +100,6 @@ export default function BookingForm() {
 
   return (
     <div className="bg-white rounded-[2.5rem] shadow-2xl p-6 md:p-10 border border-slate-100 w-full max-w-2xl mx-auto overflow-hidden" dir="rtl">
-      {/* Progress Bar */}
       {step < 4 && (
         <div className="mb-10">
           <div className="flex justify-between mb-4">
@@ -157,7 +155,7 @@ export default function BookingForm() {
                       setFormData({...formData, device_type: e.target.value}); 
                     } 
                   }} 
-                  className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg outline-none focus:border-orange-500 appearance-none transition-all"
+                  className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg text-slate-900 font-medium outline-none focus:border-orange-500 appearance-none transition-all"
                 >
                   <option value="">اختر الجهاز</option>
                   {DEVICE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
@@ -171,7 +169,7 @@ export default function BookingForm() {
                     required 
                     value={customDevice} 
                     onChange={e => setCustomDevice(e.target.value)} 
-                    className="w-full mt-3 bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg outline-none focus:border-orange-500" 
+                    className="w-full mt-3 bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg text-slate-900 font-medium outline-none focus:border-orange-500" 
                     placeholder="اكتب نوع الجهاز" 
                   />
                 )}
@@ -193,7 +191,7 @@ export default function BookingForm() {
                       setFormData({...formData, brand: e.target.value}); 
                     } 
                   }} 
-                  className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg outline-none focus:border-orange-500 appearance-none transition-all"
+                  className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg text-slate-900 font-medium outline-none focus:border-orange-500 appearance-none transition-all"
                 >
                   <option value="">اختر الماركة</option>
                   {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
@@ -207,7 +205,7 @@ export default function BookingForm() {
                     required 
                     value={customBrand} 
                     onChange={e => setCustomBrand(e.target.value)} 
-                    className="w-full mt-3 bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg outline-none focus:border-orange-500" 
+                    className="w-full mt-3 bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg text-slate-900 font-medium outline-none focus:border-orange-500" 
                     placeholder="اكتب الماركة" 
                   />
                 )}
@@ -247,7 +245,7 @@ export default function BookingForm() {
                     required 
                     value={formData.customer_name} 
                     onChange={e => setFormData({...formData, customer_name: e.target.value})} 
-                    className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg outline-none focus:border-orange-500 transition-all" 
+                    className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg text-slate-900 font-medium outline-none focus:border-orange-500 transition-all" 
                     placeholder="أحمد محمد" 
                   />
                 </div>
@@ -260,7 +258,7 @@ export default function BookingForm() {
                     required 
                     value={formData.phone} 
                     onChange={e => setFormData({...formData, phone: e.target.value})} 
-                    className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg outline-none focus:border-orange-500 transition-all text-left" 
+                    className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg text-slate-900 font-medium outline-none focus:border-orange-500 transition-all text-left" 
                     placeholder="01xxxxxxxxx" 
                   />
                 </div>
@@ -275,7 +273,7 @@ export default function BookingForm() {
                   required 
                   value={formData.address} 
                   onChange={e => setFormData({...formData, address: e.target.value})} 
-                  className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg outline-none focus:border-orange-500 transition-all" 
+                  className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg text-slate-900 font-medium outline-none focus:border-orange-500 transition-all" 
                   placeholder="مثال: سموحة - شارع فوزي معاذ" 
                 />
               </div>
@@ -331,7 +329,7 @@ export default function BookingForm() {
                   rows={4} 
                   value={formData.problem_description} 
                   onChange={e => setFormData({...formData, problem_description: e.target.value})} 
-                  className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg outline-none focus:border-orange-500 resize-none transition-all" 
+                  className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg text-slate-900 font-medium outline-none focus:border-orange-500 resize-none transition-all" 
                   placeholder="مثال: الجهاز لا يعمل، أو يصدر صوتاً عالياً..."
                 ></textarea>
               </div>
@@ -392,7 +390,6 @@ export default function BookingForm() {
         )}
       </AnimatePresence>
 
-      {/* Trust badges footer */}
       {step < 4 && (
         <div className="mt-10 flex flex-wrap justify-center gap-4 text-xs text-slate-400 font-bold border-t border-slate-50 pt-6">
           <span className="flex items-center gap-1"><Sparkles className="w-3 h-3 text-orange-400" /> ضمان شامل</span>
