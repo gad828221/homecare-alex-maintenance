@@ -83,20 +83,7 @@
     }
     </script>
 
-    <!-- OneSignal Push Notifications -->
-    <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async></script>
-    <script>
-      window.OneSignal = window.OneSignal || [];
-      OneSignal.push(function() {
-        OneSignal.init({
-          appId: "8e1f2b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
-          allowLocalhostAsSecureOrigin: true,
-          serviceWorkerPath: "/OneSignalSDKWorker.js",
-          serviceWorkerUpdaterPath: "/OneSignalSDKUpdaterWorker.js"
-        });
-        OneSignal.showSlidedownPrompt();
-      });
-    </script>
+
   </head>
   <body>
     <div id="root"></div>
