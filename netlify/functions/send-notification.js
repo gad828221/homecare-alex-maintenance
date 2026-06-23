@@ -23,12 +23,8 @@ export const handler = async (event) => {
       big_picture: 'https://maintenanceguide.life/logo.png',
       ios_badgeType: 'Increase',
       ios_badgeCount: 1,
-      android_channel_id: 'default',
-      android_priority: 'high',
-      ios_sound: 'default',
-      android_sound: 'default',
-      android_accent_color: 'FF6B35',
-      included_segments: ['All']
+      ...(userId && { include_external_user_ids: [userId] }),
+      ...(!userId && { included_segments: ['All'] })
     };
 
     const response = await fetch('https://onesignal.com/api/v1/notifications', {
