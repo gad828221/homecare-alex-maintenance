@@ -6,11 +6,12 @@ import BookingForm from "@/components/BookingForm";
 import { 
   Zap, Droplet, Wind, Flame, Star, Clock, Shield, Users, 
   Phone, MessageCircle, CheckCircle, Award, Truck, 
-  Settings, Heart, MapPin, Sparkles, ChevronDown, ShieldCheck, Headphones
+  Settings, Heart, MapPin, Sparkles, ChevronDown, ShieldCheck, Headphones,
+  Calendar
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { requestNotificationPermission, onForegroundMessage } from "../lib/firebase";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Home() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
