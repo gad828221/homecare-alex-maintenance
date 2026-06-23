@@ -3,12 +3,14 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import path from "node:path";
 import { defineConfig } from "vite";
+// import { vitePluginManusRuntime } from "vite-plugin-manus-runtime"; // معلق مؤقتاً
 
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    // jsxLocPlugin(), // معلق مؤقتاً لحل مشكلة الصفحة البيضاء
+    // jsxLocPlugin(), // معلق مؤقتاً - يسبب مشكلة في البناء
+    // vitePluginManusRuntime(), // معلق مؤقتاً - يسبب مشكلة في البناء
   ],
   resolve: {
     alias: {
