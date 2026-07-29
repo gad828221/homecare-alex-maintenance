@@ -7,7 +7,7 @@ import {
   RotateCcw
 } from "lucide-react";
 import { createClient } from '@supabase/supabase-js';
-import { requestNotificationPermission, onMessageListener } from "../utils/fcm";
+
 
 // ==================== الإعدادات الأساسية ====================
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -104,7 +104,7 @@ export default function ProtectedOrders() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'orders' | 'technicians' | 'reports' | 'invoicesReview' | 'cash' | 'partners' | 'notifications' | 'permissions' | 'performance'>('orders');
   const [showOrderModal, setShowOrderModal] = useState(false);
-  const [fcmToken, setFcmToken] = useState<string | null>(null);
+
   const [showTechModal, setShowTechModal] = useState(false);
   const [showPartnerModal, setShowPartnerModal] = useState(false);
   const [showCashModal, setShowCashModal] = useState(false);
@@ -143,31 +143,7 @@ export default function ProtectedOrders() {
   const [stats, setStats] = useState({ pending: 0, inProgress: 0, completed: 0, cancelled: 0, totalIncome: 0 });
   const [currentUser, setCurrentUser] = useState<any>(null);
 
-  useEffect(() => {
-    if (!currentUser) return;
-    
-    const setupFCM = async () => {
-      try {
-        const token = await requestNotificationPermission();
-        if (token) {
-          setFcmToken(token);
-          await supabase.from('device_tokens').upsert({ 
-            user_id: currentUser.id, 
-            token: token,
-            updated_at: new Date().toISOString()
-          });
-        }
-      } catch (err) {
-        console.error("FCM Setup Error:", err);
-      }
-    };
-    
-    setupFCM();
-    
-    onMessageListener().then((payload: any) => {
-      console.log("إشعار جديد:", payload);
-    }).catch(err => console.error("FCM Listener Error:", err));
-  }, [currentUser]);
+
   const [userRole, setUserRole] = useState<string>('');
   
   const [showSettleModal, setShowSettleModal] = useState(false);
@@ -355,32 +331,43 @@ export default function ProtectedOrders() {
     try {
       const incomeEntries = await fetchAPI(`cash_ledger?select=amount&date=eq.${targetDate}&type=eq.income`);
       const totalIncome = (incomeEntries || []).reduce((sum, entry) => sum + (entry.amount || 0), 0);
+      
+      const existingDistributions = await fetchAPI(`cash_ledger?select=amount&date=eq.${targetDate}&type=eq.profit_distribution`);
+      const totalDistributedSoFar = (existingDistributions || []).reduce((sum, entry) => sum + (entry.amount || 0), 0);
+
       if (totalIncome <= 0) {
         alert(`⚠️ لا توجد أرباح ليوم ${targetDate}.`);
         return;
       }
+
       const activePartners = partners.filter(p => p.is_active === true);
       if (activePartners.length === 0) {
         alert("⚠️ لا يوجد شركاء نشطون.");
         return;
       }
+
       const totalPartnerShares = activePartners.reduce((sum, p) => sum + (Number(p.share_percentage) || 0), 0);
       if (totalPartnerShares <= 0) {
         alert("⚠️ إجمالي نسب الشركاء غير صالح.");
         return;
       }
-      const amountToDistribute = Number(((totalIncome * totalPartnerShares) / 100).toFixed(2));
-      if (amountToDistribute <= 0) {
-        alert("⚠️ لا يوجد مبلغ كافٍ للتوزيع.");
-        return;
-      }
-      if (!confirm(`💰 أرباح يوم ${targetDate}: ${totalIncome.toLocaleString()} ج.م\n📤 نسبة التوزيع: ${totalPartnerShares}%\n💰 سيتم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء\nهل تريد الاستمرار؟`)) return;
 
-      const existingDistributions = await fetchAPI(`cash_ledger?select=id&date=eq.${targetDate}&type=eq.profit_distribution`);
-      if (existingDistributions && existingDistributions.length > 0) {
-        alert("⚠️ تم التوزيع مسبقاً.");
+      // حساب إجمالي ما يجب توزيعه بناءً على الدخل الكلي
+      const totalShouldBeDistributed = Number(((totalIncome * totalPartnerShares) / 100).toFixed(2));
+      
+      // المبلغ المتبقي للتوزيع (الإجمالي المطلوب - ما تم توزيعه بالفعل)
+      const amountToDistribute = Number((totalShouldBeDistributed - totalDistributedSoFar).toFixed(2));
+
+      if (amountToDistribute <= 0) {
+        alert(`⚠️ تم توزيع كافة أرباح يوم ${targetDate} بالفعل (${totalDistributedSoFar.toLocaleString()} ج.م). لا توجد أرباح جديدة للتوزيع.`);
         return;
       }
+
+      const confirmMsg = totalDistributedSoFar > 0 
+        ? `💰 إجمالي أرباح اليوم: ${totalIncome.toLocaleString()} ج.م\n📤 تم توزيع سابقاً: ${totalDistributedSoFar.toLocaleString()} ج.م\n🔄 المتبقي للتوزيع الآن: ${amountToDistribute.toLocaleString()} ج.م\n\nهل تريد الاستمرار؟`
+        : `💰 أرباح يوم ${targetDate}: ${totalIncome.toLocaleString()} ج.م\n📤 نسبة التوزيع: ${totalPartnerShares}%\n💰 سيتم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء\n\nهل تريد الاستمرار؟`;
+
+      if (!confirm(confirmMsg)) return;
 
       let distributedSum = 0;
       for (let i = 0; i < activePartners.length; i++) {

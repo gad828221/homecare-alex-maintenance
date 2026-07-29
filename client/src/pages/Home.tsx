@@ -10,7 +10,7 @@ import {
   Calendar
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { requestNotificationPermission, onForegroundMessage } from "../lib/firebase";
+
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Home() {
@@ -44,15 +44,7 @@ export default function Home() {
   ];
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      requestNotificationPermission().catch(console.error);
-    }, 5000);
-
-    onForegroundMessage((payload) => {
-      alert(`${payload.notification.title}\n${payload.notification.body}`);
-    });
-
-    return () => clearTimeout(timer);
+    // Notifications disabled
   }, []);
 
   return (
