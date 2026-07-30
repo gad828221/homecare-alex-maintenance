@@ -6,6 +6,7 @@ import { defineConfig } from "vite";
 // import { vitePluginManusRuntime } from "vite-plugin-manus-runtime"; // معلق مؤقتاً
 
 export default defineConfig({
+  base: '/',
   plugins: [
     react(),
     tailwindcss(),

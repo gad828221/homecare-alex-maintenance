@@ -1,4 +1,4 @@
-import { useEffect, Suspense, lazy } from "react";
+import React, { Suspense, lazy, useEffect } from "react";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";
@@ -7,17 +7,15 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { EnhancedNotificationProvider } from "./components/EnhancedNotificationSystem";
 import { Phone, MessageCircle } from "lucide-react";
 
-// ============ LAZY LOADED PAGES ============
 const Home = lazy(() => import("./pages/Home"));
 const Login = lazy(() => import("./pages/LoginPage"));
 const TechPortal = lazy(() => import("./pages/TechnicianPortal"));
 const DataEntry = lazy(() => import("./pages/DataEntryPage"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
 const ProtectedOrders = lazy(() => import("./components/ProtectedOrders"));
 const InvoicePage = lazy(() => import("./pages/InvoicePage"));
 const PickupReceiptPage = lazy(() => import("./pages/PickupReceiptPage"));
 
-// ============ LAZY LOADED BRAND PAGES ============
 const SamsungService = lazy(() => import("./pages/SamsungService"));
 const LGService = lazy(() => import("./pages/LGService"));
 const SharpService = lazy(() => import("./pages/SharpService"));
@@ -31,7 +29,6 @@ const BekoService = lazy(() => import("./pages/BekoService"));
 const HooverService = lazy(() => import("./pages/HooverService"));
 const IndesitService = lazy(() => import("./pages/IndesitService"));
 
-// ============ LOADING FALLBACK ============
 function LoadingFallback() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-white">
@@ -100,7 +97,9 @@ function FloatingButtons() {
 function AppContent() {
   return (
     <>
-      <Router />
+      <Suspense fallback={<LoadingFallback />}>
+        <Router />
+      </Suspense>
       <FloatingButtons />
     </>
   );
