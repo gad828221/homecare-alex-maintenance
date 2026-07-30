@@ -1155,11 +1155,18 @@ export default function ProtectedOrders() {
             {!showDeleted && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredOrders.map(order => {
-                  const delayed = isDelayed(order);
-                  return (
-                    <div key={order.id} className={`bg-slate-900 rounded-xl border-r-4 p-4 ${delayed ? 'border-red-500' : order.status === 'completed' ? 'border-green-500' : order.status === 'in-progress' ? 'border-blue-500' : order.status === 'deferred' ? 'border-purple-500' : 'border-yellow-500'}`}>
-                      <div className="flex justify-between items-start">
-                        <div><h3 className="font-bold text-white">{order.customer_name}</h3><p className="text-xs text-slate-400">رقم: {order.order_number}</p></div>
+	                  const delayed = isDelayed(order);
+	                  const noTechnician = !order.technician || order.technician === '-' || order.technician === '';
+	                  return (
+	                    <div key={order.id} className={`rounded-xl border-r-4 p-4 transition-all ${noTechnician ? 'bg-orange-900/20 border-orange-500 ring-1 ring-orange-500/30' : 'bg-slate-900'} ${delayed ? 'border-red-500' : order.status === 'completed' ? 'border-green-500' : order.status === 'in-progress' ? 'border-blue-500' : order.status === 'deferred' ? 'border-purple-500' : 'border-yellow-500'}`}>
+	                      <div className="flex justify-between items-start">
+	                        <div>
+	                          <div className="flex items-center gap-2">
+	                            <h3 className="font-bold text-white">{order.customer_name}</h3>
+	                            {noTechnician && <span className="bg-orange-600 text-white text-[10px] px-1.5 py-0.5 rounded-full animate-pulse">بدون فني</span>}
+	                          </div>
+	                          <p className="text-xs text-slate-400">رقم: {order.order_number}</p>
+	                        </div>
                         <div className="flex gap-1"><button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`p-1 rounded ${order.is_paid ? 'text-green-500 bg-green-500/10' : 'text-red-500 bg-red-500/10'}`}>{order.is_paid ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}</button>{canEditDelete() && <><button onClick={() => { setEditingOrder(order); setFormData(order); setShowOrderModal(true); }} className="p-1 text-blue-500"><Edit size={16} /></button><button onClick={() => copyOrderDetails(order)} className="p-1 text-slate-400" title="نسخ البيانات"><Copy size={16} /></button><button onClick={() => deleteOrder(order.id)} className="p-1 text-red-500"><Trash2 size={16} /></button></>}</div>
                       </div>
                       <div className="grid grid-cols-2 gap-1 mt-2 text-sm">
