@@ -1166,6 +1166,10 @@ export default function ProtectedOrders() {
 	                            {noTechnician && <span className="bg-orange-600 text-white text-[10px] px-1.5 py-0.5 rounded-full animate-pulse">بدون فني</span>}
 	                          </div>
 	                          <p className="text-xs text-slate-400">رقم: {order.order_number}</p>
+	                          <div className="flex items-center gap-2 mt-1">
+	                            <span className="text-[10px] text-slate-500 flex items-center gap-1">📅 {new Date(order.created_at || order.date).toLocaleDateString('ar-EG')}</span>
+	                            <span className="text-[10px] text-slate-500 flex items-center gap-1">🕒 {new Date(order.created_at || order.date).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</span>
+	                          </div>
 	                        </div>
                         <div className="flex gap-1"><button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`p-1 rounded ${order.is_paid ? 'text-green-500 bg-green-500/10' : 'text-red-500 bg-red-500/10'}`}>{order.is_paid ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}</button>{canEditDelete() && <><button onClick={() => { setEditingOrder(order); setFormData(order); setShowOrderModal(true); }} className="p-1 text-blue-500"><Edit size={16} /></button><button onClick={() => copyOrderDetails(order)} className="p-1 text-slate-400" title="نسخ البيانات"><Copy size={16} /></button><button onClick={() => deleteOrder(order.id)} className="p-1 text-red-500"><Trash2 size={16} /></button></>}</div>
                       </div>
