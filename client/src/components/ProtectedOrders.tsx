@@ -828,15 +828,44 @@ export default function ProtectedOrders() {
   const clearFilters = () => { setSearchTerm(''); setFilterStatus('all'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); };
 
   const filteredOrders = orders.filter(o => {
-    if (searchTerm && !o.customer_name?.includes(searchTerm) && !o.phone?.includes(searchTerm) && !String(o.order_number).includes(searchTerm)) return false;
-    if (filterStatus !== 'all' && o.status !== filterStatus) return false;
-    if (filterTechnician && o.technician !== filterTechnician) return false;
+    // تحسين البحث ليشمل الاسم، الهاتف، ورقم الأوردر
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesName = o.customer_name?.toLowerCase().includes(searchLower);
+      const matchesPhone = o.phone?.includes(searchTerm);
+      const matchesOrderNum = String(o.order_number).includes(searchTerm);
+      if (!matchesName && !matchesPhone && !matchesOrderNum) return false;
+    }
+
+    // منطق الفلترة السريعة
+    if (filterStatus === '__UNPAID__') {
+      if (o.status !== 'completed' || o.is_paid) return false;
+    } else if (filterStatus !== 'all' && o.status !== filterStatus) {
+      return false;
+    }
+
+    if (filterTechnician === '__NONE__') {
+      if (o.technician && o.technician !== '-' && o.technician !== '') return false;
+    } else if (filterTechnician && o.technician !== filterTechnician) {
+      return false;
+    }
+
     if (filterDeviceType && o.device_type !== filterDeviceType) return false;
-    if (filterDateFrom && o.date && o.date < filterDateFrom) return false;
-    if (filterDateTo && o.date && o.date > filterDateTo) return false;
+    
+    // فلترة التاريخ
+    if (filterDateFrom) {
+      const oDate = o.created_at ? o.created_at.split('T')[0] : o.date;
+      if (oDate < filterDateFrom) return false;
+    }
+    if (filterDateTo) {
+      const oDate = o.created_at ? o.created_at.split('T')[0] : o.date;
+      if (oDate > filterDateTo) return false;
+    }
+
     if (filterDelay === 'delayed' && !isDelayed(o)) return false;
-    if (showAllOrders) return true;
-    return (o.status === 'in-progress' || o.status === 'pending' || !o.technician);
+    
+    if (showAllOrders || filterStatus !== 'all' || filterTechnician || filterDateFrom || searchTerm) return true;
+    return (o.status === 'in-progress' || o.status === 'pending' || !o.technician || o.technician === '-' || o.technician === '');
   });
 
   const filteredTechnicians = technicians.filter(t => filterTechStatus === 'all' ? true : filterTechStatus === 'active' ? t.is_active !== false : t.is_active === false);
@@ -1112,11 +1141,40 @@ export default function ProtectedOrders() {
         {/* تبويب الأوردرات */}
         {activeTab === 'orders' && (
           <div className="space-y-4">
-            <div className="bg-slate-900 rounded-xl p-4 flex flex-wrap gap-3 items-center">
-              <div className="relative flex-1 min-w-[200px]"><Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} /><input type="text" placeholder="بحث..." className="w-full pr-10 p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
-              <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
-                <option value="all">الكل</option><option value="pending">قيد الانتظار</option><option value="in-progress">قيد التنفيذ</option><option value="inspected">تم الكشف</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option><option value="deferred">مؤجل</option>
-              </select>
+	            <div className="bg-slate-900 rounded-xl p-4 flex flex-col gap-4">
+	              <div className="flex flex-wrap gap-3 items-center">
+	                <div className="relative flex-1 min-w-[200px]"><Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} /><input type="text" placeholder="بحث بالاسم أو الهاتف أو رقم الأوردر..." className="w-full pr-10 p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
+	                <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+	                  <option value="all">جميع الحالات</option><option value="pending">قيد الانتظار</option><option value="in-progress">قيد التنفيذ</option><option value="inspected">تم الكشف</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option><option value="deferred">مؤجل</option>
+	                </select>
+	                <select value={filterTechnician} onChange={e => setFilterTechnician(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"><option value="">جميع الفنيين</option>{technicians.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}</select>
+	                <select value={filterDeviceType} onChange={e => setFilterDeviceType(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"><option value="">جميع الأجهزة</option>{DEVICE_TYPES.map(d => <option key={d}>{d}</option>)}</select>
+	              </div>
+	              
+	              <div className="flex flex-wrap gap-2 items-center border-t border-slate-800 pt-3">
+	                <span className="text-xs text-slate-500 ml-2">فلترة سريعة:</span>
+	                <button onClick={() => { clearFilters(); const today = new Date().toISOString().split('T')[0]; setFilterDateFrom(today); setFilterDateTo(today); }} className="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 px-3 py-1 rounded-full text-xs border border-blue-600/30 transition">📅 أوردرات اليوم</button>
+	                <button onClick={() => { clearFilters(); setFilterStatus('all'); setSearchTerm(''); // Logic for no tech will be in filteredOrders
+	                  setFilterTechnician('__NONE__'); // Special value to handle in filter logic
+	                }} className="bg-orange-600/20 hover:bg-orange-600/40 text-orange-400 px-3 py-1 rounded-full text-xs border border-orange-600/30 transition">👨‍🔧 بدون فني</button>
+	                <button onClick={() => { clearFilters(); setFilterStatus('completed'); // We'll add a specific filter for unpaid in logic
+	                  setFilterStatus('__UNPAID__'); 
+	                }} className="bg-red-600/20 hover:bg-red-600/40 text-red-400 px-3 py-1 rounded-full text-xs border border-red-600/30 transition">💰 بانتظار التحصيل</button>
+	                <div className="h-4 w-[1px] bg-slate-700 mx-1"></div>
+	                <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} className="p-1 bg-slate-800 border border-slate-700 rounded text-xs text-white" />
+	                <span className="text-slate-600 text-xs">إلى</span>
+	                <input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} className="p-1 bg-slate-800 border border-slate-700 rounded text-xs text-white" />
+	                <button onClick={() => setFilterDelay(filterDelay==='delayed'?'all':'delayed')} className={`px-3 py-1 rounded-full text-xs transition ${filterDelay==='delayed'?'bg-red-600 text-white':'bg-slate-800 text-slate-300 border border-slate-700'}`}>⚠️ المتأخرة</button>
+	                <button onClick={clearFilters} className="bg-slate-800 text-slate-300 px-3 py-1 rounded-full text-xs border border-slate-700 hover:bg-slate-700 transition">مسح</button>
+	              </div>
+	            </div>
+	            
+	            <div className="flex flex-wrap gap-3 items-center">
+	              <button onClick={() => setShowAllOrders(!showAllOrders)} className={`px-3 py-2 rounded-lg text-sm transition ${showAllOrders ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>{showAllOrders ? '📋 إخفاء المنجز' : '📋 عرض الكل'}</button>
+	              <button onClick={() => { setEditingOrder(null); setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") }); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={18} /> أوردر جديد</button>
+	              <button onClick={() => setShowDeleted(!showDeleted)} className={`px-3 py-2 rounded-lg text-sm transition ${showDeleted ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}><Trash2 size={16} /> {showDeleted ? 'إخفاء المحذوفة' : `عرض المحذوفة (${deletedOrders.length})`}</button>
+	              <button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg ml-auto"><RefreshCw size={18} /></button>
+	            </div>
               <select value={filterTechnician} onChange={e => setFilterTechnician(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"><option value="">جميع الفنيين</option>{technicians.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}</select>
               <select value={filterDeviceType} onChange={e => setFilterDeviceType(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"><option value="">جميع الأجهزة</option>{DEVICE_TYPES.map(d => <option key={d}>{d}</option>)}</select>
               <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" />
@@ -1161,9 +1219,24 @@ export default function ProtectedOrders() {
 	                    <div key={order.id} className={`rounded-xl border-r-4 p-4 transition-all ${noTechnician ? 'bg-orange-900/20 border-orange-500 ring-1 ring-orange-500/30' : 'bg-slate-900'} ${delayed ? 'border-red-500' : order.status === 'completed' ? 'border-green-500' : order.status === 'in-progress' ? 'border-blue-500' : order.status === 'deferred' ? 'border-purple-500' : 'border-yellow-500'}`}>
 	                      <div className="flex justify-between items-start">
 	                        <div>
-	                          <div className="flex items-center gap-2">
+	                          <div className="flex items-center gap-2 flex-wrap">
 	                            <h3 className="font-bold text-white">{order.customer_name}</h3>
 	                            {noTechnician && <span className="bg-orange-600 text-white text-[10px] px-1.5 py-0.5 rounded-full animate-pulse">بدون فني</span>}
+	                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+	                              order.status === 'completed' ? 'bg-green-500 text-white' :
+	                              order.status === 'in-progress' ? 'bg-blue-500 text-white' :
+	                              order.status === 'pending' ? 'bg-yellow-500 text-black' :
+	                              order.status === 'cancelled' ? 'bg-red-500 text-white' :
+	                              order.status === 'deferred' ? 'bg-purple-500 text-white' :
+	                              'bg-slate-700 text-white'
+	                            }`}>
+	                              {order.status === 'pending' ? 'قيد الانتظار' :
+	                               order.status === 'in-progress' ? 'قيد التنفيذ' :
+	                               order.status === 'inspected' ? 'تم الكشف' :
+	                               order.status === 'completed' ? 'مكتمل' :
+	                               order.status === 'cancelled' ? 'ملغي' :
+	                               order.status === 'deferred' ? 'مؤجل' : order.status}
+	                            </span>
 	                          </div>
 	                          <p className="text-xs text-slate-400">رقم: {order.order_number}</p>
 	                          <div className="flex items-center gap-2 mt-1">
