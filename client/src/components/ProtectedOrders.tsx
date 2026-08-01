@@ -813,8 +813,18 @@ export default function ProtectedOrders() {
     fetchData();
   };
 
-  const deleteNotification = async (id: number) => { await fetchAPI(`notifications?id=eq.${id}`, { method: 'DELETE' }); fetchNotifications(); };
-  const deleteAllNotifications = async () => { if (confirm('حذف كل الإشعارات؟')) { for (const n of notifications) await fetchAPI(`notifications?id=eq.${n.id}`, { method: 'DELETE' }); fetchNotifications(); } };
+  const deleteNotification = async (id: number) => { 
+    if (userRole !== 'admin') return alert("⚠️ عذراً، فقط مدير النظام يمكنه حذف الإشعارات");
+    await fetchAPI(`notifications?id=eq.${id}`, { method: 'DELETE' }); 
+    fetchNotifications(); 
+  };
+  const deleteAllNotifications = async () => { 
+    if (userRole !== 'admin') return alert("⚠️ عذراً، فقط مدير النظام يمكنه حذف الإشعارات");
+    if (confirm('هل أنت متأكد من حذف جميع الإشعارات نهائياً؟')) { 
+      for (const n of notifications) await fetchAPI(`notifications?id=eq.${n.id}`, { method: 'DELETE' }); 
+      fetchNotifications(); 
+    } 
+  };
   const clearFilters = () => { setSearchTerm(''); setFilterStatus('all'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); };
 
   const filteredOrders = orders.filter(o => {
@@ -1363,11 +1373,11 @@ export default function ProtectedOrders() {
 
         {activeTab === 'notifications' && (
           <div className="space-y-3">
-            <div className="flex justify-between"><h2 className="text-xl font-bold">🔔 سجل الإشعارات</h2>{canEditDelete() && notifications.length>0 && <button onClick={deleteAllNotifications} className="bg-red-500/20 text-red-400 px-3 py-1 rounded-lg text-sm flex items-center gap-1"><Trash size={14}/> مسح الكل</button>}</div>
+            <div className="flex justify-between"><h2 className="text-xl font-bold">🔔 سجل الإشعارات</h2>{userRole === 'admin' && notifications.length>0 && <button onClick={deleteAllNotifications} className="bg-red-500/20 text-red-400 px-3 py-1 rounded-lg text-sm flex items-center gap-1"><Trash size={14}/> مسح الكل</button>}</div>
             {notifications.map(notif=>(
               <div key={notif.id} className="bg-slate-900 rounded-xl p-4 flex justify-between items-center">
                 <div><span className="text-orange-400 font-semibold">{notif.action}</span><span className="mx-2 text-slate-600">|</span><span className="text-slate-300">{notif.details}</span><div className="text-xs text-slate-500 mt-1">{new Date(notif.created_at).toLocaleString('ar-EG')}</div></div>
-                {canEditDelete() && <button onClick={()=>deleteNotification(notif.id)} className="text-red-400"><Trash size={16}/></button>}
+                {userRole === 'admin' && <button onClick={()=>deleteNotification(notif.id)} className="text-red-400"><Trash size={16}/></button>}
               </div>
             ))}
             {notifications.length===0 && <div className="text-center py-8 text-slate-400">لا توجد إشعارات</div>}
