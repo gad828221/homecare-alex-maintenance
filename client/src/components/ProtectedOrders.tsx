@@ -28,10 +28,73 @@ function AdminPermissions({ currentUser }: { currentUser?: any }) {
 }
 
 function TechnicianPerformance({ orders, technicians }: { orders: any[], technicians: any[] }) {
+  const techStats = technicians.map(tech => {
+    const techOrders = orders.filter(o => o.technician === tech.name);
+    const completed = techOrders.filter(o => o.status === 'completed').length;
+    const pending = techOrders.filter(o => o.status === 'pending' || o.status === 'in-progress').length;
+    const cancelled = techOrders.filter(o => o.status === 'cancelled').length;
+    const totalIncome = techOrders.filter(o => o.status === 'completed').reduce((sum, o) => sum + (o.total_amount || 0), 0);
+    const techShare = techOrders.filter(o => o.status === 'completed').reduce((sum, o) => sum + (o.technician_share || 0), 0);
+    
+    return {
+      name: tech.name,
+      total: techOrders.length,
+      completed,
+      pending,
+      cancelled,
+      totalIncome,
+      techShare,
+      successRate: techOrders.length > 0 ? Math.round((completed / techOrders.length) * 100) : 0
+    };
+  }).sort((a, b) => b.completed - a.completed);
+
   return (
     <div className="bg-slate-900 rounded-xl p-6 text-white">
-      <h2 className="text-xl font-bold mb-4">📊 أداء الفنيين</h2>
-      <p>عدد الأوردرات: {orders.length} | عدد الفنيين: {technicians.length}</p>
+      <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+        <Users className="text-orange-500" /> إحصائيات أداء الفنيين
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {techStats.map(stat => (
+          <div key={stat.name} className="bg-slate-800 rounded-xl p-4 border border-slate-700 hover:border-orange-500/50 transition-all">
+            <div className="flex justify-between items-start mb-3">
+              <h3 className="font-bold text-lg">{stat.name}</h3>
+              <span className="bg-orange-600/20 text-orange-400 text-xs px-2 py-1 rounded-full font-bold">
+                نجاح: {stat.successRate}%
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              <div className="text-center p-2 bg-slate-900/50 rounded-lg">
+                <div className="text-blue-400 font-bold">{stat.total}</div>
+                <div className="text-[10px] text-slate-500">إجمالي</div>
+              </div>
+              <div className="text-center p-2 bg-slate-900/50 rounded-lg">
+                <div className="text-green-400 font-bold">{stat.completed}</div>
+                <div className="text-[10px] text-slate-500">مكتمل</div>
+              </div>
+              <div className="text-center p-2 bg-slate-900/50 rounded-lg">
+                <div className="text-red-400 font-bold">{stat.cancelled}</div>
+                <div className="text-[10px] text-slate-500">ملغي</div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">إجمالي التحصيل:</span>
+                <span className="text-white font-bold">{stat.totalIncome} ج.م</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">مستحقات الفني:</span>
+                <span className="text-orange-400 font-bold">{stat.techShare} ج.م</span>
+              </div>
+              <div className="w-full bg-slate-700 h-1.5 rounded-full mt-2 overflow-hidden">
+                <div 
+                  className="bg-green-500 h-full transition-all duration-500" 
+                  style={{ width: `${stat.successRate}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1177,26 +1240,62 @@ export default function ProtectedOrders() {
             
             {!showDeleted && filteredOrders.length === 0 && !showAllOrders && <div className="text-center py-8 text-slate-400">لا توجد أوردرات (قيد الانتظار، قيد التنفيذ، أو بدون فني). اضغط "عرض الكل" لمشاهدة جميع الأوردرات.</div>}
             
-            {!showDeleted && filteredOrders.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                <div className="bg-blue-600/20 border border-blue-600 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-blue-400">{filteredOrders.filter(o => o.status === 'in-progress').length}</div>
-                  <div className="text-xs text-blue-300">🔧 قيد التنفيذ</div>
-                </div>
-                <div className="bg-red-600/20 border border-red-600 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-red-400">{filteredOrders.filter(o => isDelayed(o)).length}</div>
-                  <div className="text-xs text-red-300">⚠️ متأخرة</div>
-                </div>
-                <div className="bg-green-600/20 border border-green-600 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-green-400">{filteredOrders.filter(o => o.status === 'completed').length}</div>
-                  <div className="text-xs text-green-300">✅ مكتملة</div>
-                </div>
-                <div className="bg-purple-600/20 border border-purple-600 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-purple-400">{filteredOrders.length}</div>
-                  <div className="text-xs text-purple-300">📄 الإجمالي</div>
-                </div>
-              </div>
-            )}
+	            {!showDeleted && filteredOrders.length > 0 && (
+	              <div className="space-y-4 mb-6">
+                  {/* شريط الإحصائيات السريع */}
+	                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+	                  <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4 text-center hover:bg-blue-600/20 transition-all group">
+	                    <div className="text-3xl font-black text-blue-400 group-hover:scale-110 transition-transform">{filteredOrders.filter(o => o.status === 'in-progress').length}</div>
+	                    <div className="text-xs font-bold text-blue-300/70 mt-1 uppercase tracking-wider">🔧 قيد التنفيذ</div>
+	                  </div>
+	                  <div className="bg-red-600/10 border border-red-600/30 rounded-xl p-4 text-center hover:bg-red-600/20 transition-all group">
+	                    <div className="text-3xl font-black text-red-400 group-hover:scale-110 transition-transform">{filteredOrders.filter(o => isDelayed(o)).length}</div>
+	                    <div className="text-xs font-bold text-red-300/70 mt-1 uppercase tracking-wider">⚠️ متأخرة</div>
+	                  </div>
+	                  <div className="bg-green-600/10 border border-green-600/30 rounded-xl p-4 text-center hover:bg-green-600/20 transition-all group">
+	                    <div className="text-3xl font-black text-green-400 group-hover:scale-110 transition-transform">{filteredOrders.filter(o => o.status === 'completed').length}</div>
+	                    <div className="text-xs font-bold text-green-300/70 mt-1 uppercase tracking-wider">✅ مكتملة</div>
+	                  </div>
+	                  <div className="bg-purple-600/10 border border-purple-600/30 rounded-xl p-4 text-center hover:bg-purple-600/20 transition-all group">
+	                    <div className="text-3xl font-black text-purple-400 group-hover:scale-110 transition-transform">{filteredOrders.length}</div>
+	                    <div className="text-xs font-bold text-purple-300/70 mt-1 uppercase tracking-wider">📄 الإجمالي</div>
+	                  </div>
+	                </div>
+
+                  {/* لوحة التقارير البيانية المصغرة */}
+                  <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-sm font-bold text-slate-300 flex items-center gap-2">
+                        <LayoutDashboard size={16} className="text-orange-500" /> تحليل حالة العمل
+                      </h3>
+                      <span className="text-[10px] text-slate-500">تحديث تلقائي</span>
+                    </div>
+                    <div className="space-y-3">
+                      {['pending', 'in-progress', 'completed', 'cancelled'].map(status => {
+                        const count = filteredOrders.filter(o => o.status === status).length;
+                        const percentage = filteredOrders.length > 0 ? (count / filteredOrders.length) * 100 : 0;
+                        const color = status === 'completed' ? 'bg-green-500' : status === 'in-progress' ? 'bg-blue-500' : status === 'pending' ? 'bg-yellow-500' : 'bg-red-500';
+                        const label = status === 'completed' ? 'مكتمل' : status === 'in-progress' ? 'قيد التنفيذ' : status === 'pending' ? 'قيد الانتظار' : 'ملغي';
+                        
+                        return (
+                          <div key={status} className="space-y-1">
+                            <div className="flex justify-between text-[10px] font-bold">
+                              <span className="text-slate-400">{label}</span>
+                              <span className="text-slate-200">{count} أوردر ({Math.round(percentage)}%)</span>
+                            </div>
+                            <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                              <div 
+                                className={`${color} h-full transition-all duration-1000 ease-out`} 
+                                style={{ width: `${percentage}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+	              </div>
+	            )}
             
             {!showDeleted && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1248,8 +1347,27 @@ export default function ProtectedOrders() {
                         </select>
                         <span className={`text-xs px-2 py-1 rounded ${order.is_paid ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{order.is_paid ? 'تم التحصيل' : 'لم يتحصل'}</span>
                       </div>
-                      {order.technician_note && <div className="mt-2 text-xs text-slate-400">📝 ملاحظة الفني: {order.technician_note}</div>}
-                      {order.status === 'in-progress' && canEditDelete() && (<button onClick={() => { setSelectedOrder(order); setSettleForm({ total_amount: order.total_amount || 0, parts_cost: order.parts_cost || 0, transport_cost: order.transport_cost || 0, net_amount: order.net_amount || 0, technician_share: order.technician_share || 0, company_share: order.company_share || 0 }); setShowSettleModal(true); }} className="mt-2 w-full bg-orange-600 hover:bg-orange-700 text-white py-1 rounded-lg text-sm font-bold">تصفية الأوردر</button>)}
+	                      {order.technician_note && <div className="mt-2 text-xs text-slate-400">📝 ملاحظة الفني: {order.technician_note}</div>}
+                        
+                        {/* زر تذكير الفني للأوردرات المتأخرة */}
+                        {delayed && order.technician && order.technician !== '-' && (
+                          <button 
+                            onClick={() => {
+                              const tech = technicians.find(t => t.name === order.technician);
+                              if (tech && tech.phone) {
+                                const msg = `⚠️ تذكير أوردر متأخر!\n\nالفني: ${tech.name}\nالعميل: ${order.customer_name}\nالجهاز: ${order.device_type}\nالعنوان: ${order.address}\nرقم الأوردر: ${order.order_number}\n\nيرجى التحرك فوراً لإنهاء المهمة.`;
+                                notifyTechnician(tech.phone, tech.name, msg);
+                              } else {
+                                alert('رقم هاتف الفني غير مسجل');
+                              }
+                            }}
+                            className="mt-2 w-full bg-red-600/20 hover:bg-red-600/40 text-red-400 border border-red-600/30 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all"
+                          >
+                            <Bell size={14} className="animate-bounce" /> إرسال تذكير للفني (واتساب)
+                          </button>
+                        )}
+
+	                      {order.status === 'in-progress' && canEditDelete() && (<button onClick={() => { setSelectedOrder(order); setSettleForm({ total_amount: order.total_amount || 0, parts_cost: order.parts_cost || 0, transport_cost: order.transport_cost || 0, net_amount: order.net_amount || 0, technician_share: order.technician_share || 0, company_share: order.company_share || 0 }); setShowSettleModal(true); }} className="mt-2 w-full bg-orange-600 hover:bg-orange-700 text-white py-1 rounded-lg text-sm font-bold">تصفية الأوردر</button>)}
                       {(order.status === 'pending' || order.status === 'in-progress' || order.status === 'inspected') && (
                         <div className="flex gap-2 mt-2">
                           <button onClick={() => window.open(`/pickup-receipt?id=${order.id}`, '_blank')} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-1 rounded-lg text-sm font-bold">📋 فتح الإيصال</button>
