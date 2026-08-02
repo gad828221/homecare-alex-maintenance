@@ -297,6 +297,28 @@ export default function ProtectedOrders() {
     return getDaysDifference(order.date, order.status) > 2;
   };
 
+  const isNewOrder = (order: any) => {
+    if (!order.created_at) return false;
+    const created = new Date(order.created_at);
+    const now = new Date();
+    const diffHours = (now.getTime() - created.getTime()) / (1000 * 60 * 60);
+    return diffHours < 1; // أوردر جديد خلال آخر ساعة
+  };
+
+  const sendDailyReportToWhatsApp = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const todayOrders = orders.filter(o => (o.created_at || o.date).includes(today));
+    const completedToday = todayOrders.filter(o => o.status === 'completed').length;
+    const incomeToday = todayOrders.filter(o => o.status === 'completed').reduce((sum, o) => sum + (o.total_amount || 0), 0);
+    const pendingCount = orders.filter(o => o.status === 'pending' || o.status === 'in-progress').length;
+    const delayedCount = orders.filter(o => isDelayed(o)).length;
+    const noTechCount = orders.filter(o => !o.technician || o.technician === '-' || o.technician === '').length;
+
+    const message = `📊 *تقرير ملخص العمل اليومي* 📊\n\n📅 *التاريخ:* ${new Date().toLocaleDateString('ar-EG')}\n\n✅ *إنجازات اليوم:* \n- أوردرات جديدة: ${todayOrders.length}\n- أوردرات اكتملت: ${completedToday}\n- إجمالي التحصيل: ${incomeToday} ج.م\n\n⚠️ *الحالة الحالية:* \n- أوردرات قيد العمل: ${pendingCount}\n- أوردرات متأخرة: ${delayedCount}\n- أوردرات بدون فني: ${noTechCount}\n\n🚀 يرجى متابعة الأوردرات المتأخرة لضمان جودة الخدمة.`;
+    
+    notifyAdmin(message);
+  };
+
   const fetchNotifications = useCallback(async () => {
     try {
       const data = await fetchAPI('notifications?select=*&order=created_at.desc');
@@ -1200,10 +1222,53 @@ export default function ProtectedOrders() {
         <button onClick={() => setActiveTab('performance')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'performance' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📊 أداء الفنيين</button>
       </div>
 
-      <div className="p-4">
-        {/* تبويب الأوردرات */}
-        {activeTab === 'orders' && (
-          <div className="space-y-4">
+	      <div className="p-4">
+	        {/* تبويب الأوردرات */}
+	        {activeTab === 'orders' && (
+	          <div className="space-y-4">
+              {/* لوحة ملخص اليوم الذكي */}
+              <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-xl p-5 border border-slate-700 shadow-xl relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div>
+                    <h2 className="text-xl font-black text-white flex items-center gap-2">
+                      <LayoutDashboard className="text-orange-500" /> ملخص حالة العمل اليوم
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-1">مرحباً بك! إليك نظرة سريعة على ما يجب متابعته الآن.</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={sendDailyReportToWhatsApp}
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all shadow-lg shadow-green-900/20"
+                    >
+                      <Send size={16} /> إرسال التقرير لواتساب
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                  <div className="bg-slate-950/50 p-3 rounded-lg border border-slate-800">
+                    <div className="text-[10px] text-slate-500 font-bold mb-1">أوردرات اليوم</div>
+                    <div className="text-xl font-black text-white">{orders.filter(o => (o.created_at || o.date).includes(new Date().toISOString().split('T')[0])).length}</div>
+                  </div>
+                  <div className="bg-slate-950/50 p-3 rounded-lg border border-slate-800">
+                    <div className="text-[10px] text-slate-500 font-bold mb-1">بدون فني</div>
+                    <div className={`text-xl font-black ${orders.filter(o => !o.technician || o.technician === '-' || o.technician === '').length > 0 ? 'text-orange-500 animate-pulse' : 'text-white'}`}>
+                      {orders.filter(o => !o.technician || o.technician === '-' || o.technician === '').length}
+                    </div>
+                  </div>
+                  <div className="bg-slate-950/50 p-3 rounded-lg border border-slate-800">
+                    <div className="text-[10px] text-slate-500 font-bold mb-1">متأخرة ⚠️</div>
+                    <div className={`text-xl font-black ${orders.filter(o => isDelayed(o)).length > 0 ? 'text-red-500' : 'text-white'}`}>
+                      {orders.filter(o => isDelayed(o)).length}
+                    </div>
+                  </div>
+                  <div className="bg-slate-950/50 p-3 rounded-lg border border-slate-800">
+                    <div className="text-[10px] text-slate-500 font-bold mb-1">رصيد الخزنة</div>
+                    <div className="text-xl font-black text-green-400">{cashBalance} ج.م</div>
+                  </div>
+                </div>
+              </div>
 	            <div className="bg-slate-900 rounded-xl p-4 flex flex-col gap-4">
 		              <div className="flex flex-wrap gap-3 items-center">
 		                <div className="relative flex-1 min-w-[200px]"><Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} /><input type="text" placeholder="بحث بالاسم أو الهاتف أو رقم الأوردر..." className="w-full pr-10 p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
@@ -1303,7 +1368,13 @@ export default function ProtectedOrders() {
 	                  const delayed = isDelayed(order);
 	                  const noTechnician = !order.technician || order.technician === '-' || order.technician === '';
 	                  return (
-	                    <div key={order.id} className={`rounded-xl border-r-4 p-4 transition-all ${noTechnician ? 'bg-orange-900/20 border-orange-500 ring-1 ring-orange-500/30' : 'bg-slate-900'} ${delayed ? 'border-red-500' : order.status === 'completed' ? 'border-green-500' : order.status === 'in-progress' ? 'border-blue-500' : order.status === 'deferred' ? 'border-purple-500' : 'border-yellow-500'}`}>
+		                    <div key={order.id} className={`rounded-xl border-r-4 p-4 transition-all relative overflow-hidden ${
+                                noTechnician ? 'bg-orange-900/20 border-orange-500 ring-1 ring-orange-500/30 animate-pulse' : 
+                                isNewOrder(order) ? 'bg-blue-900/10 border-blue-500 ring-1 ring-blue-500/20' : 'bg-slate-900'
+                              } ${delayed ? 'border-red-500' : order.status === 'completed' ? 'border-green-500' : order.status === 'in-progress' ? 'border-blue-500' : order.status === 'deferred' ? 'border-purple-500' : 'border-yellow-500'}`}>
+                              {isNewOrder(order) && (
+                                <div className="absolute -left-8 top-2 bg-blue-600 text-white text-[8px] font-black px-8 py-1 -rotate-45 shadow-lg">جديد</div>
+                              )}
 	                      <div className="flex justify-between items-start">
 	                        <div>
 	                          <div className="flex items-center gap-2 flex-wrap">
