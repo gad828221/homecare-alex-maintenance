@@ -1142,50 +1142,38 @@ export default function ProtectedOrders() {
         {activeTab === 'orders' && (
           <div className="space-y-4">
 	            <div className="bg-slate-900 rounded-xl p-4 flex flex-col gap-4">
-	              <div className="flex flex-wrap gap-3 items-center">
-	                <div className="relative flex-1 min-w-[200px]"><Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} /><input type="text" placeholder="بحث بالاسم أو الهاتف أو رقم الأوردر..." className="w-full pr-10 p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
-	                <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
-	                  <option value="all">جميع الحالات</option><option value="pending">قيد الانتظار</option><option value="in-progress">قيد التنفيذ</option><option value="inspected">تم الكشف</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option><option value="deferred">مؤجل</option>
-	                </select>
-	                <select value={filterTechnician} onChange={e => setFilterTechnician(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"><option value="">جميع الفنيين</option>{technicians.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}</select>
-	                <select value={filterDeviceType} onChange={e => setFilterDeviceType(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"><option value="">جميع الأجهزة</option>{DEVICE_TYPES.map(d => <option key={d}>{d}</option>)}</select>
-	              </div>
-	              
-	              <div className="flex flex-wrap gap-2 items-center border-t border-slate-800 pt-3">
-	                <span className="text-xs text-slate-500 ml-2">فلترة سريعة:</span>
-	                <button onClick={() => { clearFilters(); const today = new Date().toISOString().split('T')[0]; setFilterDateFrom(today); setFilterDateTo(today); }} className="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 px-3 py-1 rounded-full text-xs border border-blue-600/30 transition">📅 أوردرات اليوم</button>
-	                <button onClick={() => { clearFilters(); setFilterStatus('all'); setSearchTerm(''); // Logic for no tech will be in filteredOrders
-	                  setFilterTechnician('__NONE__'); // Special value to handle in filter logic
-	                }} className="bg-orange-600/20 hover:bg-orange-600/40 text-orange-400 px-3 py-1 rounded-full text-xs border border-orange-600/30 transition">👨‍🔧 بدون فني</button>
-	                <button onClick={() => { clearFilters(); setFilterStatus('completed'); // We'll add a specific filter for unpaid in logic
-	                  setFilterStatus('__UNPAID__'); 
-	                }} className="bg-red-600/20 hover:bg-red-600/40 text-red-400 px-3 py-1 rounded-full text-xs border border-red-600/30 transition">💰 بانتظار التحصيل</button>
-	                <div className="h-4 w-[1px] bg-slate-700 mx-1"></div>
-	                <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} className="p-1 bg-slate-800 border border-slate-700 rounded text-xs text-white" />
-	                <span className="text-slate-600 text-xs">إلى</span>
-	                <input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} className="p-1 bg-slate-800 border border-slate-700 rounded text-xs text-white" />
-	                <button onClick={() => setFilterDelay(filterDelay==='delayed'?'all':'delayed')} className={`px-3 py-1 rounded-full text-xs transition ${filterDelay==='delayed'?'bg-red-600 text-white':'bg-slate-800 text-slate-300 border border-slate-700'}`}>⚠️ المتأخرة</button>
-	                <button onClick={clearFilters} className="bg-slate-800 text-slate-300 px-3 py-1 rounded-full text-xs border border-slate-700 hover:bg-slate-700 transition">مسح</button>
-	              </div>
-	            </div>
-	            
-	            <div className="flex flex-wrap gap-3 items-center">
-	              <button onClick={() => setShowAllOrders(!showAllOrders)} className={`px-3 py-2 rounded-lg text-sm transition ${showAllOrders ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>{showAllOrders ? '📋 إخفاء المنجز' : '📋 عرض الكل'}</button>
-	              <button onClick={() => { setEditingOrder(null); setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") }); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={18} /> أوردر جديد</button>
-	              <button onClick={() => setShowDeleted(!showDeleted)} className={`px-3 py-2 rounded-lg text-sm transition ${showDeleted ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}><Trash2 size={16} /> {showDeleted ? 'إخفاء المحذوفة' : `عرض المحذوفة (${deletedOrders.length})`}</button>
-	              <button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg ml-auto"><RefreshCw size={18} /></button>
-	            </div>
-              <select value={filterTechnician} onChange={e => setFilterTechnician(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"><option value="">جميع الفنيين</option>{technicians.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}</select>
-              <select value={filterDeviceType} onChange={e => setFilterDeviceType(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"><option value="">جميع الأجهزة</option>{DEVICE_TYPES.map(d => <option key={d}>{d}</option>)}</select>
-              <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" />
-              <input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" />
-              <button onClick={() => setFilterDelay(filterDelay==='delayed'?'all':'delayed')} className={`px-3 py-2 rounded-lg text-sm ${filterDelay==='delayed'?'bg-red-600 text-white':'bg-slate-800 text-slate-300'}`}>⚠️ المتأخرة فقط</button>
-              <button onClick={clearFilters} className="bg-slate-800 text-slate-300 px-3 py-2 rounded-lg text-sm">مسح الكل</button>
-              <button onClick={() => setShowAllOrders(!showAllOrders)} className={`px-3 py-2 rounded-lg text-sm transition ${showAllOrders ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>{showAllOrders ? '📋 إخفاء المنجز' : '📋 عرض الكل'}</button>
-              <button onClick={() => { setEditingOrder(null); setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") }); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={18} /> أوردر جديد</button>
-              <button onClick={() => setShowDeleted(!showDeleted)} className={`px-3 py-2 rounded-lg text-sm transition ${showDeleted ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}><Trash2 size={16} /> {showDeleted ? 'إخفاء المحذوفة' : `عرض المحذوفة (${deletedOrders.length})`}</button>
-              <button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg"><RefreshCw size={18} /></button>
-            </div>
+		              <div className="flex flex-wrap gap-3 items-center">
+		                <div className="relative flex-1 min-w-[200px]"><Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} /><input type="text" placeholder="بحث بالاسم أو الهاتف أو رقم الأوردر..." className="w-full pr-10 p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
+		                <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+		                  <option value="all">جميع الحالات</option><option value="pending">قيد الانتظار</option><option value="in-progress">قيد التنفيذ</option><option value="inspected">تم الكشف</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option><option value="deferred">مؤجل</option>
+		                </select>
+		                <select value={filterTechnician} onChange={e => setFilterTechnician(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"><option value="">جميع الفنيين</option>{technicians.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}</select>
+		                <select value={filterDeviceType} onChange={e => setFilterDeviceType(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"><option value="">جميع الأجهزة</option>{DEVICE_TYPES.map(d => <option key={d}>{d}</option>)}</select>
+		              </div>
+		              
+		              <div className="flex flex-wrap gap-2 items-center border-t border-slate-800 pt-3">
+		                <span className="text-xs text-slate-500 ml-2">فلترة سريعة:</span>
+		                <button onClick={() => { clearFilters(); const today = new Date().toISOString().split('T')[0]; setFilterDateFrom(today); setFilterDateTo(today); }} className="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 px-3 py-1 rounded-full text-xs border border-blue-600/30 transition">📅 أوردرات اليوم</button>
+		                <button onClick={() => { clearFilters(); setFilterStatus('all'); setSearchTerm(''); 
+		                  setFilterTechnician('__NONE__'); 
+		                }} className="bg-orange-600/20 hover:bg-orange-600/40 text-orange-400 px-3 py-1 rounded-full text-xs border border-orange-600/30 transition">👨‍🔧 بدون فني</button>
+		                <button onClick={() => { clearFilters(); setFilterStatus('__UNPAID__'); 
+		                }} className="bg-red-600/20 hover:bg-red-600/40 text-red-400 px-3 py-1 rounded-full text-xs border border-red-600/30 transition">💰 بانتظار التحصيل</button>
+		                <div className="h-4 w-[1px] bg-slate-700 mx-1"></div>
+		                <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} className="p-1 bg-slate-800 border border-slate-700 rounded text-xs text-white" />
+		                <span className="text-slate-600 text-xs">إلى</span>
+		                <input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} className="p-1 bg-slate-800 border border-slate-700 rounded text-xs text-white" />
+		                <button onClick={() => setFilterDelay(filterDelay==='delayed'?'all':'delayed')} className={`px-3 py-1 rounded-full text-xs transition ${filterDelay==='delayed'?'bg-red-600 text-white':'bg-slate-800 text-slate-300 border border-slate-700'}`}>⚠️ المتأخرة</button>
+		                <button onClick={clearFilters} className="bg-slate-800 text-slate-300 px-3 py-1 rounded-full text-xs border border-slate-700 hover:bg-slate-700 transition">مسح</button>
+		              </div>
+		            </div>
+		            
+		            <div className="flex flex-wrap gap-3 items-center">
+		              <button onClick={() => setShowAllOrders(!showAllOrders)} className={`px-3 py-2 rounded-lg text-sm transition ${showAllOrders ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>{showAllOrders ? '📋 إخفاء المنجز' : '📋 عرض الكل'}</button>
+		              <button onClick={() => { setEditingOrder(null); setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") }); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={18} /> أوردر جديد</button>
+		              <button onClick={() => setShowDeleted(!showDeleted)} className={`px-3 py-2 rounded-lg text-sm transition ${showDeleted ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}><Trash2 size={16} /> {showDeleted ? 'إخفاء المحذوفة' : `عرض المحذوفة (${deletedOrders.length})`}</button>
+		              <button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg ml-auto"><RefreshCw size={18} /></button>
+		            </div>
             
             {!showDeleted && filteredOrders.length === 0 && !showAllOrders && <div className="text-center py-8 text-slate-400">لا توجد أوردرات (قيد الانتظار، قيد التنفيذ، أو بدون فني). اضغط "عرض الكل" لمشاهدة جميع الأوردرات.</div>}
             
