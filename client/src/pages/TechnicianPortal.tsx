@@ -3,7 +3,8 @@ import {
   Wrench, LogOut, Clock, CheckCircle2, AlertCircle, 
   RefreshCw, Phone, MapPin, ClipboardList,
   Calendar, X, Trash2, Eye, ClockArrowUp, StickyNote,
-  Play, FileCheck, DollarSign, CalendarX, Ban, MessageSquare, Search
+  Play, FileCheck, DollarSign, CalendarX, Ban, MessageSquare, Search,
+  Camera, TrendingUp, Award, Wallet, Send, ExternalLink
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useNotification } from "../components/EnhancedNotificationSystem";
@@ -302,6 +303,50 @@ export default function TechnicianPortal() {
     setCurrentOrder(null);
   };
 
+  const isNewOrder = (order: any) => {
+    if (!order.created_at) return false;
+    const created = new Date(order.created_at);
+    const now = new Date();
+    const diffHours = (now.getTime() - created.getTime()) / (1000 * 60 * 60);
+    return diffHours < 2; // أوردر جديد خلال آخر ساعتين
+  };
+
+  const handlePhotoUpload = async (orderId: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    addNotification({ type: 'info', title: '📸 جاري الرفع', message: 'يتم الآن رفع الصورة...', duration: 2000 });
+    
+    try {
+      const fileName = `${Date.now()}_${file.name}`;
+      const { data, error } = await supabase.storage.from('order-photos').upload(fileName, file);
+      
+      let photoUrl = "";
+      if (data) {
+        const { data: publicUrlData } = supabase.storage.from('order-photos').getPublicUrl(fileName);
+        photoUrl = publicUrlData.publicUrl;
+      }
+
+      const order = orders.find(o => o.id === orderId);
+      const oldNote = order?.technician_note || '';
+      const newNote = oldNote ? `${oldNote}\n[صورة مرفقة]` : '[صورة مرفقة]';
+      
+      await fetchAPI(`orders?id=eq.${orderId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ 
+          technician_note: newNote,
+          attachment_url: photoUrl 
+        })
+      });
+      
+      fetchData();
+      addNotification({ type: 'success', title: '✅ تم الرفع', message: 'تم حفظ الصورة بنجاح', duration: 3000 });
+    } catch (err) {
+      console.error(err);
+      addNotification({ type: 'error', title: '❌ فشل الرفع', message: 'حدث خطأ أثناء رفع الصورة', duration: 3000 });
+    }
+  };
+
   // ✅ دالة الفلترة للأوردرات
   const filteredOrders = orders.filter(order => {
     if (searchTerm && !order.customer_name?.includes(searchTerm) && !order.order_number?.includes(searchTerm) && !order.phone?.includes(searchTerm)) return false;
@@ -344,10 +389,42 @@ export default function TechnicianPortal() {
       <main className="max-w-4xl mx-auto p-4 space-y-5">
         {activeTab === 'orders' && (
           <>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-2xl font-bold text-orange-400">{stats.active}</div><div className="text-xs text-slate-400">نشط</div></div>
-              <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-2xl font-bold text-green-400">{stats.completed}</div><div className="text-xs text-slate-400">مكتمل</div></div>
-              <div className="bg-slate-800 rounded-xl p-3 text-center"><div className="text-xl font-bold text-emerald-400">{stats.earnings.toLocaleString()} ج.م</div><div className="text-xs text-slate-400">أرباحي</div></div>
+            {/* لوحة إنجازات الفني الاحترافية */}
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-5 border border-slate-700 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-xl font-black text-white flex items-center gap-2">
+                    <Award className="text-orange-500" /> لوحة إنجازاتي
+                  </h2>
+                  <p className="text-[10px] text-slate-400 mt-1">أداءك اليومي ومستحقاتك المالية</p>
+                </div>
+                <div className="bg-orange-500/10 p-2 rounded-xl">
+                  <TrendingUp className="text-orange-500 w-5 h-5" />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-slate-950/40 p-3 rounded-xl border border-slate-800/50 text-center">
+                  <div className="text-2xl font-black text-blue-400">{stats.active}</div>
+                  <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mt-1">أوردرات نشطة</div>
+                </div>
+                <div className="bg-slate-950/40 p-3 rounded-xl border border-slate-800/50 text-center">
+                  <div className="text-2xl font-black text-green-400">{stats.completed}</div>
+                  <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mt-1">تم إنجازه</div>
+                </div>
+                <div className="bg-slate-950/40 p-3 rounded-xl border border-slate-800/50 text-center">
+                  <div className="text-lg font-black text-emerald-400">{stats.earnings.toLocaleString()}</div>
+                  <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mt-1">أرباحي (ج.م)</div>
+                </div>
+              </div>
+
+              {stats.active > 0 && (
+                <div className="mt-4 bg-orange-500/10 border border-orange-500/20 rounded-lg p-2 flex items-center gap-2 animate-pulse">
+                  <AlertCircle size={14} className="text-orange-500" />
+                  <span className="text-[10px] text-orange-200 font-bold">لديك {stats.active} أوردرات تحتاج لإنهاء اليوم!</span>
+                </div>
+              )}
             </div>
 
             {/* ✅ شريط الفلتر */}
@@ -385,10 +462,17 @@ export default function TechnicianPortal() {
 
             <div className="space-y-3">
               <h2 className="text-md font-semibold text-white flex items-center gap-2"><ClipboardList className="w-4 h-4 text-orange-400" /> أوردراتي</h2>
-              {filteredOrders.map(order => (
-                <div key={order.id} className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
-                  <div className={`h-1 ${order.status === 'completed' ? 'bg-green-500' : order.status === 'in-progress' ? 'bg-blue-500' : order.status === 'cancelled' ? 'bg-red-500' : order.status === 'deferred' ? 'bg-purple-500' : order.status === 'inspected' ? 'bg-yellow-500' : 'bg-yellow-500'}`}></div>
-                  <div className="p-4 space-y-3">
+              {filteredOrders.map(order => {
+                const isNew = isNewOrder(order);
+                return (
+                <div key={order.id} className={`rounded-xl border border-slate-700 overflow-hidden transition-all relative ${
+                  isNew ? 'bg-blue-900/10 border-blue-500/50 ring-1 ring-blue-500/20 animate-pulse' : 'bg-slate-800/50'
+                }`}>
+                  {isNew && (
+                    <div className="absolute -left-8 top-2 bg-blue-600 text-white text-[8px] font-black px-8 py-1 -rotate-45 shadow-lg z-10">جديد</div>
+                  )}
+                  <div className={`h-1.5 ${order.status === 'completed' ? 'bg-green-500' : order.status === 'in-progress' ? 'bg-blue-500' : order.status === 'cancelled' ? 'bg-red-500' : order.status === 'deferred' ? 'bg-purple-500' : order.status === 'inspected' ? 'bg-yellow-500' : 'bg-yellow-500'}`}></div>
+                  <div className="p-4 space-y-4">
                     <div className="flex justify-between items-start">
                       <div><div className="font-bold text-white">{order.customer_name}</div><div className="text-[11px] text-slate-400 flex items-center gap-1"><Calendar className="w-3 h-3" /> {order.date}</div></div>
                       <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
@@ -415,37 +499,45 @@ export default function TechnicianPortal() {
                       <div className="bg-slate-800 p-2 rounded-lg text-xs"><span className="text-slate-400">📝 ملاحظتك:</span> {order.technician_note}</div>
                     )}
 
-                    <div className="flex flex-wrap gap-2 pt-2">
-                      {!isPhoneHidden(order) ? (
-                        <a href={`tel:${order.phone}`} className="flex-1 bg-slate-700 hover:bg-slate-600 text-center text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1">
-                          <Phone className="w-4 h-4" /> اتصل
-                        </a>
-                      ) : (
-                        <div className="flex-1 bg-slate-800 text-slate-500 text-center text-sm font-medium py-2 rounded-lg cursor-not-allowed flex items-center justify-center gap-1">
-                          <Phone className="w-4 h-4" /> غير متاح
+                    <div className="flex flex-col gap-2 pt-2">
+                        <div className="flex gap-2">
+                          {!isPhoneHidden(order) ? (
+                            <a href={`tel:${order.phone}`} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-center text-sm font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 border border-slate-600">
+                              <Phone className="w-5 h-5 text-green-400" /> اتصل بالعميل
+                            </a>
+                          ) : (
+                            <div className="flex-1 bg-slate-800 text-slate-500 text-center text-sm font-bold py-3 rounded-xl cursor-not-allowed flex items-center justify-center gap-2 border border-slate-700">
+                              <Phone className="w-5 h-5" /> الهاتف مخفي
+                            </div>
+                          )}
+                          
+                          {/* زر رفع الصور */}
+                          <label className="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-center text-sm font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 border border-slate-600 cursor-pointer">
+                            <Camera className="w-5 h-5 text-blue-400" /> رفع صورة
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(order.id, e)} />
+                          </label>
                         </div>
-                      )}
 
                       {order.status === 'pending' && (
-                        <button onClick={() => updateStatus(order.id, 'in-progress')} className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1 shadow-lg shadow-blue-900/20">
-                          <Play className="w-4 h-4" /> بدء العمل
+                        <button onClick={() => updateStatus(order.id, 'in-progress')} className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-lg font-black py-4 rounded-xl transition flex items-center justify-center gap-3 shadow-xl shadow-blue-900/40 border-b-4 border-blue-800 active:translate-y-1 active:border-b-0">
+                          <Play className="w-6 h-6" /> ابدأ العمل الآن
                         </button>
                       )}
 
                       {order.status === 'in-progress' && (
-                        <>
-                          <button onClick={() => { setSelectedOrderForActions(order); setShowActionsModal(true); }} className="flex-1 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1 shadow-lg shadow-orange-900/20">
-                            <FileCheck className="w-4 h-4" /> إجراءات
+                        <div className="flex flex-col gap-3">
+                          <button onClick={() => openSettleModal(order)} className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-lg font-black py-4 rounded-xl transition flex items-center justify-center gap-3 shadow-xl shadow-green-900/40 border-b-4 border-green-800 active:translate-y-1 active:border-b-0">
+                            <DollarSign className="w-6 h-6" /> إنهاء وتصفية الأوردر
                           </button>
-                          <button onClick={() => openSettleModal(order)} className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-1 shadow-lg shadow-green-900/20">
-                            <DollarSign className="w-4 h-4" /> تصفية الأوردر
+                          <button onClick={() => { setSelectedOrderForActions(order); setShowActionsModal(true); }} className="w-full bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 border border-slate-600">
+                            <FileCheck className="w-5 h-5 text-orange-400" /> إجراءات أخرى (تأجيل / إلغاء)
                           </button>
-                        </>
+                        </div>
                       )}
                     </div>
                   </div>
                 </div>
-              ))}
+              )})}
               {filteredOrders.length === 0 && <div className="text-center py-8 text-slate-400">لا توجد أوردرات</div>}
             </div>
           </>
