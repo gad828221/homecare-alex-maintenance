@@ -366,7 +366,7 @@ export default function ProtectedOrders() {
   };
 
   const deleteCashEntry = async (id: number) => {
-    if (!canEditDelete()) return showToast(""", "info");
+    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
     if (confirm('هل تريد حذف هذا القيد نهائياً؟')) {
       await fetchAPI(`cash_ledger?id=eq.${id}`, { method: 'DELETE' });
       await addNotification('حذف قيد خزنة', `تم حذف قيد من سجل الخزنة`);
@@ -389,10 +389,10 @@ export default function ProtectedOrders() {
 
   const addCompanyProfitToCash = async (order: any) => {
     const companyShare = order.company_share || 0;
-    if (order.profit_added_to_cash) { showToast(""", "info"); return false; }
-    if (companyShare <= 0) { showToast(""", "info"); return false; }
-    if (!order.is_paid) { showToast(""", "info"); return false; }
-    if (order.status !== 'completed') { showToast(""", "info"); return false; }
+    if (order.profit_added_to_cash) { showToast("ليس لديك صلاحية", "error"); return false; }
+    if (companyShare <= 0) { showToast("ليس لديك صلاحية", "error"); return false; }
+    if (!order.is_paid) { showToast("ليس لديك صلاحية", "error"); return false; }
+    if (order.status !== 'completed') { showToast("ليس لديك صلاحية", "error"); return false; }
     try {
       const today = new Date().toISOString().split('T')[0];
       const roundedShare = Number(companyShare.toFixed(2));
@@ -428,13 +428,13 @@ export default function ProtectedOrders() {
 
       const activePartners = partners.filter(p => p.is_active === true);
       if (activePartners.length === 0) {
-        showToast(""", "info");
+        showToast("ليس لديك صلاحية", "error");
         return;
       }
 
       const totalPartnerShares = activePartners.reduce((sum, p) => sum + (Number(p.share_percentage) || 0), 0);
       if (totalPartnerShares <= 0) {
-        showToast(""", "info");
+        showToast("ليس لديك صلاحية", "error");
         return;
       }
 
@@ -485,7 +485,7 @@ export default function ProtectedOrders() {
       alert(`✅ تم التوزيع بنجاح.\n💰 تم توزيع ${amountToDistribute.toLocaleString()} ج.م`);
     } catch (err) {
       console.error(err);
-      showToast(""", "info");
+      showToast("ليس لديك صلاحية", "error");
     }
   };
 
@@ -525,7 +525,7 @@ export default function ProtectedOrders() {
 
       const activePartners = partners.filter(p => p.is_active && p.phone);
       if (activePartners.length === 0) {
-        showToast(""", "info");
+        showToast("ليس لديك صلاحية", "error");
         return;
       }
 
@@ -542,13 +542,13 @@ export default function ProtectedOrders() {
       showToast("'", "info");
     } catch (err) {
       console.error(err);
-      showToast(""", "info");
+      showToast("ليس لديك صلاحية", "error");
     }
   };
 
   const handleSendReportForDate = () => {
     if (!reportDate) {
-      showToast(""", "info");
+      showToast("ليس لديك صلاحية", "error");
       return;
     }
     sendDailyReportToPartners(reportDate);
@@ -556,7 +556,7 @@ export default function ProtectedOrders() {
 
   const handleDistributeSelectedProfit = async () => {
     if (!selectedProfitDate) {
-      showToast(""", "info");
+      showToast("ليس لديك صلاحية", "error");
       return;
     }
     await distributeProfitForDate(selectedProfitDate);
@@ -726,14 +726,14 @@ export default function ProtectedOrders() {
   };
 
   const deleteOrder = async (id: number) => {
-    if (!canEditDelete()) return showToast(""", "info");
+    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
     const order = orders.find(o => o.id === id);
     if (!order) return;
     const confirmation = prompt(
       `❗ حذف أوردر العميل: ${order.customer_name}\nرقم الأوردر: ${order.order_number}\n\nللتأكيد، اكتب كلمة "حذف" ثم اضغط OK.`
     );
     if (confirmation !== "حذف") {
-      showToast(""", "info");
+      showToast("ليس لديك صلاحية", "error");
       return;
     }
     try {
@@ -748,7 +748,7 @@ export default function ProtectedOrders() {
   };
 
   const restoreOrder = async (id: number) => {
-    if (!canEditDelete()) return showToast(""", "info");
+    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
     const order = deletedOrders.find(o => o.id === id);
     if (!order) return;
     if (confirm(`استعادة أوردر ${order.customer_name} (${order.order_number})؟`)) {
@@ -766,7 +766,7 @@ export default function ProtectedOrders() {
     navigator.clipboard.writeText(text);
     setCopiedId(order.id);
     setTimeout(() => setCopiedId(null), 2000);
-    showToast(""", "info");
+    showToast("ليس لديك صلاحية", "error");
   };
 
   const saveOrder = async (e: React.FormEvent) => {
@@ -815,14 +815,14 @@ export default function ProtectedOrders() {
       setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") });
       setIsOtherDevice(false); setIsOtherBrand(false); setCustomDevice(''); setCustomBrand('');
       fetchData();
-    } catch (err) { console.error(err); showToast(""", "info"); } finally { setIsSubmitting(false); }
+    } catch (err) { console.error(err); showToast("ليس لديك صلاحية", "error"); } finally { setIsSubmitting(false); }
   };
 
   const updateAllPendingOrdersProfit = async (technicianName: string, newPercentage: number) => {
-    if (!canEditDelete()) return showToast(""", "info");
+    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
     if (!confirm(`هل تريد تحديث نسب الأرباح لجميع الأوردرات غير المكتملة للفني "${technicianName}" إلى ${newPercentage}%؟`)) return;
     const pendingOrders = orders.filter(o => o.technician === technicianName && o.status !== 'completed');
-    if (pendingOrders.length === 0) { showToast(""", "info"); return; }
+    if (pendingOrders.length === 0) { showToast("ليس لديك صلاحية", "error"); return; }
     let updatedCount = 0;
     for (const order of pendingOrders) {
       const net = order.net_amount;
@@ -838,7 +838,7 @@ export default function ProtectedOrders() {
 
   const saveTechnician = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canEditDelete()) return showToast(""", "info");
+    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
     const oldTech = editingTech ? technicians.find(t => t.id === editingTech.id) : null;
     const percentageChanged = oldTech && oldTech.profit_percentage !== techForm.profit_percentage;
     try {
@@ -857,7 +857,7 @@ export default function ProtectedOrders() {
   };
 
   const deleteTechnician = async (id: number, name: string) => {
-    if (!canEditDelete()) return showToast(""", "info");
+    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
     if (confirm(`حذف الفني ${name}؟`)) { 
       await fetchAPI(`technicians?id=eq.${id}`, { method: 'DELETE' });
       await addNotification('حذف فني', `تم حذف الفني ${name}`);
@@ -866,7 +866,7 @@ export default function ProtectedOrders() {
   };
 
   const toggleTechnicianActive = async (tech: any) => {
-    if (!canEditDelete()) return showToast(""", "info");
+    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
     await fetchAPI(`technicians?id=eq.${tech.id}`, { method: 'PATCH', body: JSON.stringify({ is_active: !tech.is_active }) });
     await addNotification('تغيير حالة فني', `تم ${!tech.is_active ? 'تفعيل' : 'تعطيل'} الفني ${tech.name}`);
     fetchData();
@@ -878,13 +878,13 @@ export default function ProtectedOrders() {
     await navigator.clipboard.writeText(message);
     setCopiedId(tech.id);
     setTimeout(() => setCopiedId(null), 3000);
-    showToast(""", "info");
+    showToast("ليس لديك صلاحية", "error");
   };
 
   const printAndSendInvoice = async (order: any) => {
     const parts = prompt("✏️ قطع الغيار المستخدمة", "لا توجد") || "لا توجد";
     const warranty = prompt("🛡️ فترة الضمان", "6 أشهر") || "6 أشهر";
-    if (!order.phone) return showToast(""", "info");
+    if (!order.phone) return showToast("ليس لديك صلاحية", "error");
     
     await fetchAPI(`orders?id=eq.${order.id}`, { method: 'PATCH', body: JSON.stringify({ invoice_approved: true, warranty_period: warranty, parts_used: parts, invoice_date: new Date().toISOString().split('T')[0] }) });
     await addNotification('اعتماد فاتورة', `تم اعتماد فاتورة ${order.customer_name} مع ضمان ${warranty}`);
@@ -895,17 +895,17 @@ export default function ProtectedOrders() {
       totalAmount: order.total_amount, warranty: warranty, date: new Date().toLocaleDateString('ar-EG'),
       address: order.address, partsUsed: parts, technicianName: order.technician
     });
-    showToast(""", "info");
+    showToast("ليس لديك صلاحية", "error");
     fetchData();
   };
 
   const deleteNotification = async (id: number) => { 
-    if (userRole !== 'admin') return showToast(""", "info");
+    if (userRole !== 'admin') return showToast("ليس لديك صلاحية", "error");
     await fetchAPI(`notifications?id=eq.${id}`, { method: 'DELETE' }); 
     fetchNotifications(); 
   };
   const deleteAllNotifications = async () => { 
-    if (userRole !== 'admin') return showToast(""", "info");
+    if (userRole !== 'admin') return showToast("ليس لديك صلاحية", "error");
     if (confirm('هل أنت متأكد من حذف جميع الإشعارات نهائياً؟')) { 
       for (const n of notifications) await fetchAPI(`notifications?id=eq.${n.id}`, { method: 'DELETE' }); 
       fetchNotifications(); 
