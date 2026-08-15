@@ -464,8 +464,20 @@ export default function TechnicianPortal() {
               <h2 className="text-md font-semibold text-white flex items-center gap-2"><ClipboardList className="w-4 h-4 text-orange-400" /> أوردراتي</h2>
               {filteredOrders.map(order => {
                 const isNew = isNewOrder(order);
+                  const statusConfig = {
+                    pending: { color: 'amber', label: '⏳ قيد الانتظار', pulse: 'animate-pulse' },
+                    'in-progress': { color: 'blue', label: '🔧 قيد التنفيذ', pulse: '' },
+                    completed: { color: 'emerald', label: '✅ مكتمل', pulse: '' },
+                    cancelled: { color: 'rose', label: '❌ ملغي', pulse: '' },
+                    deferred: { color: 'purple', label: '⏰ مؤجل', pulse: '' },
+                    inspected: { color: 'cyan', label: '🔍 تم الكشف', pulse: '' }
+                  };
+                  const config = statusConfig[order.status] || { color: 'slate', label: order.status, pulse: '' };
+                  const cardColor = config.color;
+                  const isPending = order.status === 'pending';
+    
                 return (
-                    <div key={order.id} className={`group bg-slate-900 rounded-[1.5rem] border border-slate-800 p-5 transition-all hover:border-orange-500/50 hover:shadow-2xl hover:shadow-orange-500/10 relative overflow-hidden ${isNewOrder(order) ? 'ring-2 ring-blue-500/30' : ''}`}>
+                    <div key={order.id} className={`group bg-${cardColor}-950/10 rounded-[1.5rem] border-2 border-${cardColor}-500/30 p-5 transition-all hover:border-${cardColor}-500 hover:shadow-2xl hover:shadow-${cardColor}-500/20 relative overflow-hidden ${config.pulse} ${isNewOrder(order) ? "ring-4 ring-blue-500/50" : ""}`}>
                       {/* Status Background */}
                       <div className={`absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:bg-orange-500/10 transition-all`}></div>
                       
@@ -478,14 +490,7 @@ export default function TechnicianPortal() {
                           </div>
                           <span className="text-[10px] font-bold text-slate-500 tracking-widest uppercase">#{order.order_number}</span>
                         </div>
-                        <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black border border-slate-700 bg-slate-800/50 text-slate-300`}>
-                          {order.status === 'pending' ? '⏳ قيد الانتظار' :
-                           order.status === 'in-progress' ? '🔧 قيد التنفيذ' :
-                           order.status === 'inspected' ? '🔍 تم الكشف' :
-                           order.status === 'completed' ? '✅ مكتمل' :
-                           order.status === 'cancelled' ? '❌ ملغي' :
-                           order.status === 'deferred' ? '⏰ مؤجل' : order.status}
-                        </div>
+                        <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black border border-${cardColor}-500/30 bg-${cardColor}-500/10 text-${cardColor}-400`}>{config.label}</div>
                       </div>
 
                       {/* Info Grid */}
