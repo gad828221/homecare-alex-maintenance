@@ -1786,7 +1786,10 @@ export default function ProtectedOrders() {
                       const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
                       const totalParts = techOrders.reduce((sum, o) => sum + (Number(o.parts_cost) || 0), 0);
                       const totalTransport = techOrders.reduce((sum, o) => sum + (Number(o.transport_cost) || 0), 0);
-                      return { name: t.name, total, completed, percentage, totalParts, totalTransport };
+                      const totalExpenses = totalParts + totalTransport;
+                      const partsPercent = totalExpenses > 0 ? Math.round((totalParts / totalExpenses) * 100) : 0;
+                      const transportPercent = totalExpenses > 0 ? Math.round((totalTransport / totalExpenses) * 100) : 0;
+                      return { name: t.name, total, completed, percentage, totalParts, totalTransport, totalExpenses, partsPercent, transportPercent };
                     })
                     .sort((a, b) => b.percentage - a.percentage || b.completed - a.completed)
                     .slice(0, 5)
@@ -1803,12 +1806,20 @@ export default function ProtectedOrders() {
                           <span className="text-[10px] font-black text-slate-400">{t.percentage}%</span>
                         </div>
                         <div className="grid grid-cols-2 gap-2 mt-1">
-                          <div className="bg-slate-900/50 p-2 rounded-xl border border-slate-800/30">
-                            <p className="text-[8px] font-bold text-slate-500 mb-0.5">⚙️ قطع غيار</p>
+                          <div className="bg-slate-900/50 p-2 rounded-xl border border-slate-800/30 relative overflow-hidden">
+                            <div className="absolute bottom-0 left-0 h-0.5 bg-rose-500/30" style={{ width: `${t.partsPercent}%` }}></div>
+                            <div className="flex justify-between items-start">
+                              <p className="text-[8px] font-bold text-slate-500 mb-0.5">⚙️ قطع غيار</p>
+                              <span className="text-[7px] font-black text-rose-500/50">{t.partsPercent}%</span>
+                            </div>
                             <p className="text-[10px] font-black text-rose-400">{t.totalParts.toLocaleString()} ج.م</p>
                           </div>
-                          <div className="bg-slate-900/50 p-2 rounded-xl border border-slate-800/30">
-                            <p className="text-[8px] font-bold text-slate-500 mb-0.5">🚗 مواصلات</p>
+                          <div className="bg-slate-900/50 p-2 rounded-xl border border-slate-800/30 relative overflow-hidden">
+                            <div className="absolute bottom-0 left-0 h-0.5 bg-amber-500/30" style={{ width: `${t.transportPercent}%` }}></div>
+                            <div className="flex justify-between items-start">
+                              <p className="text-[8px] font-bold text-slate-500 mb-0.5">🚗 مواصلات</p>
+                              <span className="text-[7px] font-black text-amber-500/50">{t.transportPercent}%</span>
+                            </div>
                             <p className="text-[10px] font-black text-amber-400">{t.totalTransport.toLocaleString()} ج.م</p>
                           </div>
                         </div>
