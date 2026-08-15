@@ -4,9 +4,10 @@ import {
   CheckCircle2, AlertCircle, 
   Edit, Trash2, RefreshCw, Phone,
   Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut, Send,
-  RotateCcw
+  RotateCcw, Clock, MapPin, Star, Cpu
 } from "lucide-react";
 import { createClient } from '@supabase/supabase-js';
+import { Helmet } from 'react-helmet-async';
 
 
 // ==================== الإعدادات الأساسية ====================
@@ -365,7 +366,7 @@ export default function ProtectedOrders() {
   };
 
   const deleteCashEntry = async (id: number) => {
-    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية");
+    if (!canEditDelete()) return showToast(""", "info");
     if (confirm('هل تريد حذف هذا القيد نهائياً؟')) {
       await fetchAPI(`cash_ledger?id=eq.${id}`, { method: 'DELETE' });
       await addNotification('حذف قيد خزنة', `تم حذف قيد من سجل الخزنة`);
@@ -388,10 +389,10 @@ export default function ProtectedOrders() {
 
   const addCompanyProfitToCash = async (order: any) => {
     const companyShare = order.company_share || 0;
-    if (order.profit_added_to_cash) { alert("⚠️ تم إضافة أرباح هذا الأوردر مسبقاً"); return false; }
-    if (companyShare <= 0) { alert("❌ لا توجد أرباح للشركة"); return false; }
-    if (!order.is_paid) { alert("❌ الأوردر لم يتم تحصيله بعد"); return false; }
-    if (order.status !== 'completed') { alert("❌ الأوردر لم يكتمل بعد"); return false; }
+    if (order.profit_added_to_cash) { showToast(""", "info"); return false; }
+    if (companyShare <= 0) { showToast(""", "info"); return false; }
+    if (!order.is_paid) { showToast(""", "info"); return false; }
+    if (order.status !== 'completed') { showToast(""", "info"); return false; }
     try {
       const today = new Date().toISOString().split('T')[0];
       const roundedShare = Number(companyShare.toFixed(2));
@@ -427,13 +428,13 @@ export default function ProtectedOrders() {
 
       const activePartners = partners.filter(p => p.is_active === true);
       if (activePartners.length === 0) {
-        alert("⚠️ لا يوجد شركاء نشطون.");
+        showToast(""", "info");
         return;
       }
 
       const totalPartnerShares = activePartners.reduce((sum, p) => sum + (Number(p.share_percentage) || 0), 0);
       if (totalPartnerShares <= 0) {
-        alert("⚠️ إجمالي نسب الشركاء غير صالح.");
+        showToast(""", "info");
         return;
       }
 
@@ -484,7 +485,7 @@ export default function ProtectedOrders() {
       alert(`✅ تم التوزيع بنجاح.\n💰 تم توزيع ${amountToDistribute.toLocaleString()} ج.م`);
     } catch (err) {
       console.error(err);
-      alert("❌ حدث خطأ أثناء التوزيع");
+      showToast(""", "info");
     }
   };
 
@@ -524,7 +525,7 @@ export default function ProtectedOrders() {
 
       const activePartners = partners.filter(p => p.is_active && p.phone);
       if (activePartners.length === 0) {
-        alert("⚠️ لا يوجد شركاء نشطون بأرقام هواتف");
+        showToast(""", "info");
         return;
       }
 
@@ -538,16 +539,16 @@ export default function ProtectedOrders() {
         const url = `https://wa.me/${phone}?text=${encodeURIComponent(reportText)}`;
         window.open(url, '_blank');
       }
-      alert('✅ تم فتح WhatsApp لإرسال التقرير لكل شريك');
+      showToast("'", "info");
     } catch (err) {
       console.error(err);
-      alert("❌ حدث خطأ أثناء إرسال التقرير");
+      showToast(""", "info");
     }
   };
 
   const handleSendReportForDate = () => {
     if (!reportDate) {
-      alert("⚠️ يرجى اختيار التاريخ أولاً.");
+      showToast(""", "info");
       return;
     }
     sendDailyReportToPartners(reportDate);
@@ -555,7 +556,7 @@ export default function ProtectedOrders() {
 
   const handleDistributeSelectedProfit = async () => {
     if (!selectedProfitDate) {
-      alert("⚠️ يرجى اختيار التاريخ أولاً.");
+      showToast(""", "info");
       return;
     }
     await distributeProfitForDate(selectedProfitDate);
@@ -725,14 +726,14 @@ export default function ProtectedOrders() {
   };
 
   const deleteOrder = async (id: number) => {
-    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية لحذف الأوردرات");
+    if (!canEditDelete()) return showToast(""", "info");
     const order = orders.find(o => o.id === id);
     if (!order) return;
     const confirmation = prompt(
       `❗ حذف أوردر العميل: ${order.customer_name}\nرقم الأوردر: ${order.order_number}\n\nللتأكيد، اكتب كلمة "حذف" ثم اضغط OK.`
     );
     if (confirmation !== "حذف") {
-      alert("❌ تم إلغاء الحذف");
+      showToast(""", "info");
       return;
     }
     try {
@@ -747,7 +748,7 @@ export default function ProtectedOrders() {
   };
 
   const restoreOrder = async (id: number) => {
-    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية");
+    if (!canEditDelete()) return showToast(""", "info");
     const order = deletedOrders.find(o => o.id === id);
     if (!order) return;
     if (confirm(`استعادة أوردر ${order.customer_name} (${order.order_number})؟`)) {
@@ -765,7 +766,7 @@ export default function ProtectedOrders() {
     navigator.clipboard.writeText(text);
     setCopiedId(order.id);
     setTimeout(() => setCopiedId(null), 2000);
-    alert("✅ تم نسخ بيانات الأوردر إلى الحافظة");
+    showToast(""", "info");
   };
 
   const saveOrder = async (e: React.FormEvent) => {
@@ -814,14 +815,14 @@ export default function ProtectedOrders() {
       setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") });
       setIsOtherDevice(false); setIsOtherBrand(false); setCustomDevice(''); setCustomBrand('');
       fetchData();
-    } catch (err) { console.error(err); alert("❌ حدث خطأ أثناء حفظ الأوردر"); } finally { setIsSubmitting(false); }
+    } catch (err) { console.error(err); showToast(""", "info"); } finally { setIsSubmitting(false); }
   };
 
   const updateAllPendingOrdersProfit = async (technicianName: string, newPercentage: number) => {
-    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية");
+    if (!canEditDelete()) return showToast(""", "info");
     if (!confirm(`هل تريد تحديث نسب الأرباح لجميع الأوردرات غير المكتملة للفني "${technicianName}" إلى ${newPercentage}%؟`)) return;
     const pendingOrders = orders.filter(o => o.technician === technicianName && o.status !== 'completed');
-    if (pendingOrders.length === 0) { alert("لا توجد أوردرات غير مكتملة لهذا الفني."); return; }
+    if (pendingOrders.length === 0) { showToast(""", "info"); return; }
     let updatedCount = 0;
     for (const order of pendingOrders) {
       const net = order.net_amount;
@@ -837,7 +838,7 @@ export default function ProtectedOrders() {
 
   const saveTechnician = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية");
+    if (!canEditDelete()) return showToast(""", "info");
     const oldTech = editingTech ? technicians.find(t => t.id === editingTech.id) : null;
     const percentageChanged = oldTech && oldTech.profit_percentage !== techForm.profit_percentage;
     try {
@@ -856,7 +857,7 @@ export default function ProtectedOrders() {
   };
 
   const deleteTechnician = async (id: number, name: string) => {
-    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية");
+    if (!canEditDelete()) return showToast(""", "info");
     if (confirm(`حذف الفني ${name}؟`)) { 
       await fetchAPI(`technicians?id=eq.${id}`, { method: 'DELETE' });
       await addNotification('حذف فني', `تم حذف الفني ${name}`);
@@ -865,7 +866,7 @@ export default function ProtectedOrders() {
   };
 
   const toggleTechnicianActive = async (tech: any) => {
-    if (!canEditDelete()) return alert("⚠️ ليس لديك صلاحية");
+    if (!canEditDelete()) return showToast(""", "info");
     await fetchAPI(`technicians?id=eq.${tech.id}`, { method: 'PATCH', body: JSON.stringify({ is_active: !tech.is_active }) });
     await addNotification('تغيير حالة فني', `تم ${!tech.is_active ? 'تفعيل' : 'تعطيل'} الفني ${tech.name}`);
     fetchData();
@@ -877,13 +878,13 @@ export default function ProtectedOrders() {
     await navigator.clipboard.writeText(message);
     setCopiedId(tech.id);
     setTimeout(() => setCopiedId(null), 3000);
-    alert("✅ تم نسخ بيانات الدخول والشرح بنجاح!");
+    showToast(""", "info");
   };
 
   const printAndSendInvoice = async (order: any) => {
     const parts = prompt("✏️ قطع الغيار المستخدمة", "لا توجد") || "لا توجد";
     const warranty = prompt("🛡️ فترة الضمان", "6 أشهر") || "6 أشهر";
-    if (!order.phone) return alert("❌ رقم الهاتف غير موجود");
+    if (!order.phone) return showToast(""", "info");
     
     await fetchAPI(`orders?id=eq.${order.id}`, { method: 'PATCH', body: JSON.stringify({ invoice_approved: true, warranty_period: warranty, parts_used: parts, invoice_date: new Date().toISOString().split('T')[0] }) });
     await addNotification('اعتماد فاتورة', `تم اعتماد فاتورة ${order.customer_name} مع ضمان ${warranty}`);
@@ -894,17 +895,17 @@ export default function ProtectedOrders() {
       totalAmount: order.total_amount, warranty: warranty, date: new Date().toLocaleDateString('ar-EG'),
       address: order.address, partsUsed: parts, technicianName: order.technician
     });
-    alert("✅ تم اعتماد الفاتورة وإرسالها للعميل");
+    showToast(""", "info");
     fetchData();
   };
 
   const deleteNotification = async (id: number) => { 
-    if (userRole !== 'admin') return alert("⚠️ عذراً، فقط مدير النظام يمكنه حذف الإشعارات");
+    if (userRole !== 'admin') return showToast(""", "info");
     await fetchAPI(`notifications?id=eq.${id}`, { method: 'DELETE' }); 
     fetchNotifications(); 
   };
   const deleteAllNotifications = async () => { 
-    if (userRole !== 'admin') return alert("⚠️ عذراً، فقط مدير النظام يمكنه حذف الإشعارات");
+    if (userRole !== 'admin') return showToast(""", "info");
     if (confirm('هل أنت متأكد من حذف جميع الإشعارات نهائياً؟')) { 
       for (const n of notifications) await fetchAPI(`notifications?id=eq.${n.id}`, { method: 'DELETE' }); 
       fetchNotifications(); 
@@ -970,7 +971,7 @@ export default function ProtectedOrders() {
       setReportData(data || []);
     } catch (err) {
       console.error(err);
-      alert('فشل تحميل التقرير');
+      showToast("'", "info");
     } finally {
       setReportLoading(false);
     }
@@ -1026,7 +1027,7 @@ export default function ProtectedOrders() {
       setReportData(finalData.map(order => ({ ...order, date: order.created_at.split('T')[0] })));
     } catch (err) {
       console.error(err);
-      alert('فشل تحميل التقرير');
+      showToast("'", "info");
     } finally {
       setReportLoading(false);
     }
@@ -1057,7 +1058,7 @@ export default function ProtectedOrders() {
       
       setReportColumns(['رقم الأوردر', 'العميل', 'الهاتف', 'الجهاز', 'الماركة', 'الفني', 'سبب الإلغاء', 'التاريخ']);
       setReportData(filtered.map(order => ({ ...order, date: order.created_at.split('T')[0] })));
-    } catch (err) { console.error(err); alert('فشل تحميل التقرير'); } finally { setReportLoading(false); }
+    } catch (err) { console.error(err); showToast("'", "info"); } finally { setReportLoading(false); }
   };
 
   const fetchTechPerformanceReport = async () => {
@@ -1089,7 +1090,7 @@ export default function ProtectedOrders() {
       }));
       setReportColumns(['الفني', 'إجمالي الأوردرات', 'مكتمل', 'ملغي', 'متوسط الوقت (ساعات)']);
       setReportData(report);
-    } catch (err) { console.error(err); alert('فشل تحميل التقرير'); } finally { setReportLoading(false); }
+    } catch (err) { console.error(err); showToast("'", "info"); } finally { setReportLoading(false); }
   };
 
   const fetchProfitsReport = async () => {
@@ -1110,7 +1111,7 @@ export default function ProtectedOrders() {
       const report = Array.from(partnerMap.entries()).map(([name, total]) => ({ name, total }));
       setReportColumns(['الشريك', 'إجمالي الأرباح (ج.م)']);
       setReportData(report);
-    } catch (err) { console.error(err); alert('فشل تحميل التقرير'); } finally { setReportLoading(false); }
+    } catch (err) { console.error(err); showToast("'", "info"); } finally { setReportLoading(false); }
   };
 
   const fetchExpensesReport = async () => {
@@ -1125,7 +1126,7 @@ export default function ProtectedOrders() {
       if (error) throw error;
       setReportColumns(['التاريخ', 'الوصف', 'المبلغ (ج.م)']);
       setReportData(data || []);
-    } catch (err) { console.error(err); alert('فشل تحميل التقرير'); } finally { setReportLoading(false); }
+    } catch (err) { console.error(err); showToast("'", "info"); } finally { setReportLoading(false); }
   };
 
   const fetchComparisonReport = async () => {
@@ -1139,11 +1140,11 @@ export default function ProtectedOrders() {
       const totalProfitDist = (profitDistData||[]).reduce((s,p)=>s+p.amount,0);
       setReportData([{ الإيرادات: totalIncome, المصروفات: totalExpense, توزيع_الأرباح: totalProfitDist, صافي_الربح: totalIncome - totalExpense - totalProfitDist }]);
       setReportColumns(['الإيرادات (ج.م)', 'المصروفات (ج.م)', 'توزيع الأرباح (ج.م)', 'صافي الربح (ج.م)']);
-    } catch (err) { console.error(err); alert('فشل تحميل التقرير'); } finally { setReportLoading(false); }
+    } catch (err) { console.error(err); showToast("'", "info"); } finally { setReportLoading(false); }
   };
 
   const generateReport = () => {
-    if (!startDate || !endDate) { alert('يرجى اختيار تاريخ البداية والنهاية'); return; }
+    if (!startDate || !endDate) { showToast("'", "info"); return; }
     switch (reportType) {
       case 'cash': fetchCashReport(); break;
       case 'pending_orders': fetchPendingOrdersReport(); break;
@@ -1156,7 +1157,7 @@ export default function ProtectedOrders() {
   };
 
   const exportToCSV = () => {
-    if (!reportData.length) { alert('لا توجد بيانات للتصدير'); return; }
+    if (!reportData.length) { showToast("'", "info"); return; }
     const headers = reportColumns.join(',');
     const rows = reportData.map(row => reportColumns.map(col => {
       let val = '';
@@ -1195,6 +1196,9 @@ export default function ProtectedOrders() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200" dir="rtl">
+      <Helmet>
+        <title>لوحة التحكم | Homecare Alex Maintenance</title>
+      </Helmet>
       {toast && (
         <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-xl text-white font-bold shadow-lg ${
           toast.type === 'success' ? 'bg-green-600' : toast.type === 'error' ? 'bg-red-600' : 'bg-blue-600'
@@ -1227,45 +1231,61 @@ export default function ProtectedOrders() {
 	        {activeTab === 'orders' && (
 	          <div className="space-y-4">
               {/* لوحة ملخص اليوم الذكي */}
-              <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-xl p-5 border border-slate-700 shadow-xl relative overflow-hidden group">
-                <div className="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                  <div>
-                    <h2 className="text-xl font-black text-white flex items-center gap-2">
-                      <LayoutDashboard className="text-orange-500" /> ملخص حالة العمل اليوم
-                    </h2>
-                    <p className="text-xs text-slate-400 mt-1">مرحباً بك! إليك نظرة سريعة على ما يجب متابعته الآن.</p>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                <div className="lg:col-span-2 bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-6 border border-slate-700 shadow-2xl relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-2 h-full bg-orange-500"></div>
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+                    <div>
+                      <h2 className="text-2xl font-black text-white flex items-center gap-3">
+                        <LayoutDashboard className="text-orange-500 w-8 h-8" /> ملخص العمليات اليوم
+                      </h2>
+                      <p className="text-sm text-slate-400 mt-2">نظرة عامة على أداء المركز والحالات الحرجة التي تتطلب انتباهك.</p>
+                    </div>
+                    <div className="flex gap-3">
+                      <button onClick={sendDailyReportToWhatsApp} className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-2xl text-sm font-black flex items-center gap-2 transition-all shadow-lg shadow-emerald-900/20 active:scale-95">
+                        <Send size={18} /> تقرير الواتساب
+                      </button>
+                      <button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 text-white p-2.5 rounded-2xl transition-all active:scale-95">
+                        <RefreshCw size={20} />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={sendDailyReportToWhatsApp}
-                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all shadow-lg shadow-green-900/20"
-                    >
-                      <Send size={16} /> إرسال التقرير لواتساب
-                    </button>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+                    <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/50 hover:border-blue-500/30 transition-all group">
+                      <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">أوردرات اليوم</div>
+                      <div className="text-2xl font-black text-white group-hover:text-blue-400 transition-colors">{orders.filter(o => (o.created_at || o.date).includes(new Date().toISOString().split('T')[0])).length}</div>
+                    </div>
+                    <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/50 hover:border-orange-500/30 transition-all group">
+                      <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">بدون فني</div>
+                      <div className={`text-2xl font-black ${orders.filter(o => !o.technician || o.technician === '-' || o.technician === '').length > 0 ? 'text-orange-500 animate-pulse' : 'text-white'}`}>
+                        {orders.filter(o => !o.technician || o.technician === '-' || o.technician === '').length}
+                      </div>
+                    </div>
+                    <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/50 hover:border-red-500/30 transition-all group">
+                      <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">متأخرة ⚠️</div>
+                      <div className={`text-2xl font-black ${orders.filter(o => isDelayed(o)).length > 0 ? 'text-red-500' : 'text-white'}`}>
+                        {orders.filter(o => isDelayed(o)).length}
+                      </div>
+                    </div>
+                    <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/50 hover:border-green-500/30 transition-all group">
+                      <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">قيد التنفيذ</div>
+                      <div className="text-2xl font-black text-blue-400">{orders.filter(o => o.status === 'in-progress').length}</div>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                  <div className="bg-slate-950/50 p-3 rounded-lg border border-slate-800">
-                    <div className="text-[10px] text-slate-500 font-bold mb-1">أوردرات اليوم</div>
-                    <div className="text-xl font-black text-white">{orders.filter(o => (o.created_at || o.date).includes(new Date().toISOString().split('T')[0])).length}</div>
-                  </div>
-                  <div className="bg-slate-950/50 p-3 rounded-lg border border-slate-800">
-                    <div className="text-[10px] text-slate-500 font-bold mb-1">بدون فني</div>
-                    <div className={`text-xl font-black ${orders.filter(o => !o.technician || o.technician === '-' || o.technician === '').length > 0 ? 'text-orange-500 animate-pulse' : 'text-white'}`}>
-                      {orders.filter(o => !o.technician || o.technician === '-' || o.technician === '').length}
+
+                <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-6 border border-slate-700 shadow-2xl flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-4">
+                      <DollarSign className="text-green-500" />
+                      <h3 className="text-lg font-black text-white">الرصيد الحالي</h3>
                     </div>
+                    <div className="text-4xl font-black text-green-400 tabular-nums">{cashBalance.toLocaleString()} <span className="text-sm text-green-600">ج.م</span></div>
                   </div>
-                  <div className="bg-slate-950/50 p-3 rounded-lg border border-slate-800">
-                    <div className="text-[10px] text-slate-500 font-bold mb-1">متأخرة ⚠️</div>
-                    <div className={`text-xl font-black ${orders.filter(o => isDelayed(o)).length > 0 ? 'text-red-500' : 'text-white'}`}>
-                      {orders.filter(o => isDelayed(o)).length}
-                    </div>
-                  </div>
-                  <div className="bg-slate-950/50 p-3 rounded-lg border border-slate-800">
-                    <div className="text-[10px] text-slate-500 font-bold mb-1">رصيد الخزنة</div>
-                    <div className="text-xl font-black text-green-400">{cashBalance} ج.م</div>
+                  <div className="mt-6 flex gap-2">
+                    <button onClick={() => setActiveTab('cash')} className="flex-1 bg-green-600/10 hover:bg-green-600 text-green-500 hover:text-white py-3 rounded-2xl text-xs font-black transition-all">إدارة الخزنة</button>
+                    <button onClick={() => setActiveTab('reports')} className="flex-1 bg-blue-600/10 hover:bg-blue-600 text-blue-500 hover:text-white py-3 rounded-2xl text-xs font-black transition-all">التقارير</button>
                   </div>
                 </div>
               </div>
@@ -1365,92 +1385,99 @@ export default function ProtectedOrders() {
             {!showDeleted && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredOrders.map(order => {
-	                  const delayed = isDelayed(order);
-	                  const noTechnician = !order.technician || order.technician === '-' || order.technician === '';
-	                  return (
-		                    <div key={order.id} className={`rounded-xl border-r-4 p-4 transition-all relative overflow-hidden ${
-                                noTechnician ? 'bg-orange-900/20 border-orange-500 ring-1 ring-orange-500/30 animate-pulse' : 
-                                isNewOrder(order) ? 'bg-blue-900/10 border-blue-500 ring-1 ring-blue-500/20' : 'bg-slate-900'
-                              } ${delayed ? 'border-red-500' : order.status === 'completed' ? 'border-green-500' : order.status === 'in-progress' ? 'border-blue-500' : order.status === 'deferred' ? 'border-purple-500' : 'border-yellow-500'}`}>
-                              {isNewOrder(order) && (
-                                <div className="absolute -left-8 top-2 bg-blue-600 text-white text-[8px] font-black px-8 py-1 -rotate-45 shadow-lg">جديد</div>
-                              )}
-	                      <div className="flex justify-between items-start">
-	                        <div>
-	                          <div className="flex items-center gap-2 flex-wrap">
-	                            <h3 className="font-bold text-white">{order.customer_name}</h3>
-	                            {noTechnician && <span className="bg-orange-600 text-white text-[10px] px-1.5 py-0.5 rounded-full animate-pulse">بدون فني</span>}
-	                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
-	                              order.status === 'completed' ? 'bg-green-500 text-white' :
-	                              order.status === 'in-progress' ? 'bg-blue-500 text-white' :
-	                              order.status === 'pending' ? 'bg-yellow-500 text-black' :
-	                              order.status === 'cancelled' ? 'bg-red-500 text-white' :
-	                              order.status === 'deferred' ? 'bg-purple-500 text-white' :
-	                              'bg-slate-700 text-white'
-	                            }`}>
-	                              {order.status === 'pending' ? 'قيد الانتظار' :
-	                               order.status === 'in-progress' ? 'قيد التنفيذ' :
-	                               order.status === 'inspected' ? 'تم الكشف' :
-	                               order.status === 'completed' ? 'مكتمل' :
-	                               order.status === 'cancelled' ? 'ملغي' :
-	                               order.status === 'deferred' ? 'مؤجل' : order.status}
-	                            </span>
-	                          </div>
-	                          <p className="text-xs text-slate-400">رقم: {order.order_number}</p>
-	                          <div className="flex items-center gap-2 mt-1">
-	                            <span className="text-[10px] text-slate-500 flex items-center gap-1">📅 {new Date(order.created_at || order.date).toLocaleDateString('ar-EG')}</span>
-	                            <span className="text-[10px] text-slate-500 flex items-center gap-1">🕒 {new Date(order.created_at || order.date).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</span>
-	                          </div>
-	                        </div>
-                        <div className="flex gap-1"><button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`p-1 rounded ${order.is_paid ? 'text-green-500 bg-green-500/10' : 'text-red-500 bg-red-500/10'}`}>{order.is_paid ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}</button>{canEditDelete() && <><button onClick={() => { setEditingOrder(order); setFormData(order); setShowOrderModal(true); }} className="p-1 text-blue-500"><Edit size={16} /></button><button onClick={() => copyOrderDetails(order)} className="p-1 text-slate-400" title="نسخ البيانات"><Copy size={16} /></button><button onClick={() => deleteOrder(order.id)} className="p-1 text-red-500"><Trash2 size={16} /></button></>}</div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-1 mt-2 text-sm">
-                        <div className="text-slate-300">📞 {order.phone}</div>
-                        <div className="text-slate-300">🔧 {order.device_type} - {order.brand}</div>
-                        <div className="col-span-2 text-slate-300">📍 {order.address}</div>
-                        <div className="col-span-2 text-slate-300">📝 {order.problem_description}</div>
-                        <div className="text-slate-300">💰 {order.total_amount} ج.م</div>
-                        <div className="text-slate-300">👨‍🔧 {order.technician || '-'}</div>
-                      </div>
-                      <div className="flex justify-between items-center mt-3">
-                        <select value={order.status} onChange={e => updateOrderStatus(order.id, e.target.value)} className="text-xs bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white">
-                          <option value="pending">قيد الانتظار</option><option value="in-progress">قيد التنفيذ</option><option value="inspected">تم الكشف</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option><option value="deferred">مؤجل</option>
-                        </select>
-                        <span className={`text-xs px-2 py-1 rounded ${order.is_paid ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{order.is_paid ? 'تم التحصيل' : 'لم يتحصل'}</span>
-                      </div>
-	                      {order.technician_note && <div className="mt-2 text-xs text-slate-400">📝 ملاحظة الفني: {order.technician_note}</div>}
-                        
-                        {/* زر تذكير الفني للأوردرات المتأخرة */}
-                        {delayed && order.technician && order.technician !== '-' && (
-                          <button 
-                            onClick={() => {
-                              const tech = technicians.find(t => t.name === order.technician);
-                              if (tech && tech.phone) {
-                                const msg = `⚠️ تذكير أوردر متأخر!\n\nالفني: ${tech.name}\nالعميل: ${order.customer_name}\nالجهاز: ${order.device_type}\nالعنوان: ${order.address}\nرقم الأوردر: ${order.order_number}\n\nيرجى التحرك فوراً لإنهاء المهمة.`;
-                                notifyTechnician(tech.phone, tech.name, msg);
-                              } else {
-                                alert('رقم هاتف الفني غير مسجل');
-                              }
-                            }}
-                            className="mt-2 w-full bg-red-600/20 hover:bg-red-600/40 text-red-400 border border-red-600/30 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all"
-                          >
-                            <Bell size={14} className="animate-bounce" /> إرسال تذكير للفني (واتساب)
-                          </button>
-                        )}
+                  const delayed = isDelayed(order);
+                  const noTechnician = !order.technician || order.technician === '-' || order.technician === '';
+                  const statusColor = 
+                    order.status === 'completed' ? 'green' :
+                    order.status === 'in-progress' ? 'blue' :
+                    order.status === 'pending' ? 'yellow' :
+                    order.status === 'cancelled' ? 'red' :
+                    order.status === 'deferred' ? 'purple' : 'slate';
 
-	                      {order.status === 'in-progress' && canEditDelete() && (<button onClick={() => { setSelectedOrder(order); setSettleForm({ total_amount: order.total_amount || 0, parts_cost: order.parts_cost || 0, transport_cost: order.transport_cost || 0, net_amount: order.net_amount || 0, technician_share: order.technician_share || 0, company_share: order.company_share || 0 }); setShowSettleModal(true); }} className="mt-2 w-full bg-orange-600 hover:bg-orange-700 text-white py-1 rounded-lg text-sm font-bold">تصفية الأوردر</button>)}
-                      {(order.status === 'pending' || order.status === 'in-progress' || order.status === 'inspected') && (
-                        <div className="flex gap-2 mt-2">
-                          <button onClick={() => window.open(`/pickup-receipt?id=${order.id}`, '_blank')} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-1 rounded-lg text-sm font-bold">📋 فتح الإيصال</button>
-                          <button onClick={() => sendWhatsApp(order.phone, `📋 إيصال سحب الجهاز\n\nالعميل: ${order.customer_name}\nالجهاز: ${order.device_type}\nالرابط: ${window.location.origin}/pickup-receipt?id=${order.id}`)} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-1 rounded-lg text-sm font-bold">📱 إرسال واتساب</button>
+                  return (
+                    <div key={order.id} className={`group bg-slate-900 rounded-[1.5rem] border border-slate-800 p-5 transition-all hover:border-orange-500/50 hover:shadow-2xl hover:shadow-orange-500/10 relative overflow-hidden`}>
+                      <div className={`absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:bg-orange-500/10 transition-all`}></div>
+                      
+                      <div className="flex justify-between items-start mb-4 relative z-10">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-lg font-black text-white group-hover:text-orange-400 transition-colors">{order.customer_name}</h3>
+                            {isNewOrder(order) && <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-ping"></span>}
+                          </div>
+                          <span className="text-[10px] font-bold text-slate-500 tracking-widest uppercase">#{order.order_number}</span>
                         </div>
-                      )}
-                      {order.status === 'completed' && (
-                        <div className="flex gap-2 mt-2">
-                          <button onClick={() => window.open(`/invoice?id=${order.id}`, '_blank')} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1 rounded-lg text-sm font-bold">📄 فتح الفاتورة</button>
-                          <button onClick={() => sendWhatsApp(order.phone, `📄 فاتورة الخدمة\n\nالعميل: ${order.customer_name}\nالجهاز: ${order.device_type}\nالمبلغ: ${order.total_amount} ج.م\nالرابط: ${window.location.origin}/invoice?id=${order.id}`)} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-1 rounded-lg text-sm font-bold">📱 إرسال واتساب</button>
+                        <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black border border-slate-700 bg-slate-800/50 text-slate-300`}>
+                          {order.status === 'pending' ? '⏳ قيد الانتظار' :
+                           order.status === 'in-progress' ? '🔧 قيد التنفيذ' :
+                           order.status === 'inspected' ? '🔍 تم الكشف' :
+                           order.status === 'completed' ? '✅ مكتمل' :
+                           order.status === 'cancelled' ? '❌ ملغي' :
+                           order.status === 'deferred' ? '⏰ مؤجل' : order.status}
                         </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 mb-5 relative z-10">
+                        <div className="bg-slate-950/50 p-3 rounded-2xl border border-slate-800/50">
+                          <p className="text-[9px] font-bold text-slate-500 mb-1">الجهاز والماركة</p>
+                          <p className="text-xs font-black text-slate-200">{order.device_type} - {order.brand}</p>
+                        </div>
+                        <div className="bg-slate-950/50 p-3 rounded-2xl border border-slate-800/50">
+                          <p className="text-[9px] font-bold text-slate-500 mb-1">إجمالي المبلغ</p>
+                          <p className="text-xs font-black text-orange-400">{order.total_amount} ج.م</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2.5 mb-6 relative z-10">
+                        <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                          <div className="w-6 h-6 rounded-lg bg-slate-800 flex items-center justify-center text-slate-500"><MapPin size={12} /></div>
+                          <span className="line-clamp-1">{order.address || 'لا يوجد عنوان مسجل'}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                          <div className="w-6 h-6 rounded-lg bg-slate-800 flex items-center justify-center text-slate-500"><Users size={12} /></div>
+                          <span>الفني: <span className={noTechnician ? 'text-orange-500 font-black animate-pulse' : 'text-slate-200 font-bold'}>{order.technician || 'لم يتم التعيين بعد'}</span></span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                          <div className="w-6 h-6 rounded-lg bg-slate-800 flex items-center justify-center text-slate-500"><Clock size={12} /></div>
+                          <span>{new Date(order.created_at || order.date).toLocaleDateString('ar-EG')} - {new Date(order.created_at || order.date).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 relative z-10 pt-4 border-t border-slate-800/50">
+                        <a href={`tel:${order.phone}`} className="flex-1 h-10 bg-slate-800 hover:bg-blue-600 text-white rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95">
+                          <Phone size={14} /> <span className="text-[10px] font-black">اتصال</span>
+                        </a>
+                        <button onClick={() => sendWhatsApp(order.phone, `مرحباً أ/ ${order.customer_name}، معك مركز الصيانة بخصوص طلبك رقم ${order.order_number}`)} className="flex-1 h-10 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-500 hover:text-white rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95">
+                          <Send size={14} /> <span className="text-[10px] font-black">واتساب</span>
+                        </button>
+                        <div className="flex gap-1.5">
+                          <button onClick={() => { setEditingOrder(order); setFormData(order); setShowOrderModal(true); }} className="w-10 h-10 bg-slate-800 text-blue-400 hover:bg-blue-600 hover:text-white rounded-xl flex items-center justify-center transition-all active:scale-95"><Edit size={16} /></button>
+                          <button onClick={() => deleteOrder(order.id)} className="w-10 h-10 bg-slate-800 text-rose-400 hover:bg-rose-600 hover:text-white rounded-xl flex items-center justify-center transition-all active:scale-95"><Trash2 size={16} /></button>
+                        </div>
+                      </div>
+
+                      {delayed && (
+                        <div className="absolute top-2 left-2 bg-rose-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full animate-bounce shadow-lg">متأخر ⚠️</div>
                       )}
+                      
+                      <div className="mt-3 flex gap-2 relative z-10">
+                         <select value={order.status} onChange={e => updateOrderStatus(order.id, e.target.value)} className="text-[10px] bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-white flex-1">
+                           <option value="pending">تغيير الحالة</option><option value="in-progress">قيد التنفيذ</option><option value="inspected">تم الكشف</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option><option value="deferred">مؤجل</option>
+                         </select>
+                         <button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`px-3 py-1 rounded-lg text-[10px] font-bold ${order.is_paid ? 'bg-green-600/20 text-green-400' : 'bg-red-600/20 text-red-400'}`}>
+                           {order.is_paid ? 'تم التحصيل' : 'تحصيل؟'}
+                         </button>
+                      </div>
+
+                      <div className="mt-2 flex gap-1 relative z-10">
+                        {order.status === 'completed' ? (
+                          <button onClick={() => window.open(`/invoice?id=${order.id}`, '_blank')} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-1 rounded-lg text-[10px] font-bold">📄 فاتورة</button>
+                        ) : (
+                          <button onClick={() => window.open(`/pickup-receipt?id=${order.id}`, '_blank')} className="w-full bg-purple-600 hover:bg-purple-700 text-white py-1 rounded-lg text-[10px] font-bold">📋 إيصال</button>
+                        )}
+                        {order.status === 'in-progress' && canEditDelete() && (
+                          <button onClick={() => { setSelectedOrder(order); setSettleForm({ total_amount: order.total_amount || 0, parts_cost: order.parts_cost || 0, transport_cost: order.transport_cost || 0, net_amount: order.net_amount || 0, technician_share: order.technician_share || 0, company_share: order.company_share || 0 }); setShowSettleModal(true); }} className="w-full bg-orange-600 hover:bg-orange-700 text-white py-1 rounded-lg text-[10px] font-bold">💰 تصفية</button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
