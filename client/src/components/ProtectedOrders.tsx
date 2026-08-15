@@ -1786,10 +1786,10 @@ export default function ProtectedOrders() {
                       const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
                       const totalParts = techOrders.reduce((sum, o) => sum + (Number(o.parts_cost) || 0), 0);
                       const totalTransport = techOrders.reduce((sum, o) => sum + (Number(o.transport_cost) || 0), 0);
-                      const totalExpenses = totalParts + totalTransport;
-                      const partsPercent = totalExpenses > 0 ? Math.round((totalParts / totalExpenses) * 100) : 0;
-                      const transportPercent = totalExpenses > 0 ? Math.round((totalTransport / totalExpenses) * 100) : 0;
-                      return { name: t.name, total, completed, percentage, totalParts, totalTransport, totalExpenses, partsPercent, transportPercent };
+                      const totalRevenue = techOrders.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
+                      const partsPercent = totalRevenue > 0 ? Math.round((totalParts / totalRevenue) * 100) : 0;
+                      const transportPercent = totalRevenue > 0 ? Math.round((totalTransport / totalRevenue) * 100) : 0;
+                      return { name: t.name, total, completed, percentage, totalParts, totalTransport, totalRevenue, partsPercent, transportPercent };
                     })
                     .sort((a, b) => b.percentage - a.percentage || b.completed - a.completed)
                     .slice(0, 5)
