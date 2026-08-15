@@ -549,15 +549,9 @@ export default function TechnicianPortal() {
                            <button onClick={() => openActionModal(order, 'cancel')} className="flex-1 py-2 bg-slate-800/50 hover:bg-slate-800 text-rose-500/50 hover:text-rose-500 rounded-lg text-[9px] font-bold transition-all">❌ إلغاء</button>
                         </div>
                       </div>
-                    </div> setShowActionsModal(true); }} className="w-full bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 border border-slate-600">
-                            <FileCheck className="w-5 h-5 text-orange-400" /> إجراءات أخرى (تأجيل / إلغاء)
-                          </button>
-                        </div>
-                      )}
                     </div>
-                  </div>
-                </div>
-              )})}
+                  );
+                })}
               {filteredOrders.length === 0 && <div className="text-center py-8 text-slate-400">لا توجد أوردرات</div>}
             </div>
           </>
