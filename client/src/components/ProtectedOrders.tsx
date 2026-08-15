@@ -913,21 +913,14 @@ export default function ProtectedOrders() {
   };
   const clearFilters = () => { setSearchTerm(''); setFilterStatus('all'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); };
 
-  const filteredOrders = orders.filter(o => {
-    // تحسين البحث ليشمل الاسم، الهاتف، ورقم الأوردر
+  
+  const dateFilteredOrders = orders.filter(o => {
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
       const matchesName = o.customer_name?.toLowerCase().includes(searchLower);
       const matchesPhone = o.phone?.includes(searchTerm);
       const matchesOrderNum = String(o.order_number).includes(searchTerm);
       if (!matchesName && !matchesPhone && !matchesOrderNum) return false;
-    }
-
-    // منطق الفلترة السريعة
-    if (filterStatus === '__UNPAID__') {
-      if (o.status !== 'completed' || o.is_paid) return false;
-    } else if (filterStatus !== 'all' && o.status !== filterStatus) {
-      return false;
     }
 
     if (filterTechnician === '__NONE__') {
@@ -938,7 +931,6 @@ export default function ProtectedOrders() {
 
     if (filterDeviceType && o.device_type !== filterDeviceType) return false;
     
-    // فلترة التاريخ
     if (filterDateFrom) {
       const oDate = o.created_at ? o.created_at.split('T')[0] : o.date;
       if (oDate < filterDateFrom) return false;
@@ -949,10 +941,20 @@ export default function ProtectedOrders() {
     }
 
     if (filterDelay === 'delayed' && !isDelayed(o)) return false;
+    return true;
+  });
+
+  const filteredOrders = dateFilteredOrders.filter(o => {
+    if (filterStatus === '__UNPAID__') {
+      if (o.status !== 'completed' || o.is_paid) return false;
+    } else if (filterStatus !== 'all' && o.status !== filterStatus) {
+      return false;
+    }
     
     if (showAllOrders || filterStatus !== 'all' || filterTechnician || filterDateFrom || searchTerm) return true;
     return (o.status === 'in-progress' || o.status === 'pending' || !o.technician || o.technician === '-' || o.technician === '');
   });
+
 
   const filteredTechnicians = technicians.filter(t => filterTechStatus === 'all' ? true : filterTechStatus === 'active' ? t.is_active !== false : t.is_active === false);
 
@@ -1393,7 +1395,7 @@ export default function ProtectedOrders() {
                     { id: 'cancelled', label: 'ملغي', color: 'rose' },
                     { id: 'deferred', label: 'مؤجل', color: 'purple' }
                   ].map(tab => {
-                    const count = tab.id === 'all' ? orders.length : orders.filter(o => o.status === tab.id).length;
+                    const count = tab.id === 'all' ? dateFilteredOrders.length : dateFilteredOrders.filter(o => o.status === tab.id).length;
                     const isActive = filterStatus === tab.id;
                     return (
                       <button
