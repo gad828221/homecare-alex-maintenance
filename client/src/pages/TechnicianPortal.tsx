@@ -343,17 +343,41 @@ export default function TechnicianPortal() {
     return diffHours < 2; // أوردر جديد خلال آخر ساعتين
   };
 
-    const handlePhotoUpload = async (orderId: number, e: React.ChangeEvent<HTMLInputElement>, type: 'old' | 'new' | 'general' = 'general') => {
+      const handlePhotoUpload = async (orderId: number, e: React.ChangeEvent<HTMLInputElement>, type: 'old' | 'new' | 'general' = 'general') => {
     const file = e.target.files?.[0];
     if (!file) return;
     
+    // فحص حجم الملف (أقصى حجم 5 ميجا)
+    if (file.size > 5 * 1024 * 1024) {
+      addNotification({ type: 'error', title: '❌ ملف كبير جداً', message: 'أقصى حجم للصورة هو 5 ميجابايت', duration: 5000 });
+      return;
+    }
+
     setIsUploadingPhoto(true);
     addNotification({ type: 'info', title: '📸 جاري الرفع', message: 'يتم الآن رفع الصورة...', duration: 2000 });
     
     try {
-      const fileName = `${Date.now()}_${type}_${file.name}`;
-      const { data, error } = await supabase.storage.from('order-photos').upload(fileName, file);
+      const fileName = `${Date.now()}_${type}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+      const { data, error } = await supabase.storage.from('order-photos').upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
       
+      if (error) {
+        console.error('Supabase Storage Error:', error);
+        if (error.message.includes('bucket not found') || error.message.includes('does not exist')) {
+          addNotification({ 
+            type: 'critical', 
+            title: '❌ خطأ في الإعدادات', 
+            message: 'مجلد الصور (order-photos) غير موجود في Supabase. يرجى إنشاؤه أولاً من لوحة تحكم Supabase.', 
+            duration: 0 
+          });
+        } else {
+          addNotification({ type: 'error', title: '❌ فشل الرفع', message: `خطأ: ${error.message}`, duration: 5000 });
+        }
+        return;
+      }
+
       let photoUrl = "";
       if (data) {
         const { data: publicUrlData } = supabase.storage.from('order-photos').getPublicUrl(fileName);
@@ -381,12 +405,13 @@ export default function TechnicianPortal() {
       
       addNotification({ type: 'success', title: '✅ تم الرفع', message: 'تم حفظ الصورة بنجاح', duration: 3000 });
     } catch (err) {
-      console.error(err);
-      addNotification({ type: 'error', title: '❌ فشل الرفع', message: 'حدث خطأ أثناء رفع الصورة', duration: 3000 });
+      console.error('Upload Catch Error:', err);
+      addNotification({ type: 'error', title: '❌ حدث خطأ', message: 'فشل الاتصال بخادم الصور', duration: 3000 });
     } finally {
       setIsUploadingPhoto(false);
     }
   };
+
 
 
   // ✅ دالة الفلترة للأوردرات
