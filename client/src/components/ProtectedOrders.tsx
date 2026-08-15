@@ -1769,6 +1769,74 @@ export default function ProtectedOrders() {
           </div>
         )}
 
+        
+        {/* تبويب الإحصائيات الذكية */}
+        {activeTab === 'analytics' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* أفضل الفنيين */}
+              <div className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 shadow-2xl">
+                <h3 className="text-lg font-black text-white mb-6 flex items-center gap-3"><Users className="text-blue-500" /> أفضل الفنيين</h3>
+                <div className="space-y-4">
+                  {technicians
+                    .map(t => ({ name: t.name, count: orders.filter(o => o.technician === t.name && o.status === 'completed').length }))
+                    .sort((a, b) => b.count - a.count)
+                    .slice(0, 5)
+                    .map((t, i) => (
+                      <div key={i} className="flex justify-between items-center bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
+                        <span className="text-sm font-bold text-slate-300">{t.name}</span>
+                        <span className="bg-blue-600/20 text-blue-400 px-4 py-1.5 rounded-full text-xs font-black">{t.count} مكتمل</span>
+                      </div>
+                    ))
+                  }
+                  {technicians.length === 0 && <p className="text-center text-slate-500 py-4">لا يوجد فنيون مسجلون</p>}
+                </div>
+              </div>
+
+              {/* توزيع الأجهزة */}
+              <div className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 shadow-2xl">
+                <h3 className="text-lg font-black text-white mb-6 flex items-center gap-3"><Cpu className="text-orange-500" /> توزيع الأجهزة</h3>
+                <div className="space-y-4">
+                  {['غسالة', 'ثلاجة', 'بوتاجاز', 'سخان', 'تكييف', 'ميكروويف'].map(device => {
+                    const count = orders.filter(o => o.device_type === device).length;
+                    const percentage = orders.length > 0 ? (count / orders.length) * 100 : 0;
+                    if (count === 0) return null;
+                    return (
+                      <div key={device} className="space-y-2">
+                        <div className="flex justify-between text-xs font-bold">
+                          <span className="text-slate-400">{device}</span>
+                          <span className="text-slate-200">{count} ({Math.round(percentage)}%)</span>
+                        </div>
+                        <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                          <div className="bg-orange-500 h-full transition-all duration-1000" style={{ width: `${percentage}%` }}></div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {orders.length === 0 && <p className="text-center text-slate-500 py-4">لا توجد بيانات متاحة</p>}
+                </div>
+              </div>
+
+              {/* أكثر الماركات عطلاً */}
+              <div className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 shadow-2xl">
+                <h3 className="text-lg font-black text-white mb-6 flex items-center gap-3"><Star className="text-yellow-500" /> أكثر الماركات عطلاً</h3>
+                <div className="flex flex-wrap gap-2">
+                  {['سامسونج', 'LG', 'توشيبا', 'شارب', 'زانوسي', 'فريش', 'وايت ويل', 'أريستون', 'إنديست', 'بيكو', 'يونيون إير', 'هوفر'].map(brand => {
+                    const count = orders.filter(o => o.brand === brand).length;
+                    if (count === 0) return null;
+                    return (
+                      <div key={brand} className="bg-slate-950/50 border border-slate-800 px-4 py-3 rounded-2xl flex flex-col items-center min-w-[80px] flex-1">
+                        <span className="text-[10px] text-slate-500 font-bold">{brand}</span>
+                        <span className="text-lg font-black text-white">{count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'performance' && <TechnicianPerformance orders={orders} technicians={technicians} />}
         {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions currentUser={currentUser} />}
       </div>
