@@ -1,3 +1,4 @@
+import SEO from '../components/SEO';
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -45,7 +46,9 @@ export default function ToshibaService() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-white overflow-x-hidden">
+    <>
+      <SEO title="صيانة Toshiba الإسكندرية | مركز خدمة معتمد" description="مركز صيانة Toshiba المتخصص في الإسكندرية. خدمة سريعة وضمان معتمد على قطع الغيار الأصلية لجميع أجهزة Toshiba." keywords="صيانة Toshiba, توكيل Toshiba الاسكندرية, اصلاح Toshiba" />
+      <div className="min-h-screen flex flex-col bg-white overflow-x-hidden">
       <Header />
 
       {/* HERO SECTION - GOOGLE ADS HIGH CONVERSION */}
@@ -219,5 +222,6 @@ export default function ToshibaService() {
 
       <Footer />
     </div>
+    </>
   );
 }

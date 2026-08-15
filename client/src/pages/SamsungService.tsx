@@ -1,3 +1,4 @@
+import SEO from '../components/SEO';
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -47,7 +48,9 @@ export default function SamsungService() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-white overflow-x-hidden" dir="rtl">
+    <>
+      <SEO title="صيانة Samsung الإسكندرية | مركز خدمة معتمد" description="مركز صيانة Samsung المتخصص في الإسكندرية. خدمة سريعة وضمان معتمد على قطع الغيار الأصلية لجميع أجهزة Samsung." keywords="صيانة Samsung, توكيل Samsung الاسكندرية, اصلاح Samsung" />
+      <div className="min-h-screen flex flex-col bg-white overflow-x-hidden" dir="rtl">
       <Header />
 
       {/* HERO SECTION */}
@@ -181,5 +184,6 @@ export default function SamsungService() {
 
       <Footer />
     </div>
+    </>
   );
 }
