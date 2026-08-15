@@ -1780,15 +1780,18 @@ export default function ProtectedOrders() {
                 <div className="space-y-4">
                   {technicians
                     .map(t => {
-                      const total = orders.filter(o => o.technician === t.name).length;
-                      const completed = orders.filter(o => o.technician === t.name && o.status === 'completed').length;
+                      const techOrders = orders.filter(o => o.technician === t.name);
+                      const total = techOrders.length;
+                      const completed = techOrders.filter(o => o.status === 'completed').length;
                       const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-                      return { name: t.name, total, completed, percentage };
+                      const totalParts = techOrders.reduce((sum, o) => sum + (Number(o.parts_cost) || 0), 0);
+                      const totalTransport = techOrders.reduce((sum, o) => sum + (Number(o.transport_cost) || 0), 0);
+                      return { name: t.name, total, completed, percentage, totalParts, totalTransport };
                     })
                     .sort((a, b) => b.percentage - a.percentage || b.completed - a.completed)
                     .slice(0, 5)
                     .map((t, i) => (
-                      <div key={i} className="flex flex-col gap-2 bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
+                      <div key={i} className="flex flex-col gap-3 bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
                         <div className="flex justify-between items-center">
                           <span className="text-sm font-bold text-slate-300">{t.name}</span>
                           <span className="bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full text-[10px] font-black">{t.completed} / {t.total} مكتمل</span>
@@ -1798,6 +1801,16 @@ export default function ProtectedOrders() {
                             <div className="bg-blue-500 h-full transition-all duration-1000" style={{ width: `${t.percentage}%` }}></div>
                           </div>
                           <span className="text-[10px] font-black text-slate-400">{t.percentage}%</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 mt-1">
+                          <div className="bg-slate-900/50 p-2 rounded-xl border border-slate-800/30">
+                            <p className="text-[8px] font-bold text-slate-500 mb-0.5">⚙️ قطع غيار</p>
+                            <p className="text-[10px] font-black text-rose-400">{t.totalParts.toLocaleString()} ج.م</p>
+                          </div>
+                          <div className="bg-slate-900/50 p-2 rounded-xl border border-slate-800/30">
+                            <p className="text-[8px] font-bold text-slate-500 mb-0.5">🚗 مواصلات</p>
+                            <p className="text-[10px] font-black text-amber-400">{t.totalTransport.toLocaleString()} ج.م</p>
+                          </div>
                         </div>
                       </div>
                     ))
