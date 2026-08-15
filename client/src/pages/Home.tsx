@@ -218,6 +218,78 @@ export default function Home() {
         </div>
       </section>
 
+      {/* BRANCHES SECTION */}
+      <section className="py-32 bg-white relative overflow-hidden">
+        <div className="container mx-auto px-4">
+          <div className="text-center max-w-3xl mx-auto mb-20">
+            <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-8">فروعنا في الإسكندرية</h2>
+            <p className="text-xl text-slate-600 font-bold">نحن قريبون منك دائماً لضمان أسرع خدمة صيانة.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Branch 1 */}
+            <motion.div 
+              whileHover={{ y: -10 }}
+              className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 shadow-xl group transition-all"
+            >
+              <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-orange-200">
+                <MapPin className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 mb-4">فرع سان ستيفانو</h3>
+              <p className="text-slate-500 font-bold mb-6">المركز الرئيسي - سان ستيفانو، الإسكندرية.</p>
+              <a 
+                href="https://maps.app.goo.gl/TFccizUnkw4YeZBm6" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-orange-600 font-black hover:gap-4 transition-all"
+              >
+                عرض الموقع على الخريطة <ArrowRight className="w-5 h-5" />
+              </a>
+            </motion.div>
+
+            {/* Branch 2 */}
+            <motion.div 
+              whileHover={{ y: -10 }}
+              className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 shadow-xl group transition-all"
+            >
+              <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-blue-200">
+                <MapPin className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 mb-4">فرع سيدي بشر</h3>
+              <p className="text-slate-500 font-bold mb-6">شارع العاشر - سيدي بشر، الإسكندرية.</p>
+              <a 
+                href="https://maps.app.goo.gl/TFccizUnkw4YeZBm6" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-blue-600 font-black hover:gap-4 transition-all"
+              >
+                عرض الموقع على الخريطة <ArrowRight className="w-5 h-5" />
+              </a>
+            </motion.div>
+
+            {/* Branch 3 */}
+            <motion.div 
+              whileHover={{ y: -10 }}
+              className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 shadow-xl group transition-all"
+            >
+              <div className="w-16 h-16 bg-green-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-green-200">
+                <MapPin className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 mb-4">فرع 45 بحر</h3>
+              <p className="text-slate-500 font-bold mb-6">شارع 45 بحر - جاد، الإسكندرية.</p>
+              <a 
+                href="https://maps.app.goo.gl/MgH5xfjExHg1UwLE8" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-green-600 font-black hover:gap-4 transition-all"
+              >
+                عرض الموقع على الخريطة <ArrowRight className="w-5 h-5" />
+              </a>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* TESTIMONIALS */}
       <section className="py-32 bg-orange-600 rounded-[4rem] md:rounded-[6rem] mx-4 md:mx-10 my-20 overflow-hidden relative">
         <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">

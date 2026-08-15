@@ -48,16 +48,36 @@ export default function Footer() {
                   <span className="font-medium">01558625259</span>
                 </div>
               </a>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center">
-                  <MapPin className="w-5 h-5" />
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 group">
+                  <div className="w-8 h-8 bg-slate-800 group-hover:bg-orange-500 rounded-lg flex items-center justify-center transition-all flex-shrink-0">
+                    <MapPin className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-400">فرع سان ستيفانو (الرئيسي)</p>
+                    <a href="https://maps.app.goo.gl/TFccizUnkw4YeZBm6" target="_blank" rel="noopener noreferrer" className="text-xs font-medium hover:text-orange-400 transition-colors">سان ستيفانو، الإسكندرية</a>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-400">الموقع</p>
-                  <span className="font-medium">الإسكندرية، مصر</span>
+                <div className="flex items-start gap-3 group">
+                  <div className="w-8 h-8 bg-slate-800 group-hover:bg-blue-500 rounded-lg flex items-center justify-center transition-all flex-shrink-0">
+                    <MapPin className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-400">فرع سيدي بشر</p>
+                    <a href="https://maps.app.goo.gl/TFccizUnkw4YeZBm6" target="_blank" rel="noopener noreferrer" className="text-xs font-medium hover:text-blue-400 transition-colors">العاشر - سيدي بشر، الإسكندرية</a>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 group">
+                  <div className="w-8 h-8 bg-slate-800 group-hover:bg-green-500 rounded-lg flex items-center justify-center transition-all flex-shrink-0">
+                    <MapPin className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-400">فرع 45 بحر</p>
+                    <a href="https://maps.app.goo.gl/MgH5xfjExHg1UwLE8" target="_blank" rel="noopener noreferrer" className="text-xs font-medium hover:text-green-400 transition-colors">شارع 45 بحر - جاد، الإسكندرية</a>
+                  </div>
                 </div>
               </div>
-            </div> contact Info
+            </div>
           </div>
 
           {/* Hours */}
