@@ -1382,7 +1382,38 @@ export default function ProtectedOrders() {
 	              </div>
 	            )}
             
-            {!showDeleted && (
+            {/* نظام التبويبات الذكي (Kanban Mobile) */}
+                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 mb-4 sticky top-[60px] z-30 bg-slate-950/80 backdrop-blur-md py-2 -mx-4 px-4">
+                  {[
+                    { id: 'all', label: 'الكل', color: 'slate' },
+                    { id: 'pending', label: 'قيد الانتظار', color: 'amber' },
+                    { id: 'in-progress', label: 'قيد التنفيذ', color: 'blue' },
+                    { id: 'inspected', label: 'تم الكشف', color: 'cyan' },
+                    { id: 'completed', label: 'مكتمل', color: 'emerald' },
+                    { id: 'cancelled', label: 'ملغي', color: 'rose' },
+                    { id: 'deferred', label: 'مؤجل', color: 'purple' }
+                  ].map(tab => {
+                    const count = tab.id === 'all' ? orders.length : orders.filter(o => o.status === tab.id).length;
+                    const isActive = filterStatus === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setFilterStatus(tab.id)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-2xl whitespace-nowrap transition-all border-2 ${
+                          isActive 
+                          ? `bg-${tab.color}-600 border-${tab.color}-500 text-white shadow-lg shadow-${tab.color}-900/20 scale-105` 
+                          : `bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700`
+                        }`}
+                      >
+                        <span className="text-xs font-black">{tab.label}</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isActive ? 'bg-white/20' : 'bg-slate-800'}`}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {!showDeleted && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredOrders.map(order => {
                   const delayed = isDelayed(order);

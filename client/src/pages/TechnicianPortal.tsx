@@ -460,6 +460,35 @@ export default function TechnicianPortal() {
               </button>
             </div>
 
+            {/* نظام التبويبات الذكي للفني */}
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 mb-4 sticky top-0 z-30 bg-slate-950/80 backdrop-blur-md py-2 -mx-4 px-4">
+              {[
+                { id: 'all', label: 'الكل', color: 'slate' },
+                { id: 'pending', label: 'جديد', color: 'amber' },
+                { id: 'in-progress', label: 'جاري', color: 'blue' },
+                { id: 'inspected', label: 'كشف', color: 'cyan' },
+                { id: 'completed', label: 'تم', color: 'emerald' }
+              ].map(tab => {
+                const count = tab.id === 'all' ? orders.length : orders.filter(o => o.status === tab.id).length;
+                const isActive = filterStatus === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setFilterStatus(tab.id)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-2xl whitespace-nowrap transition-all border-2 ${
+                      isActive 
+                      ? `bg-${tab.color}-600 border-${tab.color}-500 text-white shadow-lg shadow-${tab.color}-900/20 scale-105` 
+                      : `bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700`
+                    }`}
+                  >
+                    <span className="text-xs font-black">{tab.label}</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isActive ? 'bg-white/20' : 'bg-slate-800'}`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
             <div className="space-y-3">
               <h2 className="text-md font-semibold text-white flex items-center gap-2"><ClipboardList className="w-4 h-4 text-orange-400" /> أوردراتي</h2>
               {filteredOrders.map(order => {
