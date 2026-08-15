@@ -374,7 +374,7 @@ export default function Home() {
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(249,115,22,0.2),transparent_70%)]"></div>
         </div>
         <div className="container mx-auto px-4 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+          <div className="max-w-4xl mx-auto text-right">
             <div className="text-right">
               <h2 className="text-5xl md:text-7xl font-black mb-10 leading-tight">جاهز لإصلاح جهازك؟</h2>
               <p className="text-2xl text-slate-400 font-bold mb-12 leading-relaxed">
@@ -403,9 +403,6 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="bg-white p-2 rounded-[3.5rem] shadow-3xl">
-              <BookingForm />
-            </div>
           </div>
         </div>
       </section>
