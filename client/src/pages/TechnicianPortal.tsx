@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { 
-  Wrench, LogOut, Clock, CheckCircle2, AlertCircle, 
+import {
+  Wrench, LogOut, Clock, CheckCircle2, AlertCircle,
   RefreshCw, Phone, MapPin, ClipboardList,
   Calendar, X, Trash2, Eye, ClockArrowUp, StickyNote,
   Play, FileCheck, DollarSign, CalendarX, Ban, MessageSquare, Search,
@@ -18,9 +18,9 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   const res = await fetch(`${supabaseUrl}/rest/v1/${endpoint}`, {
-    headers: { 
-      'apikey': supabaseKey, 
-      'Authorization': `Bearer ${supabaseKey}`, 
+    headers: {
+      'apikey': supabaseKey,
+      'Authorization': `Bearer ${supabaseKey}`,
       'Content-Type': 'application/json',
       'Prefer': 'return=representation'
     },
@@ -47,7 +47,7 @@ export default function TechnicianPortal() {
   const [actionValue, setActionValue] = useState("");
   const [currentOrder, setCurrentOrder] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'orders' | 'performance'>('orders');
-  
+
   // ✅ إضافة متغيرات الفلتر
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -213,7 +213,7 @@ export default function TechnicianPortal() {
         if (newStatus === 'inspected') statusAr = "تم الكشف 💰";
         if (newStatus === 'deferred') statusAr = "مؤجل ⏰";
         notifyAdmin(`تغيير حالة الأوردر إلى: ${statusAr}`, oldOrder);
-        
+
 
       }
     } catch (err) { console.error(err); }
@@ -250,10 +250,10 @@ export default function TechnicianPortal() {
         body: JSON.stringify({ technician_note: newNote })
       });
       await addNotification('📝 ملاحظة فنية', `أضاف الفني ملاحظة للأوردر رقم ${order.order_number}: ${note}`);
-      
+
       // إشعار Push للمدير
 
-      
+
       await fetchData();
       addNotification({ type: 'success', title: '✅ تم الإضافة', message: 'تم حفظ الملاحظة', duration: 3000 });
     } catch (err) { console.error(err); }
@@ -280,13 +280,13 @@ export default function TechnicianPortal() {
 
     const submitSettlement = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!oldPartsPhoto || !newPartsPhoto) {
-      addNotification({ 
-        type: 'critical', 
-        title: '🚫 تنبيه هام جداً', 
-        message: 'يجب تصوير قطع الغيار القديمة والجديدة قبل إكمال الأوردر! لن يتم قبول التصفية بدون صور.', 
-        duration: 0 
+      addNotification({
+        type: 'critical',
+        title: '🚫 تنبيه هام جداً',
+        message: 'يجب تصوير قطع الغيار القديمة والجديدة قبل إكمال الأوردر! لن يتم قبول التصفية بدون صور.',
+        duration: 0
       });
       return;
     }
@@ -296,19 +296,19 @@ export default function TechnicianPortal() {
 [NEW_PARTS:${newPartsPhoto}]`;
     const finalNote = (selectedOrder.technician_note || '') + photoNotes;
 
-    await updateStatus(selectedOrder.id, 'completed', { 
-      ...settleForm, 
+    await updateStatus(selectedOrder.id, 'completed', {
+      ...settleForm,
       invoice_approved: false,
       technician_note: finalNote
     });
-    
+
     setShowSettleModal(false);
-    
+
     const details = `المبلغ: ${settleForm.total_amount} ج.م | قطع غيار: ${settleForm.parts_cost} ج.م | مواصلات: ${settleForm.transport_cost} ج.م
 🖼️ صورة القديم: ${oldPartsPhoto}
 🖼️ صورة الجديد: ${newPartsPhoto}`;
     notifyAdmin("✅ تصفية الأوردر (إكمال)", selectedOrder, details);
-    
+
     setOldPartsPhoto("");
     setNewPartsPhoto("");
     addNotification({ type: 'success', title: '✅ تم الإكمال', message: 'تم إكمال الأوردر بنجاح، بانتظار موافقة المدير على الفاتورة.', duration: 5000 });
@@ -346,7 +346,7 @@ export default function TechnicianPortal() {
       const handlePhotoUpload = async (orderId: number, e: React.ChangeEvent<HTMLInputElement>, type: 'old' | 'new' | 'general' = 'general') => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     // فحص حجم الملف (أقصى حجم 5 ميجا)
     if (file.size > 5 * 1024 * 1024) {
       addNotification({ type: 'error', title: '❌ ملف كبير جداً', message: 'أقصى حجم للصورة هو 5 ميجابايت', duration: 5000 });
@@ -355,22 +355,22 @@ export default function TechnicianPortal() {
 
     setIsUploadingPhoto(true);
     addNotification({ type: 'info', title: '📸 جاري الرفع', message: 'يتم الآن رفع الصورة...', duration: 2000 });
-    
+
     try {
       const fileName = `${Date.now()}_${type}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
       const { data, error } = await supabase.storage.from('order-photos').upload(fileName, file, {
         cacheControl: '3600',
         upsert: false
       });
-      
+
       if (error) {
         console.error('Supabase Storage Error:', error);
         if (error.message.includes('bucket not found') || error.message.includes('does not exist')) {
-          addNotification({ 
-            type: 'critical', 
-            title: '❌ خطأ في الإعدادات', 
-            message: 'مجلد الصور (order-photos) غير موجود في Supabase. يرجى إنشاؤه أولاً من لوحة تحكم Supabase.', 
-            duration: 0 
+          addNotification({
+            type: 'critical',
+            title: '❌ خطأ في الإعدادات',
+            message: 'مجلد الصور (order-photos) غير موجود في Supabase. يرجى إنشاؤه أولاً من لوحة تحكم Supabase.',
+            duration: 0
           });
         } else {
           addNotification({ type: 'error', title: '❌ فشل الرفع', message: `خطأ: ${error.message}`, duration: 5000 });
@@ -386,23 +386,23 @@ export default function TechnicianPortal() {
 
       if (type === 'old') setOldPartsPhoto(photoUrl);
       else if (type === 'new') setNewPartsPhoto(photoUrl);
-      
+
       if (type === 'general') {
         const order = orders.find(o => o.id === orderId);
         const oldNote = order?.technician_note || '';
         const newNote = oldNote ? `${oldNote}
 [صورة مرفقة]` : '[صورة مرفقة]';
-        
+
         await fetchAPI(`orders?id=eq.${orderId}`, {
           method: 'PATCH',
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             technician_note: newNote,
-            attachment_url: photoUrl 
+            attachment_url: photoUrl
           })
         });
         fetchData();
       }
-      
+
       addNotification({ type: 'success', title: '✅ تم الرفع', message: 'تم حفظ الصورة بنجاح', duration: 3000 });
     } catch (err) {
       console.error('Upload Catch Error:', err);
@@ -415,7 +415,7 @@ export default function TechnicianPortal() {
 
 
   // ✅ دالة الفلترة للأوردرات
-  
+
   const searchFilteredOrders = orders.filter(order => {
     if (searchTerm && !order.customer_name?.includes(searchTerm) && !order.order_number?.includes(searchTerm) && !order.phone?.includes(searchTerm)) return false;
     return true;
@@ -476,7 +476,7 @@ export default function TechnicianPortal() {
                   <TrendingUp className="text-orange-500 w-5 h-5" />
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-3 gap-4">
                 <div className="bg-slate-950/40 p-3 rounded-xl border border-slate-800/50 text-center">
                   <div className="text-2xl font-black text-blue-400">{stats.active}</div>
@@ -549,8 +549,8 @@ export default function TechnicianPortal() {
                     key={tab.id}
                     onClick={() => setFilterStatus(tab.id)}
                     className={`flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-2xl whitespace-nowrap transition-all border-2 ${
-                      isActive 
-                      ? `bg-${tab.color}-600 border-${tab.color}-500 text-white shadow-lg shadow-${tab.color}-900/20 scale-105` 
+                      isActive
+                      ? `bg-${tab.color}-600 border-${tab.color}-500 text-white shadow-lg shadow-${tab.color}-900/20 scale-105`
                       : `bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700`
                     }`}
                   >
@@ -577,12 +577,12 @@ export default function TechnicianPortal() {
                   const config = statusConfig[order.status] || { color: 'slate', label: order.status, pulse: '' };
                   const cardColor = config.color;
                   const isPending = order.status === 'pending';
-    
+
                 return (
                     <div key={order.id} className={`group bg-${cardColor}-950/10 rounded-[1.5rem] border-2 border-${cardColor}-500/30 p-5 transition-all hover:border-${cardColor}-500 hover:shadow-2xl hover:shadow-${cardColor}-500/20 relative overflow-hidden ${config.pulse} ${isNewOrder(order) ? "ring-4 ring-blue-500/50" : ""}`}>
                       {/* Status Background */}
                       <div className={`absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:bg-orange-500/10 transition-all`}></div>
-                      
+
                       {/* Header */}
                       <div className="flex justify-between items-start mb-4 relative z-10">
                         <div className="flex flex-col gap-1">
@@ -613,7 +613,7 @@ export default function TechnicianPortal() {
                           <div className="w-6 h-6 rounded-lg bg-slate-800 flex items-center justify-center text-slate-500"><MapPin size={12} /></div>
                           <span className="line-clamp-1 flex-1">{order.address || 'لا يوجد عنوان مسجل'}</span>
                           {order.address && (
-                            <button 
+                            <button
                               onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.address + ' Alexandria Egypt')}`, '_blank')}
                               className="p-1.5 bg-blue-600/10 text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all"
                               title="فتح في الخرائط"
@@ -664,7 +664,7 @@ export default function TechnicianPortal() {
                             </button>
                           )}
                         </div>
-                        
+
                         <div className="flex gap-2">
                            <button onClick={() => openActionModal(order, 'inspect')} className="flex-1 py-2 bg-slate-800/50 hover:bg-slate-800 text-slate-400 rounded-lg text-[9px] font-bold transition-all">🔍 كشف</button>
                            <button onClick={() => openActionModal(order, 'defer')} className="flex-1 py-2 bg-slate-800/50 hover:bg-slate-800 text-slate-400 rounded-lg text-[9px] font-bold transition-all">⏰ تأجيل</button>
@@ -729,7 +729,7 @@ export default function TechnicianPortal() {
                   <label className="text-[10px] font-bold text-rose-400 block">📸 القطع القديمة (إلزامي)</label>
                   <div className="relative h-24 bg-slate-700 rounded-xl border-2 border-dashed border-rose-500/30 flex items-center justify-center overflow-hidden">
                     {oldPartsPhoto ? (
-                      <img src={oldPartsPhoto} className="w-full h-full object-cover" />
+                      <img src={oldPartsPhoto} alt="صورة القطعة القديمة قبل الاستبدال" className="w-full h-full object-cover" />
                     ) : (
                       <Camera className="text-rose-500/50" />
                     )}
@@ -740,7 +740,7 @@ export default function TechnicianPortal() {
                   <label className="text-[10px] font-bold text-emerald-400 block">📸 القطع الجديدة (إلزامي)</label>
                   <div className="relative h-24 bg-slate-700 rounded-xl border-2 border-dashed border-emerald-500/30 flex items-center justify-center overflow-hidden">
                     {newPartsPhoto ? (
-                      <img src={newPartsPhoto} className="w-full h-full object-cover" />
+                      <img src={newPartsPhoto} alt="صورة القطعة الجديدة بعد الاستبدال" className="w-full h-full object-cover" />
                     ) : (
                       <Camera className="text-emerald-500/50" />
                     )}
@@ -749,9 +749,9 @@ export default function TechnicianPortal() {
                 </div>
               </div>
 
-              
 
-              
+
+
               <div><label className="text-sm text-slate-400">قطع غيار</label><input type="number" value={settleForm.parts_cost} onChange={e => handleSettleChange('parts_cost', e.target.value)} className="w-full bg-slate-700 rounded-lg p-2 text-white" /></div>
               <div><label className="text-sm text-slate-400">مواصلات</label><input type="number" value={settleForm.transport_cost} onChange={e => handleSettleChange('transport_cost', e.target.value)} className="w-full bg-slate-700 rounded-lg p-2 text-white" /></div>
               <div className="bg-slate-700/50 p-3 rounded-lg space-y-2">

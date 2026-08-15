@@ -35,15 +35,15 @@ export default function SamsungService() {
       "areaServed": "Alexandria",
       "description": "خدمة صيانة سامسونج المتخصصة في الإسكندرية بقطع غيار أصلية."
     };
-    
+
     const script = document.createElement("script");
     script.type = "application/ld+json";
     script.innerHTML = JSON.stringify(schema);
     document.head.appendChild(script);
-    
-    return () => { 
+
+    return () => {
       const existingScript = document.querySelector('script[type="application/ld+json"]');
-      if (existingScript) document.head.removeChild(existingScript); 
+      if (existingScript) document.head.removeChild(existingScript);
     };
   }, []);
 
@@ -57,8 +57,10 @@ export default function SamsungService() {
       <section className="relative min-h-[80vh] flex items-center overflow-hidden bg-slate-900 pt-20">
         <div className="absolute inset-0 z-0">
           <img
-            src="/images/brands/samsung-hero.jpg"
+            src="/images/brands/samsung-hero.webp"
             alt="صيانة أجهزة سامسونج بالإسكندرية"
+            loading="eager"
+            fetchpriority="high"
             className="w-full h-full object-cover opacity-40"
           />
           <div className="absolute inset-0 bg-gradient-to-l from-slate-900 via-slate-900/60 to-transparent"></div>

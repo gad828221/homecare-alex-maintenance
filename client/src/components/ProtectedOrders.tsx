@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { 
-  Plus, Search, LayoutDashboard, Users, 
-  CheckCircle2, AlertCircle, 
+import {
+  Plus, Search, LayoutDashboard, Users,
+  CheckCircle2, AlertCircle,
   Edit, Trash2, RefreshCw, Phone,
   Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut, Send,
   RotateCcw, Clock, MapPin, Star, Cpu
@@ -36,7 +36,7 @@ function TechnicianPerformance({ orders, technicians }: { orders: any[], technic
     const cancelled = techOrders.filter(o => o.status === 'cancelled').length;
     const totalIncome = techOrders.filter(o => o.status === 'completed').reduce((sum, o) => sum + (o.total_amount || 0), 0);
     const techShare = techOrders.filter(o => o.status === 'completed').reduce((sum, o) => sum + (o.technician_share || 0), 0);
-    
+
     return {
       name: tech.name,
       total: techOrders.length,
@@ -87,8 +87,8 @@ function TechnicianPerformance({ orders, technicians }: { orders: any[], technic
                 <span className="text-orange-400 font-bold">{stat.techShare} ج.م</span>
               </div>
               <div className="w-full bg-slate-700 h-1.5 rounded-full mt-2 overflow-hidden">
-                <div 
-                  className="bg-green-500 h-full transition-all duration-500" 
+                <div
+                  className="bg-green-500 h-full transition-all duration-500"
                   style={{ width: `${stat.successRate}%` }}
                 ></div>
               </div>
@@ -207,16 +207,16 @@ export default function ProtectedOrders() {
     status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false,
     date: new Date().toLocaleDateString("ar-EG")
   });
-  const [techForm, setTechForm] = useState({ 
+  const [techForm, setTechForm] = useState({
     name: '', phone: '', specialization: '', is_active: true,
-    username: '', password: '', profit_percentage: 50 
+    username: '', password: '', profit_percentage: 50
   });
   const [stats, setStats] = useState({ pending: 0, inProgress: 0, completed: 0, cancelled: 0, totalIncome: 0 });
   const [currentUser, setCurrentUser] = useState<any>(null);
 
 
   const [userRole, setUserRole] = useState<string>('');
-  
+
   const [showSettleModal, setShowSettleModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [settleForm, setSettleForm] = useState({
@@ -323,7 +323,7 @@ export default function ProtectedOrders() {
     const noTechCount = orders.filter(o => !o.technician || o.technician === '-' || o.technician === '').length;
 
     const message = `📊 *تقرير ملخص العمل اليومي* 📊\n\n📅 *التاريخ:* ${new Date().toLocaleDateString('ar-EG')}\n\n✅ *إنجازات اليوم:* \n- أوردرات جديدة: ${todayOrders.length}\n- أوردرات اكتملت: ${completedToday}\n- إجمالي التحصيل: ${incomeToday} ج.م\n\n⚠️ *الحالة الحالية:* \n- أوردرات قيد العمل: ${pendingCount}\n- أوردرات متأخرة: ${delayedCount}\n- أوردرات بدون فني: ${noTechCount}\n\n🚀 يرجى متابعة الأوردرات المتأخرة لضمان جودة الخدمة.`;
-    
+
     notifyAdmin(message);
   };
 
@@ -424,7 +424,7 @@ export default function ProtectedOrders() {
     try {
       const incomeEntries = await fetchAPI(`cash_ledger?select=amount&date=eq.${targetDate}&type=eq.income`);
       const totalIncome = (incomeEntries || []).reduce((sum, entry) => sum + (entry.amount || 0), 0);
-      
+
       const existingDistributions = await fetchAPI(`cash_ledger?select=amount&date=eq.${targetDate}&type=eq.profit_distribution`);
       const totalDistributedSoFar = (existingDistributions || []).reduce((sum, entry) => sum + (entry.amount || 0), 0);
 
@@ -447,7 +447,7 @@ export default function ProtectedOrders() {
 
       // حساب إجمالي ما يجب توزيعه بناءً على الدخل الكلي
       const totalShouldBeDistributed = Number(((totalIncome * totalPartnerShares) / 100).toFixed(2));
-      
+
       // المبلغ المتبقي للتوزيع (الإجمالي المطلوب - ما تم توزيعه بالفعل)
       const amountToDistribute = Number((totalShouldBeDistributed - totalDistributedSoFar).toFixed(2));
 
@@ -456,7 +456,7 @@ export default function ProtectedOrders() {
         return;
       }
 
-      const confirmMsg = totalDistributedSoFar > 0 
+      const confirmMsg = totalDistributedSoFar > 0
         ? `💰 إجمالي أرباح اليوم: ${totalIncome.toLocaleString()} ج.م\n📤 تم توزيع سابقاً: ${totalDistributedSoFar.toLocaleString()} ج.م\n🔄 المتبقي للتوزيع الآن: ${amountToDistribute.toLocaleString()} ج.م\n\nهل تريد الاستمرار؟`
         : `💰 أرباح يوم ${targetDate}: ${totalIncome.toLocaleString()} ج.م\n📤 نسبة التوزيع: ${totalPartnerShares}%\n💰 سيتم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء\n\nهل تريد الاستمرار؟`;
 
@@ -570,7 +570,7 @@ export default function ProtectedOrders() {
   };
 
   // ========== دالة fetchData الآمنة ==========
-  
+
   const updateOrderRating = async (orderId: number, rating: number) => {
     try {
       await fetchAPI(`orders?id=eq.${orderId}`, { method: 'PATCH', body: JSON.stringify({ rating }) });
@@ -647,7 +647,7 @@ export default function ProtectedOrders() {
     const parts = parseFloat(data.parts_cost) || 0;
     const transport = parseFloat(data.transport_cost) || 0;
     const net = total - parts - transport;
-    const selectedTech = technicians.find(t => 
+    const selectedTech = technicians.find(t =>
       t.name === technicianName || t.username === technicianName ||
       t.name?.toLowerCase() === technicianName?.toLowerCase() ||
       t.username?.toLowerCase() === technicianName?.toLowerCase()
@@ -705,17 +705,17 @@ export default function ProtectedOrders() {
       if (newStatus === 'completed' && order.is_paid && !order.profit_added_to_cash) await addCompanyProfitToCash({ ...order, status: newStatus, ...extraData });
       sendWhatsAppToCustomer(order, newStatus);
       fetchData();
-      
+
       showToast(`تم تحديث حالة الأوردر إلى ${newStatus}`, 'info');
-      
-      const statusAr = newStatus === 'completed' ? 'تم التنفيذ ✅' : 
-                       newStatus === 'cancelled' ? 'ملغي ❌' : 
-                       newStatus === 'in-progress' ? 'قيد التنفيذ 🔧' : 
-                       newStatus === 'inspected' ? 'تم الكشف 💰' : 
+
+      const statusAr = newStatus === 'completed' ? 'تم التنفيذ ✅' :
+                       newStatus === 'cancelled' ? 'ملغي ❌' :
+                       newStatus === 'in-progress' ? 'قيد التنفيذ 🔧' :
+                       newStatus === 'inspected' ? 'تم الكشف 💰' :
                        newStatus === 'deferred' ? 'مؤجل ⏰' : newStatus;
       const adminMsg = `📦 *تحديث حالة أوردر* 📦\n\n👤 العميل: ${order.customer_name}\n🔄 الحالة الجديدة: ${statusAr}\n🔢 رقم الأوردر: ${order.order_number}`;
       notifyAdmin(adminMsg);
-      
+
       if (order.technician && (newStatus === 'in-progress' || newStatus === 'completed')) {
         const tech = technicians.find(t => t.name === order.technician);
         if (tech && tech.phone) {
@@ -723,7 +723,7 @@ export default function ProtectedOrders() {
           sendWhatsApp(tech.phone, techMsg);
         }
       }
-      
+
     } catch (err) { console.error(err); }
   };
 
@@ -798,7 +798,7 @@ export default function ProtectedOrders() {
         if (oldOrder?.status === 'completed' && oldOrder?.is_paid && oldOrder?.profit_added_to_cash) await deleteOrderProfitFromCash(oldOrder);
         await fetchAPI(`orders?id=eq.${editingOrder.id}`, { method: 'PATCH', body: JSON.stringify(orderToSave) });
         await addNotification('تعديل أوردر', `تم تعديل أوردر ${formData.customer_name}`);
-        
+
         if (orderToSave.technician) {
           const tech = technicians.find(t => t.name === orderToSave.technician);
           if (tech && tech.phone) {
@@ -806,16 +806,16 @@ export default function ProtectedOrders() {
             notifyTechnician(tech.phone, tech.name, techMsg);
           }
         }
-        
+
         if (orderToSave.status === 'completed' && orderToSave.is_paid && !orderToSave.profit_added_to_cash) await addCompanyProfitToCash({ ...orderToSave, id: editingOrder.id });
         showToast('تم تعديل الأوردر بنجاح', 'success');
       } else {
         await fetchAPI('orders', { method: 'POST', body: JSON.stringify(orderToSave) });
         await addNotification('إضافة أوردر', `تم إضافة أوردر جديد للعميل ${formData.customer_name}`);
-        
+
         const adminMsg = `🆕 *أوردر جديد* 🆕\n\n👤 العميل: ${formData.customer_name}\n📞 الهاتف: ${formData.phone}\n🔧 الجهاز: ${finalDevice} - ${finalBrand}\n📍 العنوان: ${formData.address}\n👨‍🔧 الفني: ${orderToSave.technician || 'غير معين'}\n🔢 رقم الأوردر: ${orderToSave.order_number}\n📝 المشكلة: ${formData.problem_description || 'بدون'}`;
         notifyAdmin(adminMsg);
-        
+
         if (orderToSave.technician) {
           const tech = technicians.find(t => t.name === orderToSave.technician);
           if (tech && tech.phone) {
@@ -823,7 +823,7 @@ export default function ProtectedOrders() {
             notifyTechnician(tech.phone, tech.name, techMsg);
           }
         }
-        
+
         showToast('تم إضافة الأوردر بنجاح', 'success');
         sendWhatsAppToCustomerOnCreate(orderToSave);
       }
@@ -874,7 +874,7 @@ export default function ProtectedOrders() {
 
   const deleteTechnician = async (id: number, name: string) => {
     if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
-    if (confirm(`حذف الفني ${name}؟`)) { 
+    if (confirm(`حذف الفني ${name}؟`)) {
       await fetchAPI(`technicians?id=eq.${id}`, { method: 'DELETE' });
       await addNotification('حذف فني', `تم حذف الفني ${name}`);
       fetchData();
@@ -901,7 +901,7 @@ export default function ProtectedOrders() {
     const parts = prompt("✏️ قطع الغيار المستخدمة", "لا توجد") || "لا توجد";
     const warranty = prompt("🛡️ فترة الضمان", "6 أشهر") || "6 أشهر";
     if (!order.phone) return showToast("ليس لديك صلاحية", "error");
-    
+
     await fetchAPI(`orders?id=eq.${order.id}`, { method: 'PATCH', body: JSON.stringify({ invoice_approved: true, warranty_period: warranty, parts_used: parts, invoice_date: new Date().toISOString().split('T')[0] }) });
     await addNotification('اعتماد فاتورة', `تم اعتماد فاتورة ${order.customer_name} مع ضمان ${warranty}`);
     window.open(`/invoice?id=${order.id}`, '_blank');
@@ -915,21 +915,21 @@ export default function ProtectedOrders() {
     fetchData();
   };
 
-  const deleteNotification = async (id: number) => { 
+  const deleteNotification = async (id: number) => {
     if (userRole !== 'admin') return showToast("ليس لديك صلاحية", "error");
-    await fetchAPI(`notifications?id=eq.${id}`, { method: 'DELETE' }); 
-    fetchNotifications(); 
+    await fetchAPI(`notifications?id=eq.${id}`, { method: 'DELETE' });
+    fetchNotifications();
   };
-  const deleteAllNotifications = async () => { 
+  const deleteAllNotifications = async () => {
     if (userRole !== 'admin') return showToast("ليس لديك صلاحية", "error");
-    if (confirm('هل أنت متأكد من حذف جميع الإشعارات نهائياً؟')) { 
-      for (const n of notifications) await fetchAPI(`notifications?id=eq.${n.id}`, { method: 'DELETE' }); 
-      fetchNotifications(); 
-    } 
+    if (confirm('هل أنت متأكد من حذف جميع الإشعارات نهائياً؟')) {
+      for (const n of notifications) await fetchAPI(`notifications?id=eq.${n.id}`, { method: 'DELETE' });
+      fetchNotifications();
+    }
   };
   const clearFilters = () => { setSearchTerm(''); setFilterStatus('all'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); };
 
-  
+
   const dateFilteredOrders = orders.filter(o => {
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
@@ -946,7 +946,7 @@ export default function ProtectedOrders() {
     }
 
     if (filterDeviceType && o.device_type !== filterDeviceType) return false;
-    
+
     if (filterDateFrom) {
       const oDate = o.created_at ? o.created_at.split('T')[0] : o.date;
       if (oDate < filterDateFrom) return false;
@@ -966,7 +966,7 @@ export default function ProtectedOrders() {
     } else if (filterStatus !== 'all' && o.status !== filterStatus) {
       return false;
     }
-    
+
     if (showAllOrders || filterStatus !== 'all' || filterTechnician || filterDateFrom || searchTerm) return true;
     return (o.status === 'in-progress' || o.status === 'pending' || !o.technician || o.technician === '-' || o.technician === '');
   });
@@ -1003,44 +1003,44 @@ export default function ProtectedOrders() {
         .select('order_number, customer_name, phone, device_type, brand, technician, status, created_at')
         .in('status', ['pending', 'in-progress'])
         .order('created_at', { ascending: true });
-        
+
       if (filterTechnicianReport) {
         query = query.eq('technician', filterTechnicianReport);
       }
-      
+
       const { data, error } = await query;
       if (error) throw error;
-      
-      const testKeywords = ['اختبار', 'test', 'تجربة', 'jj', 'nn', 'hh', 'rr', 'zz', '00', '000', 
-                            'زسةس', 'ويوي', 'تلل', 'أختي', 'جاى', 'gytt', 'ممظم', 'زءووي', 'حذف', 
+
+      const testKeywords = ['اختبار', 'test', 'تجربة', 'jj', 'nn', 'hh', 'rr', 'zz', '00', '000',
+                            'زسةس', 'ويوي', 'تلل', 'أختي', 'جاى', 'gytt', 'ممظم', 'زءووي', 'حذف',
                             'تجربه', 'زسوزي', 'وسووي', 'gff', 'gggg', 'jzjz', 'nznz'];
       const filteredData = (data || []).filter(order => {
         const customer = (order.customer_name || '').toLowerCase();
         const phone = (order.phone || '').toLowerCase();
         const device = (order.device_type || '').toLowerCase();
         const brand = (order.brand || '').toLowerCase();
-        return !testKeywords.some(keyword => 
-          customer.includes(keyword) || 
-          phone.includes(keyword) || 
-          device.includes(keyword) || 
+        return !testKeywords.some(keyword =>
+          customer.includes(keyword) ||
+          phone.includes(keyword) ||
+          device.includes(keyword) ||
           brand.includes(keyword)
         );
       });
-      
+
       const start = new Date(startDate);
       const end = new Date(endDate);
       end.setHours(23, 59, 59);
-      
+
       const dateFiltered = filteredData.filter(order => {
         const orderDate = new Date(order.created_at);
         return orderDate >= start && orderDate <= end;
       });
-      
+
       const finalData = dateFiltered.filter(order => {
         const diffDays = Math.floor((new Date().getTime() - new Date(order.created_at).getTime()) / (1000 * 60 * 60 * 24));
         return diffDays > 3;
       });
-      
+
       setReportColumns(['رقم الأوردر', 'العميل', 'الهاتف', 'الجهاز', 'الماركة', 'الفني', 'الحالة', 'التاريخ']);
       setReportData(finalData.map(order => ({ ...order, date: order.created_at.split('T')[0] })));
     } catch (err) {
@@ -1059,21 +1059,21 @@ export default function ProtectedOrders() {
         .select('order_number, customer_name, phone, device_type, brand, technician, technician_note, created_at')
         .eq('status', 'cancelled')
         .order('created_at', { ascending: false });
-        
+
       if (filterTechnicianReport) query = query.eq('technician', filterTechnicianReport);
-      
+
       const { data, error } = await query;
       if (error) throw error;
-      
+
       const start = new Date(startDate);
       const end = new Date(endDate);
       end.setHours(23, 59, 59);
-      
+
       const filtered = (data || []).filter(order => {
         const orderDate = new Date(order.created_at);
         return orderDate >= start && orderDate <= end;
       });
-      
+
       setReportColumns(['رقم الأوردر', 'العميل', 'الهاتف', 'الجهاز', 'الماركة', 'الفني', 'سبب الإلغاء', 'التاريخ']);
       setReportData(filtered.map(order => ({ ...order, date: order.created_at.split('T')[0] })));
     } catch (err) { console.error(err); showToast("'", "info"); } finally { setReportLoading(false); }
@@ -1269,7 +1269,7 @@ export default function ProtectedOrders() {
                       </button>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
                     <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/50 hover:border-blue-500/30 transition-all group">
                       <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">أوردرات اليوم</div>
@@ -1317,14 +1317,14 @@ export default function ProtectedOrders() {
 		                <select value={filterTechnician} onChange={e => setFilterTechnician(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"><option value="">جميع الفنيين</option>{technicians.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}</select>
 		                <select value={filterDeviceType} onChange={e => setFilterDeviceType(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"><option value="">جميع الأجهزة</option>{DEVICE_TYPES.map(d => <option key={d}>{d}</option>)}</select>
 		              </div>
-		              
+
 		              <div className="flex flex-wrap gap-2 items-center border-t border-slate-800 pt-3">
 		                <span className="text-xs text-slate-500 ml-2">فلترة سريعة:</span>
 		                <button onClick={() => { clearFilters(); const today = new Date().toISOString().split('T')[0]; setFilterDateFrom(today); setFilterDateTo(today); }} className="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 px-3 py-1 rounded-full text-xs border border-blue-600/30 transition">📅 أوردرات اليوم</button>
-		                <button onClick={() => { clearFilters(); setFilterStatus('all'); setSearchTerm(''); 
-		                  setFilterTechnician('__NONE__'); 
+		                <button onClick={() => { clearFilters(); setFilterStatus('all'); setSearchTerm('');
+		                  setFilterTechnician('__NONE__');
 		                }} className="bg-orange-600/20 hover:bg-orange-600/40 text-orange-400 px-3 py-1 rounded-full text-xs border border-orange-600/30 transition">👨‍🔧 بدون فني</button>
-		                <button onClick={() => { clearFilters(); setFilterStatus('__UNPAID__'); 
+		                <button onClick={() => { clearFilters(); setFilterStatus('__UNPAID__');
 		                }} className="bg-red-600/20 hover:bg-red-600/40 text-red-400 px-3 py-1 rounded-full text-xs border border-red-600/30 transition">💰 بانتظار التحصيل</button>
 		                <div className="h-4 w-[1px] bg-slate-700 mx-1"></div>
 		                <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} className="p-1 bg-slate-800 border border-slate-700 rounded text-xs text-white" />
@@ -1334,16 +1334,16 @@ export default function ProtectedOrders() {
 		                <button onClick={clearFilters} className="bg-slate-800 text-slate-300 px-3 py-1 rounded-full text-xs border border-slate-700 hover:bg-slate-700 transition">مسح</button>
 		              </div>
 		            </div>
-		            
+
 		            <div className="flex flex-wrap gap-3 items-center">
 		              <button onClick={() => setShowAllOrders(!showAllOrders)} className={`px-3 py-2 rounded-lg text-sm transition ${showAllOrders ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>{showAllOrders ? '📋 إخفاء المنجز' : '📋 عرض الكل'}</button>
 		              <button onClick={() => { setEditingOrder(null); setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") }); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={18} /> أوردر جديد</button>
 		              <button onClick={() => setShowDeleted(!showDeleted)} className={`px-3 py-2 rounded-lg text-sm transition ${showDeleted ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}><Trash2 size={16} /> {showDeleted ? 'إخفاء المحذوفة' : `عرض المحذوفة (${deletedOrders.length})`}</button>
 		              <button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg ml-auto"><RefreshCw size={18} /></button>
 		            </div>
-            
+
             {!showDeleted && filteredOrders.length === 0 && !showAllOrders && <div className="text-center py-8 text-slate-400">لا توجد أوردرات (قيد الانتظار، قيد التنفيذ، أو بدون فني). اضغط "عرض الكل" لمشاهدة جميع الأوردرات.</div>}
-            
+
 	            {!showDeleted && filteredOrders.length > 0 && (
 	              <div className="space-y-4 mb-6">
                   {/* شريط الإحصائيات السريع */}
@@ -1380,7 +1380,7 @@ export default function ProtectedOrders() {
                         const percentage = filteredOrders.length > 0 ? (count / filteredOrders.length) * 100 : 0;
                         const color = status === 'completed' ? 'bg-green-500' : status === 'in-progress' ? 'bg-blue-500' : status === 'pending' ? 'bg-yellow-500' : 'bg-red-500';
                         const label = status === 'completed' ? 'مكتمل' : status === 'in-progress' ? 'قيد التنفيذ' : status === 'pending' ? 'قيد الانتظار' : 'ملغي';
-                        
+
                         return (
                           <div key={status} className="space-y-1">
                             <div className="flex justify-between text-[10px] font-bold">
@@ -1388,8 +1388,8 @@ export default function ProtectedOrders() {
                               <span className="text-slate-200">{count} أوردر ({Math.round(percentage)}%)</span>
                             </div>
                             <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                              <div 
-                                className={`${color} h-full transition-all duration-1000 ease-out`} 
+                              <div
+                                className={`${color} h-full transition-all duration-1000 ease-out`}
                                 style={{ width: `${percentage}%` }}
                               ></div>
                             </div>
@@ -1400,7 +1400,7 @@ export default function ProtectedOrders() {
                   </div>
 	              </div>
 	            )}
-            
+
             {/* نظام التبويبات الذكي (Kanban Mobile) */}
                 <div className="flex flex-nowrap gap-3 overflow-x-auto no-scrollbar pb-3 mb-4 sticky top-[60px] z-30 bg-slate-950/80 backdrop-blur-md py-2 -mx-4 px-4">
                   {[
@@ -1419,8 +1419,8 @@ export default function ProtectedOrders() {
                         key={tab.id}
                         onClick={() => setFilterStatus(tab.id)}
                         className={`flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-2xl whitespace-nowrap transition-all border-2 ${
-                          isActive 
-                          ? `bg-${tab.color}-600 border-${tab.color}-500 text-white shadow-lg shadow-${tab.color}-900/20 scale-105` 
+                          isActive
+                          ? `bg-${tab.color}-600 border-${tab.color}-500 text-white shadow-lg shadow-${tab.color}-900/20 scale-105`
                           : `bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700`
                         }`}
                       >
@@ -1448,8 +1448,8 @@ export default function ProtectedOrders() {
                   const config = statusConfig[order.status] || { color: 'slate', label: order.status, pulse: '' };
                   const cardColor = config.color;
                   const isPending = order.status === 'pending';
-    
-                  const statusColor = 
+
+                  const statusColor =
                     order.status === 'completed' ? 'green' :
                     order.status === 'in-progress' ? 'blue' :
                     order.status === 'pending' ? 'yellow' :
@@ -1459,7 +1459,7 @@ export default function ProtectedOrders() {
                   return (
                     <div key={order.id} className={`group bg-${cardColor}-950/10 rounded-[1.5rem] border-2 border-${cardColor}-500/30 p-5 transition-all hover:border-${cardColor}-500 hover:shadow-2xl hover:shadow-${cardColor}-500/20 relative overflow-hidden ${config.pulse}`}>
                       <div className={`absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:bg-orange-500/10 transition-all`}></div>
-                      
+
                       <div className="flex justify-between items-start mb-4 relative z-10">
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
@@ -1488,8 +1488,9 @@ export default function ProtectedOrders() {
                           {getPhotoUrl(order.technician_note, 'OLD') && (
                             <div className="group/photo relative">
                               <p className="text-[8px] font-bold text-rose-400 mb-1">القطع القديمة</p>
-                              <img 
-                                src={getPhotoUrl(order.technician_note, 'OLD')} 
+                              <img
+                                src={getPhotoUrl(order.technician_note, 'OLD')}
+                                alt="صورة القطعة القديمة في تقرير الفني"
                                 className="w-full h-16 object-cover rounded-xl border border-rose-500/20 cursor-pointer hover:scale-105 transition-transform"
                                 onClick={() => window.open(getPhotoUrl(order.technician_note, 'OLD'), '_blank')}
                               />
@@ -1498,8 +1499,9 @@ export default function ProtectedOrders() {
                           {getPhotoUrl(order.technician_note, 'NEW') && (
                             <div className="group/photo relative">
                               <p className="text-[8px] font-bold text-emerald-400 mb-1">القطع الجديدة</p>
-                              <img 
-                                src={getPhotoUrl(order.technician_note, 'NEW')} 
+                              <img
+                                src={getPhotoUrl(order.technician_note, 'NEW')}
+                                alt="صورة القطعة الجديدة في تقرير الفني"
                                 className="w-full h-16 object-cover rounded-xl border border-emerald-500/20 cursor-pointer hover:scale-105 transition-transform"
                                 onClick={() => window.open(getPhotoUrl(order.technician_note, 'NEW'), '_blank')}
                               />
@@ -1538,7 +1540,7 @@ export default function ProtectedOrders() {
                       {delayed && (
                         <div className="absolute top-2 left-2 bg-rose-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full animate-bounce shadow-lg">متأخر ⚠️</div>
                       )}
-                      
+
                       <div className="mt-3 flex gap-2 relative z-10">
                          <select value={order.status} onChange={e => updateOrderStatus(order.id, e.target.value)} className="text-[10px] bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-white flex-1">
                            <option value="pending">تغيير الحالة</option><option value="in-progress">قيد التنفيذ</option><option value="inspected">تم الكشف</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option><option value="deferred">مؤجل</option>
@@ -1548,14 +1550,14 @@ export default function ProtectedOrders() {
                          </button>
                       </div>
 
-                      
+
                       {order.status === 'completed' && (
                         <div className="mt-4 pt-4 border-t border-slate-800/50 relative z-10">
                           <p className="text-[10px] font-bold text-slate-500 mb-2">تقييم أداء الفني:</p>
                           <div className="flex gap-1">
                             {[1, 2, 3, 4, 5].map(star => (
-                              <button 
-                                key={star} 
+                              <button
+                                key={star}
                                 onClick={() => updateOrderRating(order.id, star)}
                                 className={`transition-all ${star <= (order.rating || 0) ? 'text-yellow-500 scale-110' : 'text-slate-700 hover:text-slate-500'}`}
                               >
@@ -1580,7 +1582,7 @@ export default function ProtectedOrders() {
                 })}
               </div>
             )}
-            
+
             {showDeleted && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {deletedOrders.length === 0 && <div className="col-span-full text-center py-8 text-slate-400">لا توجد أوردرات محذوفة</div>}
@@ -1769,7 +1771,7 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        
+
         {/* تبويب الإحصائيات الذكية */}
         {activeTab === 'analytics' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">

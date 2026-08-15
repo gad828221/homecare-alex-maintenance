@@ -3,9 +3,9 @@ import { Card } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BookingForm from "@/components/BookingForm";
-import { 
-  Zap, Droplet, Wind, Flame, Star, Clock, Shield, Users, 
-  Phone, MessageCircle, CheckCircle, Award, Truck, 
+import {
+  Zap, Droplet, Wind, Flame, Star, Clock, Shield, Users,
+  Phone, MessageCircle, CheckCircle, Award, Truck,
   Settings, Heart, MapPin, Sparkles, ChevronDown, ShieldCheck, Headphones,
   Calendar, ArrowRight
 } from "lucide-react";
@@ -55,16 +55,18 @@ export default function Home() {
       <section className="relative min-h-[95vh] flex items-center overflow-hidden bg-slate-900 pt-20">
         <div className="absolute inset-0 z-0">
           <img
-            src="/images/hero-bg-professional.jpg"
+            src="/images/hero-bg-professional.webp"
             alt="صيانة أجهزة منزلية احترافية بالإسكندرية"
             className="w-full h-full object-cover opacity-40 scale-105 animate-pulse-slow"
+            loading="eager"
+            fetchpriority="high"
           />
           <div className="absolute inset-0 bg-gradient-to-l from-slate-900 via-slate-900/60 to-transparent"></div>
         </div>
-        
+
         <div className="container mx-auto px-4 relative z-10 py-12">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8 }}
@@ -74,7 +76,7 @@ export default function Home() {
                 <Sparkles className="w-5 h-5 text-orange-400" />
                 <span className="text-orange-400 font-black text-sm md:text-base">المركز الأول المعتمد في الإسكندرية 2026</span>
               </div>
-              
+
               <h1 className="text-5xl md:text-8xl font-black text-white leading-[1.1] mb-8">
                 صيانة أجهزتك <br />
                 <span className="text-orange-500">في منزلك اليوم</span> <br />
@@ -94,7 +96,7 @@ export default function Home() {
                   <Calendar className="w-8 h-8 ml-3 group-hover:rotate-12 transition-transform" />
                   احجز موعدك الآن
                 </Button>
-                
+
                 <a
                   href="tel:+201278885772"
                   className="flex items-center justify-center gap-4 bg-white/10 hover:bg-white/20 backdrop-blur-xl border-2 border-white/20 text-white text-2xl font-black px-12 py-6 rounded-3xl transition-all"
@@ -126,7 +128,7 @@ export default function Home() {
               </div>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
@@ -163,12 +165,12 @@ export default function Home() {
             <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-8">لماذا نحن الخيار الأول بالإسكندرية؟</h2>
             <p className="text-xl text-slate-600 font-bold">نجمع بين الخبرة الهندسية والسرعة في التنفيذ لنقدم لك تجربة صيانة لا مثيل لها.</p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
-              <motion.div 
+              <motion.div
                 whileHover={{ y: -10 }}
-                key={index} 
+                key={index}
                 className="bg-white p-10 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 group transition-all"
               >
                 <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mb-8 group-hover:bg-orange-600 transition-colors duration-500 shadow-inner">
@@ -190,8 +192,8 @@ export default function Home() {
               <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-8">خدماتنا المتخصصة</h2>
               <p className="text-xl text-slate-600 font-bold leading-relaxed">نقدم حلولاً متكاملة لكافة الأجهزة المنزلية بأعلى معايير الجودة العالمية وقطع غيار أصلية.</p>
             </div>
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="bg-slate-900 hover:bg-slate-800 text-white font-black px-10 py-8 rounded-2xl text-xl"
               onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
             >
@@ -202,10 +204,11 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {services.map((service, index) => (
               <div key={index} className="group relative overflow-hidden rounded-[3rem] bg-slate-900 h-[400px]">
-                <img 
-                  src={`/images/services/${index === 0 ? 'refrigerator-repair-pro.jpg' : index === 1 ? 'washing-machine-repair-pro.jpg' : index === 2 ? 'ac-repair-pro.jpg' : 'stove-repair-pro.jpg'}`} 
+                <img
+                  src={`/images/services/${index === 0 ? 'refrigerator-repair-pro.webp' : index === 1 ? 'washing-machine-repair-pro.webp' : index === 2 ? 'ac-repair-pro.webp' : 'stove-repair-pro.webp'}`}
                   alt={service.title}
                   className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:scale-110 transition-transform duration-700"
+                  loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
                 <div className="absolute bottom-0 right-0 p-12 text-right">
@@ -231,7 +234,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Branch 1 */}
-            <motion.div 
+            <motion.div
               whileHover={{ y: -10 }}
               className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 shadow-xl group transition-all"
             >
@@ -240,9 +243,9 @@ export default function Home() {
               </div>
               <h3 className="text-2xl font-black text-slate-900 mb-4">فرع سان ستيفانو</h3>
               <p className="text-slate-500 font-bold mb-6">المركز الرئيسي - سان ستيفانو، الإسكندرية.</p>
-              <a 
-                href="https://maps.app.goo.gl/TFccizUnkw4YeZBm6" 
-                target="_blank" 
+              <a
+                href="https://maps.app.goo.gl/TFccizUnkw4YeZBm6"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-orange-600 font-black hover:gap-4 transition-all"
               >
@@ -251,7 +254,7 @@ export default function Home() {
             </motion.div>
 
             {/* Branch 2 */}
-            <motion.div 
+            <motion.div
               whileHover={{ y: -10 }}
               className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 shadow-xl group transition-all"
             >
@@ -260,9 +263,9 @@ export default function Home() {
               </div>
               <h3 className="text-2xl font-black text-slate-900 mb-4">فرع سيدي بشر</h3>
               <p className="text-slate-500 font-bold mb-6">شارع العاشر - سيدي بشر، الإسكندرية.</p>
-              <a 
-                href="https://maps.app.goo.gl/TFccizUnkw4YeZBm6" 
-                target="_blank" 
+              <a
+                href="https://maps.app.goo.gl/TFccizUnkw4YeZBm6"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-blue-600 font-black hover:gap-4 transition-all"
               >
@@ -271,7 +274,7 @@ export default function Home() {
             </motion.div>
 
             {/* Branch 3 */}
-            <motion.div 
+            <motion.div
               whileHover={{ y: -10 }}
               className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 shadow-xl group transition-all"
             >
@@ -280,9 +283,9 @@ export default function Home() {
               </div>
               <h3 className="text-2xl font-black text-slate-900 mb-4">فرع 45 بحر</h3>
               <p className="text-slate-500 font-bold mb-6">شارع 45 بحر - جاد، الإسكندرية.</p>
-              <a 
-                href="https://maps.app.goo.gl/MgH5xfjExHg1UwLE8" 
-                target="_blank" 
+              <a
+                href="https://maps.app.goo.gl/MgH5xfjExHg1UwLE8"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-green-600 font-black hover:gap-4 transition-all"
               >
@@ -340,7 +343,7 @@ export default function Home() {
           <div className="space-y-4">
             {faqs.map((faq, index) => (
               <div key={index} className="border-2 border-slate-100 rounded-[2rem] overflow-hidden transition-all">
-                <button 
+                <button
                   onClick={() => setActiveFaq(activeFaq === index ? null : index)}
                   className="w-full flex items-center justify-between p-8 text-right bg-white hover:bg-slate-50 transition-colors"
                 >
@@ -349,7 +352,7 @@ export default function Home() {
                 </button>
                 <AnimatePresence>
                   {activeFaq === index && (
-                    <motion.div 
+                    <motion.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
@@ -377,7 +380,7 @@ export default function Home() {
               <p className="text-2xl text-slate-400 font-bold mb-12 leading-relaxed">
                 انضم إلى أكثر من 50,000 عميل سعيد في الإسكندرية. احجز الآن وسنصلك خلال 60 دقيقة فقط بقطع غيار أصلية وضمان معتمد.
               </p>
-              
+
               <div className="space-y-8">
                 <div className="flex items-center gap-6">
                   <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-900/40">

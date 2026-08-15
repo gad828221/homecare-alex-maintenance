@@ -13,7 +13,7 @@ export default function ZanussiService() {
     document.title = "صيانة زانوسي الإسكندرية | مركز خدمة Zanussi المتخصص 01278885772";
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) metaDesc.setAttribute("content", "خدمة صيانة زانوسي بالإسكندرية. نحن مركز خدمة متخصص لصيانة كافة أجهزة Zanussi (ثلاجات، غسالات، تكييفات) بالمنزل بقطع غيار أصلية وضمان سنة.");
-    
+
     // Schema Markup for Google Ads Quality Score
     const schema = {
       "@context": "https://schema.org",
@@ -33,15 +33,15 @@ export default function ZanussiService() {
       "areaServed": "Alexandria",
       "description": "خدمة صيانة زانوسي المتخصصة في الإسكندرية بقطع غيار أصلية."
     };
-    
+
     const script = document.createElement("script");
     script.type = "application/ld+json";
     script.innerHTML = JSON.stringify(schema);
     document.head.appendChild(script);
-    
-    return () => { 
+
+    return () => {
       const existingScript = document.querySelector('script[type="application/ld+json"]');
-      if (existingScript) document.head.removeChild(existingScript); 
+      if (existingScript) document.head.removeChild(existingScript);
     };
   }, []);
 
@@ -54,21 +54,23 @@ export default function ZanussiService() {
       {/* HERO SECTION - GOOGLE ADS HIGH CONVERSION */}
       <section className="relative min-h-[75vh] flex items-center overflow-hidden bg-yellow-900">
         <div className="absolute inset-0 z-0">
-          <img 
-            src="/images/hero-bg-new.jpg" 
-            alt="صيانة زانوسي المتخصصة بالإسكندرية" 
+          <img
+            src="/images/hero-bg-new.webp"
+            alt="صيانة زانوسي المتخصصة بالإسكندرية"
             className="w-full h-full object-cover opacity-30"
+            loading="eager"
+            fetchpriority="high"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-yellow-900 via-yellow-900/70 to-transparent"></div>
         </div>
-        
+
         <div className="container mx-auto px-4 relative z-10 py-12">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 bg-yellow-500/20 border border-yellow-500/30 px-4 py-2 rounded-full mb-6 animate-pulse">
               <ShieldCheck className="w-4 h-4 text-yellow-400" />
               <span className="text-yellow-400 font-bold text-sm uppercase tracking-wider">مركز خدمة Zanussi المتخصص - الإسكندرية</span>
             </div>
-            
+
             <h1 className="text-4xl md:text-7xl font-black text-white leading-tight mb-6">
               رقم صيانة <span className="text-yellow-400">زانوسي</span> <br />
               <span className="text-white">بمنزلك الآن</span> <br />
@@ -95,7 +97,7 @@ export default function ZanussiService() {
                 01278885772
               </a>
             </div>
-            
+
             <div className="flex flex-wrap gap-4 text-white/80 font-bold text-sm">
               <div className="flex items-center gap-1"><CheckCircle className="w-4 h-4 text-green-400" /> كشف فوري</div>
               <div className="flex items-center gap-1"><CheckCircle className="w-4 h-4 text-green-400" /> فاتورة رسمية</div>
@@ -144,7 +146,7 @@ export default function ZanussiService() {
               <p className="text-xl text-slate-600 mb-8 leading-relaxed font-medium">
                 هل تعاني من أعطال في أجهزة Zanussi؟ لا داعي للقلق. نحن نوفر لك خدمة صيانة منزلية فورية باستخدام أحدث معدات الفحص الإلكتروني لتحديد العطل بدقة متناهية وتوفير التكلفة.
               </p>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
                 {[
                   'صيانة ثلاجات زانوسي',
@@ -176,10 +178,10 @@ export default function ZanussiService() {
                 </div>
               </div>
             </div>
-            
+
             <div className="relative">
               <div className="absolute -inset-4 bg-yellow-600/10 rounded-[3rem] blur-3xl"></div>
-              <img src="/images/services/washing-machine-repair-pro.jpg" alt="فني صيانة زانوسي الإسكندرية" className="relative rounded-[3rem] shadow-2xl w-full h-[600px] object-cover" />
+              <img src="/images/services/washing-machine-repair-pro.webp" alt="فني صيانة زانوسي الإسكندرية" className="relative rounded-[3rem] shadow-2xl w-full h-[600px] object-cover" loading="lazy" decoding="async" />
               <div className="absolute top-10 -right-10 bg-white p-6 rounded-3xl shadow-2xl border border-slate-100 hidden md:block animate-bounce">
                 <div className="flex items-center gap-2 mb-2">
                   {[1,2,3,4,5].map(s => <Star key={s} className="w-4 h-4 fill-yellow-400 text-yellow-400" />)}
