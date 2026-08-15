@@ -268,9 +268,11 @@ export default function ProtectedOrders() {
   }, []);
 
   const canEditDelete = () => userRole === 'admin' || userRole === 'manager';
+  const isViewer = userRole === 'viewer';
   const handleLogout = () => { localStorage.clear(); sessionStorage.clear(); window.location.href = "/login"; };
 
   const sendWhatsAppToCustomerOnCreate = (order: any) => {
+    if (isViewer) return;
     const phone = formatPhoneForWhatsApp(order.phone);
     if (!phone) return;
     const message = `📝 *تم استلام طلب الصيانة بنجاح* 📝\n\n🔢 *رقم الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n🔧 *الجهاز:* ${order.device_type} - ${order.brand}\n📍 *العنوان:* ${order.address || 'غير محدد'}\n\n✅ تم تسجيل طلبك وسيتم التواصل معك قريباً.`;
@@ -361,6 +363,7 @@ export default function ProtectedOrders() {
 
   const addCashEntry = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
     try {
       const amount = Number(Number(cashForm.amount).toFixed(2));
       const entryData = { ...cashForm, amount };
@@ -382,6 +385,7 @@ export default function ProtectedOrders() {
   };
 
   const deleteOrderProfitFromCash = async (order: any) => {
+    if (!canEditDelete()) return false;
     try {
       const entries = await fetchAPI(`cash_ledger?description=like=*${order.order_number}*&type=eq.income&select=id`);
       if (entries && entries.length > 0) {
@@ -395,6 +399,7 @@ export default function ProtectedOrders() {
   };
 
   const addCompanyProfitToCash = async (order: any) => {
+    if (!canEditDelete()) return false;
     const companyShare = order.company_share || 0;
     if (order.profit_added_to_cash) { showToast("ليس لديك صلاحية", "error"); return false; }
     if (companyShare <= 0) { showToast("ليس لديك صلاحية", "error"); return false; }
@@ -421,6 +426,7 @@ export default function ProtectedOrders() {
 
   // ✅ توزيع أرباح يوم – يعتمد على الإيرادات اليومية فقط، بدون reserve، ويمنع التكرار
   const distributeProfitForDate = async (targetDate: string) => {
+    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
     try {
       const incomeEntries = await fetchAPI(`cash_ledger?select=amount&date=eq.${targetDate}&type=eq.income`);
       const totalIncome = (incomeEntries || []).reduce((sum, entry) => sum + (entry.amount || 0), 0);
@@ -572,6 +578,7 @@ export default function ProtectedOrders() {
   // ========== دالة fetchData الآمنة ==========
 
   const updateOrderRating = async (orderId: number, rating: number) => {
+    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
     try {
       await fetchAPI(`orders?id=eq.${orderId}`, { method: 'PATCH', body: JSON.stringify({ rating }) });
       showToast("✅ تم تقييم الفني بنجاح", "success");
@@ -580,9 +587,13 @@ export default function ProtectedOrders() {
   };
 
   const fetchData = useCallback(async () => {
+    if (!userRole) return;
     setLoading(true);
     try {
-      const allOrders = await fetchAPI('orders?select=*&order=created_at.desc');
+      const orderFields = isViewer
+        ? 'id,order_number,customer_name,device_type,address,brand,problem_description,technician,status,total_amount,parts_cost,transport_cost,net_amount,company_share,technician_share,is_paid,created_at,date,deleted_at,technician_note,rating,warranty_period,invoice_approved,invoice_date,parts_used,completed_at'
+        : '*';
+      const allOrders = await fetchAPI(`orders?select=${orderFields}&order=created_at.desc`);
       const ordersArray = Array.isArray(allOrders) ? allOrders : [];
       const activeOrders = ordersArray.filter((o: any) => !o.deleted_at);
       const deletedOrders = ordersArray.filter((o: any) => o.deleted_at);
@@ -620,7 +631,7 @@ export default function ProtectedOrders() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userRole, isViewer]);
 
   useEffect(() => {
     fetchData();
@@ -680,6 +691,7 @@ export default function ProtectedOrders() {
   };
 
   const sendWhatsAppToCustomer = (order: any, newStatus: string) => {
+    if (isViewer) return;
     const phone = formatPhoneForWhatsApp(order.phone);
     if (!phone) return;
     let statusMessage = "";
@@ -695,6 +707,7 @@ export default function ProtectedOrders() {
   };
 
   const updateOrderStatus = async (id: number, newStatus: string, extraData = {}) => {
+    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
     const order = orders.find(o => o.id === id);
     if (!order) return;
     const oldStatus = order.status;
@@ -728,6 +741,7 @@ export default function ProtectedOrders() {
   };
 
   const togglePaidStatus = async (id: number, currentStatus: boolean) => {
+    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
     const order = orders.find(o => o.id === id);
     if (!order) return;
     const newPaidStatus = !currentStatus;
@@ -778,6 +792,7 @@ export default function ProtectedOrders() {
   };
 
   const copyOrderDetails = (order: any) => {
+    if (isViewer) return showToast("ليس لديك صلاحية", "error");
     const text = `📋 *بيانات الأوردر* 📋\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n📞 *الهاتف:* ${order.phone}\n🔧 *الجهاز:* ${order.device_type} - ${order.brand}\n📍 *العنوان:* ${order.address || 'غير محدد'}\n📝 *المشكلة:* ${order.problem_description || 'لا توجد'}\n💰 *المبلغ:* ${order.total_amount} ج.م\n👨‍🔧 *الفني:* ${order.technician || 'غير معين'}\n━━━━━━━━━━━━━━━━━━━━━━`;
     navigator.clipboard.writeText(text);
     setCopiedId(order.id);
@@ -787,6 +802,7 @@ export default function ProtectedOrders() {
 
   const saveOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
     if (isSubmitting) return;
     setIsSubmitting(true);
     const finalDevice = isOtherDevice ? customDevice : formData.device_type;
@@ -898,6 +914,7 @@ export default function ProtectedOrders() {
   };
 
   const printAndSendInvoice = async (order: any) => {
+    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
     const parts = prompt("✏️ قطع الغيار المستخدمة", "لا توجد") || "لا توجد";
     const warranty = prompt("🛡️ فترة الضمان", "6 أشهر") || "6 أشهر";
     if (!order.phone) return showToast("ليس لديك صلاحية", "error");
@@ -998,9 +1015,12 @@ export default function ProtectedOrders() {
   const fetchPendingOrdersReport = async () => {
     setReportLoading(true);
     try {
+      const reportOrderFields = isViewer
+        ? 'order_number, customer_name, device_type, brand, technician, status, created_at'
+        : 'order_number, customer_name, phone, device_type, brand, technician, status, created_at';
       let query = supabase
         .from('orders')
-        .select('order_number, customer_name, phone, device_type, brand, technician, status, created_at')
+        .select(reportOrderFields)
         .in('status', ['pending', 'in-progress'])
         .order('created_at', { ascending: true });
 
@@ -1041,7 +1061,9 @@ export default function ProtectedOrders() {
         return diffDays > 3;
       });
 
-      setReportColumns(['رقم الأوردر', 'العميل', 'الهاتف', 'الجهاز', 'الماركة', 'الفني', 'الحالة', 'التاريخ']);
+      setReportColumns(isViewer
+        ? ['رقم الأوردر', 'العميل', 'الجهاز', 'الماركة', 'الفني', 'الحالة', 'التاريخ']
+        : ['رقم الأوردر', 'العميل', 'الهاتف', 'الجهاز', 'الماركة', 'الفني', 'الحالة', 'التاريخ']);
       setReportData(finalData.map(order => ({ ...order, date: order.created_at.split('T')[0] })));
     } catch (err) {
       console.error(err);
@@ -1054,9 +1076,12 @@ export default function ProtectedOrders() {
   const fetchCancelledOrdersReport = async () => {
     setReportLoading(true);
     try {
+      const reportOrderFields = isViewer
+        ? 'order_number, customer_name, device_type, brand, technician, technician_note, created_at'
+        : 'order_number, customer_name, phone, device_type, brand, technician, technician_note, created_at';
       let query = supabase
         .from('orders')
-        .select('order_number, customer_name, phone, device_type, brand, technician, technician_note, created_at')
+        .select(reportOrderFields)
         .eq('status', 'cancelled')
         .order('created_at', { ascending: false });
 
@@ -1074,7 +1099,9 @@ export default function ProtectedOrders() {
         return orderDate >= start && orderDate <= end;
       });
 
-      setReportColumns(['رقم الأوردر', 'العميل', 'الهاتف', 'الجهاز', 'الماركة', 'الفني', 'سبب الإلغاء', 'التاريخ']);
+      setReportColumns(isViewer
+        ? ['رقم الأوردر', 'العميل', 'الجهاز', 'الماركة', 'الفني', 'سبب الإلغاء', 'التاريخ']
+        : ['رقم الأوردر', 'العميل', 'الهاتف', 'الجهاز', 'الماركة', 'الفني', 'سبب الإلغاء', 'التاريخ']);
       setReportData(filtered.map(order => ({ ...order, date: order.created_at.split('T')[0] })));
     } catch (err) { console.error(err); showToast("'", "info"); } finally { setReportLoading(false); }
   };
@@ -1310,7 +1337,7 @@ export default function ProtectedOrders() {
               </div>
 	            <div className="bg-slate-900 rounded-xl p-4 flex flex-col gap-4">
 		              <div className="flex flex-wrap gap-3 items-center">
-		                <div className="relative flex-1 min-w-[200px]"><Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} /><input type="text" placeholder="بحث بالاسم أو الهاتف أو رقم الأوردر..." className="w-full pr-10 p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
+		                <div className="relative flex-1 min-w-[200px]"><Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} /><input type="text" placeholder={isViewer ? "بحث بالاسم أو رقم الأوردر..." : "بحث بالاسم أو الهاتف أو رقم الأوردر..."} className="w-full pr-10 p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
 		                <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
 		                  <option value="all">جميع الحالات</option><option value="pending">قيد الانتظار</option><option value="in-progress">قيد التنفيذ</option><option value="inspected">تم الكشف</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option><option value="deferred">مؤجل</option>
 		                </select>
@@ -1337,7 +1364,7 @@ export default function ProtectedOrders() {
 
 		            <div className="flex flex-wrap gap-3 items-center">
 		              <button onClick={() => setShowAllOrders(!showAllOrders)} className={`px-3 py-2 rounded-lg text-sm transition ${showAllOrders ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>{showAllOrders ? '📋 إخفاء المنجز' : '📋 عرض الكل'}</button>
-		              <button onClick={() => { setEditingOrder(null); setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") }); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={18} /> أوردر جديد</button>
+		              {canEditDelete() && <button onClick={() => { setEditingOrder(null); setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") }); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={18} /> أوردر جديد</button>}
 		              <button onClick={() => setShowDeleted(!showDeleted)} className={`px-3 py-2 rounded-lg text-sm transition ${showDeleted ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}><Trash2 size={16} /> {showDeleted ? 'إخفاء المحذوفة' : `عرض المحذوفة (${deletedOrders.length})`}</button>
 		              <button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg ml-auto"><RefreshCw size={18} /></button>
 		            </div>
@@ -1524,34 +1551,34 @@ export default function ProtectedOrders() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 relative z-10 pt-4 border-t border-slate-800/50">
+                      {!isViewer && <div className="flex items-center gap-2 relative z-10 pt-4 border-t border-slate-800/50">
                         <a href={`tel:${order.phone}`} className="flex-1 h-10 bg-slate-800 hover:bg-blue-600 text-white rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95">
                           <Phone size={14} /> <span className="text-[10px] font-black">اتصال</span>
                         </a>
                         <button onClick={() => sendWhatsApp(order.phone, `مرحباً أ/ ${order.customer_name}، معك مركز الصيانة بخصوص طلبك رقم ${order.order_number}`)} className="flex-1 h-10 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-500 hover:text-white rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95">
                           <Send size={14} /> <span className="text-[10px] font-black">واتساب</span>
                         </button>
-                        <div className="flex gap-1.5">
+                        {canEditDelete() && <div className="flex gap-1.5">
                           <button onClick={() => { setEditingOrder(order); setFormData(order); setShowOrderModal(true); }} className="w-10 h-10 bg-slate-800 text-blue-400 hover:bg-blue-600 hover:text-white rounded-xl flex items-center justify-center transition-all active:scale-95"><Edit size={16} /></button>
                           <button onClick={() => deleteOrder(order.id)} className="w-10 h-10 bg-slate-800 text-rose-400 hover:bg-rose-600 hover:text-white rounded-xl flex items-center justify-center transition-all active:scale-95"><Trash2 size={16} /></button>
-                        </div>
-                      </div>
+                        </div>}
+                      </div>}
 
                       {delayed && (
                         <div className="absolute top-2 left-2 bg-rose-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full animate-bounce shadow-lg">متأخر ⚠️</div>
                       )}
 
-                      <div className="mt-3 flex gap-2 relative z-10">
+                      {canEditDelete() && <div className="mt-3 flex gap-2 relative z-10">
                          <select value={order.status} onChange={e => updateOrderStatus(order.id, e.target.value)} className="text-[10px] bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-white flex-1">
                            <option value="pending">تغيير الحالة</option><option value="in-progress">قيد التنفيذ</option><option value="inspected">تم الكشف</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option><option value="deferred">مؤجل</option>
                          </select>
                          <button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`px-3 py-1 rounded-lg text-[10px] font-bold ${order.is_paid ? 'bg-green-600/20 text-green-400' : 'bg-red-600/20 text-red-400'}`}>
                            {order.is_paid ? 'تم التحصيل' : 'تحصيل؟'}
                          </button>
-                      </div>
+                      </div>}
 
 
-                      {order.status === 'completed' && (
+                      {order.status === 'completed' && canEditDelete() && (
                         <div className="mt-4 pt-4 border-t border-slate-800/50 relative z-10">
                           <p className="text-[10px] font-bold text-slate-500 mb-2">تقييم أداء الفني:</p>
                           <div className="flex gap-1">
@@ -1567,7 +1594,7 @@ export default function ProtectedOrders() {
                           </div>
                         </div>
                       )}
-<div className="mt-2 flex gap-1 relative z-10">
+                      {!isViewer && <div className="mt-2 flex gap-1 relative z-10">
                         {order.status === 'completed' ? (
                           <button onClick={() => window.open(`/invoice?id=${order.id}`, '_blank')} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-1 rounded-lg text-[10px] font-bold">📄 فاتورة</button>
                         ) : (
@@ -1576,7 +1603,7 @@ export default function ProtectedOrders() {
                         {order.status === 'in-progress' && canEditDelete() && (
                           <button onClick={() => { setSelectedOrder(order); setSettleForm({ total_amount: order.total_amount || 0, parts_cost: order.parts_cost || 0, transport_cost: order.transport_cost || 0, net_amount: order.net_amount || 0, technician_share: order.technician_share || 0, company_share: order.company_share || 0 }); setShowSettleModal(true); }} className="w-full bg-orange-600 hover:bg-orange-700 text-white py-1 rounded-lg text-[10px] font-bold">💰 تصفية</button>
                         )}
-                      </div>
+                      </div>}
                     </div>
                   );
                 })}
@@ -1592,7 +1619,7 @@ export default function ProtectedOrders() {
                       <div><h3 className="font-bold text-white">{order.customer_name}</h3><p className="text-xs text-slate-400">رقم: {order.order_number}</p><p className="text-xs text-red-400">🗑️ محذوف في {new Date(order.deleted_at).toLocaleDateString('ar-EG')}</p></div>
                       {canEditDelete() && <button onClick={() => restoreOrder(order.id)} className="p-1 text-green-500 hover:text-green-400" title="استعادة"><RotateCcw size={16} /></button>}
                     </div>
-                    <div className="grid grid-cols-2 gap-1 mt-2 text-sm"><div className="text-slate-300">📞 {order.phone}</div><div className="text-slate-300">🔧 {order.device_type} - {order.brand}</div><div className="col-span-2 text-slate-300">📍 {order.address}</div><div className="col-span-2 text-slate-300">📝 {order.problem_description}</div><div className="text-slate-300">💰 {order.total_amount} ج.م</div><div className="text-slate-300">👨‍🔧 {order.technician || '-'}</div></div>
+                    <div className="grid grid-cols-2 gap-1 mt-2 text-sm">{!isViewer && <div className="text-slate-300">📞 {order.phone}</div>}<div className="text-slate-300">🔧 {order.device_type} - {order.brand}</div><div className="col-span-2 text-slate-300">📍 {order.address}</div><div className="col-span-2 text-slate-300">📝 {order.problem_description}</div><div className="text-slate-300">💰 {order.total_amount} ج.م</div><div className="text-slate-300">👨‍🔧 {order.technician || '-'}</div></div>
                   </div>
                 ))}
               </div>
@@ -1702,7 +1729,7 @@ export default function ProtectedOrders() {
             {orders.filter(o=>o.status==='completed' && !o.invoice_approved).map(order => (
               <div key={order.id} className="bg-slate-900 rounded-xl p-4 flex justify-between items-center flex-wrap gap-3 border border-slate-800">
                 <div><p className="font-bold text-white">{order.customer_name}</p><p className="text-sm text-slate-400">{order.device_type} - {order.brand}</p><p className="text-orange-400">المبلغ: {order.total_amount} ج.م</p></div>
-                <button onClick={()=>printAndSendInvoice(order)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2"><Printer size={16}/> طباعة الفاتورة</button>
+                {canEditDelete() && <button onClick={()=>printAndSendInvoice(order)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2"><Printer size={16}/> طباعة الفاتورة</button>}
               </div>
             ))}
             {orders.filter(o=>o.status==='completed' && !o.invoice_approved).length===0 && <div className="text-center py-8 text-slate-400">لا توجد فواتير بانتظار المراجعة</div>}
@@ -1880,7 +1907,7 @@ export default function ProtectedOrders() {
         {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions currentUser={currentUser} />}
       </div>
 
-      {showOrderModal && (
+      {showOrderModal && canEditDelete() && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl shadow-xl">
             <div className="flex justify-between mb-4"><h3 className="text-xl font-bold text-white">{editingOrder ? 'تعديل أوردر' : 'أوردر جديد'}</h3><button onClick={() => setShowOrderModal(false)} className="text-slate-400"><X size={20} /></button></div>
@@ -1904,7 +1931,7 @@ export default function ProtectedOrders() {
         </div>
       )}
 
-      {showTechModal && (
+      {showTechModal && canEditDelete() && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
             <h3 className="text-xl font-bold text-white mb-4">{editingTech ? 'تعديل فني' : 'فني جديد'}</h3>
@@ -1922,12 +1949,13 @@ export default function ProtectedOrders() {
         </div>
       )}
 
-      {showPartnerModal && (
+      {showPartnerModal && canEditDelete() && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
             <h3 className="text-xl font-bold text-white mb-4">{editingPartner ? 'تعديل شريك' : 'إضافة شريك'}</h3>
             <form onSubmit={async (e) => {
               e.preventDefault();
+              if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
               try {
                 if (editingPartner) await fetchAPI(`partners?id=eq.${editingPartner.id}`, { method: 'PATCH', body: JSON.stringify(partnerForm) });
                 else await fetchAPI('partners', { method: 'POST', body: JSON.stringify(partnerForm) });
@@ -1946,7 +1974,7 @@ export default function ProtectedOrders() {
         </div>
       )}
 
-      {showCashModal && (
+      {showCashModal && canEditDelete() && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
             <h3 className="text-xl font-bold text-white mb-4">{editingCash ? 'تعديل حركة' : 'إضافة حركة'}</h3>
@@ -1961,7 +1989,7 @@ export default function ProtectedOrders() {
         </div>
       )}
 
-      {showSettleModal && selectedOrder && (
+      {showSettleModal && selectedOrder && canEditDelete() && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
             <h3 className="text-xl font-bold text-white mb-4">تصفية الأوردر</h3>
