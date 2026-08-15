@@ -160,6 +160,13 @@ const addNotification = async (action: string, details: string) => {
 // ==================== المكون الرئيسي ====================
 export default function ProtectedOrders() {
   const [orders, setOrders] = useState<any[]>([]);
+  const getPhotoUrl = (note: string, type: 'OLD' | 'NEW') => {
+    if (!note) return null;
+    const regex = new RegExp(`\\[${type}_PARTS:(.*?)\\]`);
+    const match = note.match(regex);
+    return match ? match[1] : null;
+  };
+
   const [technicians, setTechnicians] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [partners, setPartners] = useState<any[]>([]);
@@ -1465,7 +1472,32 @@ export default function ProtectedOrders() {
                         </div>
                       </div>
 
-                      <div className="space-y-2.5 mb-6 relative z-10">
+                                            {/* صور قطع الغيار */}
+                      {(getPhotoUrl(order.technician_note, 'OLD') || getPhotoUrl(order.technician_note, 'NEW')) && (
+                        <div className="grid grid-cols-2 gap-2 mb-4 relative z-10">
+                          {getPhotoUrl(order.technician_note, 'OLD') && (
+                            <div className="group/photo relative">
+                              <p className="text-[8px] font-bold text-rose-400 mb-1">القطع القديمة</p>
+                              <img 
+                                src={getPhotoUrl(order.technician_note, 'OLD')} 
+                                className="w-full h-16 object-cover rounded-xl border border-rose-500/20 cursor-pointer hover:scale-105 transition-transform"
+                                onClick={() => window.open(getPhotoUrl(order.technician_note, 'OLD'), '_blank')}
+                              />
+                            </div>
+                          )}
+                          {getPhotoUrl(order.technician_note, 'NEW') && (
+                            <div className="group/photo relative">
+                              <p className="text-[8px] font-bold text-emerald-400 mb-1">القطع الجديدة</p>
+                              <img 
+                                src={getPhotoUrl(order.technician_note, 'NEW')} 
+                                className="w-full h-16 object-cover rounded-xl border border-emerald-500/20 cursor-pointer hover:scale-105 transition-transform"
+                                onClick={() => window.open(getPhotoUrl(order.technician_note, 'NEW'), '_blank')}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+<div className="space-y-2.5 mb-6 relative z-10">
                         <div className="flex items-center gap-2 text-[11px] text-slate-400">
                           <div className="w-6 h-6 rounded-lg bg-slate-800 flex items-center justify-center text-slate-500"><MapPin size={12} /></div>
                           <span className="line-clamp-1">{order.address || 'لا يوجد عنوان مسجل'}</span>

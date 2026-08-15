@@ -53,6 +53,9 @@ export default function TechnicianPortal() {
   const [filterStatus, setFilterStatus] = useState('all');
 
   const [technicianPercentage, setTechnicianPercentage] = useState(50);
+    const [oldPartsPhoto, setOldPartsPhoto] = useState("");
+  const [newPartsPhoto, setNewPartsPhoto] = useState("");
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [settleForm, setSettleForm] = useState({
     total_amount: 0,
     parts_cost: 0,
@@ -275,13 +278,42 @@ export default function TechnicianPortal() {
     setShowSettleModal(true);
   };
 
-  const submitSettlement = async (e: React.FormEvent) => {
+    const submitSettlement = async (e: React.FormEvent) => {
     e.preventDefault();
-    await updateStatus(selectedOrder.id, 'completed', { ...settleForm, invoice_approved: false });
+    
+    if (!oldPartsPhoto || !newPartsPhoto) {
+      addNotification({ 
+        type: 'critical', 
+        title: '🚫 تنبيه هام جداً', 
+        message: 'يجب تصوير قطع الغيار القديمة والجديدة قبل إكمال الأوردر! لن يتم قبول التصفية بدون صور.', 
+        duration: 0 
+      });
+      return;
+    }
+
+    const photoNotes = `
+[OLD_PARTS:${oldPartsPhoto}]
+[NEW_PARTS:${newPartsPhoto}]`;
+    const finalNote = (selectedOrder.technician_note || '') + photoNotes;
+
+    await updateStatus(selectedOrder.id, 'completed', { 
+      ...settleForm, 
+      invoice_approved: false,
+      technician_note: finalNote
+    });
+    
     setShowSettleModal(false);
-    notifyAdmin("✅ تصفية الأوردر (إكمال)", selectedOrder, `المبلغ: ${settleForm.total_amount} ج.م | قطع غيار: ${settleForm.parts_cost} ج.م | مواصلات: ${settleForm.transport_cost} ج.م`);
+    
+    const details = `المبلغ: ${settleForm.total_amount} ج.م | قطع غيار: ${settleForm.parts_cost} ج.م | مواصلات: ${settleForm.transport_cost} ج.م
+🖼️ صورة القديم: ${oldPartsPhoto}
+🖼️ صورة الجديد: ${newPartsPhoto}`;
+    notifyAdmin("✅ تصفية الأوردر (إكمال)", selectedOrder, details);
+    
+    setOldPartsPhoto("");
+    setNewPartsPhoto("");
     addNotification({ type: 'success', title: '✅ تم الإكمال', message: 'تم إكمال الأوردر بنجاح، بانتظار موافقة المدير على الفاتورة.', duration: 5000 });
   };
+
 
   const openActionModal = (order: any, type: 'cancel' | 'inspect' | 'defer' | 'note') => {
     setCurrentOrder(order);
@@ -311,14 +343,15 @@ export default function TechnicianPortal() {
     return diffHours < 2; // أوردر جديد خلال آخر ساعتين
   };
 
-  const handlePhotoUpload = async (orderId: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const handlePhotoUpload = async (orderId: number, e: React.ChangeEvent<HTMLInputElement>, type: 'old' | 'new' | 'general' = 'general') => {
     const file = e.target.files?.[0];
     if (!file) return;
     
+    setIsUploadingPhoto(true);
     addNotification({ type: 'info', title: '📸 جاري الرفع', message: 'يتم الآن رفع الصورة...', duration: 2000 });
     
     try {
-      const fileName = `${Date.now()}_${file.name}`;
+      const fileName = `${Date.now()}_${type}_${file.name}`;
       const { data, error } = await supabase.storage.from('order-photos').upload(fileName, file);
       
       let photoUrl = "";
@@ -327,25 +360,34 @@ export default function TechnicianPortal() {
         photoUrl = publicUrlData.publicUrl;
       }
 
-      const order = orders.find(o => o.id === orderId);
-      const oldNote = order?.technician_note || '';
-      const newNote = oldNote ? `${oldNote}\n[صورة مرفقة]` : '[صورة مرفقة]';
+      if (type === 'old') setOldPartsPhoto(photoUrl);
+      else if (type === 'new') setNewPartsPhoto(photoUrl);
       
-      await fetchAPI(`orders?id=eq.${orderId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ 
-          technician_note: newNote,
-          attachment_url: photoUrl 
-        })
-      });
+      if (type === 'general') {
+        const order = orders.find(o => o.id === orderId);
+        const oldNote = order?.technician_note || '';
+        const newNote = oldNote ? `${oldNote}
+[صورة مرفقة]` : '[صورة مرفقة]';
+        
+        await fetchAPI(`orders?id=eq.${orderId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ 
+            technician_note: newNote,
+            attachment_url: photoUrl 
+          })
+        });
+        fetchData();
+      }
       
-      fetchData();
       addNotification({ type: 'success', title: '✅ تم الرفع', message: 'تم حفظ الصورة بنجاح', duration: 3000 });
     } catch (err) {
       console.error(err);
       addNotification({ type: 'error', title: '❌ فشل الرفع', message: 'حدث خطأ أثناء رفع الصورة', duration: 3000 });
+    } finally {
+      setIsUploadingPhoto(false);
     }
   };
+
 
   // ✅ دالة الفلترة للأوردرات
   
@@ -641,8 +683,35 @@ export default function TechnicianPortal() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md">
             <h3 className="text-xl font-bold text-white mb-4">تصفية الأوردر (إكمال)</h3>
-            <form onSubmit={submitSettlement} className="space-y-4">
-              <div><label className="text-sm text-slate-400">المبلغ الإجمالي</label><input type="number" value={settleForm.total_amount} onChange={e => handleSettleChange('total_amount', e.target.value)} className="w-full bg-slate-700 rounded-lg p-2 text-white" required /></div>
+                        <form onSubmit={submitSettlement} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-rose-400 block">📸 القطع القديمة (إلزامي)</label>
+                  <div className="relative h-24 bg-slate-700 rounded-xl border-2 border-dashed border-rose-500/30 flex items-center justify-center overflow-hidden">
+                    {oldPartsPhoto ? (
+                      <img src={oldPartsPhoto} className="w-full h-full object-cover" />
+                    ) : (
+                      <Camera className="text-rose-500/50" />
+                    )}
+                    <input type="file" accept="image/*" capture="environment" onChange={(e) => handlePhotoUpload(selectedOrder.id, e, 'old')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-emerald-400 block">📸 القطع الجديدة (إلزامي)</label>
+                  <div className="relative h-24 bg-slate-700 rounded-xl border-2 border-dashed border-emerald-500/30 flex items-center justify-center overflow-hidden">
+                    {newPartsPhoto ? (
+                      <img src={newPartsPhoto} className="w-full h-full object-cover" />
+                    ) : (
+                      <Camera className="text-emerald-500/50" />
+                    )}
+                    <input type="file" accept="image/*" capture="environment" onChange={(e) => handlePhotoUpload(selectedOrder.id, e, 'new')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                  </div>
+                </div>
+              </div>
+
+              
+
+              
               <div><label className="text-sm text-slate-400">قطع غيار</label><input type="number" value={settleForm.parts_cost} onChange={e => handleSettleChange('parts_cost', e.target.value)} className="w-full bg-slate-700 rounded-lg p-2 text-white" /></div>
               <div><label className="text-sm text-slate-400">مواصلات</label><input type="number" value={settleForm.transport_cost} onChange={e => handleSettleChange('transport_cost', e.target.value)} className="w-full bg-slate-700 rounded-lg p-2 text-white" /></div>
               <div className="bg-slate-700/50 p-3 rounded-lg space-y-2">
