@@ -611,7 +611,16 @@ export default function TechnicianPortal() {
                       <div className="space-y-2.5 mb-6 relative z-10">
                         <div className="flex items-center gap-2 text-[11px] text-slate-400">
                           <div className="w-6 h-6 rounded-lg bg-slate-800 flex items-center justify-center text-slate-500"><MapPin size={12} /></div>
-                          <span className="line-clamp-1">{order.address || 'لا يوجد عنوان مسجل'}</span>
+                          <span className="line-clamp-1 flex-1">{order.address || 'لا يوجد عنوان مسجل'}</span>
+                          {order.address && (
+                            <button 
+                              onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.address + ' Alexandria Egypt')}`, '_blank')}
+                              className="p-1.5 bg-blue-600/10 text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all"
+                              title="فتح في الخرائط"
+                            >
+                              <MapPin size={14} />
+                            </button>
+                          )}
                         </div>
                         {order.problem_description && (
                           <div className="flex items-start gap-2 text-[11px] text-slate-400">

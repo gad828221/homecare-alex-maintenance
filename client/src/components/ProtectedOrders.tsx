@@ -173,7 +173,7 @@ export default function ProtectedOrders() {
   const [cashLedger, setCashLedger] = useState<any[]>([]);
   const [cashBalance, setCashBalance] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'orders' | 'technicians' | 'reports' | 'invoicesReview' | 'cash' | 'partners' | 'notifications' | 'permissions' | 'performance'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'technicians' | 'reports' | 'invoicesReview' | 'cash' | 'partners' | 'notifications' | 'permissions' | 'performance' | 'analytics'>('orders');
   const [showOrderModal, setShowOrderModal] = useState(false);
 
   const [showTechModal, setShowTechModal] = useState(false);
@@ -570,6 +570,15 @@ export default function ProtectedOrders() {
   };
 
   // ========== دالة fetchData الآمنة ==========
+  
+  const updateOrderRating = async (orderId: number, rating: number) => {
+    try {
+      await fetchAPI(`orders?id=eq.${orderId}`, { method: 'PATCH', body: JSON.stringify({ rating }) });
+      showToast("✅ تم تقييم الفني بنجاح", "success");
+      fetchData();
+    } catch (err) { console.error(err); }
+  };
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -1232,6 +1241,7 @@ export default function ProtectedOrders() {
         <button onClick={() => setActiveTab('partners')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'partners' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>🤝 الشركاء</button>
         <button onClick={() => setActiveTab('notifications')} className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1 transition ${activeTab === 'notifications' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}><Bell className="w-4 h-4" /> الإشعارات ({notifications.length})</button>
         {userRole === 'admin' && <button onClick={() => setActiveTab('permissions')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'permissions' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>🔐 الصلاحيات</button>}
+        <button onClick={() => setActiveTab('analytics')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'analytics' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📈 الإحصائيات</button>
         <button onClick={() => setActiveTab('performance')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'performance' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📊 أداء الفنيين</button>
       </div>
 
@@ -1538,7 +1548,24 @@ export default function ProtectedOrders() {
                          </button>
                       </div>
 
-                      <div className="mt-2 flex gap-1 relative z-10">
+                      
+                      {order.status === 'completed' && (
+                        <div className="mt-4 pt-4 border-t border-slate-800/50 relative z-10">
+                          <p className="text-[10px] font-bold text-slate-500 mb-2">تقييم أداء الفني:</p>
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map(star => (
+                              <button 
+                                key={star} 
+                                onClick={() => updateOrderRating(order.id, star)}
+                                className={`transition-all ${star <= (order.rating || 0) ? 'text-yellow-500 scale-110' : 'text-slate-700 hover:text-slate-500'}`}
+                              >
+                                <Star size={18} fill={star <= (order.rating || 0) ? 'currentColor' : 'none'} />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+<div className="mt-2 flex gap-1 relative z-10">
                         {order.status === 'completed' ? (
                           <button onClick={() => window.open(`/invoice?id=${order.id}`, '_blank')} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-1 rounded-lg text-[10px] font-bold">📄 فاتورة</button>
                         ) : (
