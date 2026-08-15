@@ -348,11 +348,17 @@ export default function TechnicianPortal() {
   };
 
   // ✅ دالة الفلترة للأوردرات
-  const filteredOrders = orders.filter(order => {
+  
+  const searchFilteredOrders = orders.filter(order => {
     if (searchTerm && !order.customer_name?.includes(searchTerm) && !order.order_number?.includes(searchTerm) && !order.phone?.includes(searchTerm)) return false;
+    return true;
+  });
+
+  const filteredOrders = searchFilteredOrders.filter(order => {
     if (filterStatus !== 'all' && order.status !== filterStatus) return false;
     return true;
   });
+
 
   if (!isActive) {
     return (
@@ -469,7 +475,7 @@ export default function TechnicianPortal() {
                 { id: 'inspected', label: 'كشف', color: 'cyan' },
                 { id: 'completed', label: 'تم', color: 'emerald' }
               ].map(tab => {
-                const count = tab.id === 'all' ? orders.length : orders.filter(o => o.status === tab.id).length;
+                const count = tab.id === 'all' ? searchFilteredOrders.length : searchFilteredOrders.filter(o => o.status === tab.id).length;
                 const isActive = filterStatus === tab.id;
                 return (
                   <button
