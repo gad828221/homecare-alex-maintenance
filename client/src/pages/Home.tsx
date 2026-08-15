@@ -130,10 +130,13 @@ export default function Home() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="hidden lg:block relative"
+              className="relative w-full max-w-xl mx-auto lg:mx-0"
             >
-              <div className="absolute -inset-4 bg-orange-500/20 rounded-[3rem] blur-3xl"></div>
-              <div className="relative bg-white/5 backdrop-blur-sm border border-white/10 p-2 rounded-[3rem] shadow-2xl">
+              <div className="absolute -inset-4 bg-orange-500/30 rounded-[3rem] blur-3xl animate-pulse-slow"></div>
+              <div className="relative bg-white p-1 rounded-[2.5rem] shadow-2xl border-4 border-orange-500/20">
+                <div className="bg-orange-500 text-white py-3 px-6 rounded-t-[2.2rem] text-center font-black text-xl mb-1">
+                   احجز صيانة فورية الآن ⚡
+                </div>
                 <BookingForm />
               </div>
             </motion.div>
