@@ -83,7 +83,7 @@ export default function TechnicianPortal() {
   }, []);
 
   const isPhoneHidden = (order: any) => {
-    return order.status === 'completed' || order.status === 'cancelled' || order.status === 'inspected';
+    return order.status === 'completed';
   };
 
   const formatPhoneForWhatsApp = (phone: string) => {
@@ -599,9 +599,15 @@ export default function TechnicianPortal() {
                       {/* Actions */}
                       <div className="space-y-3 relative z-10 pt-4 border-t border-slate-800/50">
                         <div className="flex gap-2">
-                          <a href={`tel:${order.phone}`} className="flex-1 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95">
-                            <Phone size={14} /> <span className="text-[10px] font-black">اتصال بالعميل</span>
-                          </a>
+                          {isPhoneHidden(order) ? (
+                            <div className="flex-1 h-10 bg-slate-800/50 text-slate-500 rounded-xl flex items-center justify-center gap-2 border border-slate-700/30">
+                              <Ban size={14} /> <span className="text-[10px] font-black italic tracking-tighter">الرقم مخفي بعد الإتمام</span>
+                            </div>
+                          ) : (
+                            <a href={`tel:${order.phone}`} className="flex-1 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95">
+                              <Phone size={14} /> <span className="text-[10px] font-black">اتصال بالعميل</span>
+                            </a>
+                          )}
                           <button onClick={() => { setSelectedOrderForActions(order); setShowActionsModal(true); }} className="h-10 w-10 bg-slate-800 text-slate-300 hover:bg-slate-700 rounded-xl flex items-center justify-center transition-all active:scale-95">
                             <Eye size={16} />
                           </button>
