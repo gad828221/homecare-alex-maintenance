@@ -27,15 +27,47 @@
 
     <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="apple-touch-icon" href="/logo.png" />
+    <link rel="preload" as="image" href="/images/hero-bg-professional.webp" type="image/webp" fetchpriority="high" />
     
     <!-- Preconnect to external domains -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" /></noscript>
     
-    <style>
+    <style id="critical-css">
+      html, body {
+        margin: 0;
+        min-height: 100%;
+      }
       body {
-        font-family: 'Cairo', sans-serif;
+        font-family: 'Cairo', Arial, sans-serif;
+        background: #ffffff;
+      }
+      #root {
+        min-height: 100vh;
+      }
+      #root:empty {
+        min-height: 100vh;
+        background: #0f172a url('/images/hero-bg-professional.webp') center / cover no-repeat;
+        position: relative;
+        overflow: hidden;
+      }
+      #root:empty::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.62), rgba(15, 23, 42, 0.86));
+      }
+      #root:empty::after {
+        content: "جاري التحميل...";
+        position: absolute;
+        inset: 50% auto auto 50%;
+        transform: translate(-50%, -50%);
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 1rem;
+        white-space: nowrap;
       }
     </style>
 

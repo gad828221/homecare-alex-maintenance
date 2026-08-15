@@ -57,7 +57,7 @@ export default function Home() {
           <img
             src="/images/hero-bg-professional.webp"
             alt="صيانة أجهزة منزلية احترافية بالإسكندرية"
-            className="w-full h-full object-cover opacity-40 scale-105 animate-pulse-slow"
+            className="w-full h-full object-cover opacity-40 scale-105"
             loading="eager"
             fetchpriority="high"
           />
