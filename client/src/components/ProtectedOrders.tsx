@@ -1779,13 +1779,26 @@ export default function ProtectedOrders() {
                 <h3 className="text-lg font-black text-white mb-6 flex items-center gap-3"><Users className="text-blue-500" /> أفضل الفنيين</h3>
                 <div className="space-y-4">
                   {technicians
-                    .map(t => ({ name: t.name, count: orders.filter(o => o.technician === t.name && o.status === 'completed').length }))
-                    .sort((a, b) => b.count - a.count)
+                    .map(t => {
+                      const total = orders.filter(o => o.technician === t.name).length;
+                      const completed = orders.filter(o => o.technician === t.name && o.status === 'completed').length;
+                      const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+                      return { name: t.name, total, completed, percentage };
+                    })
+                    .sort((a, b) => b.percentage - a.percentage || b.completed - a.completed)
                     .slice(0, 5)
                     .map((t, i) => (
-                      <div key={i} className="flex justify-between items-center bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
-                        <span className="text-sm font-bold text-slate-300">{t.name}</span>
-                        <span className="bg-blue-600/20 text-blue-400 px-4 py-1.5 rounded-full text-xs font-black">{t.count} مكتمل</span>
+                      <div key={i} className="flex flex-col gap-2 bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-bold text-slate-300">{t.name}</span>
+                          <span className="bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full text-[10px] font-black">{t.completed} / {t.total} مكتمل</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                            <div className="bg-blue-500 h-full transition-all duration-1000" style={{ width: `${t.percentage}%` }}></div>
+                          </div>
+                          <span className="text-[10px] font-black text-slate-400">{t.percentage}%</span>
+                        </div>
                       </div>
                     ))
                   }
