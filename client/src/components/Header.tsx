@@ -49,7 +49,13 @@ export default function Header() {
             
             {/* Brands Dropdown */}
             <div className="relative group">
-              <button className="text-gray-200 hover:text-orange-400 font-bold transition-colors flex items-center gap-2">
+              <button
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded={brandsOpen}
+                aria-label="فتح قائمة ماركات الأجهزة"
+                className="text-gray-200 hover:text-orange-400 font-bold transition-colors flex items-center gap-2"
+              >
                 الماركات
                 <ChevronDown className="w-4 h-4 group-hover:rotate-180 transition-transform" />
               </button>
@@ -90,7 +96,14 @@ export default function Header() {
             </a>
 
             {/* Mobile Menu Button */}
-            <button className="lg:hidden p-2 text-white bg-slate-800 rounded-lg" onClick={() => setIsOpen(!isOpen)}>
+            <button
+              type="button"
+              aria-label={isOpen ? "إغلاق قائمة التنقل" : "فتح قائمة التنقل"}
+              aria-expanded={isOpen}
+              aria-controls="mobile-navigation"
+              className="lg:hidden p-2 text-white bg-slate-800 rounded-lg"
+              onClick={() => setIsOpen(!isOpen)}
+            >
               {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
@@ -98,11 +111,15 @@ export default function Header() {
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <nav className="lg:hidden bg-slate-800 rounded-2xl mt-2 p-4 border border-orange-500/30 shadow-2xl animate-in slide-in-from-top duration-300">
+          <nav id="mobile-navigation" aria-label="التنقل الرئيسي على الهاتف" className="lg:hidden bg-slate-800 rounded-2xl mt-2 p-4 border border-orange-500/30 shadow-2xl animate-in slide-in-from-top duration-300">
             <div className="space-y-2">
               <Link href="/" onClick={() => setIsOpen(false)} className="block text-white font-bold p-3 hover:bg-slate-700 rounded-xl">الرئيسية</Link>
               
               <button
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded={brandsOpen}
+                aria-label="فتح قائمة ماركات الأجهزة على الهاتف"
                 onClick={() => setBrandsOpen(!brandsOpen)}
                 className="w-full text-right text-white font-bold p-3 hover:bg-slate-700 rounded-xl flex items-center justify-between"
               >

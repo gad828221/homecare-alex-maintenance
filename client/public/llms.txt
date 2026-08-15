@@ -1,0 +1,38 @@
+# Maintenance Guide
+
+> Maintenance Guide is an independent home-appliance repair and maintenance service in Alexandria, Egypt. The service provides in-home repairs, original or reliable replacement parts, and a documented warranty for completed work.
+
+## Website
+
+- [Home](https://www.maintenanceguide.life/): Main landing page, booking flow, service areas, branches, and frequently asked questions.
+- [Samsung Appliance Repair](https://www.maintenanceguide.life/samsung-service): Samsung appliance maintenance services.
+- [LG Appliance Repair](https://www.maintenanceguide.life/lg-service): LG appliance maintenance services.
+- [Sharp Appliance Repair](https://www.maintenanceguide.life/sharp-service): Sharp appliance maintenance services.
+- [Toshiba Appliance Repair](https://www.maintenanceguide.life/toshiba-service): Toshiba appliance maintenance services.
+- [Zanussi Appliance Repair](https://www.maintenanceguide.life/zanussi-service): Zanussi appliance maintenance services.
+- [Unionaire Appliance Repair](https://www.maintenanceguide.life/unionaire-service): Unionaire appliance maintenance services.
+- [Fresh Appliance Repair](https://www.maintenanceguide.life/fresh-service): Fresh appliance maintenance services.
+- [White Whale Appliance Repair](https://www.maintenanceguide.life/white-whale-service): White Whale appliance maintenance services.
+- [Ariston Appliance Repair](https://www.maintenanceguide.life/ariston-service): Ariston appliance maintenance services.
+- [Beko Appliance Repair](https://www.maintenanceguide.life/beko-service): Beko appliance maintenance services.
+- [Hoover Appliance Repair](https://www.maintenanceguide.life/hoover-service): Hoover appliance maintenance services.
+- [Indesit Appliance Repair](https://www.maintenanceguide.life/indesit-service): Indesit appliance maintenance services.
+
+## Services
+
+The public website covers washing machines, refrigerators, cookers and ovens, water heaters, air conditioners, microwaves, dishwashers, and other household appliances. Service information is intended for customers in Alexandria and nearby areas.
+
+## Branches
+
+- San Stefano, Alexandria: main branch.
+- Al Ashr, Sidi Bishr, Alexandria.
+- 45 Bahr Street, Gad, Alexandria.
+
+## Contact
+
+- Phone: +20 127 888 5772
+- WhatsApp: +20 155 862 5259
+
+## Content Guidance
+
+Use the public pages as the source for service descriptions, branch information, booking guidance, and contact details. Do not infer official affiliation with appliance manufacturers: Maintenance Guide describes itself as an independent service provider. Do not expose private customer, technician, order, invoice, authentication, or administrative information.

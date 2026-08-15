@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useId, useState, useEffect } from "react";
 import { 
   MessageCircle, CheckCircle, User, Phone, Wrench, MapPin, 
   AlertCircle, Star, ShieldCheck, Clock, Users, Award, 
@@ -14,6 +14,11 @@ const DEVICE_TYPES = ['غسالة', 'ثلاجة', 'بوتاجاز', 'سخان', 
 const BRANDS = ['سامسونج', 'LG', 'شارب', 'توشيبا', 'زانوسي', 'يونيون إير', 'فريش', 'وايت ويل', 'أريستون', 'بيكو', 'هوفر', 'إنديست'];
 
 export default function BookingFormEnhanced() {
+  const formId = useId().replace(/:/g, "");
+  const deviceTypeId = `${formId}-device-type`;
+  const brandId = `${formId}-brand`;
+  const customDeviceId = `${formId}-custom-device`;
+  const customBrandId = `${formId}-custom-brand`;
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     customer_name: "",
@@ -172,10 +177,13 @@ export default function BookingFormEnhanced() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <motion.div className="space-y-3" whileHover={{ y: -2 }}>
-                <label className="flex items-center gap-2 text-sm font-black text-slate-700 mb-2">
-                  <Zap className="w-5 h-5 text-orange-600" /> نوع الجهاز
+                <label htmlFor={deviceTypeId} className="flex items-center gap-2 text-sm font-black text-slate-700 mb-2">
+                  <Zap className="w-5 h-5 text-orange-600" aria-hidden="true" /> نوع الجهاز
                 </label>
-                <select 
+                <select
+                  id={deviceTypeId}
+                  name="device_type"
+                  aria-label="اختر نوع الجهاز"
                   required 
                   value={isOtherDevice ? "other" : formData.device_type} 
                   onChange={e => { 
@@ -202,16 +210,22 @@ export default function BookingFormEnhanced() {
                     value={customDevice} 
                     onChange={e => setCustomDevice(e.target.value)} 
                     className="w-full mt-3 bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg outline-none focus:border-orange-500 focus:shadow-lg focus:shadow-orange-200 transition-all font-bold" 
+                    id={customDeviceId}
+                    name="custom_device"
+                    aria-label="اكتب نوع الجهاز الآخر"
                     placeholder="اكتب نوع الجهاز" 
                   />
                 )}
               </motion.div>
 
               <motion.div className="space-y-3" whileHover={{ y: -2 }}>
-                <label className="flex items-center gap-2 text-sm font-black text-slate-700 mb-2">
-                  <Star className="w-5 h-5 text-orange-600" /> الماركة
+                <label htmlFor={brandId} className="flex items-center gap-2 text-sm font-black text-slate-700 mb-2">
+                  <Star className="w-5 h-5 text-orange-600" aria-hidden="true" /> الماركة
                 </label>
-                <select 
+                <select
+                  id={brandId}
+                  name="brand"
+                  aria-label="اختر ماركة الجهاز"
                   required 
                   value={isOtherBrand ? "other" : formData.brand} 
                   onChange={e => { 
@@ -238,6 +252,9 @@ export default function BookingFormEnhanced() {
                     value={customBrand} 
                     onChange={e => setCustomBrand(e.target.value)} 
                     className="w-full mt-3 bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg outline-none focus:border-orange-500 focus:shadow-lg focus:shadow-orange-200 transition-all font-bold" 
+                    id={customBrandId}
+                    name="custom_brand"
+                    aria-label="اكتب الماركة الأخرى"
                     placeholder="اكتب الماركة" 
                   />
                 )}

@@ -17,10 +17,10 @@ export default function Footer() {
               نقدم خدمات صيانة احترافية وشاملة لجميع الأجهزة المنزلية بأسعار منافسة مع ضمان الجودة الشامل. فريقنا الفني مدرب على أعلى مستوى لخدمتكم على مدار الساعة.
             </p>
             <div className="flex gap-3 pt-4">
-              <a href="https://wa.me/201558625259" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center transition-all transform hover:scale-110">
+              <a href="https://wa.me/201558625259" target="_blank" rel="noopener noreferrer" aria-label="التواصل عبر واتساب" className="w-10 h-10 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center transition-all transform hover:scale-110">
                 <MessageCircle className="w-5 h-5" />
               </a>
-              <a href="tel:+201278885772" className="w-10 h-10 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center transition-all transform hover:scale-110">
+              <a href="tel:+201278885772" aria-label="الاتصال بمركز الصيانة" className="w-10 h-10 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center transition-all transform hover:scale-110">
                 <Phone className="w-5 h-5" />
               </a>
             </div>
