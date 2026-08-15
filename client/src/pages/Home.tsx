@@ -91,7 +91,7 @@ export default function Home() {
                 <Button
                   size="lg"
                   className="bg-orange-600 hover:bg-orange-700 text-white text-2xl font-black px-12 py-10 rounded-3xl shadow-3xl shadow-orange-900/40 transition-all transform hover:scale-105 group"
-                  onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+                  onClick={() => document.getElementById("booking-form")?.scrollIntoView({ behavior: "smooth", block: "center" })}
                 >
                   <Calendar className="w-8 h-8 ml-3 group-hover:rotate-12 transition-transform" />
                   احجز موعدك الآن
@@ -135,7 +135,7 @@ export default function Home() {
               className="relative w-full max-w-xl mx-auto lg:mx-0"
             >
               <div className="absolute -inset-4 bg-orange-500/30 rounded-[3rem] blur-3xl animate-pulse-slow"></div>
-              <div className="relative bg-white p-1 rounded-[2.5rem] shadow-2xl border-4 border-orange-500/20">
+              <div id="booking-form" className="relative bg-white p-1 rounded-[2.5rem] shadow-2xl border-4 border-orange-500/20 scroll-mt-24">
                 <div className="bg-orange-500 text-white py-3 px-6 rounded-t-[2.2rem] text-center font-black text-xl mb-1">
                    احجز صيانة فورية الآن ⚡
                 </div>
@@ -195,7 +195,7 @@ export default function Home() {
             <Button
               size="lg"
               className="bg-slate-900 hover:bg-slate-800 text-white font-black px-10 py-8 rounded-2xl text-xl"
-              onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+              onClick={() => document.getElementById("booking-form")?.scrollIntoView({ behavior: "smooth", block: "center" })}
             >
               اطلب فني الآن
             </Button>
