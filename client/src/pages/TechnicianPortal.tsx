@@ -280,7 +280,7 @@ export default function TechnicianPortal() {
     await updateStatus(selectedOrder.id, 'completed', { ...settleForm, invoice_approved: false });
     setShowSettleModal(false);
     notifyAdmin("✅ تصفية الأوردر (إكمال)", selectedOrder, `المبلغ: ${settleForm.total_amount} ج.م | قطع غيار: ${settleForm.parts_cost} ج.م | مواصلات: ${settleForm.transport_cost} ج.م`);
-    alert("✅ تم إكمال الأوردر وانتظار موافقة المدير على الفاتورة.");
+    addNotification({ type: 'success', title: '✅ تم الإكمال', message: 'تم إكمال الأوردر بنجاح، بانتظار موافقة المدير على الفاتورة.', duration: 5000 });
   };
 
   const openActionModal = (order: any, type: 'cancel' | 'inspect' | 'defer' | 'note') => {
@@ -465,71 +465,91 @@ export default function TechnicianPortal() {
               {filteredOrders.map(order => {
                 const isNew = isNewOrder(order);
                 return (
-                <div key={order.id} className={`rounded-xl border border-slate-700 overflow-hidden transition-all relative ${
-                  isNew ? 'bg-blue-900/10 border-blue-500/50 ring-1 ring-blue-500/20 animate-pulse' : 'bg-slate-800/50'
-                }`}>
-                  {isNew && (
-                    <div className="absolute -left-8 top-2 bg-blue-600 text-white text-[8px] font-black px-8 py-1 -rotate-45 shadow-lg z-10">جديد</div>
-                  )}
-                  <div className={`h-1.5 ${order.status === 'completed' ? 'bg-green-500' : order.status === 'in-progress' ? 'bg-blue-500' : order.status === 'cancelled' ? 'bg-red-500' : order.status === 'deferred' ? 'bg-purple-500' : order.status === 'inspected' ? 'bg-yellow-500' : 'bg-yellow-500'}`}></div>
-                  <div className="p-4 space-y-4">
-                    <div className="flex justify-between items-start">
-                      <div><div className="font-bold text-white">{order.customer_name}</div><div className="text-[11px] text-slate-400 flex items-center gap-1"><Calendar className="w-3 h-3" /> {order.date}</div></div>
-                      <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        order.status === 'completed' ? 'bg-green-500/20 text-green-400' : 
-                        order.status === 'in-progress' ? 'bg-blue-500/20 text-blue-400' : 
-                        order.status === 'cancelled' ? 'bg-red-500/20 text-red-400' : 
-                        order.status === 'deferred' ? 'bg-purple-500/20 text-purple-400' : 
-                        order.status === 'inspected' ? 'bg-yellow-500/20 text-yellow-400' : 
-                        'bg-yellow-500/20 text-yellow-400'
-                      }`}>
-                        {order.status === 'completed' ? 'مكتمل' : 
-                         order.status === 'in-progress' ? 'جاري العمل' : 
-                         order.status === 'cancelled' ? 'ملغي' : 
-                         order.status === 'deferred' ? 'مؤجل' : 
-                         order.status === 'inspected' ? 'تم الكشف' : 'قيد الانتظار'}
+                    <div key={order.id} className={`group bg-slate-900 rounded-[1.5rem] border border-slate-800 p-5 transition-all hover:border-orange-500/50 hover:shadow-2xl hover:shadow-orange-500/10 relative overflow-hidden ${isNewOrder(order) ? 'ring-2 ring-blue-500/30' : ''}`}>
+                      {/* Status Background */}
+                      <div className={`absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:bg-orange-500/10 transition-all`}></div>
+                      
+                      {/* Header */}
+                      <div className="flex justify-between items-start mb-4 relative z-10">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-lg font-black text-white group-hover:text-orange-400 transition-colors">{order.customer_name}</h3>
+                            {isNewOrder(order) && <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-ping"></span>}
+                          </div>
+                          <span className="text-[10px] font-bold text-slate-500 tracking-widest uppercase">#{order.order_number}</span>
+                        </div>
+                        <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black border border-slate-700 bg-slate-800/50 text-slate-300`}>
+                          {order.status === 'pending' ? '⏳ قيد الانتظار' :
+                           order.status === 'in-progress' ? '🔧 قيد التنفيذ' :
+                           order.status === 'inspected' ? '🔍 تم الكشف' :
+                           order.status === 'completed' ? '✅ مكتمل' :
+                           order.status === 'cancelled' ? '❌ ملغي' :
+                           order.status === 'deferred' ? '⏰ مؤجل' : order.status}
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-xs text-slate-300 space-y-1">
-                      <div>🔧 {order.device_type || 'جهاز'} - {order.brand || 'ماركة'}</div>
-                      <div className="flex items-start gap-1"><MapPin className="w-3 h-3 text-slate-500 mt-0.5" /> {order.address || 'لا يوجد عنوان'}</div>
-                      {order.problem_description && <div className="text-slate-400">⚠️ {order.problem_description}</div>}
-                    </div>
-                    {order.technician_note && (
-                      <div className="bg-slate-800 p-2 rounded-lg text-xs"><span className="text-slate-400">📝 ملاحظتك:</span> {order.technician_note}</div>
-                    )}
 
-                    <div className="flex flex-col gap-2 pt-2">
+                      {/* Info Grid */}
+                      <div className="grid grid-cols-2 gap-3 mb-5 relative z-10">
+                        <div className="bg-slate-950/50 p-3 rounded-2xl border border-slate-800/50">
+                          <p className="text-[9px] font-bold text-slate-500 mb-1">الجهاز والماركة</p>
+                          <p className="text-xs font-black text-slate-200">{order.device_type} - {order.brand}</p>
+                        </div>
+                        <div className="bg-slate-950/50 p-3 rounded-2xl border border-slate-800/50">
+                          <p className="text-[9px] font-bold text-slate-500 mb-1">تاريخ الأوردر</p>
+                          <p className="text-xs font-black text-slate-200">{new Date(order.created_at || order.date).toLocaleDateString('ar-EG')}</p>
+                        </div>
+                      </div>
+
+                      {/* Location and Notes */}
+                      <div className="space-y-2.5 mb-6 relative z-10">
+                        <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                          <div className="w-6 h-6 rounded-lg bg-slate-800 flex items-center justify-center text-slate-500"><MapPin size={12} /></div>
+                          <span className="line-clamp-1">{order.address || 'لا يوجد عنوان مسجل'}</span>
+                        </div>
+                        {order.problem_description && (
+                          <div className="flex items-start gap-2 text-[11px] text-slate-400">
+                            <div className="w-6 h-6 rounded-lg bg-slate-800 flex items-center justify-center text-slate-500 shrink-0"><StickyNote size={12} /></div>
+                            <span className="line-clamp-2">{order.problem_description}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="space-y-3 relative z-10 pt-4 border-t border-slate-800/50">
                         <div className="flex gap-2">
-                          {!isPhoneHidden(order) ? (
-                            <a href={`tel:${order.phone}`} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-center text-sm font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 border border-slate-600">
-                              <Phone className="w-5 h-5 text-green-400" /> اتصل بالعميل
-                            </a>
-                          ) : (
-                            <div className="flex-1 bg-slate-800 text-slate-500 text-center text-sm font-bold py-3 rounded-xl cursor-not-allowed flex items-center justify-center gap-2 border border-slate-700">
-                              <Phone className="w-5 h-5" /> الهاتف مخفي
-                            </div>
-                          )}
-                          
-                          {/* زر رفع الصور */}
-                          <label className="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-center text-sm font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 border border-slate-600 cursor-pointer">
-                            <Camera className="w-5 h-5 text-blue-400" /> رفع صورة
-                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(order.id, e)} />
-                          </label>
+                          <a href={`tel:${order.phone}`} className="flex-1 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95">
+                            <Phone size={14} /> <span className="text-[10px] font-black">اتصال بالعميل</span>
+                          </a>
+                          <button onClick={() => { setSelectedOrderForActions(order); setShowActionsModal(true); }} className="h-10 w-10 bg-slate-800 text-slate-300 hover:bg-slate-700 rounded-xl flex items-center justify-center transition-all active:scale-95">
+                            <Eye size={16} />
+                          </button>
                         </div>
 
-                      {order.status === 'pending' && (
-                        <button onClick={() => updateStatus(order.id, 'in-progress')} className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-lg font-black py-4 rounded-xl transition flex items-center justify-center gap-3 shadow-xl shadow-blue-900/40 border-b-4 border-blue-800 active:translate-y-1 active:border-b-0">
-                          <Play className="w-6 h-6" /> ابدأ العمل الآن
-                        </button>
-                      )}
-
-                      {order.status === 'in-progress' && (
-                        <div className="flex flex-col gap-3">
-                          <button onClick={() => openSettleModal(order)} className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-lg font-black py-4 rounded-xl transition flex items-center justify-center gap-3 shadow-xl shadow-green-900/40 border-b-4 border-green-800 active:translate-y-1 active:border-b-0">
-                            <DollarSign className="w-6 h-6" /> إنهاء وتصفية الأوردر
-                          </button>
-                          <button onClick={() => { setSelectedOrderForActions(order); setShowActionsModal(true); }} className="w-full bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 border border-slate-600">
+                        <div className="flex gap-2">
+                          {order.status === 'pending' && (
+                            <button onClick={() => updateStatus(order.id, 'in-progress')} className="w-full h-10 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-[10px] font-black transition-all active:scale-95">
+                              🚀 بدء العمل
+                            </button>
+                          )}
+                          {order.status === 'in-progress' && (
+                            <button onClick={() => openSettleModal(order)} className="w-full h-10 bg-green-600 hover:bg-green-700 text-white rounded-xl text-[10px] font-black transition-all active:scale-95">
+                              💰 تصفية الأوردر
+                            </button>
+                          )}
+                          {(order.status === 'inspected' || order.status === 'deferred') && (
+                            <button onClick={() => openSettleModal(order)} className="w-full h-10 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-[10px] font-black transition-all active:scale-95">
+                              📝 تحديث التصفية
+                            </button>
+                          )}
+                        </div>
+                        
+                        <div className="flex gap-2">
+                           <button onClick={() => openActionModal(order, 'inspect')} className="flex-1 py-2 bg-slate-800/50 hover:bg-slate-800 text-slate-400 rounded-lg text-[9px] font-bold transition-all">🔍 كشف</button>
+                           <button onClick={() => openActionModal(order, 'defer')} className="flex-1 py-2 bg-slate-800/50 hover:bg-slate-800 text-slate-400 rounded-lg text-[9px] font-bold transition-all">⏰ تأجيل</button>
+                           <button onClick={() => openActionModal(order, 'cancel')} className="flex-1 py-2 bg-slate-800/50 hover:bg-slate-800 text-rose-500/50 hover:text-rose-500 rounded-lg text-[9px] font-bold transition-all">❌ إلغاء</button>
+                        </div>
+                      </div>
+                    </div> setShowActionsModal(true); }} className="w-full bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 border border-slate-600">
                             <FileCheck className="w-5 h-5 text-orange-400" /> إجراءات أخرى (تأجيل / إلغاء)
                           </button>
                         </div>
