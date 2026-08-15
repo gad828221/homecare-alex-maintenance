@@ -7,7 +7,7 @@ import {
   Zap, Droplet, Wind, Flame, Star, Clock, Shield, Users, 
   Phone, MessageCircle, CheckCircle, Award, Truck, 
   Settings, Heart, MapPin, Sparkles, ChevronDown, ShieldCheck, Headphones,
-  Calendar
+  Calendar, ArrowRight
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
