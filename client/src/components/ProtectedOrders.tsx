@@ -591,7 +591,7 @@ export default function ProtectedOrders() {
     setLoading(true);
     try {
       const orderFields = isViewer
-        ? 'id,order_number,customer_name,device_type,address,brand,problem_description,technician,status,total_amount,parts_cost,transport_cost,net_amount,company_share,technician_share,is_paid,created_at,date,deleted_at,technician_note,rating,warranty_period,invoice_approved,invoice_date,parts_used,completed_at'
+        ? 'id,order_number,customer_name,device_type,address,brand,problem_description,technician,status,total_amount,parts_cost,transport_cost,net_amount,company_share,technician_share,is_paid,created_at,date,deleted_at,technician_note,warranty_period,invoice_approved,invoice_date,parts_used,completed_at'
         : '*';
       const allOrders = await fetchAPI(`orders?select=${orderFields}&order=created_at.desc`);
       const ordersArray = Array.isArray(allOrders) ? allOrders : [];
