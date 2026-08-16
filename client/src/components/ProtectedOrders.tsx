@@ -754,7 +754,7 @@ export default function ProtectedOrders() {
             event: 'order_status_changed',
             title: '🔄 تحديث حالة أوردر',
             message: techMsg,
-            targetUserIds: [tech.id],
+            targetUserIds: [`tech:${tech.id}`],
             data: { order_number: order.order_number, status: newStatus }
           });
         }
@@ -847,7 +847,7 @@ export default function ProtectedOrders() {
               event: 'technician_assigned',
               title: '🔧 تم تحديث أوردر مكلّف به',
               message: techMsg,
-              targetUserIds: [tech.id],
+              targetUserIds: [`tech:${tech.id}`],
               data: { order_number: orderToSave.order_number }
             });
           }
@@ -878,7 +878,7 @@ export default function ProtectedOrders() {
               event: 'technician_assigned',
               title: '🔧 تم تعيين أوردر جديد لك',
               message: techMsg,
-              targetUserIds: [tech.id],
+              targetUserIds: [`tech:${tech.id}`],
               data: { order_number: orderToSave.order_number }
             });
           }

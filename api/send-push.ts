@@ -20,6 +20,10 @@ type PushBody = {
   data?: unknown;
 };
 
+type Audience =
+  | { filters: Array<Record<string, string>>; target_channel?: 'push' }
+  | { include_aliases: { external_id: string[] }; target_channel: 'push' };
+
 const APP_ID = process.env.ONESIGNAL_APP_ID || '9abc8506-3935-44a8-b044-3117e77d26dc';
 const ALLOWED_EVENTS = new Set([
   'new_order',
@@ -32,14 +36,23 @@ const ALLOWED_EVENTS = new Set([
 const cleanStrings = (value: unknown, max = 20): string[] => {
   if (!Array.isArray(value)) return [];
   return [...new Set(value
-    .filter((item): item is string => typeof item === 'string')
-    .map(item => item.trim())
+    .filter((item): item is string | number => typeof item === 'string' || typeof item === 'number')
+    .map(item => String(item).trim())
     .filter(Boolean)
     .slice(0, max))];
 };
 
 const respond = (res: ResponseLike, code: number, body: unknown) => {
   res.status(code).json(body);
+};
+
+const buildRoleFilters = (roles: string[]): Array<Record<string, string>> => {
+  const filters: Array<Record<string, string>> = [];
+  roles.forEach((role, index) => {
+    if (index > 0) filters.push({ operator: 'OR' });
+    filters.push({ field: 'tag', key: 'role', relation: '=', value: role });
+  });
+  return filters;
 };
 
 export default async function handler(req: RequestLike, res: ResponseLike) {
@@ -68,7 +81,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 
   const apiKey = process.env.ONESIGNAL_API_KEY;
   if (!apiKey) {
-    respond(res, 503, { error: 'OneSignal is not configured on the server' });
+    respond(res, 503, { error: 'OneSignal is not configured on the server. Add ONESIGNAL_API_KEY in Vercel.' });
     return;
   }
 
@@ -77,7 +90,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   const message = typeof body.message === 'string' ? body.message.trim().slice(0, 1000) : '';
   const event = typeof body.event === 'string' ? body.event : '';
   const targetRoles = cleanStrings(body.targetRoles, 5);
-  const targetUserIds = cleanStrings(body.targetUserIds, 20);
+  const targetUserIds = cleanStrings(body.targetUserIds, 20000);
 
   if (!title || !message || !ALLOWED_EVENTS.has(event)) {
     respond(res, 400, { error: 'title, message, and a supported event are required' });
@@ -89,44 +102,59 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     return;
   }
 
-  const filters: Array<Record<string, string>> = [];
-  [...targetRoles.map(role => ({ key: 'role', value: role })), ...targetUserIds.map(id => ({ key: 'user_id', value: id }))]
-    .forEach((target, index, targets) => {
-      if (index > 0) filters.push({ operator: 'OR' });
-      filters.push({ field: 'tag', key: target.key, relation: '=', value: target.value });
-      if (index === targets.length - 1 && filters.at(-1)?.operator === 'OR') filters.pop();
-    });
-
   const safeData = body.data && typeof body.data === 'object' && !Array.isArray(body.data)
-    ? Object.fromEntries(Object.entries(body.data as Record<string, unknown>).slice(0, 20).map(([key, value]) => [key, String(value).slice(0, 200)]))
+    ? Object.fromEntries(
+        Object.entries(body.data as Record<string, unknown>)
+          .slice(0, 20)
+          .map(([key, value]) => [key.slice(0, 80), String(value).slice(0, 200)])
+      )
     : {};
 
-  try {
-    const response = await fetch('https://api.onesignal.com/notifications?c=push', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Key ${apiKey}`,
-      },
-      body: JSON.stringify({
-        app_id: APP_ID,
-        target_channel: 'push',
-        filters,
-        headings: { en: title, ar: title },
-        contents: { en: message, ar: message },
-        custom_data: { event, ...safeData },
-        priority: 10,
-      }),
+  const audiences: Audience[] = [];
+  if (targetRoles.length > 0) {
+    audiences.push({ filters: buildRoleFilters(targetRoles) });
+  }
+  if (targetUserIds.length > 0) {
+    audiences.push({
+      include_aliases: { external_id: targetUserIds },
+      target_channel: 'push',
     });
+  }
 
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      console.error('OneSignal API error:', response.status, result);
-      respond(res, response.status, { error: 'OneSignal rejected the notification', details: result });
+  try {
+    const responses = await Promise.all(audiences.map(audience =>
+      fetch('https://api.onesignal.com/notifications?c=push', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: apiKey.startsWith('Key ') ? apiKey : `Key ${apiKey}`,
+        },
+        body: JSON.stringify({
+          app_id: APP_ID,
+          ...audience,
+          headings: { en: title, ar: title },
+          contents: { en: message, ar: message },
+          custom_data: { event, ...safeData },
+          priority: 10,
+        }),
+      })
+    ));
+
+    const results = await Promise.all(responses.map(response => response.json().catch(() => ({}))));
+    const failedIndex = responses.findIndex(response => !response.ok);
+    if (failedIndex !== -1) {
+      console.error('OneSignal API error:', responses[failedIndex].status, results[failedIndex]);
+      respond(res, responses[failedIndex].status, {
+        error: 'OneSignal rejected the notification',
+        details: results[failedIndex],
+      });
       return;
     }
 
-    respond(res, 200, { success: true, id: result?.id || null });
+    respond(res, 200, {
+      success: true,
+      ids: results.map(result => result?.id).filter(Boolean),
+    });
   } catch (error) {
     console.error('OneSignal request failed:', error);
     respond(res, 500, { error: 'Failed to send push notification' });
