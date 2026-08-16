@@ -88,9 +88,11 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     });
     return;
   }
-  // تنظيف المفتاح تماماً من أي رموز غير صالحة (فقط حروف، أرقام، وشرطة سفلية)
-  apiKey = apiKey.replace(/[^a-zA-Z0-9_]/g, '');
-  const keyInfo = `Len:${apiKey.length}|Start:${apiKey.slice(0, 3)}...`;
+  // تنظيف فائق الصرامة: حذف أي مسافات، أسطر، أو رموز غير مرئية
+  const rawLen = apiKey.length;
+  apiKey = apiKey.trim().replace(/[\n\r\s\t]/g, '');
+  const cleanLen = apiKey.length;
+  const keyInfo = `V1.1.6|Raw:${rawLen}|Clean:${cleanLen}|Start:${apiKey.slice(0, 5)}`;
 
   const body = (req.body || {}) as PushBody;
   const title = typeof body.title === 'string' ? body.title.trim().slice(0, 120) : '';
