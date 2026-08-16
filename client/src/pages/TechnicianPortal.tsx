@@ -719,48 +719,80 @@ export default function TechnicianPortal() {
         </div>
       )}
 
-      {showSettleModal && selectedOrder && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold text-white mb-4">تصفية الأوردر (إكمال)</h3>
-                        <form onSubmit={submitSettlement} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+            {showSettleModal && selectedOrder && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
+          <div className="bg-slate-800 rounded-3xl p-6 w-full max-w-md border border-slate-700 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-black text-white">💰 تصفية الأوردر</h3>
+              <button onClick={() => setShowSettleModal(false)} className="p-2 bg-slate-700 rounded-full text-slate-400 hover:text-white"><X size={20} /></button>
+            </div>
+            
+            <form onSubmit={submitSettlement} className="space-y-5">
+              {/* Photos Section */}
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-rose-400 block">📸 القطع القديمة (إلزامي)</label>
-                  <div className="relative h-24 bg-slate-700 rounded-xl border-2 border-dashed border-rose-500/30 flex items-center justify-center overflow-hidden">
+                  <label className="text-[11px] font-black text-rose-400 block text-center">📸 القطع القديمة</label>
+                  <div className="relative h-28 bg-slate-900 rounded-2xl border-2 border-dashed border-rose-500/20 flex items-center justify-center overflow-hidden hover:border-rose-500/50 transition-all">
                     {oldPartsPhoto ? (
-                      <img src={oldPartsPhoto} alt="صورة القطعة القديمة قبل الاستبدال" className="w-full h-full object-cover" />
+                      <img src={oldPartsPhoto} alt="Old" className="w-full h-full object-cover" />
                     ) : (
-                      <Camera className="text-rose-500/50" />
+                      <Camera className="text-rose-500/30 w-8 h-8" />
                     )}
                     <input type="file" accept="image/*" capture="environment" onChange={(e) => handlePhotoUpload(selectedOrder.id, e, 'old')} className="absolute inset-0 opacity-0 cursor-pointer" />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-emerald-400 block">📸 القطع الجديدة (إلزامي)</label>
-                  <div className="relative h-24 bg-slate-700 rounded-xl border-2 border-dashed border-emerald-500/30 flex items-center justify-center overflow-hidden">
+                  <label className="text-[11px] font-black text-emerald-400 block text-center">📸 القطع الجديدة</label>
+                  <div className="relative h-28 bg-slate-900 rounded-2xl border-2 border-dashed border-emerald-500/20 flex items-center justify-center overflow-hidden hover:border-emerald-500/50 transition-all">
                     {newPartsPhoto ? (
-                      <img src={newPartsPhoto} alt="صورة القطعة الجديدة بعد الاستبدال" className="w-full h-full object-cover" />
+                      <img src={newPartsPhoto} alt="New" className="w-full h-full object-cover" />
                     ) : (
-                      <Camera className="text-emerald-500/50" />
+                      <Camera className="text-emerald-500/30 w-8 h-8" />
                     )}
                     <input type="file" accept="image/*" capture="environment" onChange={(e) => handlePhotoUpload(selectedOrder.id, e, 'new')} className="absolute inset-0 opacity-0 cursor-pointer" />
                   </div>
                 </div>
               </div>
 
+              {/* Financial Inputs */}
+              <div className="space-y-4 bg-slate-900/50 p-4 rounded-2xl border border-slate-700/50">
+                <div>
+                  <label className="text-xs font-bold text-slate-400 mb-1.5 block">إجمالي الفاتورة (المبلغ المحصل)</label>
+                  <div className="relative">
+                    <input 
+                      type="number" 
+                      required 
+                      value={settleForm.total_amount || ''} 
+                      onChange={e => handleSettleChange('total_amount', e.target.value)} 
+                      className="w-full bg-slate-800 rounded-xl px-4 py-3 text-white border-2 border-orange-500/30 focus:border-orange-500 outline-none transition-all font-black text-lg" 
+                      placeholder="0" 
+                    />
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">ج.م</span>
+                  </div>
+                </div>
 
-
-
-	              <div><label className="text-sm text-slate-400">إجمالي الفاتورة</label><input type="number" required value={settleForm.total_amount} onChange={e => handleSettleChange('total_amount', e.target.value)} className="w-full bg-slate-700 rounded-lg p-2 text-white border border-orange-500/30" placeholder="المبلغ الكلي المحصل من العميل" /></div>
-	              <div><label className="text-sm text-slate-400">قطع غيار</label><input type="number" value={settleForm.parts_cost} onChange={e => handleSettleChange('parts_cost', e.target.value)} className="w-full bg-slate-700 rounded-lg p-2 text-white" /></div>
-	              <div><label className="text-sm text-slate-400">مواصلات</label><input type="number" value={settleForm.transport_cost} onChange={e => handleSettleChange('transport_cost', e.target.value)} className="w-full bg-slate-700 rounded-lg p-2 text-white" /></div>
-              <div className="bg-slate-700/50 p-3 rounded-lg space-y-2">
-                <div className="flex justify-between"><span className="text-slate-400">الصافي:</span><span className="text-white">{settleForm.net_amount} ج.م</span></div>
-                <div className="flex justify-between"><span className="text-slate-400">نصيب الفني ({technicianPercentage}%):</span><span className="text-green-400">{settleForm.technician_share} ج.م</span></div>
-                <div className="flex justify-between"><span className="text-slate-400">نصيب الشركة:</span><span className="text-orange-400">{settleForm.company_share} ج.م</span></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-500 mb-1 block">قطع غيار</label>
+                    <input type="number" value={settleForm.parts_cost || ''} onChange={e => handleSettleChange('parts_cost', e.target.value)} className="w-full bg-slate-800 rounded-xl px-3 py-2 text-white border border-slate-700 outline-none" placeholder="0" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-500 mb-1 block">مواصلات</label>
+                    <input type="number" value={settleForm.transport_cost || ''} onChange={e => handleSettleChange('transport_cost', e.target.value)} className="w-full bg-slate-800 rounded-xl px-3 py-2 text-white border border-slate-700 outline-none" placeholder="0" />
+                  </div>
+                </div>
               </div>
-              <button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-bold">تأكيد الإكمال</button>
+
+              {/* Summary */}
+              <div className="bg-slate-950/50 p-4 rounded-2xl space-y-3 border border-slate-800">
+                <div className="flex justify-between items-center"><span className="text-xs text-slate-500">الصافي للشركة والفني:</span><span className="text-sm font-black text-white">{settleForm.net_amount} ج.م</span></div>
+                <div className="flex justify-between items-center"><span className="text-xs text-slate-500">نصيب الفني ({technicianPercentage}%):</span><span className="text-sm font-black text-emerald-400">{settleForm.technician_share} ج.م</span></div>
+                <div className="flex justify-between items-center pt-2 border-t border-slate-800"><span className="text-xs text-slate-400 font-bold">المستحق للشركة:</span><span className="text-lg font-black text-orange-500">{settleForm.company_share} ج.م</span></div>
+              </div>
+
+              <button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white py-4 rounded-2xl font-black text-lg shadow-xl shadow-orange-900/20 transition-all active:scale-95">
+                تأكيد وإكمال الأوردر ✅
+              </button>
             </form>
           </div>
         </div>

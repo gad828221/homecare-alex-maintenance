@@ -88,12 +88,12 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     });
     return;
   }
-  // تنظيف فائق الصرامة: حذف أي شيء ليس حرفاً أو رقماً أو شرطة سفلية
+  // تنظيف فائق الصرامة: حذف أي شيء ليس حرفاً أو رقماً أو شرطة سفلية أو شرطة عادية
   const rawLen = apiKey.length;
-  apiKey = apiKey.replace(/[^a-zA-Z0-9_]/g, '');
+  apiKey = apiKey.replace(/[^a-zA-Z0-9_-]/g, '');
   const cleanLen = apiKey.length;
-  // تشخيص مفصل: أول 10 وآخر 10 حروف للتأكد من صحة المفتاح
-  const keyInfo = `V1.1.8|Len:${cleanLen}|Start:${apiKey.slice(0, 10)}|End:${apiKey.slice(-10)}`;
+  // تشخيص مفصل v1.1.9
+  const keyInfo = `V1.1.9|Len:${cleanLen}|Start:${apiKey.slice(0, 10)}|End:${apiKey.slice(-10)}`;
 
   const body = (req.body || {}) as PushBody;
   const title = typeof body.title === 'string' ? body.title.trim().slice(0, 120) : '';
