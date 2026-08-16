@@ -52,11 +52,8 @@ export default function NotificationPermissionButton() {
       if (typeof window === 'undefined') return true;
       const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
       const hasSupport = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
-      
-      // الكشف عن المتصفحات داخل التطبيقات (In-App Browsers) التي غالباً لا تدعم الإشعارات
       const ua = navigator.userAgent || '';
       const isInApp = /FBAN|FBAV|WhatsApp|Instagram|Line|Messenger/i.test(ua);
-
       if (!isSecure || (!hasSupport && !isInApp)) return false;
       return true;
     };
@@ -69,12 +66,21 @@ export default function NotificationPermissionButton() {
         return;
       }
 
-      const optedIn = Boolean(OneSignal?.User?.PushSubscription?.optedIn);
-      const osPermission = OneSignal?.Notifications?.permission; // boolean in v16
       const nativePermission = typeof Notification !== 'undefined' ? Notification.permission : 'default';
-
-      if (optedIn || osPermission === true || nativePermission === 'granted') {
+      
+      // إذا كان المتصفح أعطى الإذن، نعتبر الحالة مقبولة فوراً لتجنب إزعاج المستخدم
+      if (nativePermission === 'granted') {
         setPermissionStatus('granted');
+        setTimeout(() => mounted && setIsVisible(false), 3000);
+        return;
+      }
+
+      const optedIn = Boolean(OneSignal?.User?.PushSubscription?.optedIn);
+      const osPermission = OneSignal?.Notifications?.permission;
+
+      if (optedIn || osPermission === true) {
+        setPermissionStatus('granted');
+        setTimeout(() => mounted && setIsVisible(false), 3000);
       } else if (nativePermission === 'denied') {
         setPermissionStatus('denied');
       } else {
@@ -84,30 +90,33 @@ export default function NotificationPermissionButton() {
 
     runWithOneSignal(async (OneSignal) => {
       try {
+        syncStatus(OneSignal);
+
         const storedUser = readStoredUser();
         const externalId = getExternalId(storedUser);
-        if (externalId && OneSignal?.login) await OneSignal.login(externalId);
+        
+        if (externalId && OneSignal?.login) {
+          await OneSignal.login(externalId).catch((e: any) => console.warn('OS Login failed:', e));
+        }
+
         const stableId = storedUser?.id ?? storedUser?.username ?? storedUser?.techName;
         if (stableId !== undefined && stableId !== null && OneSignal?.User?.addTags) {
           await OneSignal.User.addTags({
             role: storedUser?.role || userRole,
-            user_id: String(stableId),
-            ...(storedUser?.username ? { username: String(storedUser.username) } : {}),
-            ...(storedUser?.techName ? { tech_name: String(storedUser.techName) } : {})
-          });
+            user_id: String(stableId)
+          }).catch((e: any) => console.warn('OS Tags failed:', e));
         }
+
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+          await OneSignal?.User?.PushSubscription?.optIn?.().catch(() => {});
+        }
+
         syncStatus(OneSignal);
 
         const subscription = OneSignal?.User?.PushSubscription;
-        const handleSubscriptionChange = () => syncStatus(OneSignal);
-        subscription?.addEventListener?.('change', handleSubscriptionChange);
-
-        if (mounted && subscription?.optedIn) {
-          setPermissionStatus('granted');
-          setTimeout(() => mounted && setIsVisible(false), 2000);
-        }
+        subscription?.addEventListener?.('change', () => syncStatus(OneSignal));
       } catch (error) {
-        console.error('OneSignal initialization error:', error);
+        console.error('OneSignal background init error:', error);
       }
     });
 
@@ -123,15 +132,7 @@ export default function NotificationPermissionButton() {
         const storedUser = readStoredUser();
         const externalId = getExternalId(storedUser);
         if (externalId && OneSignal?.login) await OneSignal.login(externalId);
-        const stableId = storedUser?.id ?? storedUser?.username ?? storedUser?.techName;
-        if (stableId !== undefined && stableId !== null && OneSignal?.User?.addTags) {
-          await OneSignal.User.addTags({
-            role: storedUser?.role || userRole,
-            user_id: String(stableId)
-          });
-        }
-
-        // محاولة إظهار Slidedown أولاً لأنها أكثر استقراراً في الموبايل
+        
         if (OneSignal?.slidedown) {
           await OneSignal.slidedown.promptPush();
         }
@@ -142,7 +143,6 @@ export default function NotificationPermissionButton() {
           setPermissionStatus('granted');
           setTimeout(() => setIsVisible(false), 2000);
         } else {
-          // التحقق من الحالة الحقيقية بعد محاولة الطلب
           const currentPermission = typeof Notification !== 'undefined' ? Notification.permission : 'default';
           if (currentPermission === 'denied') {
             setPermissionStatus('denied');
@@ -152,7 +152,12 @@ export default function NotificationPermissionButton() {
         }
       } catch (error) {
         console.error('OneSignal permission error:', error);
-        setPermissionStatus('denied');
+        // لا نغير الحالة لـ denied إلا إذا كان المتصفح يرفض فعلاً
+        if (typeof Notification !== 'undefined' && Notification.permission === 'denied') {
+          setPermissionStatus('denied');
+        } else {
+          setPermissionStatus('default');
+        }
       }
     });
   };
@@ -175,7 +180,7 @@ export default function NotificationPermissionButton() {
           <div className="flex-shrink-0 mt-1">
             {permissionStatus === 'loading' ? (
               <div className="animate-spin"><Bell className="w-6 h-6 text-blue-600" /></div>
-            ) : permissionStatus === 'denied' ? (
+            ) : permissionStatus === 'denied' || permissionStatus === 'unsupported' ? (
               <AlertCircle className="w-6 h-6 text-red-600" />
             ) : (
               <Bell className="w-6 h-6 text-blue-600" />
@@ -263,6 +268,12 @@ export default function NotificationPermissionButton() {
             <div className="mt-2 p-2 bg-black/5 rounded text-[10px] font-mono opacity-50 break-all">
               Diagnostic: {permissionStatus} | {typeof Notification !== 'undefined' ? Notification.permission : 'N/A'} | {window.location.hostname}
             </div>
+            
+            {window.location.hostname.includes('www') && (
+              <p className="mt-2 text-[10px] text-red-600 font-bold">
+                ⚠️ تنبيه: جرب فتح الموقع بدون www إذا استمرت المشكلة.
+              </p>
+            )}
           </div>
         ) : (
           <button
