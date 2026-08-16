@@ -126,11 +126,12 @@ const formatPhoneForWhatsApp = (phone: string) => {
 const notifyAdmin = (message: string) => {
   window.open(`https://wa.me/${ADMIN_PHONE}?text=${encodeURIComponent(message)}`, '_blank');
 };
-const notifyTechnician = (techPhone: string, techName: string, message: string) => {
-  const phone = formatPhoneForWhatsApp(techPhone);
-  if (!phone) return;
-  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
-};
+  const notifyTechnician = (techPhone: string, techName: string, message: string) => {
+    const phone = formatPhoneForWhatsApp(techPhone);
+    if (!phone) return;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
 const sendWhatsApp = (phoneNumber: string, message: string) => {
   const phone = formatPhoneForWhatsApp(phoneNumber);
   if (!phone) return;
@@ -831,6 +832,17 @@ export default function ProtectedOrders() {
         }
       }
 
+    } catch (err) { console.error(err); }
+  };
+
+  const pingTechnician = async (techName: string) => {
+    if (!techName || techName === '-' || techName === '') {
+      showToast("يرجى تعيين فني أولاً", "error");
+      return;
+    }
+    try {
+      await addNotification('tech_ping', techName);
+      showToast(`جاري تنبيه الفني ${techName}...`, 'success');
     } catch (err) { console.error(err); }
   };
 
@@ -1732,10 +1744,21 @@ export default function ProtectedOrders() {
                           <div className="w-6 h-6 rounded-lg bg-slate-800 flex items-center justify-center text-slate-500"><MapPin size={12} /></div>
                           <span className="line-clamp-1">{order.address || 'لا يوجد عنوان مسجل'}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-[11px] text-slate-400">
-                          <div className="w-6 h-6 rounded-lg bg-slate-800 flex items-center justify-center text-slate-500"><Users size={12} /></div>
-                          <span>الفني: <span className={noTechnician ? 'text-orange-500 font-black animate-pulse' : 'text-slate-200 font-bold'}>{order.technician || 'لم يتم التعيين بعد'}</span></span>
-                        </div>
+	                        <div className="flex items-center gap-2 text-[11px] text-slate-400">
+	                          <div className="w-6 h-6 rounded-lg bg-slate-800 flex items-center justify-center text-slate-500"><Users size={12} /></div>
+	                          <div className="flex-1 flex items-center justify-between">
+	                            <span>الفني: <span className={noTechnician ? 'text-orange-500 font-black animate-pulse' : 'text-slate-200 font-bold'}>{order.technician || 'لم يتم التعيين بعد'}</span></span>
+	                            {!noTechnician && canEditDelete() && (
+	                              <button 
+	                                onClick={() => pingTechnician(order.technician)}
+	                                className="p-1 bg-orange-600/20 text-orange-500 rounded-lg hover:bg-orange-600 hover:text-white transition-all"
+	                                title="تنبيه الفني الآن"
+	                              >
+	                                <Bell size={12} className="animate-pulse" />
+	                              </button>
+	                            )}
+	                          </div>
+	                        </div>
                         <div className="flex items-center gap-2 text-[11px] text-slate-400">
                           <div className="w-6 h-6 rounded-lg bg-slate-800 flex items-center justify-center text-slate-500"><Clock size={12} /></div>
                           <span>{new Date(order.created_at || order.date).toLocaleDateString('ar-EG')} - {new Date(order.created_at || order.date).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</span>
@@ -2146,7 +2169,7 @@ export default function ProtectedOrders() {
             إعادة ضبط النظام الشاملة (حل مشاكل الإشعارات)
           </button>
           <div className="text-[10px] text-slate-500 opacity-30">
-            System Version: v1.2.5-alarm-test (Deployed: Aug 17, 03:30)
+            System Version: v1.3.1-tech-ping-fix (Deployed: Aug 17, 04:00)
           </div>
         </div>
       </div>

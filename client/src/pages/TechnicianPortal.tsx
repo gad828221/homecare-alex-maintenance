@@ -1,10 +1,10 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Wrench, LogOut, Clock, CheckCircle2, AlertCircle,
   RefreshCw, Phone, MapPin, ClipboardList,
   Calendar, X, Trash2, Eye, ClockArrowUp, StickyNote,
   Play, FileCheck, DollarSign, CalendarX, Ban, MessageSquare, Search,
-  Camera, TrendingUp, Award, Wallet, Send, ExternalLink
+  Camera, TrendingUp, Award, Wallet, Send, ExternalLink, Bell
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useNotification } from "../components/EnhancedNotificationSystem";
@@ -37,6 +37,8 @@ export default function TechnicianPortal() {
   const [loading, setLoading] = useState(true);
   const [techName, setTechName] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [isUrgentAlert, setIsUrgentAlert] = useState(false);
+  const alertInterval = useRef<any>(null);
   const [stats, setStats] = useState({ active: 0, completed: 0, earnings: 0 });
   const [showSettleModal, setShowSettleModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -140,6 +142,40 @@ export default function TechnicianPortal() {
     } catch (err) { console.error(err); }
   }, [techName]);
 
+  const playDing = (isUrgent = false) => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      oscillator.frequency.value = isUrgent ? 1200 : 880;
+      oscillator.type = isUrgent ? 'square' : 'sine';
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(isUrgent ? 0.4 : 0.2, audioContext.currentTime + 0.05);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + (isUrgent ? 0.8 : 0.5));
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + (isUrgent ? 0.8 : 0.5));
+    } catch (e) { console.warn("Audio error", e); }
+  };
+
+  const startUrgentAlert = () => {
+    if (alertInterval.current) return;
+    setIsUrgentAlert(true);
+    playDing(true);
+    alertInterval.current = setInterval(() => {
+      playDing(true);
+    }, 2000);
+  };
+
+  const stopUrgentAlert = () => {
+    if (alertInterval.current) {
+      clearInterval(alertInterval.current);
+      alertInterval.current = null;
+    }
+    setIsUrgentAlert(false);
+  };
+
   const fetchData = useCallback(async () => {
     if (!techName || !isActive) return;
     try {
@@ -179,7 +215,7 @@ export default function TechnicianPortal() {
           fetchData();
           if (payload.eventType === 'INSERT') {
             addNotification({
-              type: 'critical',
+              type: 'error',
               title: '📢 أوردر جديد',
               message: `تم إضافة أوردر جديد للعميل ${payload.new.customer_name}`,
               duration: 0
@@ -197,6 +233,32 @@ export default function TechnicianPortal() {
       .subscribe();
     return () => { supabase.removeChannel(subscription); };
   }, [techName, addNotification, fetchData]);
+
+  useEffect(() => {
+    if (!techName) return;
+    
+    // اشتراك حي لتنبيهات المدير المباشرة (Ping)
+    const pingChannel = supabase
+      .channel('tech-pings')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `action=eq.tech_ping`
+        },
+        (payload) => {
+          if (payload.new.details === techName) {
+            console.log('🔔 استلام تنبيه مباشر من المدير!');
+            startUrgentAlert();
+          }
+        }
+      )
+      .subscribe();
+      
+    return () => { supabase.removeChannel(pingChannel); };
+  }, [techName]);
 
   const updateStatus = async (id: number, newStatus: string, extraData = {}) => {
     try {
@@ -446,7 +508,17 @@ export default function TechnicianPortal() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-200">
+    <div className={`min-h-screen bg-slate-900 text-slate-200 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`}>
+      {isUrgentAlert && (
+        <div className="fixed top-0 left-0 w-full z-[100] animate-bounce pt-4 flex justify-center pointer-events-none">
+          <button 
+            onClick={(e) => { e.stopPropagation(); stopUrgentAlert(); }} 
+            className="pointer-events-auto bg-red-600 text-white px-8 py-4 rounded-full font-black shadow-2xl flex items-center gap-3 border-4 border-white animate-pulse text-xl"
+          >
+            <Bell className="animate-spin" /> تنبيه من المدير! اضغط للإيقاف
+          </button>
+        </div>
+      )}
       <div className="bg-slate-800/80 border-b border-slate-700 sticky top-0 z-40 px-4 py-3">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3"><Wrench className="w-6 h-6 text-orange-400" /><div><h1 className="text-lg font-bold text-white">بوابة الفنيين</h1><p className="text-xs text-orange-400">{techName}</p></div></div>
