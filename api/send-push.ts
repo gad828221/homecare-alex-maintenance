@@ -128,12 +128,12 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   }
 
   try {
-    const responses = await Promise.all(audiences.map(audience =>
+    let responses = await Promise.all(audiences.map(audience =>
       fetch('https://api.onesignal.com/notifications?c=push', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': apiKey.includes(' ') ? apiKey : `Key ${apiKey}`,
+          'Authorization': apiKey.includes(' ') ? apiKey : `Basic ${apiKey}`,
         },
         body: JSON.stringify({
           app_id: APP_ID,
@@ -145,6 +145,28 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
         }),
       })
     ));
+
+    // إذا فشلت المصادقة بـ Basic، نحاول بـ Key (للمفاتيح الجديدة)
+    if (responses[0]?.status === 401 || responses[0]?.status === 403) {
+      console.log('Retrying with Key prefix...');
+      responses = await Promise.all(audiences.map(audience =>
+        fetch('https://api.onesignal.com/notifications?c=push', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': apiKey.includes(' ') ? apiKey : `Key ${apiKey}`,
+          },
+          body: JSON.stringify({
+            app_id: APP_ID,
+            ...audience,
+            headings: { en: title, ar: title },
+            contents: { en: message, ar: message },
+            custom_data: { event, ...safeData },
+            priority: 10,
+          }),
+        })
+      ));
+    }
 
     const results = await Promise.all(responses.map(response => response.json().catch(() => ({}))));
     const failedIndex = responses.findIndex(response => !response.ok);
