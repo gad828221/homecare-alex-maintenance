@@ -157,6 +157,11 @@ export default function NotificationPermissionButton() {
     });
   };
 
+  const copyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    alert('تم نسخ الرابط. افتحه في متصفح Chrome الآن.');
+  };
+
   if (!shouldRender || !isVisible || permissionStatus === 'granted') return null;
 
   return (
@@ -246,6 +251,18 @@ export default function NotificationPermissionButton() {
                 </button>
               </div>
             )}
+            
+            <button
+              type="button"
+              onClick={copyLink}
+              className="mt-2 w-full py-2 border-2 border-dashed border-red-200 text-red-700 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors"
+            >
+              نسخ الرابط لفتحه في Chrome 🔗
+            </button>
+
+            <div className="mt-2 p-2 bg-black/5 rounded text-[10px] font-mono opacity-50 break-all">
+              Diagnostic: {permissionStatus} | {typeof Notification !== 'undefined' ? Notification.permission : 'N/A'} | {window.location.hostname}
+            </div>
           </div>
         ) : (
           <button
