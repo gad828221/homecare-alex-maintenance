@@ -267,8 +267,15 @@ export default function ProtectedOrders() {
     setUserRole(role || 'user');
   }, []);
 
+  useEffect(() => {
+    if (userRole === 'viewer' && viewerBlockedTabs.includes(activeTab)) {
+      setActiveTab('orders');
+    }
+  }, [userRole, activeTab]);
+
   const canEditDelete = () => userRole === 'admin' || userRole === 'manager';
   const isViewer = userRole === 'viewer';
+  const viewerBlockedTabs = ['technicians', 'reports', 'invoicesReview', 'partners', 'performance'];
   const handleLogout = () => { localStorage.clear(); sessionStorage.clear(); window.location.href = "/login"; };
 
   const sendWhatsAppToCustomerOnCreate = (order: any) => {
@@ -504,6 +511,7 @@ export default function ProtectedOrders() {
 
   // دالة إرسال التقرير اليومي للشركاء (مع احتساب توزيعات الأرباح بشكل صحيح)
   const sendDailyReportToPartners = async (targetDate: string) => {
+    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
     try {
       // 1. حساب الرصيد الافتتاحي (جميع الحركات قبل التاريخ)
       const allEntriesBefore = await fetchAPI(`cash_ledger?select=*&date=lt.${targetDate}`);
@@ -1261,15 +1269,15 @@ export default function ProtectedOrders() {
 
       <div className="flex gap-2 p-4 border-b bg-slate-900 overflow-x-auto">
         <button onClick={() => setActiveTab('orders')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'orders' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📋 الأوردرات</button>
-        <button onClick={() => setActiveTab('technicians')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'technicians' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>👨‍🔧 الفنيين</button>
-        <button onClick={() => setActiveTab('reports')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'reports' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📊 التقارير</button>
-        <button onClick={() => setActiveTab('invoicesReview')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'invoicesReview' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📄 الفواتير</button>
+        {userRole !== 'viewer' && <button onClick={() => setActiveTab('technicians')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'technicians' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>👨‍🔧 الفنيين</button>}
+        {userRole !== 'viewer' && <button onClick={() => setActiveTab('reports')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'reports' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📊 التقارير</button>}
+        {userRole !== 'viewer' && <button onClick={() => setActiveTab('invoicesReview')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'invoicesReview' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📄 الفواتير</button>}
         <button onClick={() => setActiveTab('cash')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'cash' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>💰 الخزنة</button>
-        <button onClick={() => setActiveTab('partners')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'partners' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>🤝 الشركاء</button>
+        {userRole !== 'viewer' && <button onClick={() => setActiveTab('partners')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'partners' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>🤝 الشركاء</button>}
         <button onClick={() => setActiveTab('notifications')} className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1 transition ${activeTab === 'notifications' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}><Bell className="w-4 h-4" /> الإشعارات ({notifications.length})</button>
         {userRole === 'admin' && <button onClick={() => setActiveTab('permissions')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'permissions' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>🔐 الصلاحيات</button>}
         <button onClick={() => setActiveTab('analytics')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'analytics' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📈 الإحصائيات</button>
-        <button onClick={() => setActiveTab('performance')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'performance' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📊 أداء الفنيين</button>
+        {userRole !== 'viewer' && <button onClick={() => setActiveTab('performance')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'performance' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📊 أداء الفنيين</button>}
       </div>
 
 	      <div className="p-4">
@@ -1627,7 +1635,7 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {activeTab === 'technicians' && (
+        {activeTab === 'technicians' && userRole !== 'viewer' && (
           <div className="bg-slate-900 rounded-xl p-4">
             <div className="flex justify-between items-center mb-4">
               <div className="flex gap-2">
@@ -1659,7 +1667,7 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {activeTab === 'reports' && (
+        {activeTab === 'reports' && userRole !== 'viewer' && (
           <div className="bg-slate-900 rounded-xl p-4 space-y-4">
             <div className="flex flex-wrap gap-4 items-end">
               <div><label className="block text-sm text-slate-400 mb-1">نوع التقرير</label>
@@ -1724,7 +1732,7 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {activeTab === 'invoicesReview' && (
+        {activeTab === 'invoicesReview' && userRole !== 'viewer' && (
           <div className="space-y-3">
             {orders.filter(o=>o.status==='completed' && !o.invoice_approved).map(order => (
               <div key={order.id} className="bg-slate-900 rounded-xl p-4 flex justify-between items-center flex-wrap gap-3 border border-slate-800">
@@ -1769,7 +1777,7 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {activeTab === 'partners' && (
+        {activeTab === 'partners' && userRole !== 'viewer' && (
           <div className="space-y-4">
             <div className="flex justify-end">{canEditDelete() && <button onClick={()=>{setEditingPartner(null); setPartnerForm({name:'',share_percentage:0,phone:'',is_active:true}); setShowPartnerModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><UserPlus size={16}/> إضافة شريك</button>}</div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1903,7 +1911,7 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {activeTab === 'performance' && <TechnicianPerformance orders={orders} technicians={technicians} />}
+        {activeTab === 'performance' && userRole !== 'viewer' && <TechnicianPerformance orders={orders} technicians={technicians} />}
         {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions currentUser={currentUser} />}
       </div>
 
