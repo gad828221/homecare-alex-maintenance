@@ -264,7 +264,25 @@ export default function ProtectedOrders() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setToast({ message, type });
+    if (type === 'success' || type === 'info') playDing();
     setTimeout(() => setToast(null), 3000);
+  };
+
+  const playDing = () => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      oscillator.frequency.value = 880;
+      oscillator.type = 'sine';
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.05);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.5);
+    } catch (e) { console.warn("Audio error", e); }
   };
 
   useEffect(() => {
@@ -658,6 +676,17 @@ export default function ProtectedOrders() {
 
   useEffect(() => {
     fetchData();
+    
+    // اشتراك حي للأوردرات الجديدة لإصدار صوت تنبيه
+    const channel = supabase
+      .channel('orders-audio-alert')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => {
+        playDing();
+        fetchData();
+      })
+      .subscribe();
+      
+    return () => { supabase.removeChannel(channel); };
   }, [fetchData]);
 
   const calculateAmounts = (data: any) => {
@@ -2065,7 +2094,7 @@ export default function ProtectedOrders() {
             إعادة ضبط النظام الشاملة (حل مشاكل الإشعارات)
           </button>
           <div className="text-[10px] text-slate-500 opacity-30">
-            System Version: v1.1.9-settle-fix-diagnostic (Deployed: Aug 17, 02:05)
+            System Version: v1.2.0-audio-alerts (Deployed: Aug 17, 02:15)
           </div>
         </div>
       </div>
