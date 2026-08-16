@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Plus, Search, LayoutDashboard, Users,
   CheckCircle2, AlertCircle,
@@ -2134,7 +2134,7 @@ export default function ProtectedOrders() {
             إعادة ضبط النظام الشاملة (حل مشاكل الإشعارات)
           </button>
           <div className="text-[10px] text-slate-500 opacity-30">
-            System Version: v1.2.2-urgent-alerts (Deployed: Aug 17, 03:00)
+            System Version: v1.2.3-ref-fix (Deployed: Aug 17, 03:10)
           </div>
         </div>
       </div>
