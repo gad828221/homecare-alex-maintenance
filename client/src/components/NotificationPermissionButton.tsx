@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Bell, AlertCircle, Info, ChevronDown, ChevronUp } from 'lucide-react';
 
-type PermissionStatus = 'granted' | 'denied' | 'default' | 'loading';
+type PermissionStatus = 'granted' | 'denied' | 'default' | 'loading' | 'unsupported';
 
 type StoredUser = {
   id?: string | number;
@@ -47,11 +47,38 @@ export default function NotificationPermissionButton() {
     if (!shouldRender) return;
 
     let mounted = true;
+
+    const checkSupport = () => {
+      if (typeof window === 'undefined') return true;
+      const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+      const hasSupport = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+      
+      // الكشف عن المتصفحات داخل التطبيقات (In-App Browsers) التي غالباً لا تدعم الإشعارات
+      const ua = navigator.userAgent || '';
+      const isInApp = /FBAN|FBAV|WhatsApp|Instagram|Line|Messenger/i.test(ua);
+
+      if (!isSecure || (!hasSupport && !isInApp)) return false;
+      return true;
+    };
+
     const syncStatus = (OneSignal: any) => {
+      if (!mounted) return;
+      
+      if (!checkSupport()) {
+        setPermissionStatus('unsupported');
+        return;
+      }
+
       const optedIn = Boolean(OneSignal?.User?.PushSubscription?.optedIn);
-      const browserPermission = OneSignal?.Notifications?.permission;
-      if (mounted) {
-        setPermissionStatus(optedIn || browserPermission === true ? 'granted' : 'default');
+      const osPermission = OneSignal?.Notifications?.permission; // boolean in v16
+      const nativePermission = typeof Notification !== 'undefined' ? Notification.permission : 'default';
+
+      if (optedIn || osPermission === true || nativePermission === 'granted') {
+        setPermissionStatus('granted');
+      } else if (nativePermission === 'denied') {
+        setPermissionStatus('denied');
+      } else {
+        setPermissionStatus('default');
       }
     };
 
@@ -124,7 +151,7 @@ export default function NotificationPermissionButton() {
   return (
     <div className="fixed bottom-4 right-4 z-[9999] max-w-sm w-[calc(100%-2rem)] md:w-96" dir="rtl">
       <div className={`p-4 rounded-xl shadow-2xl border-2 flex flex-col gap-3 transition-all ${
-        permissionStatus === 'denied'
+        permissionStatus === 'denied' || permissionStatus === 'unsupported'
           ? 'bg-red-50 border-red-200 text-red-900'
           : 'bg-blue-50 border-blue-200 text-blue-900'
       }`}>
@@ -140,11 +167,14 @@ export default function NotificationPermissionButton() {
           </div>
           <div className="flex-1">
             <p className="font-bold text-lg">
-              {permissionStatus === 'denied' ? 'الإشعارات محظورة!' : 'فعّل إشعارات الموبايل'}
+              {permissionStatus === 'unsupported' ? 'المتصفح غير مدعوم!' : 
+               permissionStatus === 'denied' ? 'الإشعارات محظورة!' : 'فعّل إشعارات الموبايل'}
             </p>
             <p className="text-sm opacity-90 leading-relaxed">
-              {permissionStatus === 'denied'
-                ? 'لقد تم حظر الإشعارات. فعّلها من إعدادات الموقع حتى تصلك تنبيهات الأوردرات الجديدة.'
+              {permissionStatus === 'unsupported'
+                ? 'متصفحك الحالي لا يدعم الإشعارات. يرجى فتح الموقع في متصفح Google Chrome أو Safari مباشرة.'
+                : permissionStatus === 'denied'
+                ? 'لقد تم حظر الإشعارات من إعدادات المتصفح. يرجى السماح بها يدوياً لتصلك تنبيهات الأوردرات.'
                 : 'احصل على تنبيه فوري بصوت على هاتفك عند إضافة أوردر أو تغيير حالته.'}
             </p>
           </div>
@@ -158,7 +188,15 @@ export default function NotificationPermissionButton() {
           </button>
         </div>
 
-        {permissionStatus === 'denied' ? (
+        {permissionStatus === 'unsupported' ? (
+          <button
+            type="button"
+            onClick={() => window.open(window.location.href, '_blank')}
+            className="w-full py-3 rounded-lg font-bold bg-slate-800 text-white shadow-lg hover:bg-slate-700 transition-colors"
+          >
+            فتح في المتصفح الخارجي 🌐
+          </button>
+        ) : permissionStatus === 'denied' ? (
           <div className="flex flex-col gap-2">
             <button
               type="button"
@@ -173,17 +211,17 @@ export default function NotificationPermissionButton() {
               <div className="bg-white p-3 rounded-lg text-xs border border-red-100 shadow-inner flex flex-col gap-2 leading-relaxed">
                 <p><strong>لأجهزة أندرويد (Chrome):</strong></p>
                 <ol className="list-decimal list-inside pl-1 flex flex-col gap-1">
-                  <li>اضغط على رمز إعدادات الموقع بجانب رابط الموقع.</li>
-                  <li>اختر إعدادات المواقع أو Permissions.</li>
-                  <li>اجعل الإشعارات سماحاً (Allow)، ثم أعد فتح الموقع.</li>
+                  <li>اضغط على رمز الإعدادات 🔒 بجانب الرابط.</li>
+                  <li>اختر <strong>Permissions</strong> أو <strong>إعدادات الموقع</strong>.</li>
+                  <li>اجعل <strong>Notifications</strong> على <strong>Allow</strong> أو <strong>سماح</strong>.</li>
                 </ol>
                 <hr className="border-red-50" />
-                <p><strong>لأجهزة آيفون (Safari):</strong></p>
-                <ol className="list-decimal list-inside pl-1 flex flex-col gap-1">
-                  <li>أضف الموقع إلى الشاشة الرئيسية.</li>
-                  <li>افتح الموقع من الأيقونة الجديدة.</li>
-                  <li>اسمح بالإشعارات عند ظهور طلب النظام.</li>
-                </ol>
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="mt-1 text-blue-600 font-bold underline text-center"
+                >
+                  بعد السماح، اضغط هنا لتحديث الصفحة
+                </button>
               </div>
             )}
           </div>
