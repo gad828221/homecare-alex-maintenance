@@ -173,7 +173,7 @@ export default function ProtectedOrders() {
   const [cashLedger, setCashLedger] = useState<any[]>([]);
   const [cashBalance, setCashBalance] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'orders' | 'technicians' | 'reports' | 'invoicesReview' | 'cash' | 'partners' | 'notifications' | 'permissions' | 'performance' | 'analytics'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'technicians' | 'reports' | 'invoicesReview' | 'cash' | 'partners' | 'notifications' | 'permissions' | 'performance' | 'analytics' | 'feedback'>('orders');
   const [showOrderModal, setShowOrderModal] = useState(false);
 
   const [showTechModal, setShowTechModal] = useState(false);
@@ -275,7 +275,14 @@ export default function ProtectedOrders() {
 
   const canEditDelete = () => userRole === 'admin' || userRole === 'manager';
   const isViewer = userRole === 'viewer';
-  const viewerBlockedTabs = ['technicians', 'reports', 'invoicesReview', 'partners', 'performance'];
+  const viewerBlockedTabs = ['technicians', 'reports', 'invoicesReview', 'partners', 'performance', 'feedback'];
+  const sendFeedbackRequest = (order: any) => {
+    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
+    if (!order.phone || !order.order_number) return showToast("بيانات العميل غير مكتملة", "error");
+    const feedbackUrl = `${window.location.origin}/feedback?order=${encodeURIComponent(order.order_number)}`;
+    const message = `مرحباً أ/ ${order.customer_name || 'عميلنا العزيز'}،\n\nنرجو مشاركتنا تقييمك لخدمة الصيانة للأوردر رقم ${order.order_number}.\n\n⭐ قيّم الخدمة من هنا:\n${feedbackUrl}\n\nشكراً لثقتك في Maintenance Guide.`;
+    sendWhatsApp(order.phone, message);
+  };
   const handleLogout = () => { localStorage.clear(); sessionStorage.clear(); window.location.href = "/login"; };
 
   const sendWhatsAppToCustomerOnCreate = (order: any) => {
@@ -1275,6 +1282,7 @@ export default function ProtectedOrders() {
         <button onClick={() => setActiveTab('cash')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'cash' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>💰 الخزنة</button>
         {userRole !== 'viewer' && <button onClick={() => setActiveTab('partners')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'partners' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>🤝 الشركاء</button>}
         <button onClick={() => setActiveTab('notifications')} className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1 transition ${activeTab === 'notifications' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}><Bell className="w-4 h-4" /> الإشعارات ({notifications.length})</button>
+        {canEditDelete() && <button onClick={() => setActiveTab('feedback')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'feedback' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>⭐ تقييمات العملاء</button>}
         {userRole === 'admin' && <button onClick={() => setActiveTab('permissions')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'permissions' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>🔐 الصلاحيات</button>}
         <button onClick={() => setActiveTab('analytics')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'analytics' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📈 الإحصائيات</button>
         {userRole !== 'viewer' && <button onClick={() => setActiveTab('performance')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'performance' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📊 أداء الفنيين</button>}
@@ -1608,6 +1616,9 @@ export default function ProtectedOrders() {
                         ) : (
                           <button onClick={() => window.open(`/pickup-receipt?id=${order.id}`, '_blank')} className="w-full bg-purple-600 hover:bg-purple-700 text-white py-1 rounded-lg text-[10px] font-bold">📋 إيصال</button>
                         )}
+                        {order.status === 'completed' && canEditDelete() && (
+                          <button onClick={() => sendFeedbackRequest(order)} className="w-full bg-yellow-600/20 hover:bg-yellow-600 text-yellow-300 hover:text-white py-1 rounded-lg text-[10px] font-bold">⭐ طلب تقييم</button>
+                        )}
                         {order.status === 'in-progress' && canEditDelete() && (
                           <button onClick={() => { setSelectedOrder(order); setSettleForm({ total_amount: order.total_amount || 0, parts_cost: order.parts_cost || 0, transport_cost: order.transport_cost || 0, net_amount: order.net_amount || 0, technician_share: order.technician_share || 0, company_share: order.company_share || 0 }); setShowSettleModal(true); }} className="w-full bg-orange-600 hover:bg-orange-700 text-white py-1 rounded-lg text-[10px] font-bold">💰 تصفية</button>
                         )}
@@ -1808,6 +1819,37 @@ export default function ProtectedOrders() {
 
 
         {/* تبويب الإحصائيات الذكية */}
+        {activeTab === 'feedback' && canEditDelete() && (
+          <div className="space-y-4">
+            <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5">
+              <h2 className="text-xl font-black text-white">⭐ تقييمات العملاء</h2>
+              <p className="text-sm text-slate-400 mt-2">تظهر هنا التقييمات التي يرسلها العملاء من رابط التقييم بعد إتمام الخدمة.</p>
+            </div>
+            {(() => {
+              const feedbackItems = notifications.filter((notification) => notification.action === 'تقييم عميل');
+              const scores = feedbackItems.map((notification) => Number((notification.details || '').match(/(\d+)\/5/)?.[1] || 0)).filter(Boolean);
+              const average = scores.length ? (scores.reduce((sum, score) => sum + score, 0) / scores.length).toFixed(1) : '-';
+              return (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 text-center"><div className="text-3xl font-black text-yellow-400">{average}</div><div className="text-xs text-slate-400 mt-1">متوسط التقييم</div></div>
+                    <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 text-center"><div className="text-3xl font-black text-orange-400">{feedbackItems.length}</div><div className="text-xs text-slate-400 mt-1">إجمالي التقييمات</div></div>
+                  </div>
+                  <div className="space-y-3">
+                    {feedbackItems.map((notification) => (
+                      <div key={notification.id} className="bg-slate-900 rounded-2xl border border-slate-800 p-4">
+                        <div className="flex justify-between gap-3 items-start"><span className="text-yellow-400 font-black">{notification.details?.match(/(\d+)\/5/)?.[1] || '-'} / 5 ⭐</span><span className="text-xs text-slate-500">{new Date(notification.created_at).toLocaleString('ar-EG')}</span></div>
+                        <p className="text-slate-200 mt-3 leading-7">{notification.details}</p>
+                      </div>
+                    ))}
+                    {feedbackItems.length === 0 && <div className="text-center py-10 text-slate-400">لا توجد تقييمات عملاء حتى الآن.</div>}
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        )}
+
         {activeTab === 'analytics' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

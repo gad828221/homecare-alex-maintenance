@@ -15,6 +15,7 @@ const NotFound = lazy(() => import("@/pages/NotFound"));
 const ProtectedOrders = lazy(() => import("./components/ProtectedOrders"));
 const InvoicePage = lazy(() => import("./pages/InvoicePage"));
 const PickupReceiptPage = lazy(() => import("./pages/PickupReceiptPage"));
+const FeedbackPage = lazy(() => import("./pages/FeedbackPage"));
 
 const SamsungService = lazy(() => import("./pages/SamsungService"));
 const LGService = lazy(() => import("./pages/LGService"));
@@ -63,6 +64,7 @@ function Router() {
         <Route path="/data-entry" component={DataEntry} />
         <Route path="/invoice" component={InvoicePage} />
         <Route path="/pickup-receipt" component={PickupReceiptPage} />
+        <Route path="/feedback" component={FeedbackPage} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
@@ -108,7 +110,7 @@ function AppContent() {
 function App() {
   useEffect(() => {
     const publicPaths = [
-      "/", "/login", "/invoice", "/pickup-receipt",
+      "/", "/login", "/invoice", "/pickup-receipt", "/feedback",
       "/samsung-service", "/lg-service", "/sharp-service",
       "/toshiba-service", "/zanussi-service", "/unionaire-service",
       "/fresh-service", "/white-whale-service", "/ariston-service",

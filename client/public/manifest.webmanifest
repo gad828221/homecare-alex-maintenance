@@ -1,0 +1,28 @@
+{
+  "name": "Maintenance Guide - بوابة الفنيين",
+  "short_name": "Maintenance Guide",
+  "description": "بوابة إدارة أوردرات الصيانة للفنيين والمديرين",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/login?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#f97316",
+  "icons": [
+    {
+      "src": "/pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
