@@ -79,12 +79,13 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     return;
   }
 
-  const apiKey = process.env.ONESIGNAL_API_KEY;
+  let apiKey = process.env.ONESIGNAL_API_KEY;
   if (!apiKey) {
     console.error('Environment variable ONESIGNAL_API_KEY is missing');
     respond(res, 503, { error: 'Variable ONESIGNAL_API_KEY is missing in Vercel settings.' });
     return;
   }
+  apiKey = apiKey.trim();
 
   const body = (req.body || {}) as PushBody;
   const title = typeof body.title === 'string' ? body.title.trim().slice(0, 120) : '';
@@ -128,7 +129,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': apiKey.includes(' ') ? apiKey : `Basic ${apiKey}`,
+          'Authorization': apiKey.includes(' ') ? apiKey : `Key ${apiKey}`,
         },
         body: JSON.stringify({
           app_id: APP_ID,
