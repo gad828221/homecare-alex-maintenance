@@ -704,17 +704,22 @@ export default function ProtectedOrders() {
     fetchData();
     
     // اشتراك حي للأوردرات الجديدة لإصدار صوت تنبيه ملح للمدير
+    console.log("🔔 Realtime subscription active for role:", userRole);
     const channel = supabase
       .channel('orders-audio-alert')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => {
-        if (userRole === 'admin' || userRole === 'manager') {
+        console.log("🆕 New order detected via realtime!", payload);
+        const role = userRole?.toLowerCase() || '';
+        if (role === 'admin' || role === 'manager') {
           startUrgentAlert();
         } else {
           playDing();
         }
         fetchData();
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log("📡 Realtime status:", status);
+      });
       
     return () => { supabase.removeChannel(channel); };
   }, [fetchData]);
@@ -1543,8 +1548,15 @@ export default function ProtectedOrders() {
                         >
                           <RotateCcw size={18} />
                         </button>
-                        <button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg"><RefreshCw size={18} className={loading ? 'animate-spin' : ''} /></button>
-                      </div>
+	                        <button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg"><RefreshCw size={18} className={loading ? 'animate-spin' : ''} /></button>
+	                        <button 
+	                          onClick={() => startUrgentAlert()} 
+	                          className="bg-red-600/20 hover:bg-red-600/40 text-red-500 px-3 py-2 rounded-lg border border-red-600/30 transition-colors"
+	                          title="تجربة صوت الإنذار"
+	                        >
+	                          <AlertCircle size={18} className="animate-pulse" />
+	                        </button>
+	                      </div>
 
 		            </div>
 
@@ -2134,7 +2146,7 @@ export default function ProtectedOrders() {
             إعادة ضبط النظام الشاملة (حل مشاكل الإشعارات)
           </button>
           <div className="text-[10px] text-slate-500 opacity-30">
-            System Version: v1.2.3-ref-fix (Deployed: Aug 17, 03:10)
+            System Version: v1.2.5-alarm-test (Deployed: Aug 17, 03:30)
           </div>
         </div>
       </div>
