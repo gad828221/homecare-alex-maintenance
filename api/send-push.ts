@@ -129,9 +129,9 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   }
 
   try {
-    const sendWithAuth = (authHeader: string) => 
+    const sendWithAuth = (url: string, authHeader: string) => 
       Promise.all(audiences.map(audience =>
-        fetch('https://onesignal.com/api/v1/notifications', {
+        fetch(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -148,17 +148,13 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
         })
       ));
 
-    // تجربة 3 طرق مصادقة لضمان النجاح مع المفاتيح الجديدة والقديمة
-    let responses = await sendWithAuth(`Key ${apiKey}`);
+    // تجربة الرابط الجديد V2 مع بادئة Key (للمفاتيح التي تبدأ بـ os_v2)
+    let responses = await sendWithAuth('https://api.onesignal.com/notifications', `Key ${apiKey}`);
     
+    // إذا فشل، نجرب الرابط القديم V1 مع بادئة Basic (للمفاتيح القديمة)
     if (responses[0]?.status === 401 || responses[0]?.status === 403) {
-      console.log('Retrying with Basic prefix...');
-      responses = await sendWithAuth(`Basic ${apiKey}`);
-    }
-
-    if (responses[0]?.status === 401 || responses[0]?.status === 403) {
-      console.log('Retrying with no prefix...');
-      responses = await sendWithAuth(apiKey);
+      console.log('Retrying with V1 endpoint and Basic auth...');
+      responses = await sendWithAuth('https://onesignal.com/api/v1/notifications', `Basic ${apiKey}`);
     }
 
     const results = await Promise.all(responses.map(response => response.json().catch(() => ({}))));
