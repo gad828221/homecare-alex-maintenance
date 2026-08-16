@@ -1427,7 +1427,7 @@ export default function ProtectedOrders() {
                         >
                           <Bell size={18} />
                         </button>
-                        <button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg"><RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} /></button>
+                        <button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg"><RefreshCw size={18} className={loading ? 'animate-spin' : ''} /></button>
                       </div>
 
 		            </div>
