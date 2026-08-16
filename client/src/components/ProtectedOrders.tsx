@@ -2019,6 +2019,9 @@ export default function ProtectedOrders() {
 
         {activeTab === 'performance' && userRole !== 'viewer' && <TechnicianPerformance orders={orders} technicians={technicians} />}
         {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions currentUser={currentUser} />}
+        <div className="mt-8 text-center text-[10px] text-slate-500 opacity-30">
+          System Version: v1.0.5-push-fix
+        </div>
       </div>
 
       {showOrderModal && canEditDelete() && (
