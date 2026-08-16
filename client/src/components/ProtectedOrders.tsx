@@ -1414,13 +1414,17 @@ export default function ProtectedOrders() {
 		              			              <div className="flex gap-2 ml-auto">
                         <button
                           onClick={async () => {
-                            const ok = await sendExternalPush({
+                            const result = await sendExternalPush({
                               event: 'system_alert',
                               title: '🔔 إشعار تجريبي',
                               message: 'إذا وصلك هذا الإشعار، فهذا يعني أن النظام يعمل بنجاح!',
                               targetRoles: ['admin', 'manager']
                             });
-                            showToast(ok ? 'تم إرسال الإشعار التجريبي' : 'فشل الإرسال - تحقق من الإعدادات', ok ? 'success' : 'error');
+                            if (result.ok) {
+                              showToast('تم إرسال الإشعار التجريبي', 'success');
+                            } else {
+                              showToast(`فشل الإرسال: ${result.error || 'تحقق من الإعدادات'}`, 'error');
+                            }
                           }}
                           className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition-colors"
                           title="إرسال إشعار تجريبي للهاتف"

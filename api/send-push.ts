@@ -81,7 +81,8 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 
   const apiKey = process.env.ONESIGNAL_API_KEY;
   if (!apiKey) {
-    respond(res, 503, { error: 'OneSignal is not configured on the server. Add ONESIGNAL_API_KEY in Vercel.' });
+    console.error('Environment variable ONESIGNAL_API_KEY is missing');
+    respond(res, 503, { error: 'Variable ONESIGNAL_API_KEY is missing in Vercel settings.' });
     return;
   }
 
@@ -127,7 +128,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: apiKey.startsWith('Key ') ? apiKey : `Key ${apiKey}`,
+          'Authorization': apiKey.includes(' ') ? apiKey : `Basic ${apiKey}`,
         },
         body: JSON.stringify({
           app_id: APP_ID,
