@@ -88,6 +88,20 @@ export default function BookingForm() {
           targetRoles: ['admin', 'manager'],
           data: { order_number: orderNumber }
         });
+
+        // إرسال تنبيه يدوي مباشر للوحة التحكم لضمان عمل الإنذار الصوتي
+        try {
+          await fetch(`${supabaseUrl}/rest/v1/notifications`, {
+            method: 'POST',
+            headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              action: 'new_order_alert', 
+              details: orderNumber, 
+              user_name: 'نظام الموقع', 
+              created_at: new Date().toISOString() 
+            })
+          });
+        } catch (err) { console.error("Realtime alert error:", err); }
         
         const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(`أوردر جديد: ${orderNumber}\nالاسم: ${formData.customer_name}\nالجهاز: ${finalDeviceType}\nالعنوان: ${formData.address}`)}`;
         window.open(whatsappUrl, "_blank");

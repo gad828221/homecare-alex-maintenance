@@ -722,8 +722,24 @@ export default function ProtectedOrders() {
         console.log("📡 Realtime status:", status);
       });
       
-    return () => { supabase.removeChannel(channel); };
-  }, [fetchData]);
+    // اشتراك حي لتنبيهات الأوردرات الجديدة اليدوية (Fallback)
+    const alertChannel = supabase
+      .channel('admin-order-alerts')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'action=eq.new_order_alert' }, (payload) => {
+        console.log("🆕 Manual new order alert received!", payload);
+        const role = userRole?.toLowerCase() || '';
+        if (role === 'admin' || role === 'manager') {
+          startUrgentAlert();
+          fetchData();
+        }
+      })
+      .subscribe();
+
+    return () => { 
+      supabase.removeChannel(channel); 
+      supabase.removeChannel(alertChannel);
+    };
+  }, [fetchData, userRole]);
 
   const calculateAmounts = (data: any) => {
     const total = parseFloat(data.total_amount) || 0;
@@ -2169,7 +2185,7 @@ export default function ProtectedOrders() {
             إعادة ضبط النظام الشاملة (حل مشاكل الإشعارات)
           </button>
           <div className="text-[10px] text-slate-500 opacity-30">
-            System Version: v1.3.1-tech-ping-fix (Deployed: Aug 17, 04:00)
+            System Version: v1.3.2-new-order-fix (Deployed: Aug 17, 04:15)
           </div>
         </div>
       </div>
