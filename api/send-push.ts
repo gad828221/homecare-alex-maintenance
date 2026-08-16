@@ -122,8 +122,8 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 
   const audiences: any[] = [];
   
-  // إذا كان المطلوب الإرسال للكل، نستخدم الشرائح مباشرة ونتجاهل الفلاتر الأخرى للأدوار
-  if (targetRoles.includes('all')) {
+  // إذا كان المطلوب الإرسال للكل أو للمديرين (كخيار احتياطي)، نرسل للجميع لضمان الوصول
+  if (targetRoles.includes('all') || targetRoles.includes('admin') || targetRoles.includes('manager')) {
     audiences.push({ included_segments: ['Total Subscriptions'] });
   } else if (targetRoles.length > 0) {
     audiences.push({ filters: buildRoleFilters(targetRoles) });

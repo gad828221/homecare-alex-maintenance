@@ -227,6 +227,7 @@ export default function ProtectedOrders() {
   const [userRole, setUserRole] = useState<string>('');
   const [isUrgentAlert, setIsUrgentAlert] = useState(false);
   const alertInterval = useRef<any>(null);
+  const lastCheckedOrderId = useRef<number | null>(null);
 
   const [showSettleModal, setShowSettleModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -654,15 +655,29 @@ export default function ProtectedOrders() {
     } catch (err) { console.error(err); }
   };
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (isAutoRefresh = false) => {
     if (!userRole) return;
-    setLoading(true);
+    if (!isAutoRefresh) setLoading(true);
     try {
       const orderFields = isViewer
         ? 'id,order_number,customer_name,device_type,address,brand,problem_description,technician,status,total_amount,parts_cost,transport_cost,net_amount,company_share,technician_share,is_paid,created_at,date,deleted_at,technician_note,warranty_period,invoice_approved,invoice_date,parts_used,completed_at'
         : '*';
       const allOrders = await fetchAPI(`orders?select=${orderFields}&order=created_at.desc`);
       const ordersArray = Array.isArray(allOrders) ? allOrders : [];
+      
+      // نظام المراقب الذكي: إذا وجدنا أوردر جديد برقم ID أكبر من آخر واحد رأيناه
+      if (ordersArray.length > 0) {
+        const newestId = Math.max(...ordersArray.map((o: any) => o.id));
+        if (lastCheckedOrderId.current !== null && newestId > lastCheckedOrderId.current) {
+          const role = userRole?.toLowerCase() || '';
+          if (role === 'admin' || role === 'manager') {
+            console.log("🔍 Polling found new order! ID:", newestId);
+            startUrgentAlert();
+          }
+        }
+        lastCheckedOrderId.current = newestId;
+      }
+
       const activeOrders = ordersArray.filter((o: any) => !o.deleted_at);
       const deletedOrders = ordersArray.filter((o: any) => o.deleted_at);
 
@@ -712,6 +727,12 @@ export default function ProtectedOrders() {
         console.log("✅ OneSignal Tag Forced:", role);
       }
     });
+
+    // نظام التحديث التلقائي (المراقب الذكي)
+    const interval = setInterval(() => {
+      console.log("🔄 Auto-polling for new orders...");
+      fetchData(true);
+    }, 10000);
     
     // اشتراك حي للأوردرات الجديدة لإصدار صوت تنبيه ملح للمدير
     console.log("🔔 Realtime subscription active for role:", userRole);
@@ -745,10 +766,26 @@ export default function ProtectedOrders() {
       .subscribe();
 
     return () => { 
+      clearInterval(interval);
       supabase.removeChannel(channel); 
       supabase.removeChannel(alertChannel);
     };
   }, [fetchData, userRole]);
+
+  // وميض عنوان الصفحة عند وجود إنذار
+  useEffect(() => {
+    let interval: any;
+    if (isUrgentAlert) {
+      let show = true;
+      interval = setInterval(() => {
+        document.title = show ? "🚨 أوردر جديد! 🚨" : "HomeCare Dashboard";
+        show = !show;
+      }, 1000);
+    } else {
+      document.title = "HomeCare Dashboard";
+    }
+    return () => clearInterval(interval);
+  }, [isUrgentAlert]);
 
   const calculateAmounts = (data: any) => {
     const total = parseFloat(data.total_amount) || 0;
@@ -928,7 +965,7 @@ export default function ProtectedOrders() {
     navigator.clipboard.writeText(text);
     setCopiedId(order.id);
     setTimeout(() => setCopiedId(null), 2000);
-    showToast("ليس لديك صلاحية", "error");
+    showToast("✅ تم نسخ بيانات الأوردر", "success");
   };
 
   const saveOrder = async (e: React.FormEvent) => {
@@ -1062,7 +1099,7 @@ export default function ProtectedOrders() {
     await navigator.clipboard.writeText(message);
     setCopiedId(tech.id);
     setTimeout(() => setCopiedId(null), 3000);
-    showToast("ليس لديك صلاحية", "error");
+    showToast("✅ تم نسخ رابط دخول الفني", "success");
   };
 
   const printAndSendInvoice = async (order: any) => {
@@ -1080,7 +1117,7 @@ export default function ProtectedOrders() {
       totalAmount: order.total_amount, warranty: warranty, date: new Date().toLocaleDateString('ar-EG'),
       address: order.address, partsUsed: parts, technicianName: order.technician
     });
-    showToast("ليس لديك صلاحية", "error");
+    showToast("✅ تم اعتماد وإرسال الفاتورة", "success");
     fetchData();
   };
 
@@ -2194,7 +2231,7 @@ export default function ProtectedOrders() {
             إعادة ضبط النظام الشاملة (حل مشاكل الإشعارات)
           </button>
           <div className="text-[10px] text-slate-500 opacity-30">
-            System Version: v1.3.5-smart-polling (Deployed: Aug 17, 05:00)
+            System Version: v1.3.6-toast-fix (Deployed: Aug 17, 05:15)
           </div>
         </div>
       </div>
