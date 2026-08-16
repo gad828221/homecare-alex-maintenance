@@ -79,13 +79,17 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     return;
   }
 
-  let apiKey = process.env.ONESIGNAL_API_KEY;
+  let apiKey = process.env.ONESIGNAL_API_KEY || process.env.ONESIGNAL_REST_API_KEY || process.env.REST_API_KEY;
   if (!apiKey) {
-    console.error('Environment variable ONESIGNAL_API_KEY is missing');
-    respond(res, 503, { error: 'Variable ONESIGNAL_API_KEY is missing in Vercel settings.' });
+    const availableVars = Object.keys(process.env).filter(k => k.includes('ONESIGNAL') || k.includes('API_KEY')).join(', ');
+    respond(res, 503, { 
+      error: 'API Key missing', 
+      details: `Available vars: ${availableVars || 'None'}. Please check Vercel Env Names.` 
+    });
     return;
   }
   apiKey = apiKey.trim();
+  const keyInfo = `Len:${apiKey.length}|Start:${apiKey.slice(0, 3)}...`;
 
   const body = (req.body || {}) as PushBody;
   const title = typeof body.title === 'string' ? body.title.trim().slice(0, 120) : '';
@@ -146,8 +150,10 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     const failedIndex = responses.findIndex(response => !response.ok);
     if (failedIndex !== -1) {
       const errorDetail = results[failedIndex];
-      const errorMessage = Array.isArray(errorDetail.errors) ? errorDetail.errors.join(', ') : 'OneSignal rejected the notification';
-      console.error('OneSignal API error:', responses[failedIndex].status, errorDetail);
+      let errorMessage = Array.isArray(errorDetail.errors) ? errorDetail.errors.join(', ') : 'OneSignal rejected the notification';
+      if (responses[failedIndex].status === 401 || responses[failedIndex].status === 403) {
+        errorMessage = `Auth Failed (${keyInfo}): ${errorMessage}`;
+      }
       respond(res, responses[failedIndex].status, {
         error: errorMessage,
         details: errorDetail,
