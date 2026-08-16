@@ -299,8 +299,11 @@ export default function ProtectedOrders() {
     }
   }, [userRole, activeTab]);
 
-  const canEditDelete = () => userRole === 'admin' || userRole === 'manager';
-  const isViewer = userRole === 'viewer';
+  const canEditDelete = () => {
+    const role = userRole?.toLowerCase() || '';
+    return role === 'admin' || role === 'manager';
+  };
+  const isViewer = userRole?.toLowerCase() === 'viewer';
   const viewerBlockedTabs = ['technicians', 'reports', 'invoicesReview', 'partners', 'performance', 'feedback'];
   const sendFeedbackRequest = (order: any) => {
     if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
@@ -822,7 +825,7 @@ export default function ProtectedOrders() {
       `❗ حذف أوردر العميل: ${order.customer_name}\nرقم الأوردر: ${order.order_number}\n\nللتأكيد، اكتب كلمة "حذف" ثم اضغط OK.`
     );
     if (confirmation !== "حذف") {
-      showToast("ليس لديك صلاحية", "error");
+      showToast("تم إلغاء الحذف", "info");
       return;
     }
     try {
@@ -927,14 +930,14 @@ export default function ProtectedOrders() {
       setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") });
       setIsOtherDevice(false); setIsOtherBrand(false); setCustomDevice(''); setCustomBrand('');
       fetchData();
-    } catch (err) { console.error(err); showToast("ليس لديك صلاحية", "error"); } finally { setIsSubmitting(false); }
+    } catch (err) { console.error(err); showToast("حدث خطأ أثناء الحفظ", "error"); } finally { setIsSubmitting(false); }
   };
 
   const updateAllPendingOrdersProfit = async (technicianName: string, newPercentage: number) => {
     if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
     if (!confirm(`هل تريد تحديث نسب الأرباح لجميع الأوردرات غير المكتملة للفني "${technicianName}" إلى ${newPercentage}%؟`)) return;
     const pendingOrders = orders.filter(o => o.technician === technicianName && o.status !== 'completed');
-    if (pendingOrders.length === 0) { showToast("ليس لديك صلاحية", "error"); return; }
+    if (pendingOrders.length === 0) { showToast("لا توجد أوردرات معلقة لتحديثها", "info"); return; }
     let updatedCount = 0;
     for (const order of pendingOrders) {
       const net = order.net_amount;
@@ -2094,7 +2097,7 @@ export default function ProtectedOrders() {
             إعادة ضبط النظام الشاملة (حل مشاكل الإشعارات)
           </button>
           <div className="text-[10px] text-slate-500 opacity-30">
-            System Version: v1.2.0-audio-alerts (Deployed: Aug 17, 02:15)
+            System Version: v1.2.1-admin-fix (Deployed: Aug 17, 02:30)
           </div>
         </div>
       </div>
