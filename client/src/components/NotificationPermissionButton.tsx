@@ -131,13 +131,24 @@ export default function NotificationPermissionButton() {
           });
         }
 
+        // محاولة إظهار Slidedown أولاً لأنها أكثر استقراراً في الموبايل
+        if (OneSignal?.slidedown) {
+          await OneSignal.slidedown.promptPush();
+        }
+
         const permission = await OneSignal?.Notifications?.requestPermission?.();
         if (permission) {
           await OneSignal?.User?.PushSubscription?.optIn?.();
           setPermissionStatus('granted');
           setTimeout(() => setIsVisible(false), 2000);
         } else {
-          setPermissionStatus('denied');
+          // التحقق من الحالة الحقيقية بعد محاولة الطلب
+          const currentPermission = typeof Notification !== 'undefined' ? Notification.permission : 'default';
+          if (currentPermission === 'denied') {
+            setPermissionStatus('denied');
+          } else {
+            setPermissionStatus('default');
+          }
         }
       } catch (error) {
         console.error('OneSignal permission error:', error);
@@ -209,18 +220,29 @@ export default function NotificationPermissionButton() {
             </button>
             {showInstructions && (
               <div className="bg-white p-3 rounded-lg text-xs border border-red-100 shadow-inner flex flex-col gap-2 leading-relaxed">
-                <p><strong>لأجهزة أندرويد (Chrome):</strong></p>
-                <ol className="list-decimal list-inside pl-1 flex flex-col gap-1">
-                  <li>اضغط على رمز الإعدادات 🔒 بجانب الرابط.</li>
-                  <li>اختر <strong>Permissions</strong> أو <strong>إعدادات الموقع</strong>.</li>
-                  <li>اجعل <strong>Notifications</strong> على <strong>Allow</strong> أو <strong>سماح</strong>.</li>
-                </ol>
+                <p className="font-bold text-blue-800 mb-1">💡 الحل السريع لفك الحظر:</p>
+                
+                <div className="space-y-3">
+                  <div>
+                    <p className="font-bold">1️⃣ أندرويد (Chrome):</p>
+                    <p className="pr-4">اضغط على رمز 🔒 أو الإعدادات بجانب الرابط في الأعلى ⬅️ اختر **إعدادات الموقع** ⬅️ اضغط **حذف البيانات وإعادة ضبط الأذونات** ⬅️ ثم حدّث الصفحة.</p>
+                  </div>
+                  
+                  <hr className="border-slate-100" />
+                  
+                  <div>
+                    <p className="font-bold">2️⃣ آيفون (Safari):</p>
+                    <p className="pr-4">تأكد من **إضافة الموقع للشاشة الرئيسية** أولاً ⬅️ افتح التطبيق من الأيقونة ⬅️ اذهب للإعدادات ⬅️ الإشعارات ⬅️ تأكد أنها مفعلة للموقع.</p>
+                  </div>
+                </div>
+
                 <hr className="border-red-50" />
                 <button 
+                  type="button"
                   onClick={() => window.location.reload()}
-                  className="mt-1 text-blue-600 font-bold underline text-center"
+                  className="mt-1 py-2 bg-blue-50 text-blue-700 rounded-lg font-bold text-center active:bg-blue-100 transition-colors"
                 >
-                  بعد السماح، اضغط هنا لتحديث الصفحة
+                  بعد الضبط، اضغط هنا لتحديث الصفحة 🔄
                 </button>
               </div>
             )}
