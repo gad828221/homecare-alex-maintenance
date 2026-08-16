@@ -10,6 +10,13 @@ import { createClient } from '@supabase/supabase-js';
 import { Helmet } from 'react-helmet-async';
 import { sendExternalPush } from '../utils/pushNotifications';
 
+const runWithOneSignal = (callback: (OneSignal: any) => void | Promise<void>) => {
+  if (typeof window === 'undefined') return;
+  const win = window as any;
+  win.OneSignalDeferred = win.OneSignalDeferred || [];
+  win.OneSignalDeferred.push(callback);
+};
+
 
 // ==================== الإعدادات الأساسية ====================
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -2042,8 +2049,24 @@ export default function ProtectedOrders() {
 
         {activeTab === 'performance' && userRole !== 'viewer' && <TechnicianPerformance orders={orders} technicians={technicians} />}
         {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions currentUser={currentUser} />}
-        <div className="mt-8 text-center text-[10px] text-slate-500 opacity-30">
-          System Version: v1.0.6-slidedown-fix
+        <div className="mt-8 flex flex-col items-center gap-2">
+          <button 
+            onClick={() => {
+              localStorage.clear();
+              sessionStorage.clear();
+              runWithOneSignal((OneSignal) => {
+                OneSignal.User.PushSubscription.optOut();
+              });
+              alert("تم مسح كافة الإعدادات. سيتم الآن تسجيل الخروج، يرجى الدخول مرة أخرى وستظهر نافذة الإشعارات.");
+              window.location.href = "/login";
+            }}
+            className="text-[10px] bg-slate-800 text-slate-500 px-3 py-1 rounded-full border border-slate-700 hover:text-white transition-colors"
+          >
+            إعادة ضبط النظام الشاملة (حل مشاكل الإشعارات)
+          </button>
+          <div className="text-[10px] text-slate-500 opacity-30">
+            System Version: v1.0.8-final-push-fix
+          </div>
         </div>
       </div>
 
