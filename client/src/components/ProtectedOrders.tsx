@@ -224,6 +224,8 @@ export default function ProtectedOrders() {
 
 
   const [userRole, setUserRole] = useState<string>('');
+  const [isUrgentAlert, setIsUrgentAlert] = useState(false);
+  const alertInterval = useRef<any>(null);
 
   const [showSettleModal, setShowSettleModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -268,21 +270,42 @@ export default function ProtectedOrders() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const playDing = () => {
+  const playDing = (isUrgent = false) => {
     try {
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
-      oscillator.frequency.value = 880;
-      oscillator.type = 'sine';
+      
+      // صوت أقوى وأكثر حدة للإنذار الملح
+      oscillator.frequency.value = isUrgent ? 1200 : 880;
+      oscillator.type = isUrgent ? 'square' : 'sine';
+      
       gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.05);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      gainNode.gain.linearRampToValueAtTime(isUrgent ? 0.4 : 0.2, audioContext.currentTime + 0.05);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + (isUrgent ? 0.8 : 0.5));
+      
       oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.5);
+      oscillator.stop(audioContext.currentTime + (isUrgent ? 0.8 : 0.5));
     } catch (e) { console.warn("Audio error", e); }
+  };
+
+  const startUrgentAlert = () => {
+    if (alertInterval.current) return;
+    setIsUrgentAlert(true);
+    playDing(true);
+    alertInterval.current = setInterval(() => {
+      playDing(true);
+    }, 2000);
+  };
+
+  const stopUrgentAlert = () => {
+    if (alertInterval.current) {
+      clearInterval(alertInterval.current);
+      alertInterval.current = null;
+    }
+    setIsUrgentAlert(false);
   };
 
   useEffect(() => {
@@ -680,11 +703,15 @@ export default function ProtectedOrders() {
   useEffect(() => {
     fetchData();
     
-    // اشتراك حي للأوردرات الجديدة لإصدار صوت تنبيه
+    // اشتراك حي للأوردرات الجديدة لإصدار صوت تنبيه ملح للمدير
     const channel = supabase
       .channel('orders-audio-alert')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => {
-        playDing();
+        if (userRole === 'admin' || userRole === 'manager') {
+          startUrgentAlert();
+        } else {
+          playDing();
+        }
         fetchData();
       })
       .subscribe();
@@ -1323,7 +1350,17 @@ export default function ProtectedOrders() {
   if (loading) return <div className="flex justify-center items-center h-screen text-slate-400">جاري التحميل...</div>;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200" dir="rtl">
+    <div className={`min-h-screen bg-slate-950 text-slate-200 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`} dir="rtl">
+      {isUrgentAlert && (
+        <div className="fixed top-0 left-0 w-full z-[100] animate-bounce pt-4 flex justify-center pointer-events-none">
+          <button 
+            onClick={(e) => { e.stopPropagation(); stopUrgentAlert(); }} 
+            className="pointer-events-auto bg-red-600 text-white px-8 py-4 rounded-full font-black shadow-2xl flex items-center gap-3 border-4 border-white animate-pulse text-xl"
+          >
+            <Bell className="animate-spin" /> إيقاف صوت الإنذار (أوردر جديد!)
+          </button>
+        </div>
+      )}
       <Helmet>
         <title>لوحة التحكم | Homecare Alex Maintenance</title>
       </Helmet>
@@ -2097,7 +2134,7 @@ export default function ProtectedOrders() {
             إعادة ضبط النظام الشاملة (حل مشاكل الإشعارات)
           </button>
           <div className="text-[10px] text-slate-500 opacity-30">
-            System Version: v1.2.1-admin-fix (Deployed: Aug 17, 02:30)
+            System Version: v1.2.2-urgent-alerts (Deployed: Aug 17, 03:00)
           </div>
         </div>
       </div>
