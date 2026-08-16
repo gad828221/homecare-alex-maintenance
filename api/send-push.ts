@@ -120,10 +120,15 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       )
     : {};
 
-  const audiences: Audience[] = [];
-  if (targetRoles.length > 0) {
+  const audiences: any[] = [];
+  
+  // إذا كان المطلوب الإرسال للكل، نستخدم الشرائح مباشرة ونتجاهل الفلاتر الأخرى للأدوار
+  if (targetRoles.includes('all')) {
+    audiences.push({ included_segments: ['Total Subscriptions'] });
+  } else if (targetRoles.length > 0) {
     audiences.push({ filters: buildRoleFilters(targetRoles) });
   }
+
   if (targetUserIds.length > 0) {
     audiences.push({
       include_aliases: { external_id: targetUserIds },
@@ -147,8 +152,6 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 	            contents: { en: message, ar: message },
 	            custom_data: { event, ...safeData },
 	            priority: 10,
-	            // إذا كان أحد الأدوار المستهدفة هو 'all'، نرسل للجميع عبر الشرائح (Segments)
-	            ...(targetRoles.includes('all') ? { included_segments: ['Total Subscriptions'] } : {}),
 	          }),
 	        })
 	      ));
