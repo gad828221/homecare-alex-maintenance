@@ -88,7 +88,8 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     });
     return;
   }
-  apiKey = apiKey.trim();
+  // تنظيف المفتاح تماماً من أي مسافات أو أسطر جديدة قد تكون دخلت بالخطأ أثناء اللصق
+  apiKey = apiKey.replace(/\s/g, '');
   const keyInfo = `Len:${apiKey.length}|Start:${apiKey.slice(0, 3)}...`;
 
   const body = (req.body || {}) as PushBody;
@@ -128,33 +129,13 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   }
 
   try {
-    let responses = await Promise.all(audiences.map(audience =>
-      fetch('https://api.onesignal.com/notifications?c=push', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': apiKey.includes(' ') ? apiKey : `Basic ${apiKey}`,
-        },
-        body: JSON.stringify({
-          app_id: APP_ID,
-          ...audience,
-          headings: { en: title, ar: title },
-          contents: { en: message, ar: message },
-          custom_data: { event, ...safeData },
-          priority: 10,
-        }),
-      })
-    ));
-
-    // إذا فشلت المصادقة بـ Basic، نحاول بـ Key (للمفاتيح الجديدة)
-    if (responses[0]?.status === 401 || responses[0]?.status === 403) {
-      console.log('Retrying with Key prefix...');
-      responses = await Promise.all(audiences.map(audience =>
-        fetch('https://api.onesignal.com/notifications?c=push', {
+    const sendWithAuth = (authHeader: string) => 
+      Promise.all(audiences.map(audience =>
+        fetch('https://onesignal.com/api/v1/notifications', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': apiKey.includes(' ') ? apiKey : `Key ${apiKey}`,
+            'Authorization': authHeader,
           },
           body: JSON.stringify({
             app_id: APP_ID,
@@ -166,6 +147,18 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
           }),
         })
       ));
+
+    // تجربة 3 طرق مصادقة لضمان النجاح مع المفاتيح الجديدة والقديمة
+    let responses = await sendWithAuth(`Key ${apiKey}`);
+    
+    if (responses[0]?.status === 401 || responses[0]?.status === 403) {
+      console.log('Retrying with Basic prefix...');
+      responses = await sendWithAuth(`Basic ${apiKey}`);
+    }
+
+    if (responses[0]?.status === 401 || responses[0]?.status === 403) {
+      console.log('Retrying with no prefix...');
+      responses = await sendWithAuth(apiKey);
     }
 
     const results = await Promise.all(responses.map(response => response.json().catch(() => ({}))));
