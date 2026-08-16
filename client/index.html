@@ -43,8 +43,7 @@
         await OneSignal.init({
           appId: "9abc8506-3935-44a8-b044-3117e77d26dc",
           autoResubscribe: true,
-          serviceWorkerPath: "/push/onesignal/OneSignalSDKWorker.js",
-          serviceWorkerParam: { scope: "/push/onesignal/" },
+          serviceWorkerPath: "/OneSignalSDKWorker.js",
           notificationClickHandlerMatch: "origin"
         });
       });

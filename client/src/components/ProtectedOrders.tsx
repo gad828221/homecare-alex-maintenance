@@ -1411,7 +1411,25 @@ export default function ProtectedOrders() {
 		              <button onClick={() => setShowAllOrders(!showAllOrders)} className={`px-3 py-2 rounded-lg text-sm transition ${showAllOrders ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>{showAllOrders ? '📋 إخفاء المنجز' : '📋 عرض الكل'}</button>
 		              {canEditDelete() && <button onClick={() => { setEditingOrder(null); setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") }); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={18} /> أوردر جديد</button>}
 		              <button onClick={() => setShowDeleted(!showDeleted)} className={`px-3 py-2 rounded-lg text-sm transition ${showDeleted ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}><Trash2 size={16} /> {showDeleted ? 'إخفاء المحذوفة' : `عرض المحذوفة (${deletedOrders.length})`}</button>
-		              <button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg ml-auto"><RefreshCw size={18} /></button>
+		              			              <div className="flex gap-2 ml-auto">
+                        <button
+                          onClick={async () => {
+                            const ok = await sendExternalPush({
+                              event: 'system_alert',
+                              title: '🔔 إشعار تجريبي',
+                              message: 'إذا وصلك هذا الإشعار، فهذا يعني أن النظام يعمل بنجاح!',
+                              targetRoles: ['admin', 'manager']
+                            });
+                            showToast(ok ? 'تم إرسال الإشعار التجريبي' : 'فشل الإرسال - تحقق من الإعدادات', ok ? 'success' : 'error');
+                          }}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition-colors"
+                          title="إرسال إشعار تجريبي للهاتف"
+                        >
+                          <Bell size={18} />
+                        </button>
+                        <button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg"><RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} /></button>
+                      </div>
+
 		            </div>
 
             {!showDeleted && filteredOrders.length === 0 && !showAllOrders && <div className="text-center py-8 text-slate-400">لا توجد أوردرات (قيد الانتظار، قيد التنفيذ، أو بدون فني). اضغط "عرض الكل" لمشاهدة جميع الأوردرات.</div>}
