@@ -88,11 +88,11 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     });
     return;
   }
-  // تنظيف فائق الصرامة: حذف أي مسافات، أسطر، أو رموز غير مرئية
+  // تنظيف فائق الصرامة: حذف أي شيء ليس حرفاً أو رقماً أو شرطة سفلية (لإزالة الرموز المخفية)
   const rawLen = apiKey.length;
-  apiKey = apiKey.trim().replace(/[\n\r\s\t]/g, '');
+  apiKey = apiKey.replace(/[^a-zA-Z0-9_]/g, '');
   const cleanLen = apiKey.length;
-  const keyInfo = `V1.1.6|Raw:${rawLen}|Clean:${cleanLen}|Start:${apiKey.slice(0, 5)}`;
+  const keyInfo = `V1.1.7|Raw:${rawLen}|Clean:${cleanLen}|Start:${apiKey.slice(0, 5)}`;
 
   const body = (req.body || {}) as PushBody;
   const title = typeof body.title === 'string' ? body.title.trim().slice(0, 120) : '';
