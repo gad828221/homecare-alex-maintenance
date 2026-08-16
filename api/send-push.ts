@@ -24,7 +24,7 @@ type Audience =
   | { filters: Array<Record<string, string>>; target_channel?: 'push' }
   | { include_aliases: { external_id: string[] }; target_channel: 'push' };
 
-const APP_ID = process.env.ONESIGNAL_APP_ID || '9abc8506-3935-44a8-b044-3117e77d26dc';
+const APP_ID = (process.env.ONESIGNAL_APP_ID || '9abc8506-3935-44a8-b044-3117e77d26dc').replace(/[^a-zA-Z0-9-]/g, '');
 const ALLOWED_EVENTS = new Set([
   'new_order',
   'technician_assigned',
@@ -88,8 +88,8 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     });
     return;
   }
-  // تنظيف المفتاح تماماً من أي مسافات أو أسطر جديدة قد تكون دخلت بالخطأ أثناء اللصق
-  apiKey = apiKey.replace(/\s/g, '');
+  // تنظيف المفتاح تماماً من أي رموز غير صالحة (فقط حروف، أرقام، وشرطة سفلية)
+  apiKey = apiKey.replace(/[^a-zA-Z0-9_]/g, '');
   const keyInfo = `Len:${apiKey.length}|Start:${apiKey.slice(0, 3)}...`;
 
   const body = (req.body || {}) as PushBody;
@@ -148,13 +148,15 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
         })
       ));
 
-    // تجربة الرابط الجديد V2 مع بادئة Key (للمفاتيح التي تبدأ بـ os_v2)
-    let responses = await sendWithAuth('https://api.onesignal.com/notifications', `Key ${apiKey}`);
+    // تجربة كافة طرق المصادقة الممكنة لضمان النجاح
+    let responses = await sendWithAuth('https://onesignal.com/api/v1/notifications', `Key ${apiKey}`);
     
-    // إذا فشل، نجرب الرابط القديم V1 مع بادئة Basic (للمفاتيح القديمة)
     if (responses[0]?.status === 401 || responses[0]?.status === 403) {
-      console.log('Retrying with V1 endpoint and Basic auth...');
       responses = await sendWithAuth('https://onesignal.com/api/v1/notifications', `Basic ${apiKey}`);
+    }
+
+    if (responses[0]?.status === 401 || responses[0]?.status === 403) {
+      responses = await sendWithAuth('https://api.onesignal.com/notifications', `Key ${apiKey}`);
     }
 
     const results = await Promise.all(responses.map(response => response.json().catch(() => ({}))));
