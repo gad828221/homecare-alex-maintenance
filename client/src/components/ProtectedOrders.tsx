@@ -1435,14 +1435,37 @@ export default function ProtectedOrders() {
                           onClick={() => {
                             const win = window as any;
                             win.OneSignalDeferred = win.OneSignalDeferred || [];
-                            win.OneSignalDeferred.push((OneSignal: any) => {
-                              OneSignal.Notifications.requestPermission();
+                            win.OneSignalDeferred.push(async (OneSignal: any) => {
+                              try {
+                                // محاولة إظهار النافذة المنبثقة الداخلية أولاً
+                                if (OneSignal.slidedown) {
+                                  await OneSignal.slidedown.promptPush();
+                                }
+                                // ثم طلب الإذن الرسمي
+                                await OneSignal.Notifications.requestPermission();
+                              } catch (e) {
+                                console.error(e);
+                                alert("يرجى التأكد من السماح بالإشعارات من إعدادات المتصفح (رمز القفل بجانب الرابط)");
+                              }
                             });
                           }}
                           className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-lg transition-colors"
                           title="تفعيل الإشعارات يدوياً"
                         >
                           <Bell size={18} className="animate-pulse" />
+                        </button>
+                        <button 
+                          onClick={() => {
+                            if(confirm("سيتم مسح إعدادات الإشعارات القديمة وإعادة تحميل الصفحة. هل تريد الاستمرار؟")) {
+                              localStorage.removeItem("onesignal-notification-prompt");
+                              localStorage.removeItem("isPushNotificationsEnabled");
+                              window.location.reload();
+                            }
+                          }}
+                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg transition-colors"
+                          title="إعادة ضبط الإشعارات"
+                        >
+                          <RotateCcw size={18} />
                         </button>
                         <button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg"><RefreshCw size={18} className={loading ? 'animate-spin' : ''} /></button>
                       </div>
@@ -2020,7 +2043,7 @@ export default function ProtectedOrders() {
         {activeTab === 'performance' && userRole !== 'viewer' && <TechnicianPerformance orders={orders} technicians={technicians} />}
         {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions currentUser={currentUser} />}
         <div className="mt-8 text-center text-[10px] text-slate-500 opacity-30">
-          System Version: v1.0.5-push-fix
+          System Version: v1.0.6-slidedown-fix
         </div>
       </div>
 
