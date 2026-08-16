@@ -703,6 +703,15 @@ export default function ProtectedOrders() {
 
   useEffect(() => {
     fetchData();
+
+    // إجبار وسم OneSignal للمدير فور الدخول
+    runWithOneSignal(async (OneSignal: any) => {
+      const role = userRole?.toLowerCase();
+      if (role === 'admin' || role === 'manager') {
+        await OneSignal.User.addTag('role', role).catch(() => {});
+        console.log("✅ OneSignal Tag Forced:", role);
+      }
+    });
     
     // اشتراك حي للأوردرات الجديدة لإصدار صوت تنبيه ملح للمدير
     console.log("🔔 Realtime subscription active for role:", userRole);
@@ -964,7 +973,7 @@ export default function ProtectedOrders() {
           event: 'new_order',
           title: '🆕 أوردر جديد',
           message: adminMsg,
-          targetRoles: ['admin', 'manager'],
+          targetRoles: ['admin', 'manager', 'all'],
           data: { order_number: orderToSave.order_number }
         });
 
@@ -2185,7 +2194,7 @@ export default function ProtectedOrders() {
             إعادة ضبط النظام الشاملة (حل مشاكل الإشعارات)
           </button>
           <div className="text-[10px] text-slate-500 opacity-30">
-            System Version: v1.3.2-new-order-fix (Deployed: Aug 17, 04:15)
+            System Version: v1.3.3-external-push-fix (Deployed: Aug 17, 04:30)
           </div>
         </div>
       </div>
