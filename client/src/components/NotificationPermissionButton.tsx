@@ -167,7 +167,8 @@ export default function NotificationPermissionButton() {
     alert('تم نسخ الرابط. افتحه في متصفح Chrome الآن.');
   };
 
-  if (!shouldRender || !isVisible || permissionStatus === 'granted') return null;
+  if (!shouldRender || !isVisible) return null;
+  if (permissionStatus === 'granted' && !window.location.search.includes('debug')) return null;
 
   return (
     <div className="fixed bottom-4 right-4 z-[9999] max-w-sm w-[calc(100%-2rem)] md:w-96" dir="rtl">
@@ -267,6 +268,7 @@ export default function NotificationPermissionButton() {
 
             <div className="mt-2 p-2 bg-black/5 rounded text-[10px] font-mono opacity-50 break-all">
               Diagnostic: {permissionStatus} | {typeof Notification !== 'undefined' ? Notification.permission : 'N/A'} | {window.location.hostname}
+              <br/>User: {localStorage.getItem('userRole')} | ID: {JSON.parse(localStorage.getItem('currentUser') || '{}').id}
             </div>
             
             {window.location.hostname.includes('www') && (
