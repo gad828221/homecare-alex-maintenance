@@ -144,10 +144,12 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     const results = await Promise.all(responses.map(response => response.json().catch(() => ({}))));
     const failedIndex = responses.findIndex(response => !response.ok);
     if (failedIndex !== -1) {
-      console.error('OneSignal API error:', responses[failedIndex].status, results[failedIndex]);
+      const errorDetail = results[failedIndex];
+      const errorMessage = Array.isArray(errorDetail.errors) ? errorDetail.errors.join(', ') : 'OneSignal rejected the notification';
+      console.error('OneSignal API error:', responses[failedIndex].status, errorDetail);
       respond(res, responses[failedIndex].status, {
-        error: 'OneSignal rejected the notification',
-        details: results[failedIndex],
+        error: errorMessage,
+        details: errorDetail,
       });
       return;
     }

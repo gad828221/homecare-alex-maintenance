@@ -2065,7 +2065,7 @@ export default function ProtectedOrders() {
             إعادة ضبط النظام الشاملة (حل مشاكل الإشعارات)
           </button>
           <div className="text-[10px] text-slate-500 opacity-30">
-            System Version: v1.0.8-final-push-fix
+            System Version: v1.0.9-debug-push
           </div>
         </div>
       </div>
