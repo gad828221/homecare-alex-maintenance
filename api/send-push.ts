@@ -143,13 +143,15 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
           body: JSON.stringify({
             app_id: APP_ID,
             ...audience,
-            headings: { en: title, ar: title },
-            contents: { en: message, ar: message },
-            custom_data: { event, ...safeData },
-            priority: 10,
-          }),
-        })
-      ));
+	    headings: { en: title, ar: title },
+	            contents: { en: message, ar: message },
+	            custom_data: { event, ...safeData },
+	            priority: 10,
+	            // إذا كان أحد الأدوار المستهدفة هو 'all'، نرسل للجميع عبر الشرائح (Segments)
+	            ...(targetRoles.includes('all') ? { included_segments: ['Total Subscriptions'] } : {}),
+	          }),
+	        })
+	      ));
 
     // تجربة كافة طرق المصادقة الممكنة لضمان النجاح
     let responses = await sendWithAuth('https://onesignal.com/api/v1/notifications', `Key ${apiKey}`);

@@ -6,9 +6,11 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { sendExternalPush } from "../utils/pushNotifications";
+import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const DEVICE_TYPES = ['غسالة', 'ثلاجة', 'بوتاجاز', 'سخان', 'تكييف', 'ميكروويف', 'غسالة أطباق'];
 const BRANDS = ['سامسونج', 'LG', 'شارب', 'توشيبا', 'زانوسي', 'يونيون إير', 'فريش', 'وايت ويل', 'أريستون', 'بيكو', 'هوفر', 'إنديست', 'كريازي'];
@@ -67,17 +69,9 @@ export default function BookingForm() {
     };
 
     try {
-      const response = await fetch(`${supabaseUrl}/rest/v1/orders`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`
-        },
-        body: JSON.stringify(orderToSave)
-      });
+      const { error: insertError } = await supabase.from('orders').insert([orderToSave]);
 
-      if (response.ok) {
+      if (!insertError) {
         setSubmitMessage("✅ تم استلام طلبك بنجاح! سنتواصل معك خلال 5 دقائق.");
         setStep(4);
         
@@ -91,25 +85,21 @@ export default function BookingForm() {
 
         // إرسال تنبيه يدوي مباشر للوحة التحكم لضمان عمل الإنذار الصوتي
         try {
-          await fetch(`${supabaseUrl}/rest/v1/notifications`, {
-            method: 'POST',
-            headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              action: 'new_order_alert', 
-              details: orderNumber, 
-              user_name: 'نظام الموقع', 
-              created_at: new Date().toISOString() 
-            })
-          });
+          await supabase.from('notifications').insert([{ 
+            action: 'new_order_alert', 
+            details: orderNumber, 
+            user_name: 'نظام الموقع', 
+            created_at: new Date().toISOString() 
+          }]);
         } catch (err) { console.error("Realtime alert error:", err); }
         
         const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(`أوردر جديد: ${orderNumber}\nالاسم: ${formData.customer_name}\nالجهاز: ${finalDeviceType}\nالعنوان: ${formData.address}`)}`;
         window.open(whatsappUrl, "_blank");
       } else {
-        throw new Error("فشل في إرسال الطلب");
+        throw insertError;
       }
     } catch (err: any) {
-      setSubmitMessage(`❌ خطأ: ${err.message}`);
+      setSubmitMessage(`❌ خطأ: ${err.message || 'فشل في إرسال الطلب'}`);
     } finally {
       setIsSubmitting(false);
     }
