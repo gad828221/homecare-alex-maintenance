@@ -752,8 +752,9 @@ export default function TechnicianPortal() {
 
 
 
-              <div><label className="text-sm text-slate-400">قطع غيار</label><input type="number" value={settleForm.parts_cost} onChange={e => handleSettleChange('parts_cost', e.target.value)} className="w-full bg-slate-700 rounded-lg p-2 text-white" /></div>
-              <div><label className="text-sm text-slate-400">مواصلات</label><input type="number" value={settleForm.transport_cost} onChange={e => handleSettleChange('transport_cost', e.target.value)} className="w-full bg-slate-700 rounded-lg p-2 text-white" /></div>
+	              <div><label className="text-sm text-slate-400">إجمالي الفاتورة</label><input type="number" required value={settleForm.total_amount} onChange={e => handleSettleChange('total_amount', e.target.value)} className="w-full bg-slate-700 rounded-lg p-2 text-white border border-orange-500/30" placeholder="المبلغ الكلي المحصل من العميل" /></div>
+	              <div><label className="text-sm text-slate-400">قطع غيار</label><input type="number" value={settleForm.parts_cost} onChange={e => handleSettleChange('parts_cost', e.target.value)} className="w-full bg-slate-700 rounded-lg p-2 text-white" /></div>
+	              <div><label className="text-sm text-slate-400">مواصلات</label><input type="number" value={settleForm.transport_cost} onChange={e => handleSettleChange('transport_cost', e.target.value)} className="w-full bg-slate-700 rounded-lg p-2 text-white" /></div>
               <div className="bg-slate-700/50 p-3 rounded-lg space-y-2">
                 <div className="flex justify-between"><span className="text-slate-400">الصافي:</span><span className="text-white">{settleForm.net_amount} ج.م</span></div>
                 <div className="flex justify-between"><span className="text-slate-400">نصيب الفني ({technicianPercentage}%):</span><span className="text-green-400">{settleForm.technician_share} ج.م</span></div>
