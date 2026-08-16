@@ -6,6 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { EnhancedNotificationProvider } from "./components/EnhancedNotificationSystem";
 import { Phone, MessageCircle } from "lucide-react";
+import NotificationPermissionButton from "./components/NotificationPermissionButton";
 
 const Home = lazy(() => import("./pages/Home"));
 const Login = lazy(() => import("./pages/LoginPage"));
@@ -103,6 +104,7 @@ function AppContent() {
         <Router />
       </Suspense>
       <FloatingButtons />
+      <NotificationPermissionButton />
     </>
   );
 }

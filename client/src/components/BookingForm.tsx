@@ -5,6 +5,7 @@ import {
   Sparkles, ChevronLeft, ChevronRight, Calendar, ArrowRight
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { sendExternalPush } from "../utils/pushNotifications";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -80,16 +81,13 @@ export default function BookingForm() {
         setSubmitMessage("✅ تم استلام طلبك بنجاح! سنتواصل معك خلال 5 دقائق.");
         setStep(4);
         
-        try {
-          await fetch('/.netlify/functions/send-notification', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              title: '📋 أوردر جديد من الموقع',
-              message: `عميل جديد: ${formData.customer_name}\nالجهاز: ${finalDeviceType}\nالعنوان: ${formData.address}\nالرقم: ${orderNumber}`
-            })
-          });
-        } catch (err) { console.error('Notification Error:', err); }
+        await sendExternalPush({
+          event: 'new_order',
+          title: '📋 أوردر جديد من الموقع',
+          message: `عميل جديد: ${formData.customer_name}\nالجهاز: ${finalDeviceType}\nالعنوان: ${formData.address}\nرقم الأوردر: ${orderNumber}`,
+          targetRoles: ['admin', 'manager'],
+          data: { order_number: orderNumber }
+        });
         
         const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(`أوردر جديد: ${orderNumber}\nالاسم: ${formData.customer_name}\nالجهاز: ${finalDeviceType}\nالعنوان: ${formData.address}`)}`;
         window.open(whatsappUrl, "_blank");

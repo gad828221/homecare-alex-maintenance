@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { createClient } from '@supabase/supabase-js';
 import { Helmet } from 'react-helmet-async';
+import { sendExternalPush } from '../utils/pushNotifications';
 
 
 // ==================== الإعدادات الأساسية ====================
@@ -749,6 +750,13 @@ export default function ProtectedOrders() {
         if (tech && tech.phone) {
           const techMsg = `🔧 *تحديث في أوردرك* 🔧\n\nالعميل: ${order.customer_name}\nالحالة: ${statusAr}\nرقم الأوردر: ${order.order_number}`;
           sendWhatsApp(tech.phone, techMsg);
+          void sendExternalPush({
+            event: 'order_status_changed',
+            title: '🔄 تحديث حالة أوردر',
+            message: techMsg,
+            targetUserIds: [tech.id],
+            data: { order_number: order.order_number, status: newStatus }
+          });
         }
       }
 
@@ -835,6 +843,13 @@ export default function ProtectedOrders() {
           if (tech && tech.phone) {
             const techMsg = `تم تحديث بيانات الأوردر الخاص بالعميل: ${formData.customer_name}\nالجهاز: ${finalDevice}\nالعنوان: ${formData.address}`;
             notifyTechnician(tech.phone, tech.name, techMsg);
+            void sendExternalPush({
+              event: 'technician_assigned',
+              title: '🔧 تم تحديث أوردر مكلّف به',
+              message: techMsg,
+              targetUserIds: [tech.id],
+              data: { order_number: orderToSave.order_number }
+            });
           }
         }
 
@@ -846,12 +861,26 @@ export default function ProtectedOrders() {
 
         const adminMsg = `🆕 *أوردر جديد* 🆕\n\n👤 العميل: ${formData.customer_name}\n📞 الهاتف: ${formData.phone}\n🔧 الجهاز: ${finalDevice} - ${finalBrand}\n📍 العنوان: ${formData.address}\n👨‍🔧 الفني: ${orderToSave.technician || 'غير معين'}\n🔢 رقم الأوردر: ${orderToSave.order_number}\n📝 المشكلة: ${formData.problem_description || 'بدون'}`;
         notifyAdmin(adminMsg);
+        void sendExternalPush({
+          event: 'new_order',
+          title: '🆕 أوردر جديد',
+          message: adminMsg,
+          targetRoles: ['admin', 'manager'],
+          data: { order_number: orderToSave.order_number }
+        });
 
         if (orderToSave.technician) {
           const tech = technicians.find(t => t.name === orderToSave.technician);
           if (tech && tech.phone) {
             const techMsg = `العميل: ${formData.customer_name}\nالجهاز: ${finalDevice}\nالعنوان: ${formData.address}\nرقم الأوردر: ${orderToSave.order_number}`;
             notifyTechnician(tech.phone, tech.name, techMsg);
+            void sendExternalPush({
+              event: 'technician_assigned',
+              title: '🔧 تم تعيين أوردر جديد لك',
+              message: techMsg,
+              targetUserIds: [tech.id],
+              data: { order_number: orderToSave.order_number }
+            });
           }
         }
 

@@ -1,68 +1,131 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Bell, AlertCircle, Info, ChevronDown, ChevronUp } from 'lucide-react';
 
+type PermissionStatus = 'granted' | 'denied' | 'default' | 'loading';
+
+type StoredUser = {
+  id?: string | number;
+  username?: string;
+  role?: string;
+  techName?: string;
+};
+
+const runWithOneSignal = (callback: (OneSignal: any) => void | Promise<void>) => {
+  if (typeof window === 'undefined') return;
+  const win = window as any;
+  win.OneSignalDeferred = win.OneSignalDeferred || [];
+  win.OneSignalDeferred.push(callback);
+};
+
+const readStoredUser = (): StoredUser | null => {
+  try {
+    const raw = localStorage.getItem('currentUser');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const getExternalId = (user: StoredUser | null) => {
+  if (!user) return null;
+  const role = user.role || localStorage.getItem('userRole') || 'user';
+  const stableId = user.id ?? user.username ?? user.techName;
+  return stableId === undefined || stableId === null ? null : `${role}:${stableId}`;
+};
+
 export default function NotificationPermissionButton() {
-  const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'default' | 'loading'>('default');
+  const [permissionStatus, setPermissionStatus] = useState<PermissionStatus>('default');
   const [isVisible, setIsVisible] = useState(true);
   const [showInstructions, setShowInstructions] = useState(false);
 
-  // ✅ تحديد المسار الحالي مباشرة (آمن ولا يحتاج React Router)
-  const currentPath = window.location.pathname;
-
-  // ✅ التحقق من دور المستخدم المسموح له
-  const allowedRoles = ['admin', 'manager', 'viewer', 'tech'];
-  const userRole = localStorage.getItem('userRole');
-  const isAllowedUser = userRole && allowedRoles.includes(userRole);
-
-  // ❌ إذا المستخدم ليس من الأدوار المطلوبة، لا نعرض أي شيء
-  if (!isAllowedUser) return null;
-
-  // ❌ لا نعرض أيضاً في الصفحة الرئيسية (احتياطي)
-  if (currentPath === '/') return null;
+  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
+  const userRole = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
+  const isAllowedUser = userRole === 'admin' || userRole === 'manager' || userRole === 'tech';
+  const shouldRender = isAllowedUser && currentPath !== '/';
 
   useEffect(() => {
-    const checkPermission = async () => {
-      try {
-        if (!window.OneSignal) return;
-        const isSubscribed = await window.OneSignal.User.getOnesignalId();
-        if (isSubscribed) setPermissionStatus('granted');
-        else setPermissionStatus(Notification.permission === 'denied' ? 'denied' : 'default');
-      } catch (error) {
-        console.error(error);
+    if (!shouldRender) return;
+
+    let mounted = true;
+    const syncStatus = (OneSignal: any) => {
+      const optedIn = Boolean(OneSignal?.User?.PushSubscription?.optedIn);
+      const browserPermission = OneSignal?.Notifications?.permission;
+      if (mounted) {
+        setPermissionStatus(optedIn || browserPermission === true ? 'granted' : 'default');
       }
     };
-    checkPermission();
 
-    const handleGranted = () => {
-      setPermissionStatus('granted');
-      setTimeout(() => setIsVisible(false), 2000);
+    runWithOneSignal(async (OneSignal) => {
+      try {
+        const storedUser = readStoredUser();
+        const externalId = getExternalId(storedUser);
+        if (externalId && OneSignal?.login) await OneSignal.login(externalId);
+        const stableId = storedUser?.id ?? storedUser?.username ?? storedUser?.techName;
+        if (stableId !== undefined && stableId !== null && OneSignal?.User?.addTags) {
+          await OneSignal.User.addTags({
+            role: storedUser?.role || userRole,
+            user_id: String(stableId),
+            ...(storedUser?.username ? { username: String(storedUser.username) } : {}),
+            ...(storedUser?.techName ? { tech_name: String(storedUser.techName) } : {})
+          });
+        }
+        syncStatus(OneSignal);
+
+        const subscription = OneSignal?.User?.PushSubscription;
+        const handleSubscriptionChange = () => syncStatus(OneSignal);
+        subscription?.addEventListener?.('change', handleSubscriptionChange);
+
+        if (mounted && subscription?.optedIn) {
+          setPermissionStatus('granted');
+          setTimeout(() => mounted && setIsVisible(false), 2000);
+        }
+      } catch (error) {
+        console.error('OneSignal initialization error:', error);
+      }
+    });
+
+    return () => {
+      mounted = false;
     };
-    window.addEventListener('onesignal-permission-granted', handleGranted);
-    return () => window.removeEventListener('onesignal-permission-granted', handleGranted);
-  }, []);
+  }, [shouldRender, userRole, currentPath]);
 
-  const handleEnable = async () => {
+  const handleEnable = () => {
     setPermissionStatus('loading');
-    try {
-      if (!window.OneSignal) return;
-      const permission = await window.OneSignal.Notifications.requestPermission();
-      if (permission) {
-        setPermissionStatus('granted');
-        setTimeout(() => setIsVisible(false), 2000);
-      } else setPermissionStatus('denied');
-    } catch (error) {
-      console.error(error);
-      setPermissionStatus('denied');
-    }
+    runWithOneSignal(async (OneSignal) => {
+      try {
+        const storedUser = readStoredUser();
+        const externalId = getExternalId(storedUser);
+        if (externalId && OneSignal?.login) await OneSignal.login(externalId);
+        const stableId = storedUser?.id ?? storedUser?.username ?? storedUser?.techName;
+        if (stableId !== undefined && stableId !== null && OneSignal?.User?.addTags) {
+          await OneSignal.User.addTags({
+            role: storedUser?.role || userRole,
+            user_id: String(stableId)
+          });
+        }
+
+        const permission = await OneSignal?.Notifications?.requestPermission?.();
+        if (permission) {
+          await OneSignal?.User?.PushSubscription?.optIn?.();
+          setPermissionStatus('granted');
+          setTimeout(() => setIsVisible(false), 2000);
+        } else {
+          setPermissionStatus('denied');
+        }
+      } catch (error) {
+        console.error('OneSignal permission error:', error);
+        setPermissionStatus('denied');
+      }
+    });
   };
 
-  if (!isVisible || permissionStatus === 'granted') return null;
+  if (!shouldRender || !isVisible || permissionStatus === 'granted') return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-[9999] max-w-sm w-[calc(100%-2rem)] md:w-96">
+    <div className="fixed bottom-4 right-4 z-[9999] max-w-sm w-[calc(100%-2rem)] md:w-96" dir="rtl">
       <div className={`p-4 rounded-xl shadow-2xl border-2 flex flex-col gap-3 transition-all ${
-        permissionStatus === 'denied' 
-          ? 'bg-red-50 border-red-200 text-red-900' 
+        permissionStatus === 'denied'
+          ? 'bg-red-50 border-red-200 text-red-900'
           : 'bg-blue-50 border-blue-200 text-blue-900'
       }`}>
         <div className="flex items-start gap-3">
@@ -81,16 +144,28 @@ export default function NotificationPermissionButton() {
             </p>
             <p className="text-sm opacity-90 leading-relaxed">
               {permissionStatus === 'denied'
-                ? 'لقد قمت بحظر الإشعارات سابقاً. لن تصلك تنبيهات الأوردرات الجديدة حتى تقوم بتفعيلها يدوياً.'
-                : 'احصل على تنبيه فوري بصوت قوي على هاتفك عند إضافة أي أوردر جديد.'}
+                ? 'لقد تم حظر الإشعارات. فعّلها من إعدادات الموقع حتى تصلك تنبيهات الأوردرات الجديدة.'
+                : 'احصل على تنبيه فوري بصوت على هاتفك عند إضافة أوردر أو تغيير حالته.'}
             </p>
           </div>
-          <button onClick={() => setIsVisible(false)} className="flex-shrink-0 text-gray-400 hover:text-gray-600 p-1">✕</button>
+          <button
+            type="button"
+            onClick={() => setIsVisible(false)}
+            className="flex-shrink-0 text-gray-400 hover:text-gray-600 p-1"
+            aria-label="إغلاق تنبيه الإشعارات"
+          >
+            ✕
+          </button>
         </div>
 
         {permissionStatus === 'denied' ? (
           <div className="flex flex-col gap-2">
-            <button onClick={() => setShowInstructions(!showInstructions)} className="flex items-center justify-between w-full px-4 py-2 bg-red-100 hover:bg-red-200 rounded-lg font-bold text-sm transition-colors">
+            <button
+              type="button"
+              onClick={() => setShowInstructions(!showInstructions)}
+              className="flex items-center justify-between w-full px-4 py-2 bg-red-100 hover:bg-red-200 rounded-lg font-bold text-sm transition-colors"
+              aria-expanded={showInstructions}
+            >
               <span className="flex items-center gap-2"><Info className="w-4 h-4" /> طريقة التفعيل يدوياً</span>
               {showInstructions ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
@@ -98,24 +173,29 @@ export default function NotificationPermissionButton() {
               <div className="bg-white p-3 rounded-lg text-xs border border-red-100 shadow-inner flex flex-col gap-2 leading-relaxed">
                 <p><strong>لأجهزة أندرويد (Chrome):</strong></p>
                 <ol className="list-decimal list-inside pl-1 flex flex-col gap-1">
-                  <li>اضغط على 🔒 بجانب رابط الموقع في الأعلى.</li>
-                  <li>اختر <strong>إعدادات المواقع</strong> أو <strong>Permissions</strong>.</li>
-                  <li>ابحث عن <strong>الإشعارات</strong> واجعلها <strong>سماح (Allow)</strong>.</li>
+                  <li>اضغط على رمز إعدادات الموقع بجانب رابط الموقع.</li>
+                  <li>اختر إعدادات المواقع أو Permissions.</li>
+                  <li>اجعل الإشعارات سماحاً (Allow)، ثم أعد فتح الموقع.</li>
                 </ol>
                 <hr className="border-red-50" />
                 <p><strong>لأجهزة آيفون (Safari):</strong></p>
                 <ol className="list-decimal list-inside pl-1 flex flex-col gap-1">
-                  <li>اضغط على زر المشاركة (المربع والسهم).</li>
-                  <li>اختر <strong>إضافة للشاشة الرئيسية</strong>.</li>
-                  <li>افتح الموقع من الأيقونة الجديدة وفعّل الإشعارات.</li>
+                  <li>أضف الموقع إلى الشاشة الرئيسية.</li>
+                  <li>افتح الموقع من الأيقونة الجديدة.</li>
+                  <li>اسمح بالإشعارات عند ظهور طلب النظام.</li>
                 </ol>
               </div>
             )}
           </div>
         ) : (
-          <button onClick={handleEnable} disabled={permissionStatus === 'loading'} className={`w-full py-3 rounded-lg font-bold text-white shadow-lg transition-all active:scale-95 ${
-            permissionStatus === 'loading' ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-          }`}>
+          <button
+            type="button"
+            onClick={handleEnable}
+            disabled={permissionStatus === 'loading'}
+            className={`w-full py-3 rounded-lg font-bold text-white shadow-lg transition-colors ${
+              permissionStatus === 'loading' ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+            }`}
+          >
             {permissionStatus === 'loading' ? 'جاري التفعيل...' : 'تفعيل الإشعارات الآن 🔔'}
           </button>
         )}
