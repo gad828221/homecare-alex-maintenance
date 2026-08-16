@@ -88,11 +88,12 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     });
     return;
   }
-  // تنظيف فائق الصرامة: حذف أي شيء ليس حرفاً أو رقماً أو شرطة سفلية (لإزالة الرموز المخفية)
+  // تنظيف فائق الصرامة: حذف أي شيء ليس حرفاً أو رقماً أو شرطة سفلية
   const rawLen = apiKey.length;
   apiKey = apiKey.replace(/[^a-zA-Z0-9_]/g, '');
   const cleanLen = apiKey.length;
-  const keyInfo = `V1.1.7|Raw:${rawLen}|Clean:${cleanLen}|Start:${apiKey.slice(0, 5)}`;
+  // تشخيص مفصل: أول 10 وآخر 10 حروف للتأكد من صحة المفتاح
+  const keyInfo = `V1.1.8|Len:${cleanLen}|Start:${apiKey.slice(0, 10)}|End:${apiKey.slice(-10)}`;
 
   const body = (req.body || {}) as PushBody;
   const title = typeof body.title === 'string' ? body.title.trim().slice(0, 120) : '';
