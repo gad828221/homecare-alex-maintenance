@@ -2276,7 +2276,7 @@ export default function ProtectedOrders() {
             إعادة ضبط النظام الشاملة (حل مشاكل الإشعارات)
           </button>
           <div className="text-[10px] text-slate-500 opacity-30">
-            System Version: v1.3.8-smart-warranty (Deployed: Aug 17, 05:45)
+            System Version: v1.3.9-edit-invoice (Deployed: Aug 17, 06:00)
           </div>
         </div>
       </div>
@@ -2298,8 +2298,20 @@ export default function ProtectedOrders() {
                 <div><label className="text-sm text-slate-400">قطع غيار</label><input type="number" value={formData.parts_cost} onChange={e => handleFormChange('parts_cost', parseFloat(e.target.value))} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" /></div>
                 <div><label className="text-sm text-slate-400">مواصلات</label><input type="number" value={formData.transport_cost} onChange={e => handleFormChange('transport_cost', parseFloat(e.target.value))} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" /></div>
                 <div className="col-span-2"><label className="flex items-center gap-2 text-slate-300"><input type="checkbox" checked={formData.is_paid} onChange={e => handleFormChange('is_paid', e.target.checked)} /> تم التحصيل</label></div>
+                
+                {editingOrder && (
+                  <>
+                    <div className="col-span-2 border-t border-slate-800 pt-4 mt-2">
+                      <h4 className="text-orange-500 font-bold text-sm mb-3 flex items-center gap-2">🛡️ بيانات الفاتورة والضمان</h4>
+                    </div>
+                    <div className="col-span-2"><label className="flex items-center gap-2 text-slate-300 mb-2"><input type="checkbox" checked={formData.invoice_approved} onChange={e => handleFormChange('invoice_approved', e.target.checked)} /> اعتماد الفاتورة والضمان</label></div>
+                    <div><label className="text-sm text-slate-400">فترة الضمان</label><select value={formData.warranty_period || '6 أشهر'} onChange={e => handleFormChange('warranty_period', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="بدون ضمان">بدون ضمان</option><option value="3 أشهر">3 أشهر</option><option value="6 أشهر">6 أشهر</option><option value="1 سنة">1 سنة</option><option value="2 سنة">2 سنة</option></select></div>
+                    <div><label className="text-sm text-slate-400">تاريخ الفاتورة</label><input type="date" value={formData.invoice_date || new Date().toISOString().split('T')[0]} onChange={e => handleFormChange('invoice_date', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" /></div>
+                    <div className="col-span-2"><label className="text-sm text-slate-400">قطع الغيار المستخدمة (تظهر في الفاتورة)</label><textarea rows={2} value={formData.parts_used || ''} onChange={e => handleFormChange('parts_used', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" placeholder="مثلاً: طلمبة طرد، سير موتور..." /></div>
+                  </>
+                )}
               </div>
-              <div className="flex gap-3 pt-4"><button type="submit" disabled={isSubmitting} className="flex-1 bg-orange-600 text-white py-2 rounded-lg font-bold">{isSubmitting ? 'جاري الحفظ...' : 'حفظ'}</button><button type="button" onClick={() => setShowOrderModal(false)} className="flex-1 bg-slate-800 text-slate-300 py-2 rounded-lg font-bold">إلغاء</button></div>
+              <div className="flex gap-3 pt-4"><button type="submit" disabled={isSubmitting} className="flex-1 bg-orange-600 text-white py-2 rounded-lg font-bold">{isSubmitting ? 'جاري الحفظ...' : 'حفظ التعديلات'}</button><button type="button" onClick={() => setShowOrderModal(false)} className="flex-1 bg-slate-800 text-slate-300 py-2 rounded-lg font-bold">إلغاء</button></div>
             </form>
           </div>
         </div>
