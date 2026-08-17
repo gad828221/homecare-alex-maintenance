@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import jsPDF from "jspdf";
+import { openWhatsAppDirectly } from '../utils/whatsapp';
 import { Download, Printer, Send, Copy, Check, Link, ShieldCheck, MessageCircle, Clock } from "lucide-react";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -103,8 +104,7 @@ export default function InvoicePageNew() {
 
   const requestWarrantySupport = () => {
     const message = `🚨 *طلب دعم فني (تحت الضمان)* 🚨\n\n🔢 رقم الأوردر: ${invoice.order_number}\n👤 العميل: ${invoice.customer_name}\n🔧 الجهاز: ${invoice.device_type} - ${invoice.brand}\n📅 تاريخ الفاتورة: ${new Date(invoice.created_at).toLocaleDateString('ar-EG')}\n🛡️ حالة الضمان: ${getWarrantyRemaining().text}\n\nيرجى التواصل معي بخصوص مشكلة في الجهاز.`;
-    const whatsappUrl = `https://wa.me/201278885772?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    openWhatsAppDirectly('201278885772', message);
   };
 
   const downloadPDF = async () => {
@@ -213,8 +213,7 @@ export default function InvoicePageNew() {
     const message = `📄 *فاتورة الصيانة والضمان - Maintenance Guide*\n\n🔗 رابط الفاتورة:\n${receiptUrl}\n\n✨ شكراً لثقتك بنا`;
 
     const phone = formatPhoneForWhatsApp(invoice.phone);
-    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    openWhatsAppDirectly(phone, message);
   };
 
   // نسخ نص الفاتورة (كما هو)

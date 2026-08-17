@@ -1,3 +1,5 @@
+import { openWhatsAppDirectly } from '../utils/whatsapp';
+
 export const invoiceService = {
   sendInvoiceViaWhatsApp: (invoice: any): void => {
     // رابط صفحة الفاتورة (حيث يمكن العميل تحميل PDF أو صورة)
@@ -21,7 +23,6 @@ export const invoiceService = {
     if (formattedPhone.startsWith('0')) formattedPhone = formattedPhone.substring(1);
     if (formattedPhone.length === 10) formattedPhone = '20' + formattedPhone;
     
-    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    openWhatsAppDirectly(formattedPhone, message);
   }
 };

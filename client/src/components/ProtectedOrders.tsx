@@ -123,19 +123,31 @@ const formatPhoneForWhatsApp = (phone: string) => {
   if (cleaned.length === 10) cleaned = '20' + cleaned;
   return cleaned;
 };
-const notifyAdmin = (message: string) => {
-  window.open(`https://wa.me/${ADMIN_PHONE}?text=${encodeURIComponent(message)}`, '_blank');
+const openWhatsApp = (phone: string, message: string) => {
+  const cleanedPhone = formatPhoneForWhatsApp(phone);
+  if (!cleanedPhone) return;
+  const encodedMsg = encodeURIComponent(message);
+  
+  // محاولة استخدام الرابط العميق لفتح التطبيق مباشرة على الموبايل
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (isMobile) {
+    window.location.href = `whatsapp://send?phone=${cleanedPhone}&text=${encodedMsg}`;
+  } else {
+    // على الكمبيوتر نستخدم الرابط العادي
+    window.open(`https://wa.me/${cleanedPhone}?text=${encodedMsg}`, '_blank');
+  }
 };
-  const notifyTechnician = (techPhone: string, techName: string, message: string) => {
-    const phone = formatPhoneForWhatsApp(techPhone);
-    if (!phone) return;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
-  };
+
+const notifyAdmin = (message: string) => {
+  openWhatsApp(ADMIN_PHONE, message);
+};
+
+const notifyTechnician = (techPhone: string, techName: string, message: string) => {
+  openWhatsApp(techPhone, message);
+};
 
 const sendWhatsApp = (phoneNumber: string, message: string) => {
-  const phone = formatPhoneForWhatsApp(phoneNumber);
-  if (!phone) return;
-  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+  openWhatsApp(phoneNumber, message);
 };
 
 // ==================== دالة جلب محسّنة ====================
@@ -342,10 +354,8 @@ export default function ProtectedOrders() {
 
   const sendWhatsAppToCustomerOnCreate = (order: any) => {
     if (isViewer) return;
-    const phone = formatPhoneForWhatsApp(order.phone);
-    if (!phone) return;
     const message = `📝 *تم استلام طلب الصيانة بنجاح* 📝\n\n🔢 *رقم الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n🔧 *الجهاز:* ${order.device_type} - ${order.brand}\n📍 *العنوان:* ${order.address || 'غير محدد'}\n\n✅ تم تسجيل طلبك وسيتم التواصل معك قريباً.`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+    openWhatsApp(order.phone, message);
   };
 
   const getDaysDifference = (dateStr: string, status: string) => {
@@ -659,8 +669,7 @@ export default function ProtectedOrders() {
         let phone = partner.phone.replace(/\D/g, '');
         if (phone.startsWith('0')) phone = phone.substring(1);
         if (!phone.startsWith('20')) phone = '20' + phone;
-        const url = `https://wa.me/${phone}?text=${encodeURIComponent(reportText)}`;
-        window.open(url, '_blank');
+        openWhatsApp(partner.phone, reportText);
       }
       showToast("'", "info");
     } catch (err) {
@@ -906,8 +915,6 @@ export default function ProtectedOrders() {
 
   const sendWhatsAppToCustomer = (order: any, newStatus: string) => {
     if (isViewer) return;
-    const phone = formatPhoneForWhatsApp(order.phone);
-    if (!phone) return;
     let statusMessage = "";
     switch (newStatus) {
       case 'in-progress': statusMessage = "🔧 تم بدء العمل على طلبك بواسطة الفني."; break;
@@ -917,7 +924,7 @@ export default function ProtectedOrders() {
       default: return;
     }
     const message = `📢 *تحديث حالة طلب الصيانة* 📢\n\n🔢 *رقم الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n📝 *الحالة الجديدة:* ${statusMessage}\n\nشكراً لتواصلك معنا. 🌟`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+    openWhatsApp(order.phone, message);
   };
 
   const updateOrderStatus = async (id: number, newStatus: string, extraData = {}) => {
@@ -2239,7 +2246,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-slate-500 opacity-20">
             Maintenance Guide © 2026 - All Rights Reserved
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v1.5.2-final-security</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v1.5.3-direct-whatsapp</div>
         </div>
       </div>
 

@@ -10,6 +10,7 @@ import { useLocation } from "wouter";
 import { useNotification } from "../components/EnhancedNotificationSystem";
 import TechnicianPerformance from "../components/TechnicianPerformance";
 import { createClient } from '@supabase/supabase-js';
+import { openWhatsAppDirectly } from '../utils/whatsapp';
 
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -113,7 +114,7 @@ export default function TechnicianPortal() {
       });
     } catch (err) { console.error(err); }
     const message = `🔔 *تنبيه إداري* 🔔\n━━━━━━━━━━━━━━━━━━━━━━\n👤 *الفني:* ${techName}\n🔢 *كود الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n📋 *الإجراء:* ${action}\n${details ? `📝 *التفاصيل:* ${details}\n` : ''}\n⏰ *الوقت:* ${new Date().toLocaleString("ar-EG")}\n\nيرجى المراجعة من لوحة التحكم.`;
-    window.open(`https://wa.me/201558625259?text=${encodeURIComponent(message)}`, '_blank');
+    openWhatsAppDirectly('201558625259', message);
   };
 
   useEffect(() => {
@@ -430,7 +431,7 @@ export default function TechnicianPortal() {
       `✨ *شكراً لثقتك بنا. نحن دائماً في خدمتك.* ✨`;
     
     const customerPhone = formatPhoneForWhatsApp(selectedOrder.phone);
-    window.open(`https://wa.me/${customerPhone}?text=${encodeURIComponent(customerMsg)}`, '_blank');
+    openWhatsAppDirectly(customerPhone, customerMsg);
 
     setOldPartsPhoto("");
     setNewPartsPhoto("");

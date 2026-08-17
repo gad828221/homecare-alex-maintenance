@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { sendExternalPush } from "../utils/pushNotifications";
+import { openWhatsAppDirectly } from "../utils/whatsapp";
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -93,8 +94,8 @@ export default function BookingForm() {
           }]);
         } catch (err) { console.error("Realtime alert error:", err); }
         
-        const whatsappUrl = `https://wa.me/201558625259?text=${encodeURIComponent(`أوردر جديد: ${orderNumber}\nالاسم: ${formData.customer_name}\nالجهاز: ${finalDeviceType}\nالعنوان: ${formData.address}`)}`;
-        window.open(whatsappUrl, "_blank");
+        const msg = `أوردر جديد: ${orderNumber}\nالاسم: ${formData.customer_name}\nالجهاز: ${finalDeviceType}\nالعنوان: ${formData.address}`;
+        openWhatsAppDirectly('201558625259', msg);
       } else {
         throw insertError;
       }

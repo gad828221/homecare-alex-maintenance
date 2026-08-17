@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import jsPDF from "jspdf";
+import { openWhatsAppDirectly } from '../utils/whatsapp';
 import { Download, Printer, Send, Copy, Check, MapPin, Phone, MessageCircle, Clock, ShieldCheck, User, Wrench, AlertCircle, Edit2, Save, X } from "lucide-react";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -238,8 +239,7 @@ export default function PickupReceiptPage() {
     const message = `📄 *إيصال سحب جهاز - Maintenance Guide*\n\n🔗 رابط الإيصال:\n${receiptUrl}\n\n✨ شكراً لثقتك بنا`;
 
     const phone = formatPhoneForWhatsApp(order.phone);
-    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    openWhatsAppDirectly(phone, message);
   };
 
   if (loading) return <div className="p-8 text-center">جاري تحميل الإيصال...</div>;
