@@ -27,24 +27,34 @@ const DEVICE_TYPES = ['غسالة', 'ثلاجة', 'بوتاجاز', 'سخان', 
 const BRANDS = ['سامسونج', 'LG', 'شارب', 'توشيبا', 'زانوسي', 'يونيون إير', 'فريش', 'وايت ويل', 'أريستون', 'بيكو', 'هوفر', 'إنديست', 'كريازي'];
 
 // ==================== إدارة المستخدمين والصلاحيات (النسخة المتكاملة) ====================
-function AdminPermissions({ users, onEdit, onDelete, onToggle, canEdit }: { users: any[], onEdit: (u: any) => void, onDelete: (id: number, name: string) => void, onToggle: (u: any) => void, canEdit: boolean }) {
+function AdminPermissions({ users, onEdit, onDelete, onToggle, canEdit, onSync }: { users: any[], onEdit: (u: any) => void, onDelete: (id: number, name: string) => void, onToggle: (u: any) => void, canEdit: boolean, onSync: () => void }) {
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center bg-slate-900/50 border border-slate-800 p-4 rounded-2xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900/50 border border-slate-800 p-4 rounded-2xl">
         <div>
           <h2 className="text-xl font-black text-white flex items-center gap-2">
             <ShieldCheck className="text-orange-500" /> إدارة صلاحيات النظام
           </h2>
           <p className="text-xs text-slate-500 mt-1">إدارة حسابات الموظفين، المديرين، ومدخلي البيانات.</p>
         </div>
-        {canEdit && (
-          <button 
-            onClick={() => onEdit(null)}
-            className="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-lg active:scale-95"
-          >
-            <UserPlus size={16} /> إضافة مستخدم جديد
-          </button>
-        )}
+        <div className="flex gap-2 w-full md:w-auto">
+          {canEdit && (
+            <>
+              <button 
+                onClick={onSync}
+                className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-[10px] font-black flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95"
+              >
+                <RefreshCw size={14} /> مزامنة الفنيين
+              </button>
+              <button 
+                onClick={() => onEdit(null)}
+                className="flex-1 md:flex-none bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl text-[10px] font-black flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95"
+              >
+                <UserPlus size={14} /> إضافة مستخدم
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -512,6 +522,42 @@ export default function ProtectedOrders() {
       showToast(user.is_active ? "⚠️ تم إيقاف الحساب" : "✅ تم تفعيل الحساب", "info");
       fetchData();
     } catch (err) { console.error(err); }
+  };
+
+  const syncTechniciansToUsers = async () => {
+    if (userRole !== 'admin') return;
+    setLoading(true);
+    let syncCount = 0;
+    try {
+      for (const tech of technicians) {
+        // التحقق إذا كان الفني موجود بالفعل في جدول المستخدمين
+        const existingUser = users.find(u => u.username === tech.username || u.name === tech.name);
+        if (!existingUser) {
+          await fetchAPI('users', {
+            method: 'POST',
+            body: JSON.stringify({
+              name: tech.name,
+              username: tech.username || tech.name.replace(/\s+/g, '_').toLowerCase(),
+              password: tech.password || '123456',
+              role: 'tech',
+              is_active: tech.is_active !== false
+            })
+          });
+          syncCount++;
+        }
+      }
+      if (syncCount > 0) {
+        showToast(`✅ تم مزامنة ${syncCount} فني بنجاح`, "success");
+        fetchData();
+      } else {
+        showToast("ℹ️ كافة الفنيين لديهم حسابات بالفعل", "info");
+      }
+    } catch (err) {
+      console.error(syncCount, err);
+      showToast("❌ فشل مزامنة بعض الفنيين", "error");
+    } finally {
+      setLoading(false);
+    }
   };
   const sendFeedbackRequest = (order: any) => {
     if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
@@ -2647,13 +2693,14 @@ export default function ProtectedOrders() {
             onEdit={(u) => { setEditingUserAccount(u); setUserForm(u || { name: '', username: '', password: '', role: 'viewer', is_active: true }); setShowUserModal(true); }}
             onDelete={deleteUserAccount}
             onToggle={toggleUserAccountStatus}
+            onSync={syncTechniciansToUsers}
           />
         )}
         <div className="mt-8 flex flex-col items-center gap-2">
           <div className="text-[10px] text-slate-500 opacity-20">
             Maintenance Guide © 2026 - All Rights Reserved
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v1.6.5-unified-system</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v1.6.6-sync-technicians</div>
         </div>
       </div>
 
