@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import jsPDF from "jspdf";
-import { Download, Printer, Send, Copy, Check, Link } from "lucide-react";
+import { Download, Printer, Send, Copy, Check, Link, ShieldCheck, MessageCircle, Clock } from "lucide-react";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -69,12 +69,13 @@ export default function InvoicePageNew() {
   const getWarrantyRemaining = () => {
     const endDate = calculateWarrantyEndDate(invoice?.warranty_period);
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
     const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
+    
+    if (today > end) return { status: 'expired', text: "انتهى الضمان", days: 0 };
 
-    if (today > end) return "انتهى الضمان";
-
+    const diffTime = Math.abs(end.getTime() - today.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
     let months = (end.getFullYear() - today.getFullYear()) * 12;
     months += end.getMonth() - today.getMonth();
     let days = end.getDate() - today.getDate();
@@ -85,10 +86,25 @@ export default function InvoicePageNew() {
         days = prevMonthDate.getDate() + days;
     }
 
-    if (months === 0 && days === 0) return "ينتهي اليوم";
-    if (months === 0) return `${days} يوم`;
-    if (days === 0) return `${months} شهر`;
-    return `${months} شهر و ${days} يوم`;
+    let text = "";
+    if (months === 0 && days === 0) text = "ينتهي اليوم";
+    else if (months === 0) text = `${days} يوم`;
+    else if (days === 0) text = `${months} شهر`;
+    else text = `${months} شهر و ${days} يوم`;
+
+    return { 
+      status: diffDays <= 7 ? 'expiring' : 'active', 
+      text, 
+      days: diffDays,
+      months,
+      remainingDays: days
+    };
+  };
+
+  const requestWarrantySupport = () => {
+    const message = `🚨 *طلب دعم فني (تحت الضمان)* 🚨\n\n🔢 رقم الأوردر: ${invoice.order_number}\n👤 العميل: ${invoice.customer_name}\n🔧 الجهاز: ${invoice.device_type} - ${invoice.brand}\n📅 تاريخ الفاتورة: ${new Date(invoice.created_at).toLocaleDateString('ar-EG')}\n🛡️ حالة الضمان: ${getWarrantyRemaining().text}\n\nيرجى التواصل معي بخصوص مشكلة في الجهاز.`;
+    const whatsappUrl = `https://wa.me/201278885772?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   const downloadPDF = async () => {
@@ -300,26 +316,58 @@ export default function InvoicePageNew() {
               </div>
             </div>
             
-            <div className="border-r-4 border-blue-500 bg-gradient-to-l from-blue-50 to-white p-4 rounded-lg">
-              <h3 className="font-bold text-blue-700 mb-3 text-lg">💰 المبلغ والضمان</h3>
+            <div className={`border-r-4 ${getWarrantyRemaining().status === 'expired' ? 'border-red-500' : 'border-blue-500'} bg-gradient-to-l from-blue-50 to-white p-4 rounded-lg`}>
+              <h3 className="font-bold text-blue-700 mb-3 text-lg">💰 المبلغ والضمان الذكي</h3>
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white p-4 rounded-lg text-center">
+                <div className="bg-white p-4 rounded-lg text-center shadow-sm border border-blue-100">
                   <span className="text-gray-500 text-xs block mb-1">المبلغ الإجمالي</span>
-                  <p className="text-3xl font-bold text-green-600">{invoice.total_amount || 0} ج.م</p>
+                  <p className="text-3xl font-bold text-green-600">{invoice.total_amount || 0} <span className="text-sm">ج.م</span></p>
                 </div>
-                <div className="bg-white p-4 rounded-lg text-center">
+                <div className="bg-white p-4 rounded-lg text-center shadow-sm border border-blue-100">
                   <span className="text-gray-500 text-xs block mb-1">فترة الضمان</span>
                   <p className="text-2xl font-bold text-blue-600">🛡️ {invoice.warranty_period || '6 أشهر'}</p>
                 </div>
-                <div className="bg-white p-4 rounded-lg text-center col-span-2">
-                  <span className="text-gray-500 text-xs block mb-1">تاريخ انتهاء الضمان</span>
-                  <p className="text-xl font-bold text-red-600">{calculateWarrantyEndDate(invoice?.warranty_period).toLocaleDateString('ar-EG')}</p>
-                </div>
-                <div className="bg-white p-4 rounded-lg text-center col-span-2">
-                  <span className="text-gray-500 text-xs block mb-1">المتبقي من الضمان</span>
-                  <p className="text-xl font-bold text-purple-600">{getWarrantyRemaining()}</p>
-                </div>
               </div>
+              
+              <div className={`mt-4 p-6 rounded-2xl text-center shadow-inner relative overflow-hidden ${
+                getWarrantyRemaining().status === 'expired' ? 'bg-red-600 text-white' : 
+                getWarrantyRemaining().status === 'expiring' ? 'bg-orange-500 text-white' : 'bg-blue-600 text-white'
+              }`}>
+                <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                  <div className="absolute top-2 left-2 rotate-12"><ShieldCheck className="w-12 h-12" /></div>
+                  <div className="absolute bottom-2 right-2 -rotate-12"><Clock className="w-12 h-12" /></div>
+                </div>
+                
+                <p className="text-sm opacity-90 mb-1">حالة الضمان الرقمي</p>
+                <p className="text-3xl font-black mb-2">{getWarrantyRemaining().text}</p>
+                
+                {getWarrantyRemaining().status !== 'expired' && (
+                  <div className="flex justify-center gap-4 mt-4">
+                    <div className="bg-white/20 px-4 py-2 rounded-xl backdrop-blur-sm">
+                      <p className="text-2xl font-bold">{getWarrantyRemaining().months || 0}</p>
+                      <p className="text-[10px]">شهر</p>
+                    </div>
+                    <div className="bg-white/20 px-4 py-2 rounded-xl backdrop-blur-sm">
+                      <p className="text-2xl font-bold">{getWarrantyRemaining().remainingDays || 0}</p>
+                      <p className="text-[10px]">يوم</p>
+                    </div>
+                  </div>
+                )}
+                
+                <p className="mt-4 text-xs opacity-70 italic">
+                  ينتهي في: {calculateWarrantyEndDate(invoice?.warranty_period).toLocaleDateString('ar-EG')}
+                </p>
+              </div>
+
+              {getWarrantyRemaining().status !== 'expired' && (
+                <button 
+                  onClick={requestWarrantySupport}
+                  className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95"
+                >
+                  <MessageCircle className="w-6 h-6" />
+                  طلب صيانة تحت الضمان
+                </button>
+              )}
             </div>
             
             <div className="bg-gradient-to-l from-purple-50 to-white p-4 rounded-lg border-r-4 border-purple-500">

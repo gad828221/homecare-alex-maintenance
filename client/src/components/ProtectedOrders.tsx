@@ -204,6 +204,7 @@ export default function ProtectedOrders() {
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
   const [filterDelay, setFilterDelay] = useState<'all' | 'delayed'>('all');
+  const [filterWarranty, setFilterWarranty] = useState<'all' | 'active' | 'expired' | 'expiring'>('all');
   const [showAllOrders, setShowAllOrders] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
   const [deletedOrders, setDeletedOrders] = useState<any[]>([]);
@@ -381,6 +382,32 @@ export default function ProtectedOrders() {
     const now = new Date();
     const diffHours = (now.getTime() - created.getTime()) / (1000 * 60 * 60);
     return diffHours < 1; // أوردر جديد خلال آخر ساعة
+  };
+
+  const getWarrantyStatus = (order: any) => {
+    if (!order.invoice_approved || !order.warranty_period || order.status !== 'completed') {
+      return { status: 'none', text: 'لا يوجد ضمان', color: 'slate' };
+    }
+    
+    const orderDate = new Date(order.completed_at || order.created_at || new Date());
+    let months = 6;
+    if (order.warranty_period?.includes('سنة')) months = 12;
+    else if (order.warranty_period?.includes('شهر')) {
+      const match = order.warranty_period.match(/(\d+)/);
+      if (match) months = parseInt(match[1]);
+    }
+    
+    const endDate = new Date(orderDate);
+    endDate.setMonth(endDate.getMonth() + months);
+    const today = new Date();
+    
+    if (today > endDate) return { status: 'expired', text: 'منتهي', color: 'red' };
+    
+    const diffTime = Math.abs(endDate.getTime() - today.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays <= 7) return { status: 'expiring', text: 'ينتهي قريباً', color: 'orange' };
+    return { status: 'active', text: 'ساري', color: 'emerald' };
   };
 
   const sendDailyReportToWhatsApp = () => {
@@ -1133,7 +1160,7 @@ export default function ProtectedOrders() {
       fetchNotifications();
     }
   };
-  const clearFilters = () => { setSearchTerm(''); setFilterStatus('all'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); };
+  const clearFilters = () => { setSearchTerm(''); setFilterStatus('all'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); setFilterWarranty('all'); };
 
 
   const dateFilteredOrders = orders.filter(o => {
@@ -1163,6 +1190,14 @@ export default function ProtectedOrders() {
     }
 
     if (filterDelay === 'delayed' && !isDelayed(o)) return false;
+    
+    if (filterWarranty !== 'all') {
+      const warrantyInfo = getWarrantyStatus(o);
+      if (filterWarranty === 'active' && warrantyInfo.status !== 'active') return false;
+      if (filterWarranty === 'expired' && warrantyInfo.status !== 'expired') return false;
+      if (filterWarranty === 'expiring' && warrantyInfo.status !== 'expiring') return false;
+    }
+
     return true;
   });
 
@@ -1514,11 +1549,15 @@ export default function ProtectedOrders() {
                         {orders.filter(o => isDelayed(o)).length}
                       </div>
                     </div>
-                    <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/50 hover:border-green-500/30 transition-all group">
-                      <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">قيد التنفيذ</div>
-                      <div className="text-2xl font-black text-blue-400">{orders.filter(o => o.status === 'in-progress').length}</div>
-                    </div>
-                  </div>
+	                    <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/50 hover:border-green-500/30 transition-all group">
+	                      <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">قيد التنفيذ</div>
+	                      <div className="text-2xl font-black text-blue-400">{orders.filter(o => o.status === 'in-progress').length}</div>
+	                    </div>
+	                    <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/50 hover:border-emerald-500/30 transition-all group cursor-pointer" onClick={() => { clearFilters(); setFilterWarranty('active'); setFilterStatus('completed'); }}>
+	                      <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">ضمان ساري 🛡️</div>
+	                      <div className="text-2xl font-black text-emerald-400">{orders.filter(o => getWarrantyStatus(o).status === 'active').length}</div>
+	                    </div>
+	                  </div>
                 </div>
 
                 <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-6 border border-slate-700 shadow-2xl flex flex-col justify-between">
@@ -1551,9 +1590,10 @@ export default function ProtectedOrders() {
 		                <button onClick={() => { clearFilters(); setFilterStatus('all'); setSearchTerm('');
 		                  setFilterTechnician('__NONE__');
 		                }} className="bg-orange-600/20 hover:bg-orange-600/40 text-orange-400 px-3 py-1 rounded-full text-xs border border-orange-600/30 transition">👨‍🔧 بدون فني</button>
-		                <button onClick={() => { clearFilters(); setFilterStatus('__UNPAID__');
-		                }} className="bg-red-600/20 hover:bg-red-600/40 text-red-400 px-3 py-1 rounded-full text-xs border border-red-600/30 transition">💰 بانتظار التحصيل</button>
-		                <div className="h-4 w-[1px] bg-slate-700 mx-1"></div>
+			                <button onClick={() => { clearFilters(); setFilterStatus('__UNPAID__');
+			                }} className="bg-red-600/20 hover:bg-red-600/40 text-red-400 px-3 py-1 rounded-full text-xs border border-red-600/30 transition">💰 بانتظار التحصيل</button>
+			                <button onClick={() => { clearFilters(); setFilterWarranty('expiring'); }} className="bg-orange-600/20 hover:bg-orange-600/40 text-orange-400 px-3 py-1 rounded-full text-xs border border-orange-600/30 transition">🛡️ ينتهي قريباً</button>
+			                <div className="h-4 w-[1px] bg-slate-700 mx-1"></div>
 		                <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} className="p-1 bg-slate-800 border border-slate-700 rounded text-xs text-white" />
 		                <span className="text-slate-600 text-xs">إلى</span>
 		                <input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} className="p-1 bg-slate-800 border border-slate-700 rounded text-xs text-white" />
@@ -1754,10 +1794,15 @@ export default function ProtectedOrders() {
 
                       <div className="flex justify-between items-start mb-4 relative z-10">
                         <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-lg font-black text-white group-hover:text-orange-400 transition-colors">{order.customer_name}</h3>
-                            {isNewOrder(order) && <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-ping"></span>}
-                          </div>
+	                          <div className="flex items-center gap-2">
+	                            <h3 className="text-lg font-black text-white group-hover:text-orange-400 transition-colors">{order.customer_name}</h3>
+	                            {isNewOrder(order) && <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-ping"></span>}
+	                            {getWarrantyStatus(order).status !== 'none' && (
+	                              <div className={`px-2 py-0.5 rounded-full text-[8px] font-black bg-${getWarrantyStatus(order).color}-500/20 text-${getWarrantyStatus(order).color}-400 border border-${getWarrantyStatus(order).color}-500/30 flex items-center gap-1`}>
+	                                <ShieldCheck size={8} /> {getWarrantyStatus(order).text}
+	                              </div>
+	                            )}
+	                          </div>
                           <span className="text-[10px] font-bold text-slate-500 tracking-widest uppercase">#{order.order_number}</span>
                         </div>
                         <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black border border-${cardColor}-500/30 bg-${cardColor}-500/10 text-${cardColor}-400`}>{config.label}</div>
@@ -2231,7 +2276,7 @@ export default function ProtectedOrders() {
             إعادة ضبط النظام الشاملة (حل مشاكل الإشعارات)
           </button>
           <div className="text-[10px] text-slate-500 opacity-30">
-            System Version: v1.3.6-toast-fix (Deployed: Aug 17, 05:15)
+            System Version: v1.3.8-smart-warranty (Deployed: Aug 17, 05:45)
           </div>
         </div>
       </div>

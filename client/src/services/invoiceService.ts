@@ -4,14 +4,16 @@ export const invoiceService = {
     const invoiceLink = `${window.location.origin}/invoice?id=${invoice.id}`;
     
     // رسالة قصيرة تحتوي على الرابط
-    const message = `📄 *فاتورة الصيانة والضمان* 📄\n\n` +
-      `👤 العميل: ${invoice.customerName}\n` +
-      `🔢 رقم الفاتورة: ${invoice.orderNumber}\n` +
-      `💰 المبلغ: ${invoice.totalAmount} ج.م\n` +
-      `🛡️ الضمان: ${invoice.warranty}\n\n` +
-      `📎 لعرض الفاتورة وتحميلها كـ PDF أو صورة، اضغط على الرابط:\n` +
+    const message = `🛡️ *بطاقة الضمان الرقمية - Maintenance Guide* 🛡️\n\n` +
+      `👤 *العميل:* ${invoice.customerName}\n` +
+      `🔢 *رقم الأوردر:* ${invoice.orderNumber}\n` +
+      `🔧 *الجهاز:* ${invoice.device}\n` +
+      `💰 *المبلغ:* ${invoice.totalAmount} ج.م\n` +
+      `📅 *تاريخ الفاتورة:* ${invoice.date}\n` +
+      `🛡️ *فترة الضمان:* ${invoice.warranty}\n\n` +
+      `📎 *رابط الضمان والفاتورة الإلكترونية:* \n` +
       `${invoiceLink}\n\n` +
-      `📞 للاستفسار: 01278885772`;
+      `✨ *شكراً لثقتك بنا. نحن دائماً في خدمتك.* ✨`;
 
     // تنسيق رقم الهاتف
     const phone = invoice.phone.toString().replace(/[^\d]/g, '');
