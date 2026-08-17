@@ -454,7 +454,7 @@ export default function ProtectedOrders() {
     if (activeTab === 'feedback' || activeTab === 'notifications') {
       fetchNotifications();
     }
-  }, [userRole, activeTab, fetchNotifications]);
+  }, [userRole, activeTab]);
 
   const canEditDelete = () => {
     const role = userRole?.toLowerCase() || '';
@@ -2778,7 +2778,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-slate-500 opacity-20">
             Maintenance Guide © 2026 - All Rights Reserved
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v1.7.3-feedback-sync-fix</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v1.7.4-reference-error-fix</div>
         </div>
       </div>
 
