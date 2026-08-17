@@ -450,7 +450,11 @@ export default function ProtectedOrders() {
     if (userRole === 'viewer' && viewerBlockedTabs.includes(activeTab)) {
       setActiveTab('orders');
     }
-  }, [userRole, activeTab]);
+    // ✅ جلب الإشعارات والتقييمات فوراً عند فتح التبويب الخاص بها لضمان المزامنة
+    if (activeTab === 'feedback' || activeTab === 'notifications') {
+      fetchNotifications();
+    }
+  }, [userRole, activeTab, fetchNotifications]);
 
   const canEditDelete = () => {
     const role = userRole?.toLowerCase() || '';
@@ -2597,9 +2601,18 @@ export default function ProtectedOrders() {
         {/* تبويب الإحصائيات الذكية */}
         {activeTab === 'feedback' && canEditDelete() && (
           <div className="space-y-4">
-            <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5">
-              <h2 className="text-xl font-black text-white">⭐ تقييمات العملاء</h2>
-              <p className="text-sm text-slate-400 mt-2">تظهر هنا التقييمات التي يرسلها العملاء من رابط التقييم بعد إتمام الخدمة.</p>
+            <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-black text-white">⭐ تقييمات العملاء</h2>
+                <p className="text-sm text-slate-400 mt-2">تظهر هنا التقييمات التي يرسلها العملاء من رابط التقييم بعد إتمام الخدمة.</p>
+              </div>
+              <button 
+                onClick={() => { fetchNotifications(); showToast("🔄 جاري تحديث التقييمات...", "info"); }}
+                className="p-3 bg-slate-800 hover:bg-slate-700 text-orange-500 rounded-xl transition-all active:scale-95"
+                title="تحديث البيانات"
+              >
+                <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
+              </button>
             </div>
             {(() => {
               const feedbackItems = notifications.filter((notification) => notification.action === 'تقييم عميل');
@@ -2765,7 +2778,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-slate-500 opacity-20">
             Maintenance Guide © 2026 - All Rights Reserved
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v1.7.2-customer-comments</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v1.7.3-feedback-sync-fix</div>
         </div>
       </div>
 
