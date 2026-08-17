@@ -2612,12 +2612,28 @@ export default function ProtectedOrders() {
                     <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 text-center"><div className="text-3xl font-black text-orange-400">{feedbackItems.length}</div><div className="text-xs text-slate-400 mt-1">إجمالي التقييمات</div></div>
                   </div>
                   <div className="space-y-3">
-                    {feedbackItems.map((notification) => (
-                      <div key={notification.id} className="bg-slate-900 rounded-2xl border border-slate-800 p-4">
-                        <div className="flex justify-between gap-3 items-start"><span className="text-yellow-400 font-black">{notification.details?.match(/(\d+)\/5/)?.[1] || '-'} / 5 ⭐</span><span className="text-xs text-slate-500">{new Date(notification.created_at).toLocaleString('ar-EG')}</span></div>
-                        <p className="text-slate-200 mt-3 leading-7">{notification.details}</p>
-                      </div>
-                    ))}
+                    {feedbackItems.map((notification) => {
+                      const details = notification.details || '';
+                      const ratingMatch = details.match(/(\d+)\/5/);
+                      const orderMatch = details.match(/الأوردر\s+([^:]+):/);
+                      const commentMatch = details.match(/التعليق:\s*([\s\S]*)$/);
+                      const ratingValue = ratingMatch?.[1] || '-';
+                      const orderValue = orderMatch?.[1]?.trim() || '';
+                      const commentValue = commentMatch?.[1]?.trim() || '';
+                      return (
+                        <div key={notification.id} className="bg-slate-900 rounded-2xl border border-slate-800 p-4">
+                          <div className="flex flex-wrap justify-between gap-2 items-start">
+                            <span className="text-yellow-400 font-black">{ratingValue} / 5 ⭐</span>
+                            <span className="text-xs text-slate-500">{new Date(notification.created_at).toLocaleString('ar-EG')}</span>
+                          </div>
+                          {orderValue && <div className="text-xs text-orange-400 mt-2">رقم الأوردر: {orderValue}</div>}
+                          <div className="mt-3 rounded-xl bg-slate-800/70 border border-slate-700/70 p-3">
+                            <p className="text-[10px] text-slate-500 mb-1">تعليق العميل</p>
+                            <p className="text-slate-200 leading-7 break-words">{commentValue || 'لم يكتب العميل تعليقاً نصياً.'}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
                     {feedbackItems.length === 0 && <div className="text-center py-10 text-slate-400">لا توجد تقييمات عملاء حتى الآن.</div>}
                   </div>
                 </>
@@ -2749,7 +2765,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-slate-500 opacity-20">
             Maintenance Guide © 2026 - All Rights Reserved
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v1.7.1-feedback-fix</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v1.7.2-customer-comments</div>
         </div>
       </div>
 

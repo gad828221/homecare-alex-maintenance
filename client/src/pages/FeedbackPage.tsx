@@ -134,8 +134,13 @@ export default function FeedbackPage() {
               value={comment}
               onChange={(event) => setComment(event.target.value)}
               placeholder="اكتب ملاحظتك عن الخدمة أو الفني..."
+              maxLength={500}
               className="w-full rounded-2xl bg-slate-800 border border-slate-700 px-4 py-3 text-white outline-none focus:border-orange-500 resize-none"
             />
+            <div className="flex justify-between mt-1 text-[10px] text-slate-500">
+              <span>يمكنك ترك التعليق اختيارياً.</span>
+              <span>{comment.length}/500</span>
+            </div>
           </div>
 
           {error && <p role="alert" className="rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 p-3 text-sm">{error}</p>}
