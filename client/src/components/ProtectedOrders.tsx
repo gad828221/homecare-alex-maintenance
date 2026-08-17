@@ -297,6 +297,7 @@ export default function ProtectedOrders() {
         audioContextRef.current.resume();
       }
       setAudioEnabled(true);
+      sessionStorage.setItem('audio_forced_enabled', 'true');
       playDing(false);
     } catch (e) { console.error("Audio init error", e); }
   };
@@ -350,6 +351,14 @@ export default function ProtectedOrders() {
     if (!storedUser) { window.location.href = '/login'; return; }
     setCurrentUser(JSON.parse(storedUser));
     setUserRole(role || 'user');
+
+    // ✅ التحقق إذا كان الصوت قد تم تفعيله مسبقاً في هذه الجلسة
+    if (sessionStorage.getItem('audio_forced_enabled') === 'true') {
+      setAudioEnabled(true);
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      audioContextRef.current = ctx;
+      if (ctx.state === 'suspended') ctx.resume();
+    }
   }, []);
 
   useEffect(() => {
@@ -1552,7 +1561,30 @@ export default function ProtectedOrders() {
   if (loading) return <div className="flex justify-center items-center h-screen text-slate-400">جاري التحميل...</div>;
 
   return (
-    <div className={`min-h-screen bg-slate-950 text-slate-200 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`} dir="rtl">
+    <div className={`min-h-screen bg-slate-950 text-slate-200 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`}>
+      
+      {/* ✅ قفل الشاشة الإجباري للمدير لتفعيل الصوت */}
+      {!audioEnabled && (
+        <div className="fixed inset-0 z-[200] bg-slate-950 flex items-center justify-center p-6 text-center backdrop-blur-xl">
+          <div className="max-w-md w-full bg-slate-900 border border-orange-500/30 p-8 rounded-[2.5rem] shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="w-24 h-24 bg-orange-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-orange-900/40 animate-pulse">
+              <LayoutDashboard className="text-white w-10 h-10" />
+            </div>
+            <h2 className="text-2xl font-black text-white mb-4">دخول لوحة التحكم</h2>
+            <p className="text-slate-400 text-sm mb-8 leading-relaxed">
+              يجب تفعيل التنبيهات الصوتية الإجبارية لمراقبة سير العمل واستقبال إشعارات الفنيين والعملاء فوراً.
+            </p>
+            <button 
+              onClick={initAudio}
+              className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-black py-5 rounded-2xl transition-all active:scale-95 shadow-xl shadow-orange-900/20 text-lg flex items-center justify-center gap-3"
+            >
+              <Play fill="currentColor" size={20} /> دخول وتفعيل التنبيهات 🔊
+            </button>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v1.5.7</p>
+          </div>
+        </div>
+      )}
+
       {isUrgentAlert && (
         <div className="fixed top-0 left-0 w-full z-[100] animate-bounce pt-4 flex justify-center pointer-events-none">
           <button 

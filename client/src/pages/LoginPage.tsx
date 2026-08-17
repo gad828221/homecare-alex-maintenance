@@ -18,6 +18,16 @@ export default function Login() {
     setLoading(true);
     setError('');
 
+    // ✅ تفعيل الصوت إجبارياً عند أول ضغطة تفاعل (تسجيل الدخول)
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      // حفظ حالة تفعيل الصوت في الجلسة ليتم التقاطها في الصفحات التالية
+      sessionStorage.setItem('audio_forced_enabled', 'true');
+    } catch (err) { console.warn("Audio activation failed", err); }
+
     try {
       if (role === 'admin') {
         const res = await fetch(`${supabaseUrl}/rest/v1/users?select=*&username=eq.${encodeURIComponent(username)}`, {
