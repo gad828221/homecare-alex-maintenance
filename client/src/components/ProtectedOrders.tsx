@@ -1825,14 +1825,18 @@ export default function ProtectedOrders() {
     const total = techOrders.length;
     const completed = techOrders.filter((order) => order.status === 'completed').length;
     const archived = techOrders.filter((order) => isOldAndShouldArchive(order)).length;
-    const partsAlert = partsPercent >= 40;
-    const transportAlert = transportPercent >= 15;
+    const partsAlert = partsPercent > 40;
+    const transportAlert = transportPercent > 15;
+    const successRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const successAlert = total > 0 && successRate < 70;
     return {
       ...tech,
       total,
       completed,
       archived,
-      percentage: total > 0 ? Math.round((completed / total) * 100) : 0,
+      percentage: successRate,
+      successRate,
+      successAlert,
       totalInvoice,
       totalParts,
       totalTransport,
@@ -1848,10 +1852,11 @@ export default function ProtectedOrders() {
     const warnings = [
       tech.partsAlert ? `قطع الغيار ${tech.partsPercent.toFixed(1)}%` : '',
       tech.transportAlert ? `المواصلات ${tech.transportPercent.toFixed(1)}%` : '',
+      tech.successAlert ? `نسبة النجاح ${tech.successRate}% (المطلوب 70% أو أكثر)` : '',
     ].filter(Boolean).join('، ');
     if (!warnings) return showToast("مصروفات الفني ضمن الحدود المحددة", "info");
 
-    const message = `تنبيه مراجعة مصروفات\nالفني: ${tech.name}\nإجمالي الفواتير: ${tech.totalInvoice.toLocaleString()} ج.م\n${warnings}\nيرجى مراجعة تفاصيل المصروفات والتأكد من تسجيلها بدقة.`;
+    const message = `تنبيه متابعة أداء الفني\nالفني: ${tech.name}\nإجمالي الأوردرات: ${tech.total}\nنسبة النجاح الحالية: ${tech.successRate}%\nإجمالي الفواتير: ${tech.totalInvoice.toLocaleString()} ج.م\n${warnings}\nيرجى مراجعة المؤشرات وتصحيح البيانات أو استكمال الأوردرات المفتوحة.`;
     const pushResult = await sendExternalPush({
       event: 'system_alert',
       title: '⚠️ تنبيه مراجعة المصروفات',
@@ -1859,7 +1864,7 @@ export default function ProtectedOrders() {
       targetTags: [{ key: 'tech_name', value: tech.name }],
       data: { technician: tech.name, total_invoice: tech.totalInvoice, parts_percent: tech.partsPercent, transport_percent: tech.transportPercent },
     });
-    await addNotification('إنذار مصروفات فني', message);
+    await addNotification(tech.partsAlert || tech.transportAlert ? 'إنذار مصروفات فني' : 'إنذار أداء فني', message);
     showToast(pushResult.ok ? `✅ تم إرسال إنذار إلى ${tech.name}` : `⚠️ تم تسجيل الإنذار ولم يصل Push إلى ${tech.name}`, pushResult.ok ? 'success' : 'error');
   };
 
@@ -2718,7 +2723,7 @@ export default function ProtectedOrders() {
                 <div className="space-y-4">
                   <div className="max-h-[780px] overflow-y-auto space-y-4 pr-1">
                   {technicianExpenseStats.map((t) => (
-                      <div key={t.id || t.name} className={`flex flex-col gap-3 bg-slate-950/50 p-4 rounded-2xl border ${t.partsAlert || t.transportAlert ? 'border-rose-500/50' : 'border-slate-800/50'}`}>
+                      <div key={t.id || t.name} className={`flex flex-col gap-3 bg-slate-950/50 p-4 rounded-2xl border ${t.partsAlert || t.transportAlert || t.successAlert ? 'border-rose-500/50' : 'border-slate-800/50'}`}>
                         <div className="flex justify-between items-center">
                           <div className="flex flex-col">
                             <span className="text-sm font-bold text-white">{t.name}</span>
@@ -2754,11 +2759,15 @@ export default function ProtectedOrders() {
                             <p className="text-[10px] font-black text-amber-400">{t.totalTransport.toLocaleString()} ج.م</p>
                           </div>
                         </div>
-                        {(t.partsAlert || t.transportAlert) && (
+                        {(t.partsAlert || t.transportAlert || t.successAlert) && (
                           <div className="flex items-center justify-between gap-2 rounded-xl bg-rose-500/10 border border-rose-500/30 px-3 py-2">
                             <div className="flex items-center gap-2 text-[9px] text-rose-300 font-bold">
                               <AlertCircle size={14} />
-                              <span>{t.partsAlert ? 'قطع الغيار أعلى من 40%' : 'المواصلات أعلى من 15%'}</span>
+                              <span>{[
+                                t.partsAlert ? 'قطع الغيار أعلى من 40%' : '',
+                                t.transportAlert ? 'المواصلات أعلى من 15%' : '',
+                                t.successAlert ? `نسبة النجاح ${t.successRate}% (أقل من 70%)` : ''
+                              ].filter(Boolean).join('، ')}</span>
                             </div>
                             {isAdmin && <button onClick={() => sendExpenseWarning(t)} className="shrink-0 bg-rose-600 hover:bg-rose-700 text-white px-2 py-1.5 rounded-lg text-[9px] font-black flex items-center gap-1"><Send size={12} /> إرسال إنذار</button>}
                           </div>

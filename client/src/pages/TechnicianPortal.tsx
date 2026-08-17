@@ -11,6 +11,7 @@ import { useNotification } from "../components/EnhancedNotificationSystem";
 import TechnicianPerformance from "../components/TechnicianPerformance";
 import { createClient } from '@supabase/supabase-js';
 import { openWhatsAppDirectly } from '../utils/whatsapp';
+import { sendExternalPush } from '../utils/pushNotifications';
 
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -42,7 +43,17 @@ export default function TechnicianPortal() {
   const [audioEnabled, setAudioEnabled] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const alertInterval = useRef<any>(null);
-  const [stats, setStats] = useState({ active: 0, completed: 0, earnings: 0 });
+  const [stats, setStats] = useState({
+    active: 0,
+    completed: 0,
+    earnings: 0,
+    totalOrders: 0,
+    successRate: 0,
+    totalInvoice: 0,
+    partsPercent: 0,
+    transportPercent: 0
+  });
+  const [adminWarnings, setAdminWarnings] = useState<any[]>([]);
   const [showSettleModal, setShowSettleModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [showActionModal, setShowActionModal] = useState(false);
@@ -224,6 +235,21 @@ export default function TechnicianPortal() {
     setIsUrgentAlert(false);
   };
 
+  const fetchAdminWarnings = useCallback(async () => {
+    if (!techName) return;
+    try {
+      const data = await fetchAPI('notifications?select=id,action,details,created_at&order=created_at.desc&limit=100');
+      const warningActions = new Set(['إنذار مصروفات فني', 'إنذار أداء فني']);
+      const technicianMarker = `الفني: ${techName}`;
+      setAdminWarnings((data || []).filter((notification: any) => {
+        const details = String(notification.details || '');
+        return warningActions.has(notification.action) && details.includes(technicianMarker);
+      }));
+    } catch (err) {
+      console.error('Failed to load technician warnings:', err);
+    }
+  }, [techName]);
+
   const fetchData = useCallback(async () => {
     if (!techName || !isActive) return;
     try {
@@ -232,8 +258,23 @@ export default function TechnicianPortal() {
       setOrders(data);
       const active = data.filter((o: any) => o.status === 'pending' || o.status === 'in-progress').length;
       const completed = data.filter((o: any) => o.status === 'completed').length;
-      const earnings = data.filter((o: any) => o.status === 'completed').reduce((acc: number, o: any) => acc + (o.technician_share || 0), 0);
-      setStats({ active, completed, earnings });
+      const earnings = data.filter((o: any) => o.status === 'completed').reduce((acc: number, o: any) => acc + (Number(o.technician_share) || 0), 0);
+      const invoicedOrders = data.filter((o: any) => Number(o.total_amount) > 0);
+      const totalInvoice = invoicedOrders.reduce((sum: number, o: any) => sum + (Number(o.total_amount) || 0), 0);
+      const totalParts = invoicedOrders.reduce((sum: number, o: any) => sum + (Number(o.parts_cost) || 0), 0);
+      const totalTransport = invoicedOrders.reduce((sum: number, o: any) => sum + (Number(o.transport_cost) || 0), 0);
+      const successRate = data.length > 0 ? Math.round((completed / data.length) * 100) : 0;
+      setStats({
+        active,
+        completed,
+        earnings,
+        totalOrders: data.length,
+        successRate,
+        totalInvoice,
+        partsPercent: totalInvoice > 0 ? (totalParts / totalInvoice) * 100 : 0,
+        transportPercent: totalInvoice > 0 ? (totalTransport / totalInvoice) * 100 : 0
+      });
+      void fetchAdminWarnings();
 
       // إنذار المتأخرات للفني
       const delayedOrders = data.filter((o: any) => isDelayed(o));
@@ -243,6 +284,9 @@ export default function TechnicianPortal() {
 
         // إرسال إشعار خارجي للفني نفسه (مرة واحدة كل ساعة)
         const lastAlert = localStorage.getItem('last_delay_alert_tech');
+        const currentUserRaw = localStorage.getItem('currentUser');
+        let currentUser: any = null;
+        try { currentUser = currentUserRaw ? JSON.parse(currentUserRaw) : null; } catch { currentUser = null; }
         const now = new Date().getTime();
         if (!lastAlert || (now - parseInt(lastAlert)) > 3600000) {
           void sendExternalPush({
@@ -255,7 +299,7 @@ export default function TechnicianPortal() {
         }
       }
     } catch (err) { console.error(err); } finally { setLoading(false); }
-  }, [techName, isActive]);
+  }, [techName, isActive, fetchAdminWarnings]);
 
   useEffect(() => {
     if (isActive) {
@@ -301,6 +345,33 @@ export default function TechnicianPortal() {
       .subscribe();
     return () => { supabase.removeChannel(subscription); };
   }, [techName, addNotification, fetchData]);
+
+  useEffect(() => {
+    if (!techName) return;
+
+    // تحديث إنذارات المدير فور تسجيلها في لوحة التحكم
+    const warningChannel = supabase
+      .channel('technician-warning-channel')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, (payload) => {
+        const notification = payload.new as any;
+        const details = String(notification?.details || '');
+        const isForThisTechnician = details.includes(`الفني: ${techName}`);
+        const isWarning = notification?.action === 'إنذار مصروفات فني' || notification?.action === 'إنذار أداء فني';
+        if (isWarning && isForThisTechnician) {
+          void fetchAdminWarnings();
+          startUrgentAlert();
+          addNotification({
+            type: 'warning',
+            title: '⚠️ إنذار من الإدارة',
+            message: 'لديك إنذار يحتاج إلى مراجعة المصاريف أو نسبة الإنجاز.',
+            duration: 0
+          });
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(warningChannel); };
+  }, [techName, fetchAdminWarnings, addNotification]);
 
   useEffect(() => {
     if (!techName) return;
@@ -624,6 +695,40 @@ export default function TechnicianPortal() {
     return true;
   });
 
+  const adminWarningTypes = new Set<string>();
+  adminWarnings.forEach((notification: any) => {
+    const text = `${notification.action || ''} ${notification.details || ''}`;
+    if (text.includes('قطع الغيار')) adminWarningTypes.add('parts');
+    if (text.includes('المواصلات')) adminWarningTypes.add('transport');
+    if (text.includes('نسبة النجاح') || text.includes('أداء الفني')) adminWarningTypes.add('success');
+  });
+
+  const technicianWarnings = [
+    ...(stats.totalInvoice > 0 && stats.partsPercent > 40 ? [{
+      id: 'parts-expense',
+      type: 'parts',
+      title: 'مراجعة مصاريف قطع الغيار',
+      message: `قطع الغيار تمثل ${stats.partsPercent.toFixed(1)}% من إجمالي الفواتير، بينما الحد المسموح 40%.`,
+      value: stats.partsPercent,
+      source: adminWarningTypes.has('parts') ? 'إنذار مرسل من الإدارة' : 'مراقبة تلقائية'
+    }] : []),
+    ...(stats.totalInvoice > 0 && stats.transportPercent > 15 ? [{
+      id: 'transport-expense',
+      type: 'transport',
+      title: 'مراجعة مصاريف المواصلات',
+      message: `المواصلات تمثل ${stats.transportPercent.toFixed(1)}% من إجمالي الفواتير، بينما الحد المسموح 15%.`,
+      value: stats.transportPercent,
+      source: adminWarningTypes.has('transport') ? 'إنذار مرسل من الإدارة' : 'مراقبة تلقائية'
+    }] : []),
+    ...(stats.totalOrders > 0 && stats.successRate < 70 ? [{
+      id: 'success-rate',
+      type: 'success',
+      title: 'نسبة إنجاز الأوردرات منخفضة',
+      message: `نسبة نجاح أوردراتك الحالية ${stats.successRate}%، والمطلوب الوصول إلى 70% أو أكثر.`,
+      value: stats.successRate,
+      source: adminWarningTypes.has('success') ? 'إنذار مرسل من الإدارة' : 'مراقبة تلقائية'
+    }] : [])
+  ];
 
   if (!isActive) {
     return (
@@ -718,6 +823,40 @@ export default function TechnicianPortal() {
               تفعيل التنبيهات الصوتية 🔊
             </button>
           </div>
+        )}
+
+        {technicianWarnings.length > 0 && (
+          <section className="bg-gradient-to-br from-rose-950/70 via-slate-900 to-slate-900 border-2 border-rose-500/60 rounded-[1.5rem] p-4 shadow-xl shadow-rose-950/30 animate-in fade-in slide-in-from-top-3 duration-500" aria-live="assertive">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-600/20 border border-rose-500/40 flex items-center justify-center animate-pulse">
+                  <AlertCircle className="text-rose-400" size={22} />
+                </div>
+                <div>
+                  <h2 className="text-base font-black text-white">إنذارات تحتاج إلى مراجعة</h2>
+                  <p className="text-[10px] text-rose-200/80 mt-1">تختفي هذه الإنذارات تلقائياً عند تحسن المؤشرات.</p>
+                </div>
+              </div>
+              <span className="rounded-full bg-rose-500/20 text-rose-300 px-2.5 py-1 text-[10px] font-black">{technicianWarnings.length}</span>
+            </div>
+            <div className="space-y-3">
+              {technicianWarnings.map((warning: any) => (
+                <div key={warning.id} className="bg-slate-950/60 border border-rose-500/30 rounded-2xl p-3 flex items-start gap-3">
+                  <div className="mt-0.5 text-rose-400"><Bell size={16} /></div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-sm font-black text-white">{warning.title}</h3>
+                      <span className="text-[9px] font-bold text-rose-300 bg-rose-500/10 px-2 py-0.5 rounded-full">{warning.source}</span>
+                    </div>
+                    <p className="text-xs leading-6 text-slate-300 mt-1">{warning.message}</p>
+                    <div className="mt-2 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                      <div className="h-full bg-rose-500 rounded-full transition-all duration-700" style={{ width: `${Math.min(100, Math.max(0, warning.value))}%` }} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         )}
 
         {activeTab === 'orders' && (
