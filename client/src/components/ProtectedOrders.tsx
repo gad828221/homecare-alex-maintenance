@@ -1029,6 +1029,7 @@ export default function ProtectedOrders() {
 
   useEffect(() => {
     fetchData();
+    fetchNotifications();
 
     // إجبار وسم OneSignal للمدير فور الدخول
     runWithOneSignal(async (OneSignal: any) => {
@@ -1043,6 +1044,7 @@ export default function ProtectedOrders() {
     const interval = setInterval(() => {
       console.log("🔄 Auto-polling for new orders...");
       fetchData(true);
+      fetchNotifications();
     }, 10000);
     
     // اشتراك حي للأوردرات الجديدة لإصدار صوت تنبيه ملح للمدير
@@ -2747,7 +2749,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-slate-500 opacity-20">
             Maintenance Guide © 2026 - All Rights Reserved
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v1.7.0-manager-permissions</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v1.7.1-feedback-fix</div>
         </div>
       </div>
 
