@@ -987,6 +987,18 @@ export default function ProtectedOrders() {
     }
     try {
       await addNotification('tech_ping', techName);
+      
+      // ✅ إرسال إشعار Push للفني لضمان وصول التنبيه حتى لو التطبيق مغلق
+      const tech = technicians.find(t => t.name === techName);
+      if (tech) {
+        void sendExternalPush({
+          event: 'system_alert',
+          title: '🚨 تنبيه عاجل من الإدارة',
+          message: `يرجى فتح البرنامج فوراً، المدير يحاول التواصل معك!`,
+          targetUserIds: [`tech:${tech.id}`]
+        });
+      }
+      
       showToast(`جاري تنبيه الفني ${techName}...`, 'success');
     } catch (err) { console.error(err); }
   };

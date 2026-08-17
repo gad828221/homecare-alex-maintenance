@@ -121,7 +121,21 @@ export default function TechnicianPortal() {
     const storedUser = localStorage.getItem("currentUser");
     if (storedUser) {
       const user = JSON.parse(storedUser);
-      if (user.role === "tech" && user.techName) setTechName(user.techName);
+      if (user.role === "tech" && user.techName) {
+        setTechName(user.techName);
+        
+        // ✅ إضافة وسم OneSignal للفني لضمان وصول الإشعارات
+        if (typeof window !== 'undefined') {
+          const win = window as any;
+          win.OneSignalDeferred = win.OneSignalDeferred || [];
+          win.OneSignalDeferred.push(async (OneSignal: any) => {
+            await OneSignal.User.addTag('role', 'tech');
+            await OneSignal.User.addTag('tech_id', user.id?.toString());
+            await OneSignal.User.addTag('tech_name', user.techName);
+            console.log("✅ OneSignal Tags Set for Tech:", user.techName);
+          });
+        }
+      }
     }
   }, []);
 
