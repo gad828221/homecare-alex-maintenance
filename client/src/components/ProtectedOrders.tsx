@@ -205,6 +205,10 @@ export default function ProtectedOrders() {
   const [editingTech, setEditingTech] = useState<any>(null);
   const [editingPartner, setEditingPartner] = useState<any>(null);
   const [editingCash, setEditingCash] = useState<any>(null);
+  const [users, setUsers] = useState<any[]>([]);
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [editingUserAccount, setEditingUserAccount] = useState<any>(null);
+  const [userForm, setUserForm] = useState({ name: '', username: '', password: '', role: 'viewer', is_active: true });
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [filterTechStatus, setFilterTechStatus] = useState<'all' | 'active' | 'inactive'>('active');
   const [cashFilterDate, setCashFilterDate] = useState('');
@@ -373,7 +377,43 @@ export default function ProtectedOrders() {
     return role === 'admin' || role === 'manager';
   };
   const isViewer = userRole?.toLowerCase() === 'viewer';
-  const viewerBlockedTabs = ['technicians', 'reports', 'invoicesReview', 'partners', 'performance', 'feedback'];
+  const viewerBlockedTabs = ['technicians', 'reports', 'invoicesReview', 'partners', 'performance', 'feedback', 'permissions'];
+  
+  const saveUserAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (userRole !== 'admin') return showToast("ليس لديك صلاحية", "error");
+    try {
+      if (editingUserAccount) {
+        await fetchAPI(`users?id=eq.${editingUserAccount.id}`, { method: 'PATCH', body: JSON.stringify(userForm) });
+        showToast("✅ تم تحديث المستخدم", "success");
+      } else {
+        await fetchAPI('users', { method: 'POST', body: JSON.stringify(userForm) });
+        showToast("✅ تم إضافة المستخدم بنجاح", "success");
+      }
+      setShowUserModal(false);
+      fetchData();
+    } catch (err) { console.error(err); showToast("❌ حدث خطأ أثناء الحفظ", "error"); }
+  };
+
+  const deleteUserAccount = async (id: number, name: string) => {
+    if (userRole !== 'admin') return showToast("ليس لديك صلاحية", "error");
+    if (confirm(`هل أنت متأكد من حذف حساب ${name}؟`)) {
+      try {
+        await fetchAPI(`users?id=eq.${id}`, { method: 'DELETE' });
+        showToast("✅ تم حذف الحساب", "success");
+        fetchData();
+      } catch (err) { console.error(err); }
+    }
+  };
+
+  const toggleUserAccountStatus = async (user: any) => {
+    if (userRole !== 'admin') return showToast("ليس لديك صلاحية", "error");
+    try {
+      await fetchAPI(`users?id=eq.${user.id}`, { method: 'PATCH', body: JSON.stringify({ is_active: !user.is_active }) });
+      showToast(user.is_active ? "⚠️ تم إيقاف الحساب" : "✅ تم تفعيل الحساب", "info");
+      fetchData();
+    } catch (err) { console.error(err); }
+  };
   const sendFeedbackRequest = (order: any) => {
     if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
     if (!order.phone || !order.order_number) return showToast("بيانات العميل غير مكتملة", "error");
@@ -774,17 +814,19 @@ export default function ProtectedOrders() {
       setArchivedOrders(archivedOrders);
       setDeletedOrders(deletedOrders);
 
-      const [techsData, notificationsData, partnersData, cashData] = await Promise.all([
+      const [techsData, notificationsData, partnersData, cashData, usersData] = await Promise.all([
         fetchAPI('technicians?select=*'),
         fetchAPI('notifications?select=*&order=created_at.desc'),
         fetchAPI('partners?select=*&order=created_at.desc'),
-        fetchAPI('cash_ledger?select=*&order=date.desc,created_at.desc')
+        fetchAPI('cash_ledger?select=*&order=date.desc,created_at.desc'),
+        fetchAPI('users?select=*&order=created_at.desc')
       ]);
 
       setTechnicians(Array.isArray(techsData) ? techsData : []);
       setNotifications(Array.isArray(notificationsData) ? notificationsData : []);
       setPartners(Array.isArray(partnersData) ? partnersData : []);
       setCashLedger(Array.isArray(cashData) ? cashData : []);
+      setUsers(Array.isArray(usersData) ? usersData : []);
 
       let balance = 0;
       (cashData || []).forEach((entry: any) => {
@@ -2494,7 +2536,15 @@ export default function ProtectedOrders() {
         )}
 
         {activeTab === 'performance' && userRole !== 'viewer' && <TechnicianPerformance orders={orders} technicians={technicians} />}
-        {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions currentUser={currentUser} />}
+        {activeTab === 'permissions' && userRole === 'admin' && (
+          <AdminPermissions 
+            users={users} 
+            canEdit={userRole === 'admin'} 
+            onEdit={(u) => { setEditingUserAccount(u); setUserForm(u || { name: '', username: '', password: '', role: 'viewer', is_active: true }); setShowUserModal(true); }}
+            onDelete={deleteUserAccount}
+            onToggle={toggleUserAccountStatus}
+          />
+        )}
         <div className="mt-8 flex flex-col items-center gap-2">
           <div className="text-[10px] text-slate-500 opacity-20">
             Maintenance Guide © 2026 - All Rights Reserved
@@ -2612,6 +2662,49 @@ export default function ProtectedOrders() {
               </div>
               <button onClick={submitSettlement} className="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 rounded-lg font-bold">تأكيد التصفية</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showUserModal && userRole === 'admin' && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[200] p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-[2rem] p-8 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
+                <UserPlus className="text-orange-500" /> {editingUserAccount ? 'تعديل بيانات مستخدم' : 'إضافة مستخدم جديد'}
+              </h3>
+              <button onClick={() => setShowUserModal(false)} className="text-slate-500 hover:text-white"><X size={20} /></button>
+            </div>
+            <form onSubmit={saveUserAccount} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mr-2">الاسم الكامل</label>
+                <input type="text" value={userForm.name} onChange={e => setUserForm({...userForm, name: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-orange-500 transition-all" placeholder="مثلاً: أحمد محمد" required />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mr-2">اسم المستخدم (للدخول)</label>
+                <input type="text" value={userForm.username} onChange={e => setUserForm({...userForm, username: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-orange-500 transition-all" placeholder="username" required />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mr-2">كلمة المرور</label>
+                <input type="text" value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-orange-500 transition-all" placeholder="123456" required />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mr-2">الصلاحية (الدور)</label>
+                <select value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-orange-500 transition-all">
+                  <option value="admin">مدير عام (صلاحيات كاملة)</option>
+                  <option value="manager">مدير فرع (تعديل وتحصيل)</option>
+                  <option value="data-entry">مدخل بيانات (إضافة فقط)</option>
+                  <option value="viewer">مشاهد (رؤية فقط)</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2 py-2">
+                <input type="checkbox" id="user_active" checked={userForm.is_active} onChange={e => setUserForm({...userForm, is_active: e.target.checked})} className="w-4 h-4 rounded bg-slate-800 border-slate-700 text-orange-600 focus:ring-orange-500" />
+                <label htmlFor="user_active" className="text-sm text-slate-300 font-bold">الحساب نشط ويسمح له بالدخول</label>
+              </div>
+              <button type="submit" className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-black py-4 rounded-xl transition-all active:scale-95 shadow-xl shadow-orange-900/20 mt-4">
+                {editingUserAccount ? 'تحديث البيانات' : 'إنشاء الحساب الآن'}
+              </button>
+            </form>
           </div>
         </div>
       )}

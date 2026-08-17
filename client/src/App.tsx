@@ -99,12 +99,18 @@ function FloatingButtons() {
 }
 
 function AppContent() {
+  const currentPath = window.location.pathname;
+  // إخفاء أزرار الاتصال في صفحات الإدارة والعمل
+  const hideFloatingButtons = [
+    "/orders", "/tech-portal", "/data-entry", "/login"
+  ].includes(currentPath);
+
   return (
     <>
       <Suspense fallback={<LoadingFallback />}>
         <Router />
       </Suspense>
-      <FloatingButtons />
+      {!hideFloatingButtons && <FloatingButtons />}
       <NotificationPermissionButton />
       <PresenceManager />
     </>
