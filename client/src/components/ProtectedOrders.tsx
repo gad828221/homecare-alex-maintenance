@@ -1461,8 +1461,15 @@ export default function ProtectedOrders() {
   const deleteAllNotifications = async () => {
     if (userRole !== 'admin') return showToast("ليس لديك صلاحية", "error");
     if (confirm('هل أنت متأكد من حذف جميع الإشعارات نهائياً؟')) {
-      for (const n of notifications) await fetchAPI(`notifications?id=eq.${n.id}`, { method: 'DELETE' });
-      fetchNotifications();
+      try {
+        // ✅ مسح كافة الإشعارات دفعة واحدة عبر طلب واحد لسرعة فائقة (Turbo Clear)
+        await fetchAPI('notifications?id=gt.0', { method: 'DELETE' });
+        showToast("✅ تم مسح جميع الإشعارات بنجاح", "success");
+        fetchNotifications();
+      } catch (err) {
+        console.error(err);
+        showToast("❌ حدث خطأ أثناء مسح الإشعارات", "error");
+      }
     }
   };
   const clearFilters = () => { setSearchTerm(''); setFilterStatus('all'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); setFilterWarranty('all'); };
@@ -2514,44 +2521,56 @@ export default function ProtectedOrders() {
         )}
 
         {activeTab === 'notifications' && (
-          <div className="space-y-3">
-            <div className="flex justify-between"><h2 className="text-xl font-bold">🔔 سجل الإشعارات</h2>{userRole === 'admin' && notifications.length>0 && <button onClick={deleteAllNotifications} className="bg-red-500/20 text-red-400 px-3 py-1 rounded-lg text-sm flex items-center gap-1"><Trash size={14}/> مسح الكل</button>}</div>
-            {notifications.map(notif=>{
-              const isLogin = notif.action?.includes('دخول');
-              const isOrder = notif.action?.includes('أوردر') || notif.action?.includes('طلب');
-              const isMoney = notif.action?.includes('خزنة') || notif.action?.includes('أرباح');
-              
-              return (
-                <div key={notif.id} className={`bg-slate-900 rounded-2xl p-4 flex justify-between items-center border-l-4 ${
-                  isLogin ? 'border-blue-500' : isOrder ? 'border-orange-500' : isMoney ? 'border-emerald-500' : 'border-slate-700'
-                }`}>
-                  <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      isLogin ? 'bg-blue-500/10 text-blue-400' : isOrder ? 'bg-orange-500/10 text-orange-400' : isMoney ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-400'
-                    }`}>
-                      {isLogin ? <LogIn size={18} /> : isMoney ? <DollarSign size={18} /> : <Bell size={18} />}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs font-black px-2 py-0.5 rounded-full ${
-                          isLogin ? 'bg-blue-500/20 text-blue-400' : isOrder ? 'bg-orange-500/20 text-orange-400' : isMoney ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'
-                        }`}>
-                          {notif.action}
-                        </span>
-                        <span className="text-[10px] text-slate-500">{new Date(notif.created_at).toLocaleString('ar-EG')}</span>
+          <div className="space-y-3 w-full max-w-full overflow-hidden">
+            <div className="flex justify-between items-center bg-slate-900/50 border border-slate-800 p-4 rounded-2xl">
+              <h2 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">🔔 سجل الإشعارات</h2>
+              {userRole === 'admin' && notifications.length > 0 && (
+                <button 
+                  onClick={deleteAllNotifications} 
+                  className="bg-red-500/20 hover:bg-red-500/30 text-red-400 px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all shadow-lg active:scale-95"
+                >
+                  <Trash size={14}/> مسح الكل (فوري)
+                </button>
+              )}
+            </div>
+            <div className="space-y-2.5">
+              {notifications.map(notif=>{
+                const isLogin = notif.action?.includes('دخول');
+                const isOrder = notif.action?.includes('أوردر') || notif.action?.includes('طلب');
+                const isMoney = notif.action?.includes('خزنة') || notif.action?.includes('أرباح');
+                
+                return (
+                  <div key={notif.id} className={`bg-slate-900 rounded-2xl p-4 flex justify-between items-center border-l-4 w-full ${
+                    isLogin ? 'border-blue-500' : isOrder ? 'border-orange-500' : isMoney ? 'border-emerald-500' : 'border-slate-700'
+                  }`}>
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <div className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center ${
+                        isLogin ? 'bg-blue-500/10 text-blue-400' : isOrder ? 'bg-orange-500/10 text-orange-400' : isMoney ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-400'
+                      }`}>
+                        {isLogin ? <LogIn size={18} /> : isMoney ? <DollarSign size={18} /> : <Bell size={18} />}
                       </div>
-                      <p className="text-sm text-slate-300 mt-1 font-medium">{notif.details}</p>
+                      <div className="overflow-hidden">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                            isLogin ? 'bg-blue-500/20 text-blue-400' : isOrder ? 'bg-orange-500/20 text-orange-400' : isMoney ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'
+                          }`}>
+                            {notif.action}
+                          </span>
+                          <span className="text-[9px] text-slate-500">{new Date(notif.created_at).toLocaleString('ar-EG')}</span>
+                        </div>
+                        <p className="text-xs md:text-sm text-slate-300 mt-1 font-medium truncate">{notif.details}</p>
+                      </div>
                     </div>
+                    {userRole === 'admin' && (
+                      <button onClick={()=>deleteNotification(notif.id)} className="w-8 h-8 shrink-0 rounded-lg bg-slate-800 text-slate-500 hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center ml-2">
+                        <Trash2 size={14}/>
+                      </button>
+                    )}
                   </div>
-                  {userRole === 'admin' && (
-                    <button onClick={()=>deleteNotification(notif.id)} className="w-8 h-8 rounded-lg bg-slate-800 text-slate-500 hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center">
-                      <Trash2 size={14}/>
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-            {notifications.length===0 && <div className="text-center py-8 text-slate-400">لا توجد إشعارات</div>}
+                );
+              })}
+            </div>
+            {notifications.length===0 && <div className="text-center py-12 text-slate-500 text-sm">لا توجد إشعارات حالياً</div>}
           </div>
         )}
 
@@ -2711,7 +2730,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-slate-500 opacity-20">
             Maintenance Guide © 2026 - All Rights Reserved
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v1.6.7-data-integrity</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v1.6.8-turbo-notifications</div>
         </div>
       </div>
 
