@@ -462,14 +462,20 @@ export default function ProtectedOrders() {
   const saveUserAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     if (userRole !== 'admin') return showToast("ليس لديك صلاحية", "error");
+    
+    // 🛡️ حماية من التكرار
+    const isDuplicate = !editingUserAccount && users.some(u => 
+      u.username.toLowerCase() === userForm.username.toLowerCase() || 
+      u.name.toLowerCase() === userForm.name.toLowerCase()
+    );
+    if (isDuplicate) return showToast("⚠️ هذا المستخدم موجود بالفعل بنفس الاسم أو اسم المستخدم", "error");
+
     try {
       if (editingUserAccount) {
         await fetchAPI(`users?id=eq.${editingUserAccount.id}`, { method: 'PATCH', body: JSON.stringify(userForm) });
         
-        // ✅ إذا كان فني، نقوم بتحديثه في جدول الفنيين أيضاً
         if (userForm.role === 'tech') {
           const techData = { name: userForm.name, username: userForm.username, password: userForm.password, is_active: userForm.is_active };
-          // البحث عن الفني بنفس اسم المستخدم لتحديثه
           const existingTechs = await fetchAPI(`technicians?username=eq.${encodeURIComponent(userForm.username)}`);
           if (existingTechs && existingTechs.length > 0) {
             await fetchAPI(`technicians?id=eq.${existingTechs[0].id}`, { method: 'PATCH', body: JSON.stringify(techData) });
@@ -477,12 +483,10 @@ export default function ProtectedOrders() {
             await fetchAPI('technicians', { method: 'POST', body: JSON.stringify({ ...techData, specialization: 'عام', profit_percentage: 50 }) });
           }
         }
-        
         showToast("✅ تم تحديث المستخدم", "success");
       } else {
         await fetchAPI('users', { method: 'POST', body: JSON.stringify(userForm) });
         
-        // ✅ إذا كان فني جديد، نقوم بإضافته لجدول الفنيين تلقائياً
         if (userForm.role === 'tech') {
           await fetchAPI('technicians', { 
             method: 'POST', 
@@ -496,7 +500,6 @@ export default function ProtectedOrders() {
             }) 
           });
         }
-        
         showToast("✅ تم إضافة المستخدم بنجاح", "success");
       }
       setShowUserModal(false);
@@ -1381,6 +1384,14 @@ export default function ProtectedOrders() {
   const saveTechnician = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
+    
+    // 🛡️ حماية من التكرار
+    const isDuplicate = !editingTech && technicians.some(t => 
+      t.name.toLowerCase() === techForm.name.toLowerCase() || 
+      (techForm.username && t.username?.toLowerCase() === techForm.username.toLowerCase())
+    );
+    if (isDuplicate) return showToast("⚠️ هذا الفني موجود بالفعل بنفس الاسم", "error");
+
     const oldTech = editingTech ? technicians.find(t => t.id === editingTech.id) : null;
     const percentageChanged = oldTech && oldTech.profit_percentage !== techForm.profit_percentage;
     try {
@@ -2700,7 +2711,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-slate-500 opacity-20">
             Maintenance Guide © 2026 - All Rights Reserved
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v1.6.6-sync-technicians</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v1.6.7-data-integrity</div>
         </div>
       </div>
 
