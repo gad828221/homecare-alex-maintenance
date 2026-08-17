@@ -236,7 +236,7 @@ export default function PickupReceiptPage() {
     const receiptUrl = window.location.href;
     
     // رسالة تحتوي فقط على الرابط مع نص بسيط (قابل للنسخ)
-    const message = `📄 *إيصال سحب جهاز - Maintenance Guide*\n\n🔗 رابط الإيصال:\n${receiptUrl}\n\n✨ شكراً لثقتك بنا`;
+    const message = `📋 *إيصال سحب جهاز رقمي* 📋\n━━━━━━━━━━━━━━━━━━━━━━\n👤 *العميل:* ${order.customer_name}\n🔧 *الجهاز:* ${order.device_type} - ${order.brand}\n🔗 *رابط إيصال السحب الخاص بك:* \n${receiptUrl}\n\n💡 *هذا الإيصال يضمن حقك في استلام الجهاز.* \n━━━━━━━━━━━━━━━━━━━━━━\n✨ *HomeCare Maintenance - في خدمتكم دائماً* ✨`;
 
     const phone = formatPhoneForWhatsApp(order.phone);
     openWhatsAppDirectly(phone, message);

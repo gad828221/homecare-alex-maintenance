@@ -7,6 +7,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { EnhancedNotificationProvider } from "./components/EnhancedNotificationSystem";
 import { Phone, MessageCircle } from "lucide-react";
 import NotificationPermissionButton from "./components/NotificationPermissionButton";
+import PresenceManager from "./components/PresenceManager";
 
 const Home = lazy(() => import("./pages/Home"));
 const Login = lazy(() => import("./pages/LoginPage"));
@@ -105,6 +106,7 @@ function AppContent() {
       </Suspense>
       <FloatingButtons />
       <NotificationPermissionButton />
+      <PresenceManager />
     </>
   );
 }

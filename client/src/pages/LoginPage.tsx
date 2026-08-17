@@ -41,9 +41,21 @@ export default function Login() {
             name: user.name,
             role: user.role
           }));
-          localStorage.setItem('userRole', user.role);
+                    localStorage.setItem('userRole', user.role);
           
-
+          // تسجيل دخول المستخدم في الإشعارات
+          try {
+            await fetch(`${supabaseUrl}/rest/v1/notifications`, {
+              method: 'POST',
+              headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'تسجيل دخول',
+                details: `المستخدم ${user.name} قام بفتح البرنامج الآن`,
+                user_name: user.name,
+                created_at: new Date().toISOString()
+              })
+            });
+          } catch (err) { console.error(err); }
           
           window.location.href = user.role === 'data-entry' ? '/data-entry' : '/orders';
         } else {
@@ -72,10 +84,22 @@ export default function Login() {
             role: 'tech',
             techName: tech.name
           }));
-          localStorage.setItem('userRole', 'tech');
+                    localStorage.setItem('userRole', 'tech');
           localStorage.setItem('techName', tech.name);
           
-
+          // تسجيل دخول الفني في الإشعارات
+          try {
+            await fetch(`${supabaseUrl}/rest/v1/notifications`, {
+              method: 'POST',
+              headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'تسجيل دخول فني',
+                details: `الفني ${tech.name} قام بفتح البرنامج الآن`,
+                user_name: tech.name,
+                created_at: new Date().toISOString()
+              })
+            });
+          } catch (err) { console.error(err); }
           
           window.location.href = '/tech-portal';
         } else {

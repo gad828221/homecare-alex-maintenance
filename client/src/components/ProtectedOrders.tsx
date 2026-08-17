@@ -235,6 +235,7 @@ export default function ProtectedOrders() {
   });
   const [stats, setStats] = useState({ pending: 0, inProgress: 0, completed: 0, cancelled: 0, totalIncome: 0 });
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
 
 
   const [userRole, setUserRole] = useState<string>('');
@@ -443,7 +444,7 @@ export default function ProtectedOrders() {
     const delayedCount = orders.filter(o => isDelayed(o)).length;
     const noTechCount = orders.filter(o => !o.technician || o.technician === '-' || o.technician === '').length;
 
-    const message = `📊 *تقرير ملخص العمل اليومي* 📊\n\n📅 *التاريخ:* ${new Date().toLocaleDateString('ar-EG')}\n\n✅ *إنجازات اليوم:* \n- أوردرات جديدة: ${todayOrders.length}\n- أوردرات اكتملت: ${completedToday}\n- إجمالي التحصيل: ${incomeToday} ج.م\n\n⚠️ *الحالة الحالية:* \n- أوردرات قيد العمل: ${pendingCount}\n- أوردرات متأخرة: ${delayedCount}\n- أوردرات بدون فني: ${noTechCount}\n\n🚀 يرجى متابعة الأوردرات المتأخرة لضمان جودة الخدمة.`;
+    const message = `📊 *ملخص سير العمل اليومي* 📊\n━━━━━━━━━━━━━━━━━━━━━━\n📅 *التاريخ:* ${new Date().toLocaleDateString('ar-EG')}\n\n✅ *إحصائيات الإنجاز:* \n🔹 طلبات جديدة: ${todayOrders.length}\n🔹 طلبات مكتملة: ${completedToday}\n💰 إجمالي التحصيل: ${incomeToday.toLocaleString()} ج.م\n\n⚠️ *حالة الطلبات القائمة:* \n🔸 قيد العمل: ${pendingCount}\n🚨 طلبات متأخرة: ${delayedCount}\n👤 بدون فني: ${noTechCount}\n━━━━━━━━━━━━━━━━━━━━━━\n🚀 *نعمل معاً لتقديم أفضل خدمة عملاء.*`;
 
     notifyAdmin(message);
   };
@@ -654,7 +655,7 @@ export default function ProtectedOrders() {
       const closingBalance = openingBalance + totalIncome - totalExpense - totalProfitDist;
 
       // 4. بناء نص التقرير
-      const reportText = `📊 *تقرير الخزنة اليومي* 📊\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📅 *التاريخ:* ${targetDate}\n\n💰 *رصيد افتتاح الخزنة:* ${openingBalance.toLocaleString()} ج.م\n💸 *مصاريف اليوم:* ${totalExpense.toLocaleString()} ج.م\n📈 *أرباح اليوم:* ${totalIncome.toLocaleString()} ج.م\n📤 *توزيعات الأرباح:* ${totalProfitDist.toLocaleString()} ج.م\n✅ *رصيد ختامي:* ${closingBalance.toLocaleString()} ج.م\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📞 للاستفسار: 01278885772\n✨ نظام إدارة الصيانة - تقرير يومي`;
+      const reportText = `🏦 *التقرير المالي اليومي - الخزنة* 🏦\n━━━━━━━━━━━━━━━━━━━━━━\n📅 *تاريخ التقرير:* ${targetDate}\n\n💰 *رصيد الافتتاح:* ${openingBalance.toLocaleString()} ج.م\n📈 *إجمالي الإيرادات:* ${totalIncome.toLocaleString()} ج.م\n📉 *إجمالي المصروفات:* ${totalExpense.toLocaleString()} ج.م\n📤 *الأرباح الموزعة:* ${totalProfitDist.toLocaleString()} ج.م\n━━━━━━━━━━━━━━━━━━━━━━\n✅ *الرصيد الختامي الحالي:* ${closingBalance.toLocaleString()} ج.م\n━━━━━━━━━━━━━━━━━━━━━━\n✨ *HomeCare Financial System* ✨`;
 
       const activePartners = partners.filter(p => p.is_active && p.phone);
       if (activePartners.length === 0) {
@@ -671,7 +672,7 @@ export default function ProtectedOrders() {
         if (!phone.startsWith('20')) phone = '20' + phone;
         openWhatsApp(partner.phone, reportText);
       }
-      showToast("'", "info");
+      showToast("فشل تنفيذ العملية", "error");
     } catch (err) {
       console.error(err);
       showToast("ليس لديك صلاحية", "error");
@@ -838,10 +839,21 @@ export default function ProtectedOrders() {
       })
       .subscribe();
 
+    // اشتراك تتبع المتواجدين حالياً
+    const presenceChannel = supabase.channel('online-users');
+    presenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        const users = Object.values(state).flat();
+        setOnlineUsers(users);
+      })
+      .subscribe();
+
     return () => { 
       clearInterval(interval);
       supabase.removeChannel(channel); 
       supabase.removeChannel(alertChannel);
+      supabase.removeChannel(presenceChannel);
     };
   }, [fetchData, userRole]);
 
@@ -923,7 +935,7 @@ export default function ProtectedOrders() {
       case 'cancelled': statusMessage = "❌ تم إلغاء طلب الصيانة. للاستفسار، يرجى الاتصال بنا."; break;
       default: return;
     }
-    const message = `📢 *تحديث حالة طلب الصيانة* 📢\n\n🔢 *رقم الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n📝 *الحالة الجديدة:* ${statusMessage}\n\nشكراً لتواصلك معنا. 🌟`;
+    const message = `📢 *تحديث هام بخصوص طلب الصيانة* 📢\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الطلب:* ${order.order_number}\n👤 *عزيزنا العميل:* ${order.customer_name}\n\n${statusMessage}\n\n🌟 *شكراً لثقتكم في HomeCare Maintenance. نحن دائماً في خدمتكم.*`;
     openWhatsApp(order.phone, message);
   };
 
@@ -947,13 +959,13 @@ export default function ProtectedOrders() {
                        newStatus === 'in-progress' ? 'قيد التنفيذ 🔧' :
                        newStatus === 'inspected' ? 'تم الكشف 💰' :
                        newStatus === 'deferred' ? 'مؤجل ⏰' : newStatus;
-      const adminMsg = `📦 *تحديث حالة أوردر* 📦\n\n👤 العميل: ${order.customer_name}\n🔄 الحالة الجديدة: ${statusAr}\n🔢 رقم الأوردر: ${order.order_number}`;
+      const adminMsg = `🔄 *تحديث حالة طلب* 🔄\n━━━━━━━━━━━━━━━━━━━━━━\n👤 *العميل:* ${order.customer_name}\n🔢 *رقم الطلب:* ${order.order_number}\n📍 *الحالة الجديدة:* ${statusAr}\n⏰ *الوقت:* ${new Date().toLocaleTimeString('ar-EG')}\n━━━━━━━━━━━━━━━━━━━━━━`;
       notifyAdmin(adminMsg);
 
       if (order.technician && (newStatus === 'in-progress' || newStatus === 'completed')) {
         const tech = technicians.find(t => t.name === order.technician);
         if (tech && tech.phone) {
-          const techMsg = `🔧 *تحديث في أوردرك* 🔧\n\nالعميل: ${order.customer_name}\nالحالة: ${statusAr}\nرقم الأوردر: ${order.order_number}`;
+          const techMsg = `🔧 *تنبيه للفني: تحديث طلب* 🔧\n━━━━━━━━━━━━━━━━━━━━━━\n👤 *العميل:* ${order.customer_name}\n🔢 *رقم الطلب:* ${order.order_number}\n🔄 *الحالة المحدثة:* ${statusAr}\n📌 يرجى متابعة الإجراءات اللازمة.`;
           sendWhatsApp(tech.phone, techMsg);
           void sendExternalPush({
             event: 'order_status_changed',
@@ -1057,7 +1069,7 @@ export default function ProtectedOrders() {
         if (orderToSave.technician) {
           const tech = technicians.find(t => t.name === orderToSave.technician);
           if (tech && tech.phone) {
-            const techMsg = `تم تحديث بيانات الأوردر الخاص بالعميل: ${formData.customer_name}\nالجهاز: ${finalDevice}\nالعنوان: ${formData.address}`;
+            const techMsg = `📝 *تحديث بيانات الأوردر* 📝\n━━━━━━━━━━━━━━━━━━━━━━\n👤 *العميل:* ${formData.customer_name}\n🔧 *الجهاز:* ${finalDevice}\n📍 *العنوان:* ${formData.address}\n📌 تم تحديث البيانات، يرجى المراجعة.`;
             notifyTechnician(tech.phone, tech.name, techMsg);
             void sendExternalPush({
               event: 'technician_assigned',
@@ -1075,7 +1087,7 @@ export default function ProtectedOrders() {
         await fetchAPI('orders', { method: 'POST', body: JSON.stringify(orderToSave) });
         await addNotification('إضافة أوردر', `تم إضافة أوردر جديد للعميل ${formData.customer_name}`);
 
-        const adminMsg = `🆕 *أوردر جديد* 🆕\n\n👤 العميل: ${formData.customer_name}\n📞 الهاتف: ${formData.phone}\n🔧 الجهاز: ${finalDevice} - ${finalBrand}\n📍 العنوان: ${formData.address}\n👨‍🔧 الفني: ${orderToSave.technician || 'غير معين'}\n🔢 رقم الأوردر: ${orderToSave.order_number}\n📝 المشكلة: ${formData.problem_description || 'بدون'}`;
+        const adminMsg = `🆕 *إشعار: طلب صيانة جديد* 🆕\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الطلب:* ${orderToSave.order_number}\n👤 *العميل:* ${formData.customer_name}\n📱 *الهاتف:* ${formData.phone}\n🔧 *الجهاز:* ${finalDevice} - ${finalBrand}\n📍 *العنوان:* ${formData.address}\n👨‍🔧 *الفني:* ${orderToSave.technician || 'غير معين'}\n📝 *المشكلة:* ${formData.problem_description || 'لا يوجد وصف'}\n━━━━━━━━━━━━━━━━━━━━━━`;
         notifyAdmin(adminMsg);
         void sendExternalPush({
           event: 'new_order',
@@ -1088,7 +1100,7 @@ export default function ProtectedOrders() {
         if (orderToSave.technician) {
           const tech = technicians.find(t => t.name === orderToSave.technician);
           if (tech && tech.phone) {
-            const techMsg = `العميل: ${formData.customer_name}\nالجهاز: ${finalDevice}\nالعنوان: ${formData.address}\nرقم الأوردر: ${orderToSave.order_number}`;
+            const techMsg = `🔧 *تنبيه: أوردر جديد لك* 🔧\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الطلب:* ${orderToSave.order_number}\n👤 *العميل:* ${formData.customer_name}\n🔧 *الجهاز:* ${finalDevice}\n📍 *العنوان:* ${formData.address}\n📌 يرجى مراجعة التفاصيل في بوابتك الخاصة.`;
             notifyTechnician(tech.phone, tech.name, techMsg);
             void sendExternalPush({
               event: 'technician_assigned',
@@ -1166,7 +1178,7 @@ export default function ProtectedOrders() {
 
   const copyTechLink = async (tech: any) => {
     const loginUrl = `${window.location.origin}/login`;
-    const message = `🔧 *بيانات دخول بوابة الفنيين* 🔧\n━━━━━━━━━━━━━━━━━━━━━━\n👤 *الفني:* ${tech.name}\n🔗 *رابط الدخول:* ${loginUrl}\n👤 *اسم المستخدم:* ${tech.username || tech.name}\n🔑 *كلمة المرور:* ${tech.password}\n━━━━━━━━━━━━━━━━━━━━━━\n\n📝 *شرح الاستخدام:*\n1️⃣ اضغط على رابط الدخول أعلاه.\n2️⃣ اختر دور "🔧 الفني (Technician)".\n3️⃣ أدخل اسم المستخدم وكلمة المرور الخاصة بك.\n4️⃣ ستظهر لك الأوردرات الموكلة إليك.\n5️⃣ يمكنك:\n   • الاتصال بالعميل\n   • بدء العمل\n   • تصفية الأوردر بعد الإكمال\n   • كشف بقيمة، تأجيل، إلغاء، أو إضافة تعليق\n\nشكراً لتعاونك. 🌟`;
+    const message = `🔧 *بيانات الدخول الرسمية - بوابة الفنيين* 🔧\n━━━━━━━━━━━━━━━━━━━━━━\n👤 *الفني:* ${tech.name}\n🔗 *رابط الدخول:* ${loginUrl}\n👤 *اسم المستخدم:* ${tech.username || tech.name}\n🔑 *كلمة المرور:* ${tech.password}\n━━━━━━━━━━━━━━━━━━━━━━\n\n📖 *دليل البدء السريع:*\n1️⃣ افتح الرابط واختر دور "🔧 الفني".\n2️⃣ سجل دخولك بالبيانات أعلاه.\n3️⃣ ابدأ بمتابعة الأوردرات الموكلة إليك فوراً.\n\n✨ *HomeCare Team - معاً للقمة* ✨`;
     await navigator.clipboard.writeText(message);
     setCopiedId(tech.id);
     setTimeout(() => setCopiedId(null), 3000);
@@ -1274,7 +1286,7 @@ export default function ProtectedOrders() {
       setReportData(data || []);
     } catch (err) {
       console.error(err);
-      showToast("'", "info");
+      showToast("فشل تنفيذ العملية", "error");
     } finally {
       setReportLoading(false);
     }
@@ -1335,7 +1347,7 @@ export default function ProtectedOrders() {
       setReportData(finalData.map(order => ({ ...order, date: order.created_at.split('T')[0] })));
     } catch (err) {
       console.error(err);
-      showToast("'", "info");
+      showToast("فشل تنفيذ العملية", "error");
     } finally {
       setReportLoading(false);
     }
@@ -1371,7 +1383,7 @@ export default function ProtectedOrders() {
         ? ['رقم الأوردر', 'العميل', 'الجهاز', 'الماركة', 'الفني', 'سبب الإلغاء', 'التاريخ']
         : ['رقم الأوردر', 'العميل', 'الهاتف', 'الجهاز', 'الماركة', 'الفني', 'سبب الإلغاء', 'التاريخ']);
       setReportData(filtered.map(order => ({ ...order, date: order.created_at.split('T')[0] })));
-    } catch (err) { console.error(err); showToast("'", "info"); } finally { setReportLoading(false); }
+    } catch (err) { console.error(err); showToast("فشل تنفيذ العملية", "error"); } finally { setReportLoading(false); }
   };
 
   const fetchTechPerformanceReport = async () => {
@@ -1403,7 +1415,7 @@ export default function ProtectedOrders() {
       }));
       setReportColumns(['الفني', 'إجمالي الأوردرات', 'مكتمل', 'ملغي', 'متوسط الوقت (ساعات)']);
       setReportData(report);
-    } catch (err) { console.error(err); showToast("'", "info"); } finally { setReportLoading(false); }
+    } catch (err) { console.error(err); showToast("فشل تنفيذ العملية", "error"); } finally { setReportLoading(false); }
   };
 
   const fetchProfitsReport = async () => {
@@ -1424,7 +1436,7 @@ export default function ProtectedOrders() {
       const report = Array.from(partnerMap.entries()).map(([name, total]) => ({ name, total }));
       setReportColumns(['الشريك', 'إجمالي الأرباح (ج.م)']);
       setReportData(report);
-    } catch (err) { console.error(err); showToast("'", "info"); } finally { setReportLoading(false); }
+    } catch (err) { console.error(err); showToast("فشل تنفيذ العملية", "error"); } finally { setReportLoading(false); }
   };
 
   const fetchExpensesReport = async () => {
@@ -1439,7 +1451,7 @@ export default function ProtectedOrders() {
       if (error) throw error;
       setReportColumns(['التاريخ', 'الوصف', 'المبلغ (ج.م)']);
       setReportData(data || []);
-    } catch (err) { console.error(err); showToast("'", "info"); } finally { setReportLoading(false); }
+    } catch (err) { console.error(err); showToast("فشل تنفيذ العملية", "error"); } finally { setReportLoading(false); }
   };
 
   const fetchComparisonReport = async () => {
@@ -1453,11 +1465,11 @@ export default function ProtectedOrders() {
       const totalProfitDist = (profitDistData||[]).reduce((s,p)=>s+p.amount,0);
       setReportData([{ الإيرادات: totalIncome, المصروفات: totalExpense, توزيع_الأرباح: totalProfitDist, صافي_الربح: totalIncome - totalExpense - totalProfitDist }]);
       setReportColumns(['الإيرادات (ج.م)', 'المصروفات (ج.م)', 'توزيع الأرباح (ج.م)', 'صافي الربح (ج.م)']);
-    } catch (err) { console.error(err); showToast("'", "info"); } finally { setReportLoading(false); }
+    } catch (err) { console.error(err); showToast("فشل تنفيذ العملية", "error"); } finally { setReportLoading(false); }
   };
 
   const generateReport = () => {
-    if (!startDate || !endDate) { showToast("'", "info"); return; }
+    if (!startDate || !endDate) { showToast("يرجى تحديد الفترة الزمنية للتقرير", "error"); return; }
     switch (reportType) {
       case 'cash': fetchCashReport(); break;
       case 'pending_orders': fetchPendingOrdersReport(); break;
@@ -1470,7 +1482,7 @@ export default function ProtectedOrders() {
   };
 
   const exportToCSV = () => {
-    if (!reportData.length) { showToast("'", "info"); return; }
+    if (!reportData.length) { showToast("لا توجد بيانات متاحة للتصدير حالياً", "info"); return; }
     const headers = reportColumns.join(',');
     const rows = reportData.map(row => reportColumns.map(col => {
       let val = '';
@@ -1533,7 +1545,43 @@ export default function ProtectedOrders() {
       <div className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 px-4 py-3">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3"><LayoutDashboard className="w-6 h-6 text-orange-500" /><div><h1 className="text-lg font-bold text-white">لوحة تحكم المدير</h1><p className="text-xs text-slate-400">{currentUser?.name || 'مدير النظام'}</p></div></div>
+          
+          {/* قسم المتواجدين حالياً */}
+          <div className="hidden md:flex items-center gap-4 bg-slate-800/50 px-4 py-2 rounded-2xl border border-slate-700">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">المتواجدون الآن ({onlineUsers.length})</span>
+            </div>
+            <div className="flex -space-x-2 rtl:space-x-reverse">
+              {onlineUsers.slice(0, 5).map((user, idx) => (
+                <div 
+                  key={idx} 
+                  className="w-8 h-8 rounded-full bg-slate-700 border-2 border-slate-900 flex items-center justify-center text-[10px] font-bold text-white shadow-lg"
+                  title={`${user.name} (${user.role})`}
+                >
+                  {user.name?.substring(0, 2)}
+                </div>
+              ))}
+              {onlineUsers.length > 5 && (
+                <div className="w-8 h-8 rounded-full bg-slate-600 border-2 border-slate-900 flex items-center justify-center text-[10px] font-bold text-white shadow-lg">
+                  +{onlineUsers.length - 5}
+                </div>
+              )}
+            </div>
+          </div>
+
           <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"><LogOut className="w-5 h-5" /></button>
+        </div>
+        
+        {/* نسخة الموبايل من المتواجدين */}
+        <div className="md:hidden mt-2 flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+          <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+          <span className="text-[9px] font-bold text-slate-500 whitespace-nowrap">نشط:</span>
+          {onlineUsers.map((user, idx) => (
+            <span key={idx} className="text-[9px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full whitespace-nowrap border border-slate-700">
+              {user.name}
+            </span>
+          ))}
         </div>
       </div>
 
@@ -2094,12 +2142,41 @@ export default function ProtectedOrders() {
         {activeTab === 'notifications' && (
           <div className="space-y-3">
             <div className="flex justify-between"><h2 className="text-xl font-bold">🔔 سجل الإشعارات</h2>{userRole === 'admin' && notifications.length>0 && <button onClick={deleteAllNotifications} className="bg-red-500/20 text-red-400 px-3 py-1 rounded-lg text-sm flex items-center gap-1"><Trash size={14}/> مسح الكل</button>}</div>
-            {notifications.map(notif=>(
-              <div key={notif.id} className="bg-slate-900 rounded-xl p-4 flex justify-between items-center">
-                <div><span className="text-orange-400 font-semibold">{notif.action}</span><span className="mx-2 text-slate-600">|</span><span className="text-slate-300">{notif.details}</span><div className="text-xs text-slate-500 mt-1">{new Date(notif.created_at).toLocaleString('ar-EG')}</div></div>
-                {userRole === 'admin' && <button onClick={()=>deleteNotification(notif.id)} className="text-red-400"><Trash size={16}/></button>}
-              </div>
-            ))}
+            {notifications.map(notif=>{
+              const isLogin = notif.action?.includes('دخول');
+              const isOrder = notif.action?.includes('أوردر') || notif.action?.includes('طلب');
+              const isMoney = notif.action?.includes('خزنة') || notif.action?.includes('أرباح');
+              
+              return (
+                <div key={notif.id} className={`bg-slate-900 rounded-2xl p-4 flex justify-between items-center border-l-4 ${
+                  isLogin ? 'border-blue-500' : isOrder ? 'border-orange-500' : isMoney ? 'border-emerald-500' : 'border-slate-700'
+                }`}>
+                  <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      isLogin ? 'bg-blue-500/10 text-blue-400' : isOrder ? 'bg-orange-500/10 text-orange-400' : isMoney ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-400'
+                    }`}>
+                      {isLogin ? <LogIn size={18} /> : isMoney ? <DollarSign size={18} /> : <Bell size={18} />}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-black px-2 py-0.5 rounded-full ${
+                          isLogin ? 'bg-blue-500/20 text-blue-400' : isOrder ? 'bg-orange-500/20 text-orange-400' : isMoney ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'
+                        }`}>
+                          {notif.action}
+                        </span>
+                        <span className="text-[10px] text-slate-500">{new Date(notif.created_at).toLocaleString('ar-EG')}</span>
+                      </div>
+                      <p className="text-sm text-slate-300 mt-1 font-medium">{notif.details}</p>
+                    </div>
+                  </div>
+                  {userRole === 'admin' && (
+                    <button onClick={()=>deleteNotification(notif.id)} className="w-8 h-8 rounded-lg bg-slate-800 text-slate-500 hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center">
+                      <Trash2 size={14}/>
+                    </button>
+                  )}
+                </div>
+              );
+            })}
             {notifications.length===0 && <div className="text-center py-8 text-slate-400">لا توجد إشعارات</div>}
           </div>
         )}

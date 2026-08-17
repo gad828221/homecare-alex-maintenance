@@ -94,7 +94,7 @@ export default function BookingForm() {
           }]);
         } catch (err) { console.error("Realtime alert error:", err); }
         
-        const msg = `أوردر جديد: ${orderNumber}\nالاسم: ${formData.customer_name}\nالجهاز: ${finalDeviceType}\nالعنوان: ${formData.address}`;
+        const msg = `🆕 *طلب صيانة جديد* 🆕\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الطلب:* ${orderNumber}\n👤 *العميل:* ${formData.customer_name}\n📱 *الهاتف:* ${formData.phone}\n🔧 *الجهاز:* ${finalDeviceType} - ${formData.brand}\n📍 *العنوان:* ${formData.address}\n📝 *وصف العطل:* ${formData.problem_description}\n⏰ *التوقيت:* ${new Date().toLocaleString('ar-EG')}\n━━━━━━━━━━━━━━━━━━━━━━\n✨ *HomeCare Maintenance* ✨`;
         openWhatsAppDirectly('201558625259', msg);
       } else {
         throw insertError;

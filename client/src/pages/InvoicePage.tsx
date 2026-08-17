@@ -103,7 +103,7 @@ export default function InvoicePageNew() {
   };
 
   const requestWarrantySupport = () => {
-    const message = `🚨 *طلب دعم فني (تحت الضمان)* 🚨\n\n🔢 رقم الأوردر: ${invoice.order_number}\n👤 العميل: ${invoice.customer_name}\n🔧 الجهاز: ${invoice.device_type} - ${invoice.brand}\n📅 تاريخ الفاتورة: ${new Date(invoice.created_at).toLocaleDateString('ar-EG')}\n🛡️ حالة الضمان: ${getWarrantyRemaining().text}\n\nيرجى التواصل معي بخصوص مشكلة في الجهاز.`;
+    const message = `🚨 *طلب دعم فني - عميل تحت الضمان* 🚨\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الطلب:* ${invoice.order_number}\n👤 *العميل:* ${invoice.customer_name}\n🔧 *الجهاز:* ${invoice.device_type} - ${invoice.brand}\n📅 *تاريخ الفاتورة:* ${new Date(invoice.created_at).toLocaleDateString('ar-EG')}\n🛡️ *حالة الضمان:* ${getWarrantyRemaining().text}\n\n📝 *الاستفسار:* أواجه مشكلة في الجهاز وأحتاج للمساعدة.\n━━━━━━━━━━━━━━━━━━━━━━`;
     openWhatsAppDirectly('201278885772', message);
   };
 
@@ -210,7 +210,7 @@ export default function InvoicePageNew() {
     }
 
     const receiptUrl = window.location.href;
-    const message = `📄 *فاتورة الصيانة والضمان - Maintenance Guide*\n\n🔗 رابط الفاتورة:\n${receiptUrl}\n\n✨ شكراً لثقتك بنا`;
+    const message = `📄 *فاتورة الصيانة والضمان الرقمية* 📄\n━━━━━━━━━━━━━━━━━━━━━━\n🔗 *رابط الفاتورة والضمان الخاص بك:* \n${receiptUrl}\n\n💡 *يرجى الاحتفاظ بهذا الرابط لضمان حقوقك.* \n━━━━━━━━━━━━━━━━━━━━━━\n✨ *HomeCare Maintenance - نحن دائماً في خدمتك* ✨`;
 
     const phone = formatPhoneForWhatsApp(invoice.phone);
     openWhatsAppDirectly(phone, message);

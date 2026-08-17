@@ -6,16 +6,7 @@ export const invoiceService = {
     const invoiceLink = `${window.location.origin}/invoice?id=${invoice.id}`;
     
     // رسالة قصيرة تحتوي على الرابط
-    const message = `🛡️ *بطاقة الضمان الرقمية - Maintenance Guide* 🛡️\n\n` +
-      `👤 *العميل:* ${invoice.customerName}\n` +
-      `🔢 *رقم الأوردر:* ${invoice.orderNumber}\n` +
-      `🔧 *الجهاز:* ${invoice.device}\n` +
-      `💰 *المبلغ:* ${invoice.totalAmount} ج.م\n` +
-      `📅 *تاريخ الفاتورة:* ${invoice.date}\n` +
-      `🛡️ *فترة الضمان:* ${invoice.warranty}\n\n` +
-      `📎 *رابط الضمان والفاتورة الإلكترونية:* \n` +
-      `${invoiceLink}\n\n` +
-      `✨ *شكراً لثقتك بنا. نحن دائماً في خدمتك.* ✨`;
+    const message = `🛡️ *بطاقة الضمان والفاتورة الرقمية* 🛡️\n━━━━━━━━━━━━━━━━━━━━━━\n👤 *العميل:* ${invoice.customerName}\n🔢 *رقم الطلب:* ${invoice.orderNumber}\n🔧 *الجهاز:* ${invoice.device}\n💵 *إجمالي المبلغ:* ${invoice.totalAmount.toLocaleString()} ج.م\n📅 *تاريخ الخدمة:* ${invoice.date}\n🛡️ *فترة الضمان:* ${invoice.warranty}\n\n📎 *رابط الضمان والفاتورة الإلكترونية:* \n${invoiceLink}\n━━━━━━━━━━━━━━━━━━━━━━\n✨ *HomeCare Maintenance - جودة نثق بها* ✨`;
 
     // تنسيق رقم الهاتف
     const phone = invoice.phone.toString().replace(/[^\d]/g, '');
