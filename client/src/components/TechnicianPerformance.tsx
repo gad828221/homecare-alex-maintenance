@@ -7,6 +7,7 @@ interface TechnicianStats {
   completed: number;
   inProgress: number;
   delayed: number;
+  archived: number;
   totalEarnings: number;
   avgCompletionDays: number;
   totalOrders: number;
@@ -23,6 +24,7 @@ export default function TechnicianPerformance({ orders, technicians }: { orders:
         completed: 0,
         inProgress: 0,
         delayed: 0,
+        archived: 0,
         totalEarnings: 0,
         avgCompletionDays: 0,
         totalOrders: 0,
@@ -58,6 +60,9 @@ export default function TechnicianPerformance({ orders, technicians }: { orders:
         if (diffDays > 2) {
           techStats.delayed++;
         }
+        if (diffDays > 30) {
+          techStats.archived++;
+        }
       }
     });
     
@@ -83,6 +88,7 @@ export default function TechnicianPerformance({ orders, technicians }: { orders:
     { name: 'مكتمل', value: totalCompleted, color: '#10b981' },
     { name: 'قيد التنفيذ', value: stats.reduce((sum, t) => sum + t.inProgress, 0), color: '#3b82f6' },
     { name: 'متأخر', value: totalDelayed, color: '#ef4444' },
+    { name: 'مهمل (أرشيف)', value: stats.reduce((sum, t) => sum + t.archived, 0), color: '#6366f1' },
   ].filter(d => d.value > 0);
   
   const COLORS = ['#10b981', '#3b82f6', '#ef4444'];
@@ -150,7 +156,7 @@ export default function TechnicianPerformance({ orders, technicians }: { orders:
           <table className="w-full text-sm">
             <thead className="bg-slate-700">
               <tr>
-                <th className="p-3 text-right">الفني</th><th className="p-3 text-right">مكتمل</th><th className="p-3 text-right">قيد التنفيذ</th><th className="p-3 text-right">متأخر</th><th className="p-3 text-right">نسبة التأخير</th><th className="p-3 text-right">إجمالي الأرباح</th><th className="p-3 text-right">متوسط الأيام/أوردر</th>
+                <th className="p-3 text-right">الفني</th><th className="p-3 text-right">مكتمل</th><th className="p-3 text-right">قيد التنفيذ</th><th className="p-3 text-right">متأخر</th><th className="p-3 text-right text-rose-400">مهمل (أرشيف)</th><th className="p-3 text-right">نسبة التأخير</th><th className="p-3 text-right">إجمالي الأرباح</th><th className="p-3 text-right">متوسط الأيام/أوردر</th>
               </tr>
             </thead>
             <tbody>
@@ -160,6 +166,7 @@ export default function TechnicianPerformance({ orders, technicians }: { orders:
                   <td className="p-3 text-green-400">{tech.completed}</td>
                   <td className="p-3 text-blue-400">{tech.inProgress}</td>
                   <td className="p-3 text-red-400">{tech.delayed}</td>
+                  <td className="p-3 text-rose-500 font-bold">{tech.archived}</td>
                   <td className="p-3 text-yellow-400">{tech.delayedPercentage.toFixed(1)}%</td>
                   <td className="p-3 text-orange-400">{tech.totalEarnings.toLocaleString()} ج.م</td>
                   <td className="p-3 text-slate-300">{tech.avgCompletionDays.toFixed(1)} يوم</td>

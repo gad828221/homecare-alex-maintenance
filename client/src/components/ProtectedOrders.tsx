@@ -835,11 +835,11 @@ export default function ProtectedOrders() {
       });
       setCashBalance(balance);
 
-      const pending = activeOrders.filter((o: any) => o.status === 'pending').length;
-      const inProgress = activeOrders.filter((o: any) => o.status === 'in_progress').length;
-      const completed = activeOrders.filter((o: any) => o.status === 'completed').length;
-      const cancelled = activeOrders.filter((o: any) => o.status === 'cancelled').length;
-      const totalIncome = activeOrders.filter((o: any) => o.is_paid).reduce((sum, o) => sum + (o.company_share || 0), 0);
+      const pending = notDeleted.filter((o: any) => o.status === 'pending').length;
+      const inProgress = notDeleted.filter((o: any) => o.status === 'in_progress').length;
+      const completed = notDeleted.filter((o: any) => o.status === 'completed').length;
+      const cancelled = notDeleted.filter((o: any) => o.status === 'cancelled').length;
+      const totalIncome = notDeleted.filter((o: any) => o.is_paid).reduce((sum, o) => sum + (o.company_share || 0), 0);
       setStats({ pending, inProgress, completed, cancelled, totalIncome });
 
       // إنذار المتأخرات للمدير
@@ -1789,10 +1789,10 @@ export default function ProtectedOrders() {
 	                      <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">قيد التنفيذ</div>
 	                      <div className="text-2xl font-black text-blue-400">{orders.filter(o => o.status === 'in-progress').length}</div>
 	                    </div>
-	                    <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/50 hover:border-emerald-500/30 transition-all group cursor-pointer" onClick={() => { clearFilters(); setFilterWarranty('active'); setFilterStatus('completed'); }}>
-	                      <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">ضمان ساري 🛡️</div>
-	                      <div className="text-2xl font-black text-emerald-400">{orders.filter(o => getWarrantyStatus(o).status === 'active').length}</div>
-	                    </div>
+		                    <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/50 hover:border-emerald-500/30 transition-all group cursor-pointer" onClick={() => { clearFilters(); setFilterWarranty('active'); setFilterStatus('completed'); }}>
+		                      <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">ضمان ساري 🛡️</div>
+		                      <div className="text-2xl font-black text-emerald-400">{[...orders, ...archivedOrders].filter(o => getWarrantyStatus(o).status === 'active').length}</div>
+		                    </div>
 	                  </div>
                 </div>
 
@@ -2441,23 +2441,27 @@ export default function ProtectedOrders() {
                 <div className="space-y-4">
                   {technicians
                     .map(t => {
-                      const techOrders = orders.filter(o => o.technician === t.name);
+                      const techOrders = [...orders, ...archivedOrders].filter(o => o.technician === t.name);
                       const total = techOrders.length;
                       const completed = techOrders.filter(o => o.status === 'completed').length;
+                      const archived = techOrders.filter(o => isOldAndShouldArchive(o)).length;
                       const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
                       const totalParts = techOrders.reduce((sum, o) => sum + (Number(o.parts_cost) || 0), 0);
                       const totalTransport = techOrders.reduce((sum, o) => sum + (Number(o.transport_cost) || 0), 0);
                       const totalRevenue = techOrders.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
                       const partsPercent = totalRevenue > 0 ? Math.round((totalParts / totalRevenue) * 100) : 0;
                       const transportPercent = totalRevenue > 0 ? Math.round((totalTransport / totalRevenue) * 100) : 0;
-                      return { name: t.name, total, completed, percentage, totalParts, totalTransport, totalRevenue, partsPercent, transportPercent };
+                      return { name: t.name, total, completed, archived, percentage, totalParts, totalTransport, totalRevenue, partsPercent, transportPercent };
                     })
                     .sort((a, b) => b.percentage - a.percentage || b.completed - a.completed)
                     .slice(0, 5)
                     .map((t, i) => (
                       <div key={i} className="flex flex-col gap-3 bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
                         <div className="flex justify-between items-center">
-                          <span className="text-sm font-bold text-slate-300">{t.name}</span>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-white">{t.name}</span>
+                            {t.archived > 0 && <span className="text-[9px] text-rose-500 font-bold">⚠️ {t.archived} مهمل (أرشيف)</span>}
+                          </div>
                           <span className="bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full text-[10px] font-black">{t.completed} / {t.total} مكتمل</span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -2496,8 +2500,9 @@ export default function ProtectedOrders() {
                 <h3 className="text-lg font-black text-white mb-6 flex items-center gap-3"><Cpu className="text-orange-500" /> توزيع الأجهزة</h3>
                 <div className="space-y-4">
                   {['غسالة', 'ثلاجة', 'بوتاجاز', 'سخان', 'تكييف', 'ميكروويف'].map(device => {
-                    const count = orders.filter(o => o.device_type === device).length;
-                    const percentage = orders.length > 0 ? (count / orders.length) * 100 : 0;
+                    const allValidOrders = [...orders, ...archivedOrders];
+                    const count = allValidOrders.filter(o => o.device_type === device).length;
+                    const percentage = allValidOrders.length > 0 ? (count / allValidOrders.length) * 100 : 0;
                     if (count === 0) return null;
                     return (
                       <div key={device} className="space-y-2">
@@ -2520,7 +2525,7 @@ export default function ProtectedOrders() {
                 <h3 className="text-lg font-black text-white mb-6 flex items-center gap-3"><Star className="text-yellow-500" /> أكثر الماركات عطلاً</h3>
                 <div className="flex flex-wrap gap-2">
                   {['سامسونج', 'LG', 'توشيبا', 'شارب', 'زانوسي', 'فريش', 'وايت ويل', 'أريستون', 'إنديست', 'بيكو', 'يونيون إير', 'هوفر'].map(brand => {
-                    const count = orders.filter(o => o.brand === brand).length;
+                    const count = [...orders, ...archivedOrders].filter(o => o.brand === brand).length;
                     if (count === 0) return null;
                     return (
                       <div key={brand} className="bg-slate-950/50 border border-slate-800 px-4 py-3 rounded-2xl flex flex-col items-center min-w-[80px] flex-1">
@@ -2535,7 +2540,7 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {activeTab === 'performance' && userRole !== 'viewer' && <TechnicianPerformance orders={orders} technicians={technicians} />}
+        {activeTab === 'performance' && userRole !== 'viewer' && <TechnicianPerformance orders={[...orders, ...archivedOrders]} technicians={technicians} />}
         {activeTab === 'permissions' && userRole === 'admin' && (
           <AdminPermissions 
             users={users} 
