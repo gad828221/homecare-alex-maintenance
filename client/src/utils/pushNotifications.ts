@@ -4,6 +4,7 @@ export type PushNotificationInput = {
   event: 'new_order' | 'technician_assigned' | 'order_status_changed' | 'customer_feedback' | 'system_alert';
   targetRoles?: string[];
   targetUserIds?: Array<string | number>;
+  targetTags?: Array<{ key: string; value: string | number }>;
   data?: Record<string, string | number | boolean | null | undefined>;
 };
 

@@ -17,6 +17,7 @@ type PushBody = {
   event?: unknown;
   targetRoles?: unknown;
   targetUserIds?: unknown;
+  targetTags?: unknown;
   data?: unknown;
 };
 
@@ -51,6 +52,24 @@ const buildRoleFilters = (roles: string[]): Array<Record<string, string>> => {
   roles.forEach((role, index) => {
     if (index > 0) filters.push({ operator: 'OR' });
     filters.push({ field: 'tag', key: 'role', relation: '=', value: role });
+  });
+  return filters;
+};
+
+const cleanTags = (value: unknown): Array<{ key: string; value: string }> => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is { key?: unknown; value?: unknown } => !!item && typeof item === 'object')
+    .map(item => ({ key: String(item.key || '').trim(), value: String(item.value || '').trim() }))
+    .filter(item => item.key && item.value)
+    .slice(0, 20);
+};
+
+const buildTagFilters = (tags: Array<{ key: string; value: string }>): Array<Record<string, string>> => {
+  const filters: Array<Record<string, string>> = [];
+  tags.forEach((tag, index) => {
+    if (index > 0) filters.push({ operator: 'AND' });
+    filters.push({ field: 'tag', key: tag.key, relation: '=', value: tag.value });
   });
   return filters;
 };
@@ -101,13 +120,14 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   const event = typeof body.event === 'string' ? body.event : '';
   const targetRoles = cleanStrings(body.targetRoles, 5);
   const targetUserIds = cleanStrings(body.targetUserIds, 20000);
+  const targetTags = cleanTags(body.targetTags);
 
   if (!title || !message || !ALLOWED_EVENTS.has(event)) {
     respond(res, 400, { error: 'title, message, and a supported event are required' });
     return;
   }
 
-  if (targetRoles.length === 0 && targetUserIds.length === 0) {
+  if (targetRoles.length === 0 && targetUserIds.length === 0 && targetTags.length === 0) {
     respond(res, 400, { error: 'At least one target role or user ID is required' });
     return;
   }
@@ -134,6 +154,10 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       include_aliases: { external_id: targetUserIds },
       target_channel: 'push',
     });
+  }
+
+  if (targetTags.length > 0) {
+    audiences.push({ filters: buildTagFilters(targetTags), target_channel: 'push' });
   }
 
   try {

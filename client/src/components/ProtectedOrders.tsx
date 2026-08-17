@@ -1814,6 +1814,55 @@ export default function ProtectedOrders() {
     link.click();
   };
 
+  const technicianExpenseStats = technicians.map((tech) => {
+    const techOrders = [...orders, ...archivedOrders].filter((order) => order.technician === tech.name);
+    const invoicedOrders = techOrders.filter((order) => Number(order.total_amount) > 0);
+    const totalInvoice = invoicedOrders.reduce((sum, order) => sum + (Number(order.total_amount) || 0), 0);
+    const totalParts = invoicedOrders.reduce((sum, order) => sum + (Number(order.parts_cost) || 0), 0);
+    const totalTransport = invoicedOrders.reduce((sum, order) => sum + (Number(order.transport_cost) || 0), 0);
+    const partsPercent = totalInvoice > 0 ? (totalParts / totalInvoice) * 100 : 0;
+    const transportPercent = totalInvoice > 0 ? (totalTransport / totalInvoice) * 100 : 0;
+    const total = techOrders.length;
+    const completed = techOrders.filter((order) => order.status === 'completed').length;
+    const archived = techOrders.filter((order) => isOldAndShouldArchive(order)).length;
+    const partsAlert = partsPercent >= 40;
+    const transportAlert = transportPercent >= 15;
+    return {
+      ...tech,
+      total,
+      completed,
+      archived,
+      percentage: total > 0 ? Math.round((completed / total) * 100) : 0,
+      totalInvoice,
+      totalParts,
+      totalTransport,
+      partsPercent,
+      transportPercent,
+      partsAlert,
+      transportAlert,
+    };
+  }).sort((a, b) => b.percentage - a.percentage || b.completed - a.completed);
+
+  const sendExpenseWarning = async (tech: any) => {
+    if (!isAdmin) return showToast("إرسال إنذار المصروفات متاح لمدير النظام فقط", "error");
+    const warnings = [
+      tech.partsAlert ? `قطع الغيار ${tech.partsPercent.toFixed(1)}%` : '',
+      tech.transportAlert ? `المواصلات ${tech.transportPercent.toFixed(1)}%` : '',
+    ].filter(Boolean).join('، ');
+    if (!warnings) return showToast("مصروفات الفني ضمن الحدود المحددة", "info");
+
+    const message = `تنبيه مراجعة مصروفات\nالفني: ${tech.name}\nإجمالي الفواتير: ${tech.totalInvoice.toLocaleString()} ج.م\n${warnings}\nيرجى مراجعة تفاصيل المصروفات والتأكد من تسجيلها بدقة.`;
+    const pushResult = await sendExternalPush({
+      event: 'system_alert',
+      title: '⚠️ تنبيه مراجعة المصروفات',
+      message,
+      targetTags: [{ key: 'tech_name', value: tech.name }],
+      data: { technician: tech.name, total_invoice: tech.totalInvoice, parts_percent: tech.partsPercent, transport_percent: tech.transportPercent },
+    });
+    await addNotification('إنذار مصروفات فني', message);
+    showToast(pushResult.ok ? `✅ تم إرسال إنذار إلى ${tech.name}` : `⚠️ تم تسجيل الإنذار ولم يصل Push إلى ${tech.name}`, pushResult.ok ? 'success' : 'error');
+  };
+
   if (loading) return <div className="flex justify-center items-center h-screen text-slate-400">جاري التحميل...</div>;
 
   return (
@@ -2667,24 +2716,9 @@ export default function ProtectedOrders() {
               <div className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 shadow-2xl">
                 <h3 className="text-lg font-black text-white mb-6 flex items-center gap-3"><Users className="text-blue-500" /> أفضل الفنيين</h3>
                 <div className="space-y-4">
-                  {technicians
-                    .map(t => {
-                      const techOrders = [...orders, ...archivedOrders].filter(o => o.technician === t.name);
-                      const total = techOrders.length;
-                      const completed = techOrders.filter(o => o.status === 'completed').length;
-                      const archived = techOrders.filter(o => isOldAndShouldArchive(o)).length;
-                      const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-                      const totalParts = techOrders.reduce((sum, o) => sum + (Number(o.parts_cost) || 0), 0);
-                      const totalTransport = techOrders.reduce((sum, o) => sum + (Number(o.transport_cost) || 0), 0);
-                      const totalRevenue = techOrders.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
-                      const partsPercent = totalRevenue > 0 ? Math.round((totalParts / totalRevenue) * 100) : 0;
-                      const transportPercent = totalRevenue > 0 ? Math.round((totalTransport / totalRevenue) * 100) : 0;
-                      return { name: t.name, total, completed, archived, percentage, totalParts, totalTransport, totalRevenue, partsPercent, transportPercent };
-                    })
-                    .sort((a, b) => b.percentage - a.percentage || b.completed - a.completed)
-                    .slice(0, 5)
-                    .map((t, i) => (
-                      <div key={i} className="flex flex-col gap-3 bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
+                  <div className="max-h-[780px] overflow-y-auto space-y-4 pr-1">
+                  {technicianExpenseStats.map((t) => (
+                      <div key={t.id || t.name} className={`flex flex-col gap-3 bg-slate-950/50 p-4 rounded-2xl border ${t.partsAlert || t.transportAlert ? 'border-rose-500/50' : 'border-slate-800/50'}`}>
                         <div className="flex justify-between items-center">
                           <div className="flex flex-col">
                             <span className="text-sm font-bold text-white">{t.name}</span>
@@ -2698,27 +2732,40 @@ export default function ProtectedOrders() {
                           </div>
                           <span className="text-[10px] font-black text-slate-400">{t.percentage}%</span>
                         </div>
+                        <div className="flex items-center justify-between gap-2 text-[9px] text-slate-500">
+                          <span>إجمالي الفواتير: <b className="text-slate-300">{t.totalInvoice.toLocaleString()} ج.م</b></span>
+                          <span>{t.total} أوردر</span>
+                        </div>
                         <div className="grid grid-cols-2 gap-2 mt-1">
-                          <div className="bg-slate-900/50 p-2 rounded-xl border border-slate-800/30 relative overflow-hidden">
+                          <div className={`bg-slate-900/50 p-2 rounded-xl border ${t.partsAlert ? 'border-rose-500/60' : 'border-slate-800/30'} relative overflow-hidden`}>
                             <div className="absolute bottom-0 left-0 h-0.5 bg-rose-500/30" style={{ width: `${t.partsPercent}%` }}></div>
                             <div className="flex justify-between items-start">
                               <p className="text-[8px] font-bold text-slate-500 mb-0.5">⚙️ قطع غيار</p>
-                              <span className="text-[7px] font-black text-rose-500/50">{t.partsPercent}%</span>
+                              <span className={`text-[7px] font-black ${t.partsAlert ? 'text-rose-400' : 'text-rose-500/50'}`}>{t.partsPercent.toFixed(1)}%</span>
                             </div>
                             <p className="text-[10px] font-black text-rose-400">{t.totalParts.toLocaleString()} ج.م</p>
                           </div>
-                          <div className="bg-slate-900/50 p-2 rounded-xl border border-slate-800/30 relative overflow-hidden">
+                          <div className={`bg-slate-900/50 p-2 rounded-xl border ${t.transportAlert ? 'border-amber-500/60' : 'border-slate-800/30'} relative overflow-hidden`}>
                             <div className="absolute bottom-0 left-0 h-0.5 bg-amber-500/30" style={{ width: `${t.transportPercent}%` }}></div>
                             <div className="flex justify-between items-start">
                               <p className="text-[8px] font-bold text-slate-500 mb-0.5">🚗 مواصلات</p>
-                              <span className="text-[7px] font-black text-amber-500/50">{t.transportPercent}%</span>
+                              <span className={`text-[7px] font-black ${t.transportAlert ? 'text-amber-300' : 'text-amber-500/50'}`}>{t.transportPercent.toFixed(1)}%</span>
                             </div>
                             <p className="text-[10px] font-black text-amber-400">{t.totalTransport.toLocaleString()} ج.م</p>
                           </div>
                         </div>
+                        {(t.partsAlert || t.transportAlert) && (
+                          <div className="flex items-center justify-between gap-2 rounded-xl bg-rose-500/10 border border-rose-500/30 px-3 py-2">
+                            <div className="flex items-center gap-2 text-[9px] text-rose-300 font-bold">
+                              <AlertCircle size={14} />
+                              <span>{t.partsAlert ? 'قطع الغيار أعلى من 40%' : 'المواصلات أعلى من 15%'}</span>
+                            </div>
+                            {isAdmin && <button onClick={() => sendExpenseWarning(t)} className="shrink-0 bg-rose-600 hover:bg-rose-700 text-white px-2 py-1.5 rounded-lg text-[9px] font-black flex items-center gap-1"><Send size={12} /> إرسال إنذار</button>}
+                          </div>
+                        )}
                       </div>
-                    ))
-                  }
+                    ))}
+                  </div>
                   {technicians.length === 0 && <p className="text-center text-slate-500 py-4">لا يوجد فنيون مسجلون</p>}
                 </div>
               </div>
