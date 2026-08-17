@@ -4,7 +4,7 @@ import {
   RefreshCw, Phone, MapPin, ClipboardList,
   Calendar, X, Trash2, Eye, ClockArrowUp, StickyNote,
   Play, FileCheck, DollarSign, CalendarX, Ban, MessageSquare, Search,
-  Camera, TrendingUp, Award, Wallet, Send, ExternalLink, Bell
+  Camera, TrendingUp, Award, Wallet, Send, ExternalLink, Bell, Upload
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useNotification } from "../components/EnhancedNotificationSystem";
@@ -71,6 +71,8 @@ export default function TechnicianPortal() {
   const [technicianPercentage, setTechnicianPercentage] = useState(50);
     const [oldPartsPhoto, setOldPartsPhoto] = useState("");
   const [newPartsPhoto, setNewPartsPhoto] = useState("");
+  const [oldPartsPreview, setOldPartsPreview] = useState("");
+  const [newPartsPreview, setNewPartsPreview] = useState("");
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [settleForm, setSettleForm] = useState({
     total_amount: 0,
@@ -102,6 +104,12 @@ export default function TechnicianPortal() {
 
   const isPhoneHidden = (order: any) => {
     return order.status === 'completed';
+  };
+
+  const extractPartsPhoto = (note: string | undefined, type: 'OLD' | 'NEW') => {
+    if (!note) return '';
+    const match = note.match(new RegExp(`\\[${type}_PARTS:(.*?)\\]`));
+    return match?.[1] || '';
   };
 
   const formatPhoneForWhatsApp = (phone: string) => {
@@ -476,6 +484,12 @@ export default function TechnicianPortal() {
   const openSettleModal = async (order: any) => {
     await fetchTechnicianPercentage();
     setSelectedOrder(order);
+    const savedOldPhoto = extractPartsPhoto(order.technician_note, 'OLD');
+    const savedNewPhoto = extractPartsPhoto(order.technician_note, 'NEW');
+    setOldPartsPhoto(savedOldPhoto);
+    setNewPartsPhoto(savedNewPhoto);
+    setOldPartsPreview(savedOldPhoto);
+    setNewPartsPreview(savedNewPhoto);
     setSettleForm({
       total_amount: order.total_amount || 0, parts_cost: order.parts_cost || 0, transport_cost: order.transport_cost || 0,
       net_amount: order.net_amount || 0, technician_share: order.technician_share || 0, company_share: order.company_share || 0,
@@ -551,6 +565,8 @@ export default function TechnicianPortal() {
 
     setOldPartsPhoto("");
     setNewPartsPhoto("");
+    setOldPartsPreview("");
+    setNewPartsPreview("");
     addNotification({ type: 'success', title: '✅ تم الإكمال', message: 'تم إكمال الأوردر بنجاح، بانتظار موافقة المدير على الفاتورة.', duration: 5000 });
   };
 
@@ -616,14 +632,23 @@ export default function TechnicianPortal() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!file.type.startsWith('image/')) {
+      addNotification({ type: 'error', title: '❌ نوع ملف غير مدعوم', message: 'يرجى اختيار صورة من الهاتف بصيغة JPG أو PNG أو WEBP', duration: 5000 });
+      return;
+    }
+
     // فحص حجم الملف (أقصى حجم 5 ميجا)
     if (file.size > 5 * 1024 * 1024) {
       addNotification({ type: 'error', title: '❌ ملف كبير جداً', message: 'أقصى حجم للصورة هو 5 ميجابايت', duration: 5000 });
       return;
     }
 
+    const previousPreview = type === 'old' ? (oldPartsPhoto || oldPartsPreview) : (newPartsPhoto || newPartsPreview);
+    const localPreview = URL.createObjectURL(file);
+    if (type === 'old') setOldPartsPreview(localPreview);
+    if (type === 'new') setNewPartsPreview(localPreview);
     setIsUploadingPhoto(true);
-    addNotification({ type: 'info', title: '📸 جاري الرفع', message: 'يتم الآن رفع الصورة...', duration: 2000 });
+    addNotification({ type: 'info', title: '📸 جاري الرفع', message: 'يتم الآن رفع الصورة من الهاتف، يرجى الانتظار...', duration: 2500 });
 
     try {
       const fileName = `${Date.now()}_${type}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
@@ -632,11 +657,14 @@ export default function TechnicianPortal() {
         upsert: false
       });
 
-      if (error) {
+        if (error) {
         console.error('Supabase Storage Error:', error);
+        if (type === 'old') setOldPartsPreview(previousPreview);
+        if (type === 'new') setNewPartsPreview(previousPreview);
+        URL.revokeObjectURL(localPreview);
         if (error.message.includes('bucket not found') || error.message.includes('does not exist')) {
           addNotification({
-            type: 'critical',
+            type: 'error',
             title: '❌ خطأ في الإعدادات',
             message: 'مجلد الصور (order-photos) غير موجود في Supabase. يرجى إنشاؤه أولاً من لوحة تحكم Supabase.',
             duration: 0
@@ -653,8 +681,14 @@ export default function TechnicianPortal() {
         photoUrl = publicUrlData.publicUrl;
       }
 
-      if (type === 'old') setOldPartsPhoto(photoUrl);
-      else if (type === 'new') setNewPartsPhoto(photoUrl);
+      if (type === 'old') {
+        setOldPartsPhoto(photoUrl);
+        setOldPartsPreview(photoUrl);
+      } else if (type === 'new') {
+        setNewPartsPhoto(photoUrl);
+        setNewPartsPreview(photoUrl);
+      }
+      URL.revokeObjectURL(localPreview);
 
       if (type === 'general') {
         const order = orders.find(o => o.id === orderId);
@@ -675,7 +709,10 @@ export default function TechnicianPortal() {
       addNotification({ type: 'success', title: '✅ تم الرفع', message: 'تم حفظ الصورة بنجاح', duration: 3000 });
     } catch (err) {
       console.error('Upload Catch Error:', err);
-      addNotification({ type: 'error', title: '❌ حدث خطأ', message: 'فشل الاتصال بخادم الصور', duration: 3000 });
+      if (type === 'old') setOldPartsPreview(previousPreview);
+      if (type === 'new') setNewPartsPreview(previousPreview);
+      URL.revokeObjectURL(localPreview);
+      addNotification({ type: 'error', title: '❌ حدث خطأ', message: 'فشل الاتصال بخادم الصور. تأكد من الإنترنت وحاول مرة أخرى.', duration: 5000 });
     } finally {
       setIsUploadingPhoto(false);
     }
@@ -1128,27 +1165,42 @@ export default function TechnicianPortal() {
             
             <form onSubmit={submitSettlement} className="space-y-5">
               {/* Photos Section */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-rose-400 block text-center">📸 القطع القديمة</label>
-                  <div className="relative h-28 bg-slate-900 rounded-2xl border-2 border-dashed border-rose-500/20 flex items-center justify-center overflow-hidden hover:border-rose-500/50 transition-all">
-                    {oldPartsPhoto ? (
-                      <img src={oldPartsPhoto} alt="Old" className="w-full h-full object-cover" />
-                    ) : (
-                      <Camera className="text-rose-500/30 w-8 h-8" />
-                    )}
-                    <input type="file" accept="image/*" capture="environment" onChange={(e) => handlePhotoUpload(selectedOrder.id, e, 'old')} className="absolute inset-0 opacity-0 cursor-pointer" />
+              <div className="rounded-2xl border border-orange-500/20 bg-slate-900/40 p-3">
+                <p className="text-[10px] text-slate-400 text-center mb-3">يمكنك التصوير الآن أو اختيار صورة محفوظة من الهاتف</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black text-rose-400 block text-center">📸 القطع القديمة</label>
+                    <div className="relative h-28 bg-slate-950 rounded-2xl border-2 border-dashed border-rose-500/30 flex items-center justify-center overflow-hidden transition-all">
+                      {(oldPartsPhoto || oldPartsPreview) ? (
+                        <img src={oldPartsPhoto || oldPartsPreview} alt="صورة قطع الغيار القديمة" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="text-center"><Camera className="text-rose-500/50 w-8 h-8 mx-auto" /><span className="text-[9px] text-slate-500">لم يتم اختيار صورة</span></div>
+                      )}
+                      {isUploadingPhoto && <div className="absolute inset-0 bg-slate-950/75 flex items-center justify-center"><RefreshCw className="text-orange-400 animate-spin" size={22} /></div>}
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <label htmlFor={`old-parts-camera-${selectedOrder.id}`} className="cursor-pointer rounded-xl bg-rose-600/20 border border-rose-500/30 text-rose-200 py-2 text-[9px] font-black flex items-center justify-center gap-1 active:scale-95 transition-transform"><Camera size={13} /> تصوير</label>
+                      <label htmlFor={`old-parts-gallery-${selectedOrder.id}`} className="cursor-pointer rounded-xl bg-slate-700 border border-slate-600 text-slate-200 py-2 text-[9px] font-black flex items-center justify-center gap-1 active:scale-95 transition-transform"><Upload size={13} /> من الهاتف</label>
+                      <input id={`old-parts-camera-${selectedOrder.id}`} type="file" accept="image/*" capture="environment" onChange={(e) => handlePhotoUpload(selectedOrder.id, e, 'old')} className="sr-only" disabled={isUploadingPhoto} />
+                      <input id={`old-parts-gallery-${selectedOrder.id}`} type="file" accept="image/*" onChange={(e) => handlePhotoUpload(selectedOrder.id, e, 'old')} className="sr-only" disabled={isUploadingPhoto} />
+                    </div>
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-emerald-400 block text-center">📸 القطع الجديدة</label>
-                  <div className="relative h-28 bg-slate-900 rounded-2xl border-2 border-dashed border-emerald-500/20 flex items-center justify-center overflow-hidden hover:border-emerald-500/50 transition-all">
-                    {newPartsPhoto ? (
-                      <img src={newPartsPhoto} alt="New" className="w-full h-full object-cover" />
-                    ) : (
-                      <Camera className="text-emerald-500/30 w-8 h-8" />
-                    )}
-                    <input type="file" accept="image/*" capture="environment" onChange={(e) => handlePhotoUpload(selectedOrder.id, e, 'new')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black text-emerald-400 block text-center">📸 القطع الجديدة</label>
+                    <div className="relative h-28 bg-slate-950 rounded-2xl border-2 border-dashed border-emerald-500/30 flex items-center justify-center overflow-hidden transition-all">
+                      {(newPartsPhoto || newPartsPreview) ? (
+                        <img src={newPartsPhoto || newPartsPreview} alt="صورة قطع الغيار الجديدة" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="text-center"><Camera className="text-emerald-500/50 w-8 h-8 mx-auto" /><span className="text-[9px] text-slate-500">لم يتم اختيار صورة</span></div>
+                      )}
+                      {isUploadingPhoto && <div className="absolute inset-0 bg-slate-950/75 flex items-center justify-center"><RefreshCw className="text-orange-400 animate-spin" size={22} /></div>}
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <label htmlFor={`new-parts-camera-${selectedOrder.id}`} className="cursor-pointer rounded-xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-200 py-2 text-[9px] font-black flex items-center justify-center gap-1 active:scale-95 transition-transform"><Camera size={13} /> تصوير</label>
+                      <label htmlFor={`new-parts-gallery-${selectedOrder.id}`} className="cursor-pointer rounded-xl bg-slate-700 border border-slate-600 text-slate-200 py-2 text-[9px] font-black flex items-center justify-center gap-1 active:scale-95 transition-transform"><Upload size={13} /> من الهاتف</label>
+                      <input id={`new-parts-camera-${selectedOrder.id}`} type="file" accept="image/*" capture="environment" onChange={(e) => handlePhotoUpload(selectedOrder.id, e, 'new')} className="sr-only" disabled={isUploadingPhoto} />
+                      <input id={`new-parts-gallery-${selectedOrder.id}`} type="file" accept="image/*" onChange={(e) => handlePhotoUpload(selectedOrder.id, e, 'new')} className="sr-only" disabled={isUploadingPhoto} />
+                    </div>
                   </div>
                 </div>
               </div>
