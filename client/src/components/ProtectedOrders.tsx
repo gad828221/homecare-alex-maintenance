@@ -1478,6 +1478,10 @@ export default function ProtectedOrders() {
 
   const deleteNotification = async (id: number) => {
     if (userRole !== 'admin') return showToast("ليس لديك صلاحية", "error");
+    const notification = notifications.find((item) => item.id === id);
+    if (notification?.action === 'تقييم عميل') {
+      return showToast("لا يمكن حذف تقييمات العملاء من سجل الإشعارات حفاظاً على التقارير", "error");
+    }
     await fetchAPI(`notifications?id=eq.${id}`, { method: 'DELETE' });
     fetchNotifications();
   };
@@ -1485,9 +1489,10 @@ export default function ProtectedOrders() {
     if (userRole !== 'admin') return showToast("ليس لديك صلاحية", "error");
     if (confirm('هل أنت متأكد من حذف جميع الإشعارات نهائياً؟')) {
       try {
-        // ✅ مسح كافة الإشعارات دفعة واحدة عبر طلب واحد لسرعة فائقة (Turbo Clear)
-        await fetchAPI('notifications?id=gt.0', { method: 'DELETE' });
-        showToast("✅ تم مسح جميع الإشعارات بنجاح", "success");
+        // ✅ مسح الإشعارات التشغيلية فقط مع الحفاظ على تقييمات العملاء للأرشيف والتقارير.
+        const feedbackAction = encodeURIComponent('تقييم عميل');
+        await fetchAPI(`notifications?action=neq.${feedbackAction}`, { method: 'DELETE' });
+        showToast("✅ تم مسح الإشعارات التشغيلية مع الحفاظ على تقييمات العملاء", "success");
         fetchNotifications();
       } catch (err) {
         console.error(err);
@@ -2778,7 +2783,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-slate-500 opacity-20">
             Maintenance Guide © 2026 - All Rights Reserved
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v1.7.4-reference-error-fix</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v1.7.5-preserve-feedback</div>
         </div>
       </div>
 
