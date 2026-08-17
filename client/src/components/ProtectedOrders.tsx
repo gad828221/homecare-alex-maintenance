@@ -1580,7 +1580,7 @@ export default function ProtectedOrders() {
             >
               <Play fill="currentColor" size={20} /> دخول وتفعيل التنبيهات 🔊
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v1.5.7</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v1.5.9</p>
           </div>
         </div>
       )}

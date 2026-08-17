@@ -663,7 +663,7 @@ export default function TechnicianPortal() {
             >
               <Play fill="currentColor" size={20} /> بدء العمل واستقبال الأوردرات
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide OS v1.5.7</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide OS v1.5.9</p>
           </div>
         </div>
       )}
