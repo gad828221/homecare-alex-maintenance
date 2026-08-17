@@ -39,6 +39,8 @@ export default function TechnicianPortal() {
   const [techName, setTechName] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [isUrgentAlert, setIsUrgentAlert] = useState(false);
+  const [audioEnabled, setAudioEnabled] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const alertInterval = useRef<any>(null);
   const [stats, setStats] = useState({ active: 0, completed: 0, earnings: 0 });
   const [showSettleModal, setShowSettleModal] = useState(false);
@@ -159,20 +161,39 @@ export default function TechnicianPortal() {
     } catch (err) { console.error(err); }
   }, [techName]);
 
+  const initAudio = () => {
+    try {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      if (audioContextRef.current.state === 'suspended') {
+        audioContextRef.current.resume();
+      }
+      setAudioEnabled(true);
+      playDing(false); // تجربة صوت بسيطة للتأكيد
+    } catch (e) { console.error("Audio init error", e); }
+  };
+
   const playDing = (isUrgent = false) => {
     try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
+      const ctx = audioContextRef.current || new (window.AudioContext || (window as any).webkitAudioContext)();
+      if (!audioContextRef.current) audioContextRef.current = ctx;
+      
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
       oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+      gainNode.connect(ctx.destination);
       oscillator.frequency.value = isUrgent ? 1200 : 880;
       oscillator.type = isUrgent ? 'square' : 'sine';
-      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-      gainNode.gain.linearRampToValueAtTime(isUrgent ? 0.4 : 0.2, audioContext.currentTime + 0.05);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + (isUrgent ? 0.8 : 0.5));
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + (isUrgent ? 0.8 : 0.5));
+      gainNode.gain.setValueAtTime(0, ctx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(isUrgent ? 0.4 : 0.2, ctx.currentTime + 0.05);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + (isUrgent ? 0.8 : 0.5));
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + (isUrgent ? 0.8 : 0.5));
     } catch (e) { console.warn("Audio error", e); }
   };
 
@@ -646,6 +667,26 @@ export default function TechnicianPortal() {
       </div>
 
       <main className="max-w-4xl mx-auto p-4 space-y-5">
+        {!audioEnabled && (
+          <div className="bg-orange-600/20 border border-orange-500/50 p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center animate-pulse">
+                <Bell className="text-white w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white">تنبيهات الصوت معطلة</p>
+                <p className="text-[10px] text-slate-400">اضغط على الزر لتفعيل صوت الإنذار للأوردرات الجديدة</p>
+              </div>
+            </div>
+            <button 
+              onClick={initAudio}
+              className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-xl text-xs font-black transition-all shadow-lg shadow-orange-900/20 active:scale-95"
+            >
+              تفعيل التنبيهات الصوتية 🔊
+            </button>
+          </div>
+        )}
+
         {activeTab === 'orders' && (
           <>
             {/* لوحة إنجازات الفني الاحترافية */}

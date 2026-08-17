@@ -240,6 +240,8 @@ export default function ProtectedOrders() {
 
   const [userRole, setUserRole] = useState<string>('');
   const [isUrgentAlert, setIsUrgentAlert] = useState(false);
+  const [audioEnabled, setAudioEnabled] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const alertInterval = useRef<any>(null);
   const lastCheckedOrderId = useRef<number | null>(null);
 
@@ -286,24 +288,42 @@ export default function ProtectedOrders() {
     setTimeout(() => setToast(null), 3000);
   };
 
+  const initAudio = () => {
+    try {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      if (audioContextRef.current.state === 'suspended') {
+        audioContextRef.current.resume();
+      }
+      setAudioEnabled(true);
+      playDing(false);
+    } catch (e) { console.error("Audio init error", e); }
+  };
+
   const playDing = (isUrgent = false) => {
     try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+      const ctx = audioContextRef.current || new (window.AudioContext || (window as any).webkitAudioContext)();
+      if (!audioContextRef.current) audioContextRef.current = ctx;
       
-      // صوت أقوى وأكثر حدة للإنذار الملح
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
       oscillator.frequency.value = isUrgent ? 1200 : 880;
       oscillator.type = isUrgent ? 'square' : 'sine';
       
-      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-      gainNode.gain.linearRampToValueAtTime(isUrgent ? 0.4 : 0.2, audioContext.currentTime + 0.05);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + (isUrgent ? 0.8 : 0.5));
+      gainNode.gain.setValueAtTime(0, ctx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(isUrgent ? 0.4 : 0.2, ctx.currentTime + 0.05);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + (isUrgent ? 0.8 : 0.5));
       
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + (isUrgent ? 0.8 : 0.5));
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + (isUrgent ? 0.8 : 0.5));
     } catch (e) { console.warn("Audio error", e); }
   };
 
@@ -1554,6 +1574,20 @@ export default function ProtectedOrders() {
         </div>
       )}
 
+      {!audioEnabled && (
+        <div className="bg-orange-600 text-white px-4 py-2 text-center flex flex-col md:flex-row items-center justify-center gap-3 animate-pulse">
+          <div className="flex items-center gap-2">
+            <Bell size={16} />
+            <span className="text-xs font-black">تنبيهات الصوت معطلة من المتصفح</span>
+          </div>
+          <button 
+            onClick={initAudio}
+            className="bg-white text-orange-600 px-4 py-1 rounded-full text-[10px] font-black hover:bg-slate-100 transition-all shadow-lg active:scale-95"
+          >
+            تفعيل الصوت الآن 🔊
+          </button>
+        </div>
+      )}
       <div className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 px-4 py-3">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3"><LayoutDashboard className="w-6 h-6 text-orange-500" /><div><h1 className="text-lg font-bold text-white">لوحة تحكم المدير</h1><p className="text-xs text-slate-400">{currentUser?.name || 'مدير النظام'}</p></div></div>
