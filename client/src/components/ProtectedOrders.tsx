@@ -389,24 +389,38 @@ export default function ProtectedOrders() {
       return { status: 'none', text: 'لا يوجد ضمان', color: 'slate' };
     }
     
-    const orderDate = new Date(order.completed_at || order.created_at || new Date());
+    // استخدام تاريخ الفاتورة أو تاريخ الإكمال أو تاريخ الإنشاء
+    const dateSource = order.invoice_date || order.completed_at || order.created_at || order.date;
+    if (!dateSource) return { status: 'none', text: 'لا يوجد ضمان', color: 'slate' };
+    
+    const orderDate = new Date(dateSource);
+    if (isNaN(orderDate.getTime())) return { status: 'none', text: 'تاريخ غير صالح', color: 'slate' };
+
     let months = 6;
-    if (order.warranty_period?.includes('سنة')) months = 12;
-    else if (order.warranty_period?.includes('شهر')) {
+    if (order.warranty_period?.includes('سنة')) {
+      const match = order.warranty_period.match(/(\d+)/);
+      months = match ? parseInt(match[1]) * 12 : 12;
+    } else if (order.warranty_period?.includes('شهر')) {
       const match = order.warranty_period.match(/(\d+)/);
       if (match) months = parseInt(match[1]);
+    } else if (order.warranty_period === 'بدون ضمان') {
+      return { status: 'none', text: 'بدون ضمان', color: 'slate' };
     }
     
     const endDate = new Date(orderDate);
     endDate.setMonth(endDate.getMonth() + months);
+    
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endCompare = new Date(endDate);
+    endCompare.setHours(0, 0, 0, 0);
     
-    if (today > endDate) return { status: 'expired', text: 'منتهي', color: 'red' };
+    if (today > endCompare) return { status: 'expired', text: 'منتهي', color: 'red' };
     
-    const diffTime = Math.abs(endDate.getTime() - today.getTime());
+    const diffTime = endCompare.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    if (diffDays <= 7) return { status: 'expiring', text: 'ينتهي قريباً', color: 'orange' };
+    if (diffDays <= 7 && diffDays >= 0) return { status: 'expiring', text: `ينتهي خلال ${diffDays} يوم`, color: 'orange' };
     return { status: 'active', text: 'ساري', color: 'emerald' };
   };
 
@@ -736,6 +750,29 @@ export default function ProtectedOrders() {
       const cancelled = activeOrders.filter((o: any) => o.status === 'cancelled').length;
       const totalIncome = activeOrders.filter((o: any) => o.is_paid).reduce((sum, o) => sum + (o.company_share || 0), 0);
       setStats({ pending, inProgress, completed, cancelled, totalIncome });
+
+      // إنذار المتأخرات للمدير
+      const delayedOrders = activeOrders.filter(o => isDelayed(o));
+      if (delayedOrders.length > 0) {
+        const role = userRole?.toLowerCase() || '';
+        if (role === 'admin' || role === 'manager') {
+          console.log("🚨 Delayed orders found! Count:", delayedOrders.length);
+          startUrgentAlert();
+          
+          // إرسال إشعار خارجي للمدير (مرة واحدة كل ساعة لتجنب الإزعاج)
+          const lastAlert = localStorage.getItem('last_delay_alert_manager');
+          const now = new Date().getTime();
+          if (!lastAlert || (now - parseInt(lastAlert)) > 3600000) {
+            void sendExternalPush({
+              event: 'system_alert',
+              title: '⚠️ تنبيه أوردرات متأخرة',
+              message: `يوجد ${delayedOrders.length} أوردر متأخر لأكثر من يومين. يرجى المتابعة مع الفنيين.`,
+              targetRoles: ['admin', 'manager']
+            });
+            localStorage.setItem('last_delay_alert_manager', now.toString());
+          }
+        }
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -1592,7 +1629,7 @@ export default function ProtectedOrders() {
 		                }} className="bg-orange-600/20 hover:bg-orange-600/40 text-orange-400 px-3 py-1 rounded-full text-xs border border-orange-600/30 transition">👨‍🔧 بدون فني</button>
 			                <button onClick={() => { clearFilters(); setFilterStatus('__UNPAID__');
 			                }} className="bg-red-600/20 hover:bg-red-600/40 text-red-400 px-3 py-1 rounded-full text-xs border border-red-600/30 transition">💰 بانتظار التحصيل</button>
-			                <button onClick={() => { clearFilters(); setFilterWarranty('expiring'); }} className="bg-orange-600/20 hover:bg-orange-600/40 text-orange-400 px-3 py-1 rounded-full text-xs border border-orange-600/30 transition">🛡️ ينتهي قريباً</button>
+			                <button onClick={() => { clearFilters(); setFilterWarranty('expiring'); setFilterStatus('completed'); }} className="bg-orange-600/20 hover:bg-orange-600/40 text-orange-400 px-3 py-1 rounded-full text-xs border border-orange-600/30 transition">🛡️ ينتهي قريباً</button>
 			                <div className="h-4 w-[1px] bg-slate-700 mx-1"></div>
 		                <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} className="p-1 bg-slate-800 border border-slate-700 rounded text-xs text-white" />
 		                <span className="text-slate-600 text-xs">إلى</span>
@@ -2202,6 +2239,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-slate-500 opacity-20">
             Maintenance Guide © 2026 - All Rights Reserved
           </div>
+          <div className="text-[8px] text-slate-500 opacity-10">v1.5.2-final-security</div>
         </div>
       </div>
 

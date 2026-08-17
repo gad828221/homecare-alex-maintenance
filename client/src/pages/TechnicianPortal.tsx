@@ -188,6 +188,26 @@ export default function TechnicianPortal() {
       const completed = data.filter((o: any) => o.status === 'completed').length;
       const earnings = data.filter((o: any) => o.status === 'completed').reduce((acc: number, o: any) => acc + (o.technician_share || 0), 0);
       setStats({ active, completed, earnings });
+
+      // إنذار المتأخرات للفني
+      const delayedOrders = data.filter((o: any) => isDelayed(o));
+      if (delayedOrders.length > 0) {
+        console.log("🚨 Technician has delayed orders!", delayedOrders.length);
+        startUrgentAlert();
+
+        // إرسال إشعار خارجي للفني نفسه (مرة واحدة كل ساعة)
+        const lastAlert = localStorage.getItem('last_delay_alert_tech');
+        const now = new Date().getTime();
+        if (!lastAlert || (now - parseInt(lastAlert)) > 3600000) {
+          void sendExternalPush({
+            event: 'system_alert',
+            title: '⚠️ تنبيه أوردرات متأخرة',
+            message: `لديك ${delayedOrders.length} أوردر متأخر لأكثر من يومين. يرجى تقفيلها فوراً!`,
+            targetUserIds: [`tech:${currentUser?.id}`]
+          });
+          localStorage.setItem('last_delay_alert_tech', now.toString());
+        }
+      }
     } catch (err) { console.error(err); } finally { setLoading(false); }
   }, [techName, isActive]);
 
@@ -436,6 +456,35 @@ export default function TechnicianPortal() {
     setShowActionModal(false);
     setActionValue("");
     setCurrentOrder(null);
+  };
+
+  const getDaysDifference = (dateStr: string, status: string) => {
+    if (status === 'inspected') return 0;
+    if (!dateStr) return 0;
+    let orderDate: Date;
+    if (dateStr.includes('/')) {
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+        const day = parseInt(parts[0]), month = parseInt(parts[1]) - 1, year = parseInt(parts[2]);
+        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) orderDate = new Date(year, month, day);
+        else return 0;
+      } else return 0;
+    } else {
+      orderDate = new Date(dateStr);
+      if (isNaN(orderDate.getTime())) return 0;
+    }
+    const today = new Date();
+    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const diffTime = todayDate.getTime() - orderDate.getTime();
+    const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return days > 0 ? days : 0;
+  };
+
+  const isDelayed = (order: any) => {
+    if (order.status === 'completed' || order.status === 'cancelled') return false;
+    if (order.status === 'inspected') return false;
+    // استخدام حقل date أو created_at
+    return getDaysDifference(order.date || order.created_at, order.status) > 2;
   };
 
   const isNewOrder = (order: any) => {
