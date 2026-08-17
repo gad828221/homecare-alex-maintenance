@@ -181,6 +181,7 @@ const addNotification = async (action: string, details: string) => {
 // ==================== المكون الرئيسي ====================
 export default function ProtectedOrders() {
   const [orders, setOrders] = useState<any[]>([]);
+  const [archivedOrders, setArchivedOrders] = useState<any[]>([]);
   const getPhotoUrl = (note: string, type: 'OLD' | 'NEW') => {
     if (!note) return null;
     const regex = new RegExp(`\\[${type}_PARTS:(.*?)\\]`);
@@ -194,7 +195,7 @@ export default function ProtectedOrders() {
   const [cashLedger, setCashLedger] = useState<any[]>([]);
   const [cashBalance, setCashBalance] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'orders' | 'technicians' | 'reports' | 'invoicesReview' | 'cash' | 'partners' | 'notifications' | 'permissions' | 'performance' | 'analytics' | 'feedback'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'archived' | 'technicians' | 'reports' | 'invoicesReview' | 'cash' | 'partners' | 'notifications' | 'permissions' | 'performance' | 'analytics' | 'feedback'>('orders');
   const [showOrderModal, setShowOrderModal] = useState(false);
 
   const [showTechModal, setShowTechModal] = useState(false);
@@ -414,6 +415,12 @@ export default function ProtectedOrders() {
     if (order.status === 'completed' || order.status === 'cancelled') return false;
     if (order.status === 'inspected') return false;
     return getDaysDifference(order.date, order.status) > 2;
+  };
+
+  const isOldAndShouldArchive = (order: any) => {
+    const archiveStatuses = ['pending', 'in-progress', 'cancelled', 'inspected'];
+    if (!archiveStatuses.includes(order.status)) return false;
+    return getDaysDifference(order.date, order.status) > 30;
   };
 
   const isNewOrder = (order: any) => {
@@ -758,10 +765,13 @@ export default function ProtectedOrders() {
         lastCheckedOrderId.current = newestId;
       }
 
-      const activeOrders = ordersArray.filter((o: any) => !o.deleted_at);
+      const notDeleted = ordersArray.filter((o: any) => !o.deleted_at);
+      const activeOrders = notDeleted.filter((o: any) => !isOldAndShouldArchive(o));
+      const archivedOrders = notDeleted.filter((o: any) => isOldAndShouldArchive(o));
       const deletedOrders = ordersArray.filter((o: any) => o.deleted_at);
 
       setOrders(activeOrders);
+      setArchivedOrders(archivedOrders);
       setDeletedOrders(deletedOrders);
 
       const [techsData, notificationsData, partnersData, cashData] = await Promise.all([
@@ -1309,6 +1319,19 @@ export default function ProtectedOrders() {
     return (o.status === 'in-progress' || o.status === 'pending' || !o.technician || o.technician === '-' || o.technician === '');
   });
 
+  const filteredArchivedOrders = archivedOrders.filter(o => {
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesName = o.customer_name?.toLowerCase().includes(searchLower);
+      const matchesPhone = o.phone?.includes(searchTerm);
+      const matchesOrderNum = String(o.order_number).includes(searchTerm);
+      if (!matchesName && !matchesPhone && !matchesOrderNum) return false;
+    }
+    if (filterStatus !== 'all' && o.status !== filterStatus) return false;
+    if (filterTechnician && o.technician !== filterTechnician) return false;
+    return true;
+  });
+
 
   const filteredTechnicians = technicians.filter(t => filterTechStatus === 'all' ? true : filterTechStatus === 'active' ? t.is_active !== false : t.is_active === false);
 
@@ -1580,7 +1603,7 @@ export default function ProtectedOrders() {
             >
               <Play fill="currentColor" size={20} /> دخول وتفعيل التنبيهات 🔊
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v1.5.9</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v1.6.0</p>
           </div>
         </div>
       )}
@@ -1665,6 +1688,7 @@ export default function ProtectedOrders() {
 
       <div className="flex gap-2 p-4 border-b bg-slate-900 overflow-x-auto">
         <button onClick={() => setActiveTab('orders')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'orders' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📋 الأوردرات</button>
+        <button onClick={() => setActiveTab('archived')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'archived' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📂 الأرشيف ({archivedOrders.length})</button>
         {userRole !== 'viewer' && <button onClick={() => setActiveTab('technicians')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'technicians' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>👨‍🔧 الفنيين</button>}
         {userRole !== 'viewer' && <button onClick={() => setActiveTab('reports')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'reports' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📊 التقارير</button>}
         {userRole !== 'viewer' && <button onClick={() => setActiveTab('invoicesReview')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'invoicesReview' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📄 الفواتير</button>}
@@ -1678,9 +1702,9 @@ export default function ProtectedOrders() {
       </div>
 
 	      <div className="p-4">
-	        {/* تبويب الأوردرات */}
-	        {activeTab === 'orders' && (
-	          <div className="space-y-4">
+		        {/* تبويب الأوردرات */}
+		        {activeTab === 'orders' && (
+		          <div className="space-y-4">
               {/* لوحة ملخص اليوم الذكي */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
                 <div className="lg:col-span-2 bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-6 border border-slate-700 shadow-2xl relative overflow-hidden">
@@ -2056,6 +2080,80 @@ export default function ProtectedOrders() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'archived' && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center bg-indigo-900/20 border border-indigo-500/30 p-4 rounded-2xl">
+              <div>
+                <h2 className="text-xl font-black text-white flex items-center gap-2">
+                  <Plus className="rotate-45 text-indigo-400" /> أرشيف الأوردرات القديمة
+                </h2>
+                <p className="text-xs text-slate-400 mt-1">الأوردرات التي مر عليها أكثر من 30 يوماً ولم تكتمل بعد.</p>
+              </div>
+              <div className="bg-indigo-600 text-white px-4 py-1 rounded-full text-xs font-bold">
+                {archivedOrders.length} أوردر
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredArchivedOrders.length === 0 && (
+                <div className="col-span-full text-center py-20 bg-slate-900/50 rounded-[2rem] border-2 border-dashed border-slate-800">
+                  <Plus className="w-12 h-12 text-slate-700 mx-auto mb-4 rotate-45" />
+                  <p className="text-slate-500 font-bold">لا توجد أوردرات في الأرشيف حالياً</p>
+                </div>
+              )}
+              {filteredArchivedOrders.map(order => {
+                const statusConfig = {
+                  pending: { color: 'amber', label: '⏳ قيد الانتظار' },
+                  'in-progress': { color: 'blue', label: '🔧 قيد التنفيذ' },
+                  completed: { color: 'emerald', label: '✅ مكتمل' },
+                  cancelled: { color: 'rose', label: '❌ ملغي' },
+                  deferred: { color: 'purple', label: '⏰ مؤجل' },
+                  inspected: { color: 'cyan', label: '🔍 تم الكشف' }
+                };
+                const config = statusConfig[order.status] || { color: 'slate', label: order.status };
+                const cardColor = config.color;
+
+                return (
+                  <div key={order.id} className="bg-slate-900/40 rounded-[1.5rem] border border-slate-800 p-5 opacity-80 hover:opacity-100 transition-all hover:border-indigo-500/50">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="text-md font-bold text-white">{order.customer_name}</h3>
+                        <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">#{order.order_number}</span>
+                      </div>
+                      <div className={`px-2 py-1 rounded-lg text-[9px] font-bold border border-${cardColor}-500/30 bg-${cardColor}-500/10 text-${cardColor}-400`}>{config.label}</div>
+                    </div>
+                    <div className="space-y-2 text-xs text-slate-400">
+                      <p>🔧 {order.device_type} - {order.brand}</p>
+                      <p>📍 {order.address || 'بدون عنوان'}</p>
+                      <p>⏰ {new Date(order.created_at || order.date).toLocaleDateString('ar-EG')}</p>
+                      <p className="text-indigo-400 font-bold">💰 {order.total_amount} ج.م</p>
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-slate-800 flex gap-2">
+                      {!isViewer && <a href={`tel:${order.phone}`} className="flex-1 bg-slate-800 text-white py-2 rounded-xl text-center text-[10px] font-bold">اتصال</a>}
+                      {canEditDelete() && (
+                        <button 
+                          onClick={() => { setEditingOrder(order); setFormData(order); setShowOrderModal(true); }}
+                          className="px-3 bg-slate-800 text-blue-400 rounded-xl"
+                        >
+                          <Edit size={14} />
+                        </button>
+                      )}
+                      {canEditDelete() && (
+                        <button 
+                          onClick={() => deleteOrder(order.id)}
+                          className="px-3 bg-slate-800 text-rose-400 rounded-xl"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
