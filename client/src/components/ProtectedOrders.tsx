@@ -1607,69 +1607,7 @@ export default function ProtectedOrders() {
 		              {canEditDelete() && <button onClick={() => { setEditingOrder(null); setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") }); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={18} /> أوردر جديد</button>}
 		              <button onClick={() => setShowDeleted(!showDeleted)} className={`px-3 py-2 rounded-lg text-sm transition ${showDeleted ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}><Trash2 size={16} /> {showDeleted ? 'إخفاء المحذوفة' : `عرض المحذوفة (${deletedOrders.length})`}</button>
 		              			              <div className="flex gap-2 ml-auto">
-                        <button
-                          onClick={async () => {
-                            const result = await sendExternalPush({
-                              event: 'system_alert',
-                              title: '🔔 إشعار تجريبي',
-                              message: 'إذا وصلك هذا الإشعار، فهذا يعني أن النظام يعمل بنجاح!',
-                              targetRoles: ['admin', 'manager']
-                            });
-                            if (result.ok) {
-                              showToast('تم إرسال الإشعار التجريبي', 'success');
-                            } else {
-                              showToast(`فشل الإرسال: ${result.error || 'تحقق من الإعدادات'}`, 'error');
-                            }
-                          }}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition-colors"
-                          title="إرسال إشعار تجريبي للهاتف"
-                        >
-                          <Bell size={18} />
-                        </button>
-                        <button 
-                          onClick={() => {
-                            const win = window as any;
-                            win.OneSignalDeferred = win.OneSignalDeferred || [];
-                            win.OneSignalDeferred.push(async (OneSignal: any) => {
-                              try {
-                                // محاولة إظهار النافذة المنبثقة الداخلية أولاً
-                                if (OneSignal.slidedown) {
-                                  await OneSignal.slidedown.promptPush();
-                                }
-                                // ثم طلب الإذن الرسمي
-                                await OneSignal.Notifications.requestPermission();
-                              } catch (e) {
-                                console.error(e);
-                                alert("يرجى التأكد من السماح بالإشعارات من إعدادات المتصفح (رمز القفل بجانب الرابط)");
-                              }
-                            });
-                          }}
-                          className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-lg transition-colors"
-                          title="تفعيل الإشعارات يدوياً"
-                        >
-                          <Bell size={18} className="animate-pulse" />
-                        </button>
-                        <button 
-                          onClick={() => {
-                            if(confirm("سيتم مسح إعدادات الإشعارات القديمة وإعادة تحميل الصفحة. هل تريد الاستمرار؟")) {
-                              localStorage.removeItem("onesignal-notification-prompt");
-                              localStorage.removeItem("isPushNotificationsEnabled");
-                              window.location.reload();
-                            }
-                          }}
-                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg transition-colors"
-                          title="إعادة ضبط الإشعارات"
-                        >
-                          <RotateCcw size={18} />
-                        </button>
-	                        <button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg"><RefreshCw size={18} className={loading ? 'animate-spin' : ''} /></button>
-	                        <button 
-	                          onClick={() => startUrgentAlert()} 
-	                          className="bg-red-600/20 hover:bg-red-600/40 text-red-500 px-3 py-2 rounded-lg border border-red-600/30 transition-colors"
-	                          title="تجربة صوت الإنذار"
-	                        >
-	                          <AlertCircle size={18} className="animate-pulse" />
-	                        </button>
+	                        <button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg" title="تحديث البيانات"><RefreshCw size={18} className={loading ? 'animate-spin' : ''} /></button>
 	                      </div>
 
 		            </div>
@@ -2261,22 +2199,8 @@ export default function ProtectedOrders() {
         {activeTab === 'performance' && userRole !== 'viewer' && <TechnicianPerformance orders={orders} technicians={technicians} />}
         {activeTab === 'permissions' && userRole === 'admin' && <AdminPermissions currentUser={currentUser} />}
         <div className="mt-8 flex flex-col items-center gap-2">
-          <button 
-            onClick={() => {
-              localStorage.clear();
-              sessionStorage.clear();
-              runWithOneSignal((OneSignal) => {
-                OneSignal.User.PushSubscription.optOut();
-              });
-              alert("تم مسح كافة الإعدادات. سيتم الآن تسجيل الخروج، يرجى الدخول مرة أخرى وستظهر نافذة الإشعارات.");
-              window.location.href = "/login";
-            }}
-            className="text-[10px] bg-slate-800 text-slate-500 px-3 py-1 rounded-full border border-slate-700 hover:text-white transition-colors"
-          >
-            إعادة ضبط النظام الشاملة (حل مشاكل الإشعارات)
-          </button>
-          <div className="text-[10px] text-slate-500 opacity-30">
-            System Version: v1.4.1-tech-invoice (Deployed: Aug 17, 06:30)
+          <div className="text-[10px] text-slate-500 opacity-20">
+            Maintenance Guide © 2026 - All Rights Reserved
           </div>
         </div>
       </div>
