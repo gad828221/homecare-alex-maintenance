@@ -3,7 +3,7 @@ import {
   Plus, Search, LayoutDashboard, Users,
   CheckCircle2, AlertCircle,
   Edit, Trash2, RefreshCw, Phone,
-  Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut, Send, Play,
+  Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut, Send, Play, LogIn,
   RotateCcw, Clock, MapPin, Star, Cpu, ShieldCheck
 } from "lucide-react";
 import { createClient } from '@supabase/supabase-js';
@@ -2554,7 +2554,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-slate-500 opacity-20">
             Maintenance Guide © 2026 - All Rights Reserved
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v1.5.3-direct-whatsapp</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v1.6.3-full-permissions</div>
         </div>
       </div>
 
