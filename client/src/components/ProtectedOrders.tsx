@@ -456,6 +456,10 @@ export default function ProtectedOrders() {
     const role = userRole?.toLowerCase() || '';
     return role === 'admin' || role === 'manager';
   };
+  const isAdmin = userRole?.toLowerCase() === 'admin';
+  const canManageTechnicians = isAdmin;
+  const canManageCash = isAdmin;
+  const canManagePartners = isAdmin;
   const isViewer = userRole?.toLowerCase() === 'viewer';
   const viewerBlockedTabs = ['technicians', 'reports', 'invoicesReview', 'partners', 'performance', 'feedback', 'permissions'];
   
@@ -707,7 +711,7 @@ export default function ProtectedOrders() {
 
   const addCashEntry = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
+    if (!canManageCash) return showToast("مدير العمليات لا يملك صلاحية إضافة حركات للخزنة", "error");
     try {
       const amount = Number(Number(cashForm.amount).toFixed(2));
       const entryData = { ...cashForm, amount };
@@ -720,7 +724,7 @@ export default function ProtectedOrders() {
   };
 
   const deleteCashEntry = async (id: number) => {
-    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
+    if (!canManageCash) return showToast("مدير العمليات لا يملك صلاحية تعديل الخزنة", "error");
     if (confirm('هل تريد حذف هذا القيد نهائياً؟')) {
       await fetchAPI(`cash_ledger?id=eq.${id}`, { method: 'DELETE' });
       await addNotification('حذف قيد خزنة', `تم حذف قيد من سجل الخزنة`);
@@ -912,6 +916,10 @@ export default function ProtectedOrders() {
   };
 
   const handleDistributeSelectedProfit = async () => {
+    if (!canManageCash) {
+      showToast("مدير العمليات لا يملك صلاحية توزيع الأرباح أو إنشاء حركة خزنة", "error");
+      return;
+    }
     if (!selectedProfitDate) {
       showToast("ليس لديك صلاحية", "error");
       return;
@@ -1373,7 +1381,7 @@ export default function ProtectedOrders() {
   };
 
   const updateAllPendingOrdersProfit = async (technicianName: string, newPercentage: number) => {
-    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
+    if (!canManageTechnicians) return showToast("مدير العمليات لا يملك صلاحية تعديل بيانات الفنيين أو نسبهم", "error");
     if (!confirm(`هل تريد تحديث نسب الأرباح لجميع الأوردرات غير المكتملة للفني "${technicianName}" إلى ${newPercentage}%؟`)) return;
     const pendingOrders = orders.filter(o => o.technician === technicianName && o.status !== 'completed');
     if (pendingOrders.length === 0) { showToast("لا توجد أوردرات معلقة لتحديثها", "info"); return; }
@@ -1392,7 +1400,7 @@ export default function ProtectedOrders() {
 
   const saveTechnician = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
+    if (!canManageTechnicians) return showToast("مدير العمليات لا يملك صلاحية تعديل الفنيين", "error");
     
     // 🛡️ حماية من التكرار
     const isDuplicate = !editingTech && technicians.some(t => 
@@ -1419,7 +1427,7 @@ export default function ProtectedOrders() {
   };
 
   const deleteTechnician = async (id: number, name: string) => {
-    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
+    if (!canManageTechnicians) return showToast("مدير العمليات لا يملك صلاحية حذف الفنيين", "error");
     if (confirm(`حذف الفني ${name}؟`)) {
       await fetchAPI(`technicians?id=eq.${id}`, { method: 'DELETE' });
       await addNotification('حذف فني', `تم حذف الفني ${name}`);
@@ -1428,7 +1436,7 @@ export default function ProtectedOrders() {
   };
 
   const toggleTechnicianActive = async (tech: any) => {
-    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
+    if (!canManageTechnicians) return showToast("مدير العمليات لا يملك صلاحية تعديل الفنيين", "error");
     await fetchAPI(`technicians?id=eq.${tech.id}`, { method: 'PATCH', body: JSON.stringify({ is_active: !tech.is_active }) });
     await addNotification('تغيير حالة فني', `تم ${!tech.is_active ? 'تفعيل' : 'تعطيل'} الفني ${tech.name}`);
     fetchData();
@@ -2379,7 +2387,7 @@ export default function ProtectedOrders() {
                 <button onClick={() => setFilterTechStatus('inactive')} className={`px-3 py-1 rounded-full text-sm ${filterTechStatus==='inactive'?'bg-orange-600 text-white':'bg-slate-800 text-slate-300'}`}>غير النشطون</button>
                 <button onClick={() => setFilterTechStatus('all')} className={`px-3 py-1 rounded-full text-sm ${filterTechStatus==='all'?'bg-orange-600 text-white':'bg-slate-800 text-slate-300'}`}>الجميع</button>
               </div>
-              {canEditDelete() && <button onClick={() => { setEditingTech(null); setTechForm({ name: '', phone: '', specialization: '', is_active: true, username: '', password: '', profit_percentage: 50 }); setShowTechModal(true); }} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={18} /> إضافة فني</button>}
+              {canManageTechnicians && <button onClick={() => { setEditingTech(null); setTechForm({ name: '', phone: '', specialization: '', is_active: true, username: '', password: '', profit_percentage: 50 }); setShowTechModal(true); }} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={18} /> إضافة فني</button>}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {filteredTechnicians.map(tech => (
@@ -2390,7 +2398,7 @@ export default function ProtectedOrders() {
                   <p className="text-xs text-slate-400 mt-1">نسبة الأرباح: {tech.profit_percentage ?? 50}%</p>
                   <div className="flex gap-2 mt-3">
                     <button onClick={() => copyTechLink(tech)} className="flex-1 bg-slate-700 text-slate-300 py-1 rounded text-xs flex items-center justify-center gap-1">{copiedId===tech.id?<Check size={14}/>:<Copy size={14}/>} نسخ</button>
-                    {canEditDelete() && <>
+                    {canManageTechnicians && <>
                       <button onClick={() => { setEditingTech(tech); setTechForm(tech); setShowTechModal(true); }} className="p-1 text-blue-500"><Edit size={16}/></button>
                       <button onClick={() => deleteTechnician(tech.id, tech.name)} className="p-1 text-red-500"><Trash2 size={16}/></button>
                       <button onClick={() => toggleTechnicianActive(tech)} className={`p-1 ${tech.is_active!==false?'text-green-500':'text-red-500'}`}>{tech.is_active!==false?'نشط':'تعطيل'}</button>
@@ -2487,12 +2495,12 @@ export default function ProtectedOrders() {
               <div className="flex gap-2">
                 <input type="date" value={cashFilterDate} onChange={e=>setCashFilterDate(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"/>
                 <button onClick={()=>setCashFilterDate('')} className="bg-slate-700 text-white px-3 py-2 rounded-lg text-sm">إلغاء الفلتر</button>
-                {canEditDelete() && <button onClick={()=>{setEditingCash(null); setCashForm({type:'expense',amount:0,description:'',date:new Date().toISOString().split('T')[0]}); setShowCashModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={16}/> حركة جديدة</button>}
+                {canManageCash && <button onClick={()=>{setEditingCash(null); setCashForm({type:'expense',amount:0,description:'',date:new Date().toISOString().split('T')[0]}); setShowCashModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={16}/> حركة جديدة</button>}
               </div>
             </div>
             <div className="bg-purple-600/10 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 border border-purple-500/30">
               <div className="flex flex-col gap-1"><p className="text-sm font-semibold text-purple-300">📅 توزيع أرباح الشركاء</p><p className="text-xs text-slate-400">اختر التاريخ ثم اضغط زر التوزيع (يتم توزيع صافي ربح اليوم بنسبة الشركاء)</p></div>
-              <div className="flex flex-wrap items-center gap-3"><input type="date" value={selectedProfitDate} onChange={e=>setSelectedProfitDate(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"/>{canEditDelete() && <button onClick={handleDistributeSelectedProfit} className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"><DollarSign size={16}/> توزيع أرباح التاريخ المحدد</button>}</div>
+              <div className="flex flex-wrap items-center gap-3"><input type="date" value={selectedProfitDate} onChange={e=>setSelectedProfitDate(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"/>{canManageCash && <button onClick={handleDistributeSelectedProfit} className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"><DollarSign size={16}/> توزيع أرباح التاريخ المحدد</button>}</div>
             </div>
             <div className="bg-blue-600/10 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 border border-blue-500/30">
               <div className="flex flex-col gap-1"><p className="text-sm font-semibold text-blue-300">📊 إرسال تقرير الخزنة للشركاء</p><p className="text-xs text-slate-400">اختر التاريخ ثم اضغط زر الإرسال (يفتح واتساب لكل شريك)</p></div>
@@ -2506,7 +2514,7 @@ export default function ProtectedOrders() {
                   <td className="text-slate-300">{entry.type==='income'?'💰 دخل':entry.type==='expense'?'💸 مصروف':'📤 توزيع أرباح'}</td>
                   <td className={entry.type==='income'?'text-green-400':'text-red-400'}>{entry.amount} ج.م</td>
                   <td className="max-w-xs break-words text-slate-300">{entry.description}</td>
-                  <td>{canEditDelete() && <button onClick={()=>deleteCashEntry(entry.id)} className="text-red-400"><Trash2 size={16}/></button>}</td>
+                  <td>{canManageCash && <button onClick={()=>deleteCashEntry(entry.id)} className="text-red-400"><Trash2 size={16}/></button>}</td>
                 </tr>
               ))}</tbody></table>
             </div>
@@ -2515,14 +2523,14 @@ export default function ProtectedOrders() {
 
         {activeTab === 'partners' && userRole !== 'viewer' && (
           <div className="space-y-4">
-            <div className="flex justify-end">{canEditDelete() && <button onClick={()=>{setEditingPartner(null); setPartnerForm({name:'',share_percentage:0,phone:'',is_active:true}); setShowPartnerModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><UserPlus size={16}/> إضافة شريك</button>}</div>
+            <div className="flex justify-end">{canManagePartners && <button onClick={()=>{setEditingPartner(null); setPartnerForm({name:'',share_percentage:0,phone:'',is_active:true}); setShowPartnerModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><UserPlus size={16}/> إضافة شريك</button>}</div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {partners.map(partner => (
                 <div key={partner.id} className="bg-slate-900 rounded-xl p-4 border border-slate-800">
                   <div className="flex justify-between"><h3 className="font-bold text-white">{partner.name}</h3><span className={`text-xs px-2 py-1 rounded-full ${partner.is_active?'bg-green-500/20 text-green-400':'bg-red-500/20 text-red-400'}`}>{partner.is_active?'نشط':'غير نشط'}</span></div>
                   <p className="text-2xl font-bold text-orange-500 mt-2">{partner.share_percentage}%</p>
                   <p className="text-sm text-slate-400">📞 {partner.phone||'لا يوجد'}</p>
-                  {canEditDelete() && <div className="flex gap-2 mt-3"><button onClick={()=>{setEditingPartner(partner); setPartnerForm(partner); setShowPartnerModal(true);}} className="text-blue-500"><Edit size={16}/></button><button onClick={()=>deletePartner(partner.id, partner.name)} className="text-red-500"><Trash2 size={16}/></button></div>}
+                  {canManagePartners && <div className="flex gap-2 mt-3"><button onClick={()=>{setEditingPartner(partner); setPartnerForm(partner); setShowPartnerModal(true);}} className="text-blue-500"><Edit size={16}/></button><button onClick={()=>deletePartner(partner.id, partner.name)} className="text-red-500"><Trash2 size={16}/></button></div>}
                 </div>
               ))}
             </div>
@@ -2739,7 +2747,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-slate-500 opacity-20">
             Maintenance Guide © 2026 - All Rights Reserved
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v1.6.9-unique-presence</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v1.7.0-manager-permissions</div>
         </div>
       </div>
 
@@ -2803,7 +2811,7 @@ export default function ProtectedOrders() {
             <h3 className="text-xl font-bold text-white mb-4">{editingPartner ? 'تعديل شريك' : 'إضافة شريك'}</h3>
             <form onSubmit={async (e) => {
               e.preventDefault();
-              if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
+              if (!canManagePartners) return showToast("مدير العمليات لا يملك صلاحية تعديل الشركاء", "error");
               try {
                 if (editingPartner) await fetchAPI(`partners?id=eq.${editingPartner.id}`, { method: 'PATCH', body: JSON.stringify(partnerForm) });
                 else await fetchAPI('partners', { method: 'POST', body: JSON.stringify(partnerForm) });
