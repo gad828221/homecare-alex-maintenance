@@ -49,9 +49,13 @@ export default function Login() {
             id: user.id,
             username: user.username,
             name: user.name,
-            role: user.role
+            role: user.role,
+            techName: user.role === 'tech' ? user.name : undefined
           }));
-                    localStorage.setItem('userRole', user.role);
+          localStorage.setItem('userRole', user.role);
+          if (user.role === 'tech') {
+            localStorage.setItem('techName', user.name);
+          }
           
           // تسجيل دخول المستخدم في الإشعارات
           try {
@@ -59,15 +63,21 @@ export default function Login() {
               method: 'POST',
               headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                action: 'تسجيل دخول',
-                details: `المستخدم ${user.name} قام بفتح البرنامج الآن`,
+                action: user.role === 'tech' ? 'تسجيل دخول فني' : 'تسجيل دخول',
+                details: `المستخدم ${user.name} (${user.role === 'tech' ? 'فني' : 'إدارة'}) قام بفتح البرنامج الآن`,
                 user_name: user.name,
                 created_at: new Date().toISOString()
               })
             });
           } catch (err) { console.error(err); }
           
-          window.location.href = user.role === 'data-entry' ? '/data-entry' : '/orders';
+          if (user.role === 'tech') {
+            window.location.href = '/tech-portal';
+          } else if (user.role === 'data-entry') {
+            window.location.href = '/data-entry';
+          } else {
+            window.location.href = '/orders';
+          }
         } else {
           setError('❌ اسم المستخدم أو كلمة المرور غير صحيحة');
         }

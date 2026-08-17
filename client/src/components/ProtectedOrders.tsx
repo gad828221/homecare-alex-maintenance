@@ -66,9 +66,10 @@ function AdminPermissions({ users, onEdit, onDelete, onToggle, canEdit }: { user
                 user.role === 'admin' ? 'bg-orange-500/20 text-orange-400' : 
                 user.role === 'manager' ? 'bg-blue-500/20 text-blue-400' : 
                 user.role === 'data-entry' ? 'bg-emerald-500/20 text-emerald-400' : 
+                user.role === 'tech' ? 'bg-indigo-500/20 text-indigo-400' : 
                 'bg-slate-800 text-slate-400'
               }`}>
-                {user.role === 'admin' ? 'مدير عام' : user.role === 'manager' ? 'مدير فرع' : user.role === 'data-entry' ? 'مدخل بيانات' : 'مشاهد'}
+                {user.role === 'admin' ? 'مدير عام' : user.role === 'manager' ? 'مدير فرع' : user.role === 'data-entry' ? 'مدخل بيانات' : user.role === 'tech' ? 'فني' : 'مشاهد'}
               </div>
             </div>
 
@@ -454,9 +455,38 @@ export default function ProtectedOrders() {
     try {
       if (editingUserAccount) {
         await fetchAPI(`users?id=eq.${editingUserAccount.id}`, { method: 'PATCH', body: JSON.stringify(userForm) });
+        
+        // ✅ إذا كان فني، نقوم بتحديثه في جدول الفنيين أيضاً
+        if (userForm.role === 'tech') {
+          const techData = { name: userForm.name, username: userForm.username, password: userForm.password, is_active: userForm.is_active };
+          // البحث عن الفني بنفس اسم المستخدم لتحديثه
+          const existingTechs = await fetchAPI(`technicians?username=eq.${encodeURIComponent(userForm.username)}`);
+          if (existingTechs && existingTechs.length > 0) {
+            await fetchAPI(`technicians?id=eq.${existingTechs[0].id}`, { method: 'PATCH', body: JSON.stringify(techData) });
+          } else {
+            await fetchAPI('technicians', { method: 'POST', body: JSON.stringify({ ...techData, specialization: 'عام', profit_percentage: 50 }) });
+          }
+        }
+        
         showToast("✅ تم تحديث المستخدم", "success");
       } else {
         await fetchAPI('users', { method: 'POST', body: JSON.stringify(userForm) });
+        
+        // ✅ إذا كان فني جديد، نقوم بإضافته لجدول الفنيين تلقائياً
+        if (userForm.role === 'tech') {
+          await fetchAPI('technicians', { 
+            method: 'POST', 
+            body: JSON.stringify({ 
+              name: userForm.name, 
+              username: userForm.username, 
+              password: userForm.password, 
+              is_active: userForm.is_active,
+              specialization: 'عام',
+              profit_percentage: 50
+            }) 
+          });
+        }
+        
         showToast("✅ تم إضافة المستخدم بنجاح", "success");
       }
       setShowUserModal(false);
@@ -2623,7 +2653,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-slate-500 opacity-20">
             Maintenance Guide © 2026 - All Rights Reserved
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v1.6.4-functional-permissions</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v1.6.5-unified-system</div>
         </div>
       </div>
 
@@ -2768,6 +2798,7 @@ export default function ProtectedOrders() {
                   <option value="admin">مدير عام (صلاحيات كاملة)</option>
                   <option value="manager">مدير فرع (تعديل وتحصيل)</option>
                   <option value="data-entry">مدخل بيانات (إضافة فقط)</option>
+                  <option value="tech">فني (يفتح برنامج الفنيين)</option>
                   <option value="viewer">مشاهد (رؤية فقط)</option>
                 </select>
               </div>
