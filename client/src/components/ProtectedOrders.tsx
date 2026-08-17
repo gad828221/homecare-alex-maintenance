@@ -4,7 +4,7 @@ import {
   CheckCircle2, AlertCircle,
   Edit, Trash2, RefreshCw, Phone,
   Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut, Send,
-  RotateCcw, Clock, MapPin, Star, Cpu
+  RotateCcw, Clock, MapPin, Star, Cpu, ShieldCheck
 } from "lucide-react";
 import { createClient } from '@supabase/supabase-js';
 import { Helmet } from 'react-helmet-async';
@@ -2276,7 +2276,7 @@ export default function ProtectedOrders() {
             إعادة ضبط النظام الشاملة (حل مشاكل الإشعارات)
           </button>
           <div className="text-[10px] text-slate-500 opacity-30">
-            System Version: v1.3.9-edit-invoice (Deployed: Aug 17, 06:00)
+            System Version: v1.4.0-fix (Deployed: Aug 17, 06:15)
           </div>
         </div>
       </div>
