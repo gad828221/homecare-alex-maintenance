@@ -1073,8 +1073,17 @@ export default function ProtectedOrders() {
     presenceChannel
       .on('presence', { event: 'sync' }, () => {
         const state = presenceChannel.presenceState();
-        const users = Object.values(state).flat();
-        setOnlineUsers(users);
+        const presenceList = Object.values(state).flat() as any[];
+        // قد يفتح المستخدم أكثر من تبويب/جهاز، لذلك نعرض كل مستخدم مرة واحدة فقط.
+        const uniqueUsers = Array.from(
+          new Map(
+            presenceList.map((user: any) => [
+              String(user.user_id ?? `${user.name ?? 'مستخدم'}:${user.role ?? ''}`),
+              user,
+            ])
+          ).values()
+        );
+        setOnlineUsers(uniqueUsers);
       })
       .subscribe();
 
@@ -2730,7 +2739,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-slate-500 opacity-20">
             Maintenance Guide © 2026 - All Rights Reserved
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v1.6.8-turbo-notifications</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v1.6.9-unique-presence</div>
         </div>
       </div>
 
