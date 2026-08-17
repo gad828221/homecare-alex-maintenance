@@ -26,12 +26,81 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const DEVICE_TYPES = ['غسالة', 'ثلاجة', 'بوتاجاز', 'سخان', 'تكييف', 'ميكروويف', 'غسالة أطباق'];
 const BRANDS = ['سامسونج', 'LG', 'شارب', 'توشيبا', 'زانوسي', 'يونيون إير', 'فريش', 'وايت ويل', 'أريستون', 'بيكو', 'هوفر', 'إنديست', 'كريازي'];
 
-// ==================== مكونات وهمية محلية ====================
-function AdminPermissions({ currentUser }: { currentUser?: any }) {
+// ==================== إدارة المستخدمين والصلاحيات (النسخة المتكاملة) ====================
+function AdminPermissions({ users, onEdit, onDelete, onToggle, canEdit }: { users: any[], onEdit: (u: any) => void, onDelete: (id: number, name: string) => void, onToggle: (u: any) => void, canEdit: boolean }) {
   return (
-    <div className="bg-slate-900 rounded-xl p-6 text-white">
-      <h2 className="text-xl font-bold mb-4">🔐 إدارة الصلاحيات</h2>
-      <p>مرحباً {currentUser?.name || 'مدير'}، صفحة الصلاحيات تعمل.</p>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center bg-slate-900/50 border border-slate-800 p-4 rounded-2xl">
+        <div>
+          <h2 className="text-xl font-black text-white flex items-center gap-2">
+            <ShieldCheck className="text-orange-500" /> إدارة صلاحيات النظام
+          </h2>
+          <p className="text-xs text-slate-500 mt-1">إدارة حسابات الموظفين، المديرين، ومدخلي البيانات.</p>
+        </div>
+        {canEdit && (
+          <button 
+            onClick={() => onEdit(null)}
+            className="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-lg active:scale-95"
+          >
+            <UserPlus size={16} /> إضافة مستخدم جديد
+          </button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {users.map(user => (
+          <div key={user.id} className={`bg-slate-900 rounded-[1.5rem] border-2 ${user.is_active ? 'border-slate-800' : 'border-red-900/30 opacity-60'} p-5 transition-all hover:border-orange-500/30`}>
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-white ${
+                  user.role === 'admin' ? 'bg-orange-600' : user.role === 'manager' ? 'bg-blue-600' : 'bg-slate-700'
+                }`}>
+                  {user.name?.substring(0, 1)}
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-white">{user.name}</h3>
+                  <p className="text-[10px] text-slate-500">@{user.username}</p>
+                </div>
+              </div>
+              <div className={`px-2 py-0.5 rounded-full text-[9px] font-black ${
+                user.role === 'admin' ? 'bg-orange-500/20 text-orange-400' : 
+                user.role === 'manager' ? 'bg-blue-500/20 text-blue-400' : 
+                user.role === 'data-entry' ? 'bg-emerald-500/20 text-emerald-400' : 
+                'bg-slate-800 text-slate-400'
+              }`}>
+                {user.role === 'admin' ? 'مدير عام' : user.role === 'manager' ? 'مدير فرع' : user.role === 'data-entry' ? 'مدخل بيانات' : 'مشاهد'}
+              </div>
+            </div>
+
+            <div className="space-y-2 mb-4">
+              <div className="flex justify-between text-[10px]">
+                <span className="text-slate-500">كلمة المرور:</span>
+                <span className="text-slate-300 font-mono">{user.password}</span>
+              </div>
+              <div className="flex justify-between text-[10px]">
+                <span className="text-slate-500">الحالة:</span>
+                <span className={user.is_active ? 'text-emerald-400' : 'text-red-400'}>
+                  {user.is_active ? '● نشط' : '○ معطل'}
+                </span>
+              </div>
+            </div>
+
+            {canEdit && (
+              <div className="flex gap-2 pt-4 border-t border-slate-800">
+                <button onClick={() => onEdit(user)} className="flex-1 h-9 bg-slate-800 hover:bg-blue-600 text-blue-400 hover:text-white rounded-xl flex items-center justify-center gap-2 transition-all text-[10px] font-bold">
+                  <Edit size={14} /> تعديل
+                </button>
+                <button onClick={() => onToggle(user)} className={`flex-1 h-9 rounded-xl flex items-center justify-center gap-2 transition-all text-[10px] font-bold ${user.is_active ? 'bg-slate-800 text-amber-400 hover:bg-amber-600 hover:text-white' : 'bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white'}`}>
+                  {user.is_active ? 'إيقاف' : 'تفعيل'}
+                </button>
+                <button onClick={() => onDelete(user.id, user.name)} className="w-9 h-9 bg-slate-800 hover:bg-rose-600 text-rose-400 hover:text-white rounded-xl flex items-center justify-center transition-all">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -2554,7 +2623,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-slate-500 opacity-20">
             Maintenance Guide © 2026 - All Rights Reserved
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v1.6.3-full-permissions</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v1.6.4-functional-permissions</div>
         </div>
       </div>
 
