@@ -64,7 +64,9 @@ export default function TechnicianPortal() {
     transport_cost: 0,
     net_amount: 0,
     technician_share: 0,
-    company_share: 0
+    company_share: 0,
+    warranty_period: '6 أشهر',
+    parts_used: ''
   });
 
   useEffect(() => {
@@ -321,7 +323,11 @@ export default function TechnicianPortal() {
     } catch (err) { console.error(err); }
   };
 
-  const handleSettleChange = (field: string, value: string) => {
+  const handleSettleChange = (field: string, value: any) => {
+    if (field === 'warranty_period' || field === 'parts_used') {
+      setSettleForm(prev => ({ ...prev, [field]: value }));
+      return;
+    }
     const numValue = parseFloat(value) || 0;
     const updated = { ...settleForm, [field]: numValue };
     const net = updated.total_amount - updated.parts_cost - updated.transport_cost;
@@ -335,7 +341,9 @@ export default function TechnicianPortal() {
     setSelectedOrder(order);
     setSettleForm({
       total_amount: order.total_amount || 0, parts_cost: order.parts_cost || 0, transport_cost: order.transport_cost || 0,
-      net_amount: order.net_amount || 0, technician_share: order.technician_share || 0, company_share: order.company_share || 0
+      net_amount: order.net_amount || 0, technician_share: order.technician_share || 0, company_share: order.company_share || 0,
+      warranty_period: '6 أشهر',
+      parts_used: ''
     });
     setShowSettleModal(true);
   };
@@ -358,18 +366,51 @@ export default function TechnicianPortal() {
 [NEW_PARTS:${newPartsPhoto}]`;
     const finalNote = (selectedOrder.technician_note || '') + photoNotes;
 
-    await updateStatus(selectedOrder.id, 'completed', {
+    const settlementData = {
       ...settleForm,
-      invoice_approved: false,
+      invoice_approved: true,
+      invoice_date: new Date().toISOString().split('T')[0],
       technician_note: finalNote
-    });
+    };
+
+    await updateStatus(selectedOrder.id, 'completed', settlementData);
 
     setShowSettleModal(false);
 
+    // إنذار قوي للمدير
+    try {
+      await fetch(`${supabaseUrl}/rest/v1/notifications`, {
+        method: 'POST',
+        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'new_order_alert', // نستخدم هذا الأكشن لإطلاق الإنذار الصوتي عند المدير
+          details: `💰 تصفية أوردر وتسليم ضمان!\nالفني: ${techName}\nالعميل: ${selectedOrder.customer_name}\nالجهاز: ${selectedOrder.device_type}\nالمبلغ: ${settleForm.total_amount} ج.م`,
+          user_name: techName,
+          created_at: new Date().toISOString()
+        })
+      });
+    } catch (e) { console.error(e); }
+
     const details = `المبلغ: ${settleForm.total_amount} ج.م | قطع غيار: ${settleForm.parts_cost} ج.م | مواصلات: ${settleForm.transport_cost} ج.م
+🛡️ الضمان: ${settleForm.warranty_period}
 🖼️ صورة القديم: ${oldPartsPhoto}
 🖼️ صورة الجديد: ${newPartsPhoto}`;
-    notifyAdmin("✅ تصفية الأوردر (إكمال)", selectedOrder, details);
+    notifyAdmin("✅ تصفية وتسليم ضمان", selectedOrder, details);
+
+    // إرسال رابط الضمان للعميل تلقائياً
+    const invoiceLink = `${window.location.origin}/invoice?id=${selectedOrder.id}`;
+    const customerMsg = `🛡️ *بطاقة الضمان الرقمية - Maintenance Guide* 🛡️\n\n` +
+      `👤 *العميل:* ${selectedOrder.customer_name}\n` +
+      `🔢 *رقم الأوردر:* ${selectedOrder.order_number}\n` +
+      `🔧 *الجهاز:* ${selectedOrder.device_type}\n` +
+      `💰 *المبلغ:* ${settleForm.total_amount} ج.م\n` +
+      `🛡️ *فترة الضمان:* ${settleForm.warranty_period}\n\n` +
+      `📎 *رابط الضمان والفاتورة الإلكترونية:* \n` +
+      `${invoiceLink}\n\n` +
+      `✨ *شكراً لثقتك بنا. نحن دائماً في خدمتك.* ✨`;
+    
+    const customerPhone = formatPhoneForWhatsApp(selectedOrder.phone);
+    window.open(`https://wa.me/${customerPhone}?text=${encodeURIComponent(customerMsg)}`, '_blank');
 
     setOldPartsPhoto("");
     setNewPartsPhoto("");
@@ -848,12 +889,42 @@ export default function TechnicianPortal() {
                     <label className="text-[11px] font-bold text-slate-500 mb-1 block">قطع غيار</label>
                     <input type="number" value={settleForm.parts_cost || ''} onChange={e => handleSettleChange('parts_cost', e.target.value)} className="w-full bg-slate-800 rounded-xl px-3 py-2 text-white border border-slate-700 outline-none" placeholder="0" />
                   </div>
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-500 mb-1 block">مواصلات</label>
-                    <input type="number" value={settleForm.transport_cost || ''} onChange={e => handleSettleChange('transport_cost', e.target.value)} className="w-full bg-slate-800 rounded-xl px-3 py-2 text-white border border-slate-700 outline-none" placeholder="0" />
+	                  <div>
+	                    <label className="text-[11px] font-bold text-slate-500 mb-1 block">مواصلات</label>
+	                    <input type="number" value={settleForm.transport_cost || ''} onChange={e => handleSettleChange('transport_cost', e.target.value)} className="w-full bg-slate-800 rounded-xl px-3 py-2 text-white border border-slate-700 outline-none" placeholder="0" />
+	                  </div>
+	                </div>
+
+                  <div className="pt-2 border-t border-slate-700/30">
+                    <label className="text-xs font-bold text-orange-400 mb-1.5 block">🛡️ تفاصيل الضمان والفاتورة</label>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[10px] text-slate-500 block mb-1">فترة الضمان</label>
+                        <select 
+                          value={settleForm.warranty_period} 
+                          onChange={e => handleSettleChange('warranty_period', e.target.value)}
+                          className="w-full bg-slate-800 rounded-xl px-3 py-2 text-white border border-slate-700 outline-none text-sm"
+                        >
+                          <option value="بدون ضمان">بدون ضمان</option>
+                          <option value="3 أشهر">3 أشهر</option>
+                          <option value="6 أشهر">6 أشهر</option>
+                          <option value="1 سنة">1 سنة</option>
+                          <option value="2 سنة">2 سنة</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block mb-1">قطع الغيار (تظهر في الفاتورة)</label>
+                        <textarea 
+                          value={settleForm.parts_used} 
+                          onChange={e => handleSettleChange('parts_used', e.target.value)}
+                          className="w-full bg-slate-800 rounded-xl px-3 py-2 text-white border border-slate-700 outline-none text-sm"
+                          placeholder="مثلاً: طلمبة طرد، سير موتور..."
+                          rows={2}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+	              </div>
 
               {/* Summary */}
               <div className="bg-slate-950/50 p-4 rounded-2xl space-y-3 border border-slate-800">
