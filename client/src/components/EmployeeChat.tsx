@@ -102,19 +102,35 @@ export default function EmployeeChat() {
   const fetchChatData = useCallback(async () => {
     if (!canUseChat) return;
     try {
-      const [messagesResponse, usersResponse] = await Promise.all([
+      const responses = await Promise.allSettled([
         fetch(`${supabaseUrl}/rest/v1/notifications?select=*&action=eq.${CHAT_ACTION}&order=created_at.asc&limit=500`, {
           headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }
         }),
         fetch(`${supabaseUrl}/rest/v1/users?select=id,name,username,role,is_active&is_active=eq.true&order=name.asc`, {
           headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }
+        }),
+        fetch(`${supabaseUrl}/rest/v1/technicians?select=id,name,username,is_active&is_active=eq.true&order=name.asc`, {
+          headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }
         })
       ]);
-      const rows = await messagesResponse.json();
-      const userRows = await usersResponse.json();
+      const readJson = async (result: PromiseSettledResult<Response>) => result.status === 'fulfilled' && result.value.ok ? result.value.json() : [];
+      const rows = await readJson(responses[0]);
+      const userRows = await readJson(responses[1]);
+      const technicianRows = await readJson(responses[2]);
       const parsed = (Array.isArray(rows) ? rows : []).map(parseChatMessage).filter(Boolean) as ChatMessage[];
+      const participants = new Map<string, ChatUser>();
+      (Array.isArray(userRows) ? userRows : []).forEach((user: ChatUser) => {
+        const id = normalizeId(user.id);
+        if (id && user.name) participants.set(id, user);
+      });
+      (Array.isArray(technicianRows) ? technicianRows : []).forEach((technician: any) => {
+        const id = normalizeId(technician.id);
+        if (id && technician.name && !participants.has(id)) {
+          participants.set(id, { id: technician.id, name: technician.name, username: technician.username, role: 'tech', is_active: technician.is_active });
+        }
+      });
       setMessages(parsed);
-      setUsers(Array.isArray(userRows) ? userRows : []);
+      setUsers(Array.from(participants.values()).filter((user) => normalizeId(user.id) !== currentIdRef.current));
     } catch (error) {
       console.warn('تعذر تحميل شات الموظفين:', error);
     }
@@ -236,10 +252,17 @@ export default function EmployeeChat() {
               <button type="button" onClick={() => setMode('private')} className={`flex-1 rounded-xl py-2 text-xs font-black flex items-center justify-center gap-1.5 ${mode === 'private' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}><Lock size={14} /> خاص</button>
             </div>
             {mode === 'private' && (
-              <select value={selectedUserId} onChange={(event) => selectUser(event.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none" aria-label="اختيار الموظف للمحادثة الخاصة">
-                <option value="">اختر موظفاً للمحادثة الخاصة</option>
-                {users.filter((user) => normalizeId(user.id) !== currentId).map((user) => <option key={user.id} value={normalizeId(user.id)}>{user.name} {user.role ? `— ${user.role}` : ''}</option>)}
-              </select>
+              <div className="space-y-2">
+                <p className="text-[10px] text-slate-400 font-bold">اختر موظفاً للمحادثة الخاصة:</p>
+                <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto pr-1">
+                  {users.map((user) => {
+                    const userId = normalizeId(user.id);
+                    const selected = selectedUserId === userId;
+                    return <button key={userId} type="button" onClick={() => selectUser(userId)} className={`text-right rounded-xl border px-2.5 py-2 transition-all ${selected ? 'bg-indigo-600 border-indigo-400 text-white shadow-lg' : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-indigo-500/60'}`}><span className="block text-[11px] font-black truncate">{user.name}</span><span className="block text-[9px] opacity-70 mt-0.5">{user.role === 'tech' ? 'فني' : user.role === 'manager' ? 'مدير فرع' : user.role === 'admin' ? 'مدير عام' : 'موظف'}</span></button>;
+                  })}
+                  {users.length === 0 && <p className="col-span-2 text-center text-[10px] text-amber-300 py-3">لا توجد قائمة موظفين حالياً. اضغط تحديث الصفحة.</p>}
+                </div>
+              </div>
             )}
           </div>
 
