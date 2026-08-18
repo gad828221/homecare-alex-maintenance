@@ -759,7 +759,7 @@ export default function ProtectedOrders() {
     const storedProfile = lookupKeys.map((key) => technicianProfiles[key]).find(Boolean);
     return {
       technician,
-      displayName: storedProfile?.name || getTechnicianDisplayName(technician || { name: technicianIdentity }),
+      displayName: getTechnicianDisplayName(technician || { name: technicianIdentity }),
       photoUrl: storedProfile?.photoUrl || getTechnicianPhotoUrl(technician),
       specialty: getTechnicianSpecialty(technician, undefined)
     };

@@ -1,5 +1,5 @@
 export const TECHNICIAN_NAME_BY_CODE: Record<string, string> = {
-  AF: 'أحمد فهمي',
+  AF: 'أحمد فهمى',
   AM: 'أيمن مصطفى',
   SH: 'شريف',
   HARON2: 'محمد حمدي',
@@ -14,12 +14,12 @@ export type TechnicianProfile = {
   updatedAt?: string;
 };
 
-const normalizeIdentity = (value: unknown) => String(value ?? '').trim().toLowerCase();
+const normalizeIdentity = (value: unknown) => String(value ?? '').trim().toLowerCase().replace(/\./g, '');
 
 export function getTechnicianDisplayName(technician: any, fallback = 'الفني المختص'): string {
   const values = [technician?.username, technician?.code, technician?.name, technician?.techName].filter(Boolean);
   for (const value of values) {
-    const code = String(value).trim().toUpperCase();
+    const code = String(value).trim().toUpperCase().replace(/[.\s_-]/g, '');
     if (TECHNICIAN_NAME_BY_CODE[code]) return TECHNICIAN_NAME_BY_CODE[code];
   }
   return String(technician?.name || technician?.techName || fallback).trim() || fallback;
