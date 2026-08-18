@@ -248,14 +248,22 @@ const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   }
 };
 
-const addNotification = async (action: string, details: string) => {
+const addNotification = async (action: string, details: string, userName = 'المدير') => {
   try {
     await fetch('https://hjrnfsdvrrwgyppqhwml.supabase.co/rest/v1/notifications', {
       method: 'POST',
       headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, details, user_name: 'المدير', created_at: new Date().toISOString() })
+      body: JSON.stringify({ action, details, user_name: userName, created_at: new Date().toISOString() })
     });
   } catch (err) { console.error(err); }
+};
+
+const sendSmartAlertOnce = async (key: string, action: string, details: string, push: { title: string; message: string; data?: Record<string, any> }) => {
+  if (typeof window === 'undefined' || localStorage.getItem(key)) return false;
+  localStorage.setItem(key, new Date().toISOString());
+  await addNotification(action, details);
+  void sendExternalPush({ event: 'system_alert', title: push.title, message: push.message, targetRoles: ['admin', 'manager'], data: push.data });
+  return true;
 };
 
 // ==================== المكون الرئيسي ====================
@@ -625,6 +633,21 @@ export default function ProtectedOrders() {
     const now = new Date();
     const diffHours = (now.getTime() - created.getTime()) / (1000 * 60 * 60);
     return diffHours < 1; // أوردر جديد خلال آخر ساعة
+  };
+
+  const getOrderCreatedAt = (order: any) => {
+    if (order.created_at) {
+      const date = new Date(order.created_at);
+      if (!isNaN(date.getTime())) return date;
+    }
+    if (order.date && typeof order.date === 'string') {
+      const parts = order.date.split('/');
+      if (parts.length === 3) {
+        const date = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+        if (!isNaN(date.getTime())) return date;
+      }
+    }
+    return null;
   };
 
   const getWarrantyStatus = (order: any) => {
@@ -1004,12 +1027,11 @@ export default function ProtectedOrders() {
 
       // إنذار المتأخرات للمدير
       const delayedOrders = activeOrders.filter(o => isDelayed(o));
-      if (delayedOrders.length > 0) {
+            if (delayedOrders.length > 0) {
         const role = userRole?.toLowerCase() || '';
         if (role === 'admin' || role === 'manager') {
           console.log("🚨 Delayed orders found! Count:", delayedOrders.length);
           startUrgentAlert();
-          
           // إرسال إشعار خارجي للمدير (مرة واحدة كل ساعة لتجنب الإزعاج)
           const lastAlert = localStorage.getItem('last_delay_alert_manager');
           const now = new Date().getTime();
@@ -1021,6 +1043,72 @@ export default function ProtectedOrders() {
               targetRoles: ['admin', 'manager']
             });
             localStorage.setItem('last_delay_alert_manager', now.toString());
+          }
+        }
+      }
+
+      const role = userRole?.toLowerCase() || '';
+      if (role === 'admin' || role === 'manager') {
+        // تصعيد تلقائي بعد 30 دقيقة للأوردر المعيّن الذي لم يبدأ الفني العمل عليه
+        const escalationCandidates = activeOrders.filter((order: any) => {
+          const createdAt = getOrderCreatedAt(order);
+          const isAssigned = Boolean(order.technician && order.technician !== '-');
+          return order.status === 'pending' && isAssigned && createdAt && (Date.now() - createdAt.getTime()) >= 30 * 60 * 1000;
+        });
+        for (const order of escalationCandidates) {
+          const details = `🚨 تصعيد تلقائي\nالفني: ${order.technician}\nالأوردر: ${order.order_number}\nالعميل: ${order.customer_name}\nتم التعيين منذ أكثر من 30 دقيقة ولم يبدأ الفني العمل بعد.`;
+          const sent = await sendSmartAlertOnce(`smart_escalation_${order.id}`, 'تصعيد تعيين فني', details, {
+            title: '🚨 فني لم يبدأ الأوردر',
+            message: details,
+            data: { order_id: order.id, order_number: order.order_number, technician: order.technician }
+          });
+          if (sent) startUrgentAlert();
+        }
+
+        // تنبيه الضمان الذي ينتهي خلال 7 أيام مرة واحدة يومياً
+        const expiringOrders = notDeleted.filter((order: any) => getWarrantyStatus(order).status === 'expiring');
+        if (expiringOrders.length > 0) {
+          const todayKey = new Date().toISOString().split('T')[0];
+          const warrantyDetails = `🛡️ ضمانات تقترب من الانتهاء (${expiringOrders.length})\n${expiringOrders.map((order: any) => `#${order.order_number} - ${order.customer_name} - ${getWarrantyStatus(order).text}`).join('\n')}`;
+          const sent = await sendSmartAlertOnce(`smart_warranty_${todayKey}`, 'ضمان يقترب من الانتهاء', warrantyDetails, {
+            title: '🛡️ ضمانات تنتهي قريباً',
+            message: warrantyDetails,
+            data: { count: expiringOrders.length }
+          });
+          if (sent) startUrgentAlert();
+        }
+
+        // تنبيه مستقل للفواتير الكبيرة بعد اعتمادها
+        const largeSettlements = notDeleted.filter((order: any) => order.status === 'completed' && order.invoice_approved && Number(order.total_amount) >= 5000);
+        for (const order of largeSettlements) {
+          const details = `💰 فاتورة مرتفعة القيمة\nالأوردر: ${order.order_number}\nالعميل: ${order.customer_name}\nالفني: ${order.technician || 'غير محدد'}\nالإجمالي: ${Number(order.total_amount).toLocaleString()} ج.م`;
+          const sent = await sendSmartAlertOnce(`smart_large_invoice_${order.id}`, 'فاتورة مرتفعة القيمة', details, {
+            title: '💰 فاتورة تتطلب مراجعة',
+            message: details,
+            data: { order_id: order.id, total_amount: Number(order.total_amount) }
+          });
+          if (sent) startUrgentAlert();
+        }
+
+        // حصاد يومي للفنيين بعد الساعة 9 مساءً، مرة واحدة لكل يوم وفني
+        if (new Date().getHours() >= 21 && Array.isArray(techsData)) {
+          const todayKey = new Date().toISOString().split('T')[0];
+          for (const tech of techsData) {
+            const techOrders = notDeleted.filter((order: any) => order.technician === tech.name);
+            const todayOrders = techOrders.filter((order: any) => {
+              const createdAt = getOrderCreatedAt(order);
+              return createdAt && createdAt.toISOString().split('T')[0] === todayKey;
+            });
+            const completedToday = todayOrders.filter((order: any) => order.status === 'completed').length;
+            const earningsToday = todayOrders.filter((order: any) => order.status === 'completed').reduce((sum: number, order: any) => sum + (Number(order.technician_share) || 0), 0);
+            const summary = `📊 حصادك اليومي يا ${tech.name}\nأوردرات اليوم: ${todayOrders.length}\nالمكتمل: ${completedToday}\nمستحقاتك اليوم: ${earningsToday.toLocaleString()} ج.م\nالأوردرات المفتوحة: ${techOrders.filter((order: any) => ['pending', 'in-progress'].includes(order.status)).length}`;
+            if (tech.id) {
+              const summaryKey = `smart_daily_summary_${todayKey}_${tech.id}`;
+              if (!localStorage.getItem(summaryKey)) {
+                localStorage.setItem(summaryKey, new Date().toISOString());
+                void sendExternalPush({ event: 'system_alert', title: '📊 حصادك اليومي', message: summary, targetUserIds: [`tech:${tech.id}`], data: { date: todayKey, technician: tech.name } });
+              }
+            }
           }
         }
       }
@@ -1069,15 +1157,20 @@ export default function ProtectedOrders() {
         console.log("📡 Realtime status:", status);
       });
       
-    // اشتراك حي لتنبيهات الأوردرات الجديدة اليدوية (Fallback)
+    // اشتراك حي لتنبيهات الأوردرات والتصفية والفواتير (Fallback)
     const alertChannel = supabase
-      .channel('admin-order-alerts')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'action=eq.new_order_alert' }, (payload) => {
-        console.log("🆕 Manual new order alert received!", payload);
+      .channel('admin-operation-alerts')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, (payload) => {
+        const action = String((payload.new as any)?.action || '');
+        const isUrgentOperation = action === 'new_order_alert' || action === 'settlement_alert';
+        if (!isUrgentOperation) return;
+        console.log("🔔 Operation alert received!", payload);
         const role = userRole?.toLowerCase() || '';
         if (role === 'admin' || role === 'manager') {
           startUrgentAlert();
           fetchData();
+          fetchNotifications();
+          showToast(action === 'settlement_alert' ? '💰 تم تسجيل تصفية فاتورة جديدة' : '🆕 تم تسجيل أوردر جديد', 'info');
         }
       })
       .subscribe();

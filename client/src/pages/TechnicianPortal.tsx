@@ -528,19 +528,27 @@ export default function TechnicianPortal() {
 
     setShowSettleModal(false);
 
-    // إنذار قوي للمدير
+    // إشعار تصفية فاتورة فوري ومستمر للمديرين
+    const settlementDetails = `💰 تصفية فاتورة جديدة\nالفني: ${techName}\nرقم الأوردر: ${selectedOrder.order_number}\nالعميل: ${selectedOrder.customer_name}\nالجهاز: ${selectedOrder.device_type}\nإجمالي الفاتورة: ${settleForm.total_amount} ج.م\nقطع الغيار: ${settleForm.parts_cost} ج.م\nالمواصلات: ${settleForm.transport_cost} ج.م\nالوقت: ${new Date().toLocaleString('ar-EG')}`;
     try {
       await fetch(`${supabaseUrl}/rest/v1/notifications`, {
         method: 'POST',
-        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
         body: JSON.stringify({
-          action: 'new_order_alert', // نستخدم هذا الأكشن لإطلاق الإنذار الصوتي عند المدير
-          details: `💰 تصفية أوردر وتسليم ضمان!\nالفني: ${techName}\nالعميل: ${selectedOrder.customer_name}\nالجهاز: ${selectedOrder.device_type}\nالمبلغ: ${settleForm.total_amount} ج.م`,
+          action: 'settlement_alert',
+          details: settlementDetails,
           user_name: techName,
           created_at: new Date().toISOString()
         })
       });
-    } catch (e) { console.error(e); }
+      void sendExternalPush({
+        event: 'system_alert',
+        title: '💰 تصفية فاتورة جديدة',
+        message: settlementDetails,
+        targetRoles: ['admin', 'manager'],
+        data: { order_id: selectedOrder.id, order_number: selectedOrder.order_number, total_amount: settleForm.total_amount, technician: techName }
+      });
+    } catch (e) { console.error('Settlement alert error:', e); }
 
     const details = `المبلغ: ${settleForm.total_amount} ج.م | قطع غيار: ${settleForm.parts_cost} ج.م | مواصلات: ${settleForm.transport_cost} ج.م
 🛡️ الضمان: ${settleForm.warranty_period}
