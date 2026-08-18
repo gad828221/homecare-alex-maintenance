@@ -126,6 +126,9 @@ function AppContent() {
   const hideFloatingButtons = [
     "/orders", "/tech-portal", "/data-entry", "/login"
   ].includes(currentPath);
+  const currentRole = localStorage.getItem('userRole');
+  const staffChatPaths = ['/orders', '/tech-portal', '/data-entry'];
+  const canShowEmployeeChat = staffChatPaths.includes(currentPath) && ['admin', 'manager', 'tech', 'data-entry'].includes(currentRole || '');
 
   return (
     <>
@@ -136,7 +139,7 @@ function AppContent() {
       <NotificationPermissionButton />
       <PresenceManager />
       <PwaInstallBanner />
-      <EmployeeChat />
+      {canShowEmployeeChat && <EmployeeChat />}
     </>
   );
 }
