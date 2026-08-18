@@ -283,6 +283,7 @@ export default function ProtectedOrders() {
   const { enabled: wakeLockEnabled, isLocked: wakeLockActive, supported: wakeLockSupported, toggle: toggleWakeLock } = useScreenWakeLock();
   const [orders, setOrders] = useState<any[]>([]);
   const [archivedOrders, setArchivedOrders] = useState<any[]>([]);
+  const [repeatCustomerSearch, setRepeatCustomerSearch] = useState('');
   const previousCustomerPhones = useMemo(() => {
     const counts = new Map<string, number>();
     [...orders, ...archivedOrders].forEach((order) => {
@@ -291,6 +292,28 @@ export default function ProtectedOrders() {
     });
     return new Set(Array.from(counts.entries()).filter(([, count]) => count > 1).map(([phone]) => phone));
   }, [archivedOrders, orders]);
+  const repeatCustomers = useMemo(() => {
+    const groups = new Map<string, { phone: string; name: string; orders: any[] }>();
+    [...orders, ...archivedOrders].forEach((order) => {
+      const phone = normalizeCustomerPhone(order.phone);
+      if (phone.length < 10) return;
+      const current = groups.get(phone) || { phone, name: order.customer_name || 'عميل بدون اسم', orders: [] };
+      current.orders.push(order);
+      if ((!current.name || current.name === 'عميل بدون اسم') && order.customer_name) current.name = order.customer_name;
+      groups.set(phone, current);
+    });
+    return Array.from(groups.values())
+      .filter((customer) => customer.orders.length > 1)
+      .map((customer) => ({
+        ...customer,
+        orders: [...customer.orders].sort((a, b) => new Date(b.created_at || b.date || 0).getTime() - new Date(a.created_at || a.date || 0).getTime()),
+      }))
+      .sort((a, b) => b.orders.length - a.orders.length);
+  }, [archivedOrders, orders]);
+  const filteredRepeatCustomers = repeatCustomers.filter((customer) => {
+    const query = repeatCustomerSearch.trim().toLowerCase();
+    return !query || customer.name.toLowerCase().includes(query) || customer.phone.includes(query);
+  });
   const getPhotoUrl = (note: string, type: 'OLD' | 'NEW') => {
     if (!note) return null;
     const regex = new RegExp(`\\[${type}_PARTS:(.*?)\\]`);
@@ -304,7 +327,7 @@ export default function ProtectedOrders() {
   const [cashLedger, setCashLedger] = useState<any[]>([]);
   const [cashBalance, setCashBalance] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'orders' | 'archived' | 'technicians' | 'reports' | 'invoicesReview' | 'cash' | 'partners' | 'notifications' | 'permissions' | 'performance' | 'analytics' | 'feedback'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'archived' | 'technicians' | 'reports' | 'repeatCustomers' | 'invoicesReview' | 'cash' | 'partners' | 'notifications' | 'permissions' | 'performance' | 'analytics' | 'feedback'>('orders');
   const [showOrderModal, setShowOrderModal] = useState(false);
 
   const [showTechModal, setShowTechModal] = useState(false);
@@ -2232,6 +2255,7 @@ export default function ProtectedOrders() {
         <button onClick={() => setActiveTab('archived')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'archived' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📂 الأرشيف ({archivedOrders.length})</button>
         {userRole !== 'viewer' && <button onClick={() => setActiveTab('technicians')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'technicians' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>👨‍🔧 الفنيين</button>}
         {userRole !== 'viewer' && <button onClick={() => setActiveTab('reports')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'reports' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📊 التقارير</button>}
+        {userRole !== 'viewer' && <button onClick={() => setActiveTab('repeatCustomers')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'repeatCustomers' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>👥 العملاء المتكررون ({repeatCustomers.length})</button>}
         {userRole !== 'viewer' && <button onClick={() => setActiveTab('invoicesReview')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'invoicesReview' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📄 الفواتير</button>}
         <button onClick={() => setActiveTab('cash')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'cash' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>💰 الخزنة</button>
         {userRole !== 'viewer' && <button onClick={() => setActiveTab('partners')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'partners' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>🤝 الشركاء</button>}
@@ -2855,6 +2879,31 @@ export default function ProtectedOrders() {
                 </table>
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'repeatCustomers' && userRole !== 'viewer' && (
+          <div className="space-y-5">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-2xl font-black text-white flex items-center gap-2"><Users className="text-emerald-400" /> العملاء المتكررون</h2>
+                <p className="text-sm text-slate-400 mt-1">عملاء سجلوا أكثر من طلب صيانة، مرتبين حسب عدد الزيارات</p>
+              </div>
+              <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/30 px-4 py-3 text-center"><span className="block text-2xl font-black text-emerald-300">{repeatCustomers.length}</span><span className="text-xs text-emerald-200">عميل متكرر</span></div>
+            </div>
+            <div className="relative"><Search className="absolute right-3 top-3 text-slate-500" size={18} /><input value={repeatCustomerSearch} onChange={(event) => setRepeatCustomerSearch(event.target.value)} placeholder="ابحث باسم العميل أو رقم الهاتف" className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 pr-10 pl-4 text-white outline-none focus:border-emerald-500" /></div>
+            {filteredRepeatCustomers.length === 0 ? <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-10 text-center text-slate-400">لا توجد بيانات لعملاء متكررين حتى الآن</div> : <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {filteredRepeatCustomers.map((customer) => {
+                const latest = customer.orders[0];
+                const completed = customer.orders.filter((order) => order.status === 'completed').length;
+                return <div key={customer.phone} className="rounded-2xl border border-emerald-500/20 bg-slate-900/70 p-4 space-y-4 hover:border-emerald-400/50 transition-all">
+                  <div className="flex items-start justify-between gap-3"><div><h3 className="text-lg font-black text-white">{customer.name}</h3><p className="text-xs text-slate-500 mt-1" dir="ltr">{customer.phone}</p></div><span className="shrink-0 rounded-full bg-emerald-500/15 border border-emerald-400/30 px-3 py-1 text-xs font-black text-emerald-300">✨ {customer.orders.length} أوردر</span></div>
+                  <div className="grid grid-cols-2 gap-2 text-xs"><div className="rounded-xl bg-slate-950/60 border border-slate-800 p-3"><span className="block text-slate-500 mb-1">مكتمل</span><strong className="text-emerald-300 text-lg">{completed}</strong></div><div className="rounded-xl bg-slate-950/60 border border-slate-800 p-3"><span className="block text-slate-500 mb-1">آخر حالة</span><strong className="text-slate-200">{latest?.status === 'completed' ? 'مكتمل' : latest?.status === 'in-progress' ? 'قيد التنفيذ' : latest?.status === 'cancelled' ? 'ملغي' : 'قيد الانتظار'}</strong></div></div>
+                  <div className="border-t border-slate-800 pt-3 text-xs text-slate-400 space-y-1"><p>آخر أوردر: <span className="text-slate-200">{latest?.order_number || '-'}</span></p><p>آخر زيارة: <span className="text-slate-200">{latest?.created_at ? new Date(latest.created_at).toLocaleDateString('ar-EG') : latest?.date || '-'}</span></p></div>
+                  <details className="text-xs"><summary className="cursor-pointer text-emerald-300 font-bold">عرض سجل الأوردرات</summary><div className="mt-2 space-y-2">{customer.orders.map((order) => <div key={order.id} className="flex items-center justify-between rounded-lg bg-slate-950/50 px-3 py-2"><span className="text-slate-300">{order.order_number}</span><span className="text-slate-500">{order.status === 'completed' ? 'مكتمل' : order.status === 'cancelled' ? 'ملغي' : 'قيد المتابعة'}</span></div>)}</div></details>
+                </div>;
+              })}
+            </div>}
           </div>
         )}
 
