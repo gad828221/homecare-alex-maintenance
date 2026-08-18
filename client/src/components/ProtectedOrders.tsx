@@ -4,7 +4,7 @@ import {
   CheckCircle2, AlertCircle,
   Edit, Trash2, RefreshCw, Phone,
   Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut, Send, Play, LogIn,
-  RotateCcw, Clock, MapPin, Star, Cpu, ShieldCheck
+  RotateCcw, Clock, MapPin, Star, Cpu, ShieldCheck, Wrench
 } from "lucide-react";
 import { createClient } from '@supabase/supabase-js';
 import { Helmet } from 'react-helmet-async';
@@ -713,7 +713,7 @@ export default function ProtectedOrders() {
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const data = await fetchAPI('notifications?select=*&order=created_at.desc');
+      const data = await fetchAPI('notifications?select=*&action=neq.employee_chat&order=created_at.desc');
       setNotifications(data || []);
     } catch (err) { console.error(err); }
   }, []);
@@ -1006,7 +1006,7 @@ export default function ProtectedOrders() {
 
       const [techsData, notificationsData, partnersData, cashData, usersData] = await Promise.all([
         fetchAPI('technicians?select=*'),
-        fetchAPI('notifications?select=*&order=created_at.desc'),
+        fetchAPI('notifications?select=*&action=neq.employee_chat&order=created_at.desc'),
         fetchAPI('partners?select=*&order=created_at.desc'),
         fetchAPI('cash_ledger?select=*&order=date.desc,created_at.desc'),
         fetchAPI('users?select=*&order=created_at.desc')
@@ -1618,7 +1618,8 @@ export default function ProtectedOrders() {
       try {
         // ✅ مسح الإشعارات التشغيلية فقط مع الحفاظ على تقييمات العملاء للأرشيف والتقارير.
         const feedbackAction = encodeURIComponent('تقييم عميل');
-        await fetchAPI(`notifications?action=neq.${feedbackAction}`, { method: 'DELETE' });
+        const chatAction = encodeURIComponent('employee_chat');
+        await fetchAPI(`notifications?action=neq.${feedbackAction}&action=neq.${chatAction}`, { method: 'DELETE' });
         showToast("✅ تم مسح الإشعارات التشغيلية مع الحفاظ على تقييمات العملاء", "success");
         fetchNotifications();
       } catch (err) {
@@ -2327,28 +2328,23 @@ export default function ProtectedOrders() {
                 {filteredOrders.map(order => {
                   const delayed = isDelayed(order);
                   const noTechnician = !order.technician || order.technician === '-' || order.technician === '';
-                  const statusConfig = {
-                    pending: { color: 'amber', label: '⏳ قيد الانتظار', pulse: 'animate-pulse' },
-                    'in-progress': { color: 'blue', label: '🔧 قيد التنفيذ', pulse: '' },
-                    completed: { color: 'emerald', label: '✅ مكتمل', pulse: '' },
-                    cancelled: { color: 'rose', label: '❌ ملغي', pulse: '' },
-                    deferred: { color: 'purple', label: '⏰ مؤجل', pulse: '' },
-                    inspected: { color: 'cyan', label: '🔍 تم الكشف', pulse: '' }
+                  const statusConfig: Record<string, any> = {
+                    pending: { label: 'قيد الانتظار', Icon: Clock, card: 'bg-amber-950/30 border-amber-400/50 hover:border-amber-300 hover:shadow-amber-500/20', badge: 'bg-amber-500/15 text-amber-300 border-amber-400/40', icon: 'bg-amber-500/20 text-amber-300', pulse: 'animate-pulse' },
+                    'in-progress': { label: 'قيد التنفيذ', Icon: Wrench, card: 'bg-blue-950/30 border-blue-400/50 hover:border-blue-300 hover:shadow-blue-500/20', badge: 'bg-blue-500/15 text-blue-300 border-blue-400/40', icon: 'bg-blue-500/20 text-blue-300', pulse: '' },
+                    in_progress: { label: 'قيد التنفيذ', Icon: Wrench, card: 'bg-blue-950/30 border-blue-400/50 hover:border-blue-300 hover:shadow-blue-500/20', badge: 'bg-blue-500/15 text-blue-300 border-blue-400/40', icon: 'bg-blue-500/20 text-blue-300', pulse: '' },
+                    completed: { label: 'مكتمل', Icon: CheckCircle2, card: 'bg-emerald-950/30 border-emerald-400/50 hover:border-emerald-300 hover:shadow-emerald-500/20', badge: 'bg-emerald-500/15 text-emerald-300 border-emerald-400/40', icon: 'bg-emerald-500/20 text-emerald-300', pulse: '' },
+                    cancelled: { label: 'ملغي', Icon: AlertCircle, card: 'bg-rose-950/30 border-rose-400/50 hover:border-rose-300 hover:shadow-rose-500/20', badge: 'bg-rose-500/15 text-rose-300 border-rose-400/40', icon: 'bg-rose-500/20 text-rose-300', pulse: '' },
+                    deferred: { label: 'مؤجل', Icon: Clock, card: 'bg-purple-950/30 border-purple-400/50 hover:border-purple-300 hover:shadow-purple-500/20', badge: 'bg-purple-500/15 text-purple-300 border-purple-400/40', icon: 'bg-purple-500/20 text-purple-300', pulse: '' },
+                    inspected: { label: 'تم الكشف', Icon: Search, card: 'bg-cyan-950/30 border-cyan-400/50 hover:border-cyan-300 hover:shadow-cyan-500/20', badge: 'bg-cyan-500/15 text-cyan-300 border-cyan-400/40', icon: 'bg-cyan-500/20 text-cyan-300', pulse: '' },
+                    delayed: { label: 'متأخر', Icon: AlertCircle, card: 'bg-red-950/40 border-red-500/70 hover:border-red-300 hover:shadow-red-500/30', badge: 'bg-red-500/20 text-red-300 border-red-400/50', icon: 'bg-red-500/20 text-red-300', pulse: 'animate-pulse' }
                   };
-                  const config = statusConfig[order.status] || { color: 'slate', label: order.status, pulse: '' };
-                  const cardColor = config.color;
-                  const isPending = order.status === 'pending';
-
-                  const statusColor =
-                    order.status === 'completed' ? 'green' :
-                    order.status === 'in-progress' ? 'blue' :
-                    order.status === 'pending' ? 'yellow' :
-                    order.status === 'cancelled' ? 'red' :
-                    order.status === 'deferred' ? 'purple' : 'slate';
+                  const baseConfig = statusConfig[order.status] || { label: order.status, Icon: AlertCircle, card: 'bg-slate-900 border-slate-700 hover:border-slate-500 hover:shadow-slate-500/10', badge: 'bg-slate-500/15 text-slate-300 border-slate-500/40', icon: 'bg-slate-500/20 text-slate-300', pulse: '' };
+                  const config = delayed ? statusConfig.delayed : baseConfig;
+                  const StatusIcon = config.Icon;
 
                   return (
-                    <div key={order.id} className={`group bg-${cardColor}-950/10 rounded-[1.5rem] border-2 border-${cardColor}-500/30 p-5 transition-all hover:border-${cardColor}-500 hover:shadow-2xl hover:shadow-${cardColor}-500/20 relative overflow-hidden ${config.pulse}`}>
-                      <div className={`absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:bg-orange-500/10 transition-all`}></div>
+                    <div key={order.id} className={`group ${config.card} rounded-[1.5rem] border-2 p-5 transition-all hover:shadow-2xl relative overflow-hidden ${config.pulse}`}>
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:bg-white/10 transition-all"></div>
 
                       <div className="flex justify-between items-start mb-4 relative z-10">
                         <div className="flex flex-col gap-1">
@@ -2363,13 +2359,13 @@ export default function ProtectedOrders() {
 	                          </div>
                           <span className="text-[10px] font-bold text-slate-500 tracking-widest uppercase">#{order.order_number}</span>
                         </div>
-                        <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black border border-${cardColor}-500/30 bg-${cardColor}-500/10 text-${cardColor}-400`}>{config.label}</div>
+                        <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black border flex items-center gap-1.5 ${config.badge}`}><StatusIcon size={13} strokeWidth={2.5} />{config.label}</div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-3 mb-5 relative z-10">
-                        <div className="bg-slate-950/50 p-3 rounded-2xl border border-slate-800/50">
-                          <p className="text-[9px] font-bold text-slate-500 mb-1">الجهاز والماركة</p>
-                          <p className="text-xs font-black text-slate-200">{order.device_type} - {order.brand}</p>
+                        <div className="bg-slate-950/50 p-3 rounded-2xl border border-white/10 flex items-center gap-3">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${config.icon}`}><Cpu size={17} /></div>
+                          <div className="min-w-0"><p className="text-[9px] font-bold text-slate-500 mb-1">الجهاز والماركة</p><p className="text-xs font-black text-slate-200 truncate">{order.device_type} - {order.brand}</p></div>
                         </div>
                         <div className="bg-slate-950/50 p-3 rounded-2xl border border-slate-800/50">
                           <p className="text-[9px] font-bold text-slate-500 mb-1">إجمالي المبلغ</p>

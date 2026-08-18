@@ -9,6 +9,7 @@ import { Phone, MessageCircle, Download } from "lucide-react";
 import { usePwaInstall } from './hooks/usePwaInstall';
 import NotificationPermissionButton from "./components/NotificationPermissionButton";
 import PresenceManager from "./components/PresenceManager";
+import EmployeeChat from "./components/EmployeeChat";
 
 const Home = lazy(() => import("./pages/Home"));
 const Login = lazy(() => import("./pages/LoginPage"));
@@ -135,6 +136,7 @@ function AppContent() {
       <NotificationPermissionButton />
       <PresenceManager />
       <PwaInstallBanner />
+      <EmployeeChat />
     </>
   );
 }
