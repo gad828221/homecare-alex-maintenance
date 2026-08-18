@@ -24,6 +24,7 @@ import {
   Star,
   Target,
   Timer,
+  Wallet,
   TrendingUp,
 } from 'lucide-react';
 import { getTechnicianDisplayName } from '../utils/technicianProfile';
@@ -62,15 +63,18 @@ interface TechnicianPerformanceProps {
 
 export default function TechnicianPerformance({ orders, technicians }: TechnicianPerformanceProps) {
   const performance = useMemo(() => {
-    const visibleOrders = (Array.isArray(orders) ? orders : []).filter((order) => !['cancelled', 'canceled', 'inspected'].includes(getStatus(order)));
-    const completedOrders = visibleOrders.filter((order) => getStatus(order) === 'completed');
-    const activeOrders = visibleOrders.filter((order) => ['pending', 'in-progress', 'deferred'].includes(getStatus(order)));
+    const reportOrders = Array.isArray(orders) ? orders : [];
+    const cancelledOrders = reportOrders.filter((order) => ['cancelled', 'canceled'].includes(getStatus(order)));
+    const inspectedOrders = reportOrders.filter((order) => getStatus(order) === 'inspected');
+    const operationalOrders = reportOrders.filter((order) => !['cancelled', 'canceled', 'inspected'].includes(getStatus(order)));
+    const completedOrders = operationalOrders.filter((order) => getStatus(order) === 'completed');
+    const activeOrders = operationalOrders.filter((order) => ['pending', 'in-progress', 'deferred'].includes(getStatus(order)));
     const delayedOrders = activeOrders.filter((order) => daysSince(order) > 2);
-    const totalInvoice = visibleOrders.reduce((sum, order) => sum + numberValue(order.total_amount), 0);
-    const partsCost = visibleOrders.reduce((sum, order) => sum + numberValue(order.parts_cost), 0);
-    const transportCost = visibleOrders.reduce((sum, order) => sum + numberValue(order.transport_cost), 0);
+    const totalInvoice = reportOrders.reduce((sum, order) => sum + numberValue(order.total_amount), 0);
+    const partsCost = reportOrders.reduce((sum, order) => sum + numberValue(order.parts_cost), 0);
+    const transportCost = reportOrders.reduce((sum, order) => sum + numberValue(order.transport_cost), 0);
     const technicianEarnings = completedOrders.reduce((sum, order) => sum + numberValue(order.technician_share), 0);
-    const successRate = visibleOrders.length ? (completedOrders.length / visibleOrders.length) * 100 : 0;
+    const successRate = operationalOrders.length ? (completedOrders.length / operationalOrders.length) * 100 : 0;
     const partsPercent = totalInvoice ? (partsCost / totalInvoice) * 100 : 0;
     const transportPercent = totalInvoice ? (transportCost / totalInvoice) * 100 : 0;
 
@@ -85,21 +89,23 @@ export default function TechnicianPerformance({ orders, technicians }: Technicia
       ? completionDurations.reduce((sum, days) => sum + days, 0) / completionDurations.length
       : 0;
 
-    const ratings = visibleOrders.map((order) => numberValue(order.rating ?? order.customer_rating ?? order.feedback_rating)).filter((rating) => rating >= 1 && rating <= 5);
+    const ratings = reportOrders.map((order) => numberValue(order.rating ?? order.customer_rating ?? order.feedback_rating)).filter((rating) => rating >= 1 && rating <= 5);
     const averageRating = ratings.length ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length : 0;
 
     const statusData = [
       { name: 'مكتمل', value: completedOrders.length, color: '#10b981' },
-      { name: 'نشط', value: activeOrders.filter((order) => getStatus(order) !== 'deferred').length, color: '#3b82f6' },
+      { name: 'نشط', value: Math.max(0, activeOrders.length - delayedOrders.length - activeOrders.filter((order) => getStatus(order) === 'deferred').length), color: '#3b82f6' },
       { name: 'مؤجل', value: activeOrders.filter((order) => getStatus(order) === 'deferred').length, color: '#a855f7' },
       { name: 'متأخر', value: delayedOrders.length, color: '#f97316' },
+      { name: 'ملغى', value: cancelledOrders.length, color: '#ef4444' },
+      { name: 'كشف', value: inspectedOrders.length, color: '#eab308' },
     ].filter((item) => item.value > 0);
 
     const monthlyData = Array.from({ length: 6 }, (_, index) => {
       const date = new Date();
       date.setMonth(date.getMonth() - (5 - index), 1);
       const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
-      const monthOrders = visibleOrders.filter((order) => {
+      const monthOrders = reportOrders.filter((order) => {
         const orderDate = getOrderDate(order);
         return orderDate && `${orderDate.getFullYear()}-${orderDate.getMonth()}` === monthKey;
       });
@@ -110,12 +116,15 @@ export default function TechnicianPerformance({ orders, technicians }: Technicia
       };
     });
 
-    const recentOrders = [...visibleOrders]
+    const recentOrders = [...reportOrders]
       .sort((a, b) => (getOrderDate(b)?.getTime() || 0) - (getOrderDate(a)?.getTime() || 0))
       .slice(0, 5);
 
     return {
-      visibleOrders,
+      visibleOrders: reportOrders,
+      operationalOrders,
+      cancelledOrders,
+      inspectedOrders,
       completedOrders,
       activeOrders,
       delayedOrders,
@@ -138,7 +147,7 @@ export default function TechnicianPerformance({ orders, technicians }: Technicia
   const rawTechnicianName = technicians?.[0]?.name || technicians?.[0]?.username || performance.visibleOrders[0]?.technician || 'الفني';
   const technicianName = getTechnicianDisplayName({ name: rawTechnicianName });
   const hasExpenseWarning = performance.partsPercent > 40 || performance.transportPercent > 15;
-  const hasSuccessWarning = performance.visibleOrders.length > 0 && performance.successRate < 70;
+  const hasSuccessWarning = performance.operationalOrders.length > 0 && performance.successRate < 70;
 
   return (
     <div className="space-y-5" dir="rtl">
@@ -148,7 +157,7 @@ export default function TechnicianPerformance({ orders, technicians }: Technicia
           <div>
             <p className="text-xs font-bold text-orange-300">لوحة المتابعة الشخصية</p>
             <h2 className="mt-1 text-2xl font-black text-white">أداء {technicianName}</h2>
-            <p className="mt-2 text-xs leading-6 text-slate-400">ملخص الإنجاز والمصاريف والتقييمات من الأوردرات الظاهرة في بوابتك.</p>
+            <p className="mt-2 text-xs leading-6 text-slate-400">ملخص كامل للنتائج، مع فصل الأعمال التشغيلية عن الملغي والكشف.</p>
           </div>
           <div className="flex items-center gap-2 self-start rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-black text-emerald-300">
             <Gauge size={17} /> متابعة مباشرة
@@ -206,10 +215,12 @@ export default function TechnicianPerformance({ orders, technicians }: Technicia
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-3">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <div className="rounded-2xl border border-slate-700 bg-slate-900/80 p-4"><div className="flex items-center gap-2 text-slate-300"><Clock3 size={17} className="text-blue-400" /><span className="text-xs font-bold">قيد المتابعة</span></div><p className="mt-3 text-2xl font-black text-white">{performance.activeOrders.length}</p><p className="mt-1 text-[10px] text-slate-500">أوردرات نشطة حالياً</p></div>
         <div className="rounded-2xl border border-slate-700 bg-slate-900/80 p-4"><div className="flex items-center gap-2 text-slate-300"><Timer size={17} className="text-orange-400" /><span className="text-xs font-bold">المتأخر</span></div><p className="mt-3 text-2xl font-black text-orange-300">{performance.delayedOrders.length}</p><p className="mt-1 text-[10px] text-slate-500">أكثر من يومين</p></div>
         <div className="rounded-2xl border border-slate-700 bg-slate-900/80 p-4"><div className="flex items-center gap-2 text-slate-300"><Award size={17} className="text-emerald-400" /><span className="text-xs font-bold">متوسط الإنجاز</span></div><p className="mt-3 text-2xl font-black text-emerald-300">{performance.averageCompletionDays ? `${performance.averageCompletionDays.toFixed(1)} يوم` : '—'}</p><p className="mt-1 text-[10px] text-slate-500">للأوردر المكتمل</p></div>
+        <div className="rounded-2xl border border-red-500/20 bg-red-950/20 p-4"><div className="flex items-center gap-2 text-red-200"><AlertCircle size={17} className="text-red-400" /><span className="text-xs font-bold">ملغى</span></div><p className="mt-3 text-2xl font-black text-red-300">{performance.cancelledOrders.length}</p><p className="mt-1 text-[10px] text-slate-500">ضمن النتائج فقط</p></div>
+        <div className="rounded-2xl border border-yellow-500/20 bg-yellow-950/20 p-4"><div className="flex items-center gap-2 text-yellow-200"><DollarSign size={17} className="text-yellow-400" /><span className="text-xs font-bold">كشف</span></div><p className="mt-3 text-2xl font-black text-yellow-300">{performance.inspectedOrders.length}</p><p className="mt-1 text-[10px] text-slate-500">ضمن النتائج فقط</p></div>
       </section>
 
       <section className="rounded-3xl border border-slate-700 bg-slate-900 p-4 shadow-xl sm:p-5">
