@@ -242,9 +242,25 @@ export default function EmployeeChat() {
         const incoming = parseChatMessage(payload.new);
         if (!incoming) return;
         setMessages((previous) => previous.some((item) => String(item.id) === String(incoming.id)) ? previous : [...previous, incoming]);
-        if (incoming.senderId !== currentIdRef.current && canViewMessage(incoming) && incoming.conversationId !== activeConversationRef.current) {
-          addNotification({ type: 'info', title: `رسالة جديدة من ${incoming.senderName}`, message: incoming.text.slice(0, 120), duration: 5000 });
-          setUnreadVersion((version) => version + 1);
+        const isIncomingVisible = incoming.senderId !== currentIdRef.current && canViewMessage(incoming);
+        if (isIncomingVisible) {
+          const shouldNotify = !openRef.current || incoming.conversationId !== activeConversationRef.current;
+          setOpen(true);
+          if (incoming.channel === 'private') {
+            setMode('private');
+            setSelectedUserId(incoming.senderId);
+            activeConversationRef.current = incoming.conversationId;
+          } else {
+            setMode('public');
+            setSelectedUserId('');
+            activeConversationRef.current = 'public';
+          }
+          if (shouldNotify) {
+            addNotification({ type: 'info', title: `رسالة جديدة من ${incoming.senderName}`, message: incoming.text.slice(0, 120), duration: 5000 });
+            setUnreadVersion((version) => version + 1);
+          } else {
+            playChatTone('incoming');
+          }
         }
       })
       .subscribe();
