@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Wrench, LogOut, Clock, CheckCircle2, AlertCircle,
   RefreshCw, Phone, MapPin, ClipboardList,
@@ -19,6 +19,10 @@ import { usePwaInstall } from '../hooks/usePwaInstall';
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
 const supabase = createClient(supabaseUrl, supabaseKey);
+const normalizeCustomerPhone = (phone: any) => {
+  const digits = String(phone || '').replace(/\D/g, '');
+  return digits.startsWith('20') ? `0${digits.slice(2)}` : digits;
+};
 
 const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   const res = await fetch(`${supabaseUrl}/rest/v1/${endpoint}`, {
@@ -40,6 +44,14 @@ export default function TechnicianPortal() {
   const { isInstalled, installCompleted, canInstall, isIos, install } = usePwaInstall();
   const [, setLocation] = useLocation();
   const [orders, setOrders] = useState<any[]>([]);
+  const previousCustomerPhones = useMemo(() => {
+    const counts = new Map<string, number>();
+    orders.forEach((order) => {
+      const phone = normalizeCustomerPhone(order.phone);
+      if (phone.length >= 10) counts.set(phone, (counts.get(phone) || 0) + 1);
+    });
+    return new Set(Array.from(counts.entries()).filter(([, count]) => count > 1).map(([phone]) => phone));
+  }, [orders]);
   const [loading, setLoading] = useState(true);
   const [techName, setTechName] = useState("");
   const [isActive, setIsActive] = useState(true);
@@ -1108,6 +1120,7 @@ export default function TechnicianPortal() {
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
                             <h3 className="text-lg font-black text-white group-hover:text-orange-400 transition-colors">{order.customer_name}</h3>
+                            {previousCustomerPhones.has(normalizeCustomerPhone(order.phone)) && <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-black text-emerald-300" title="عميل سابق">✨ سابق</span>}
                             {isNewOrder(order) && <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-ping"></span>}
                           </div>
                           <span className="text-[10px] font-bold text-slate-500 tracking-widest uppercase">#{order.order_number}</span>

@@ -33,6 +33,10 @@ const getReportingDate = (timestamp: any) => {
   if (Number.isNaN(date.getTime())) return null;
   return new Date(date.getTime() + REPORT_TIME_OFFSET_MS);
 };
+const normalizeCustomerPhone = (phone: any) => {
+  const digits = String(phone || '').replace(/\D/g, '');
+  return digits.startsWith('20') ? `0${digits.slice(2)}` : digits;
+};
 
 // ==================== إدارة المستخدمين والصلاحيات (النسخة المتكاملة) ====================
 function AdminPermissions({ users, onEdit, onDelete, onToggle, canEdit, onSync }: { users: any[], onEdit: (u: any) => void, onDelete: (id: number, name: string) => void, onToggle: (u: any) => void, canEdit: boolean, onSync: () => void }) {
@@ -279,6 +283,14 @@ export default function ProtectedOrders() {
   const { enabled: wakeLockEnabled, isLocked: wakeLockActive, supported: wakeLockSupported, toggle: toggleWakeLock } = useScreenWakeLock();
   const [orders, setOrders] = useState<any[]>([]);
   const [archivedOrders, setArchivedOrders] = useState<any[]>([]);
+  const previousCustomerPhones = useMemo(() => {
+    const counts = new Map<string, number>();
+    [...orders, ...archivedOrders].forEach((order) => {
+      const phone = normalizeCustomerPhone(order.phone);
+      if (phone.length >= 10) counts.set(phone, (counts.get(phone) || 0) + 1);
+    });
+    return new Set(Array.from(counts.entries()).filter(([, count]) => count > 1).map(([phone]) => phone));
+  }, [archivedOrders, orders]);
   const getPhotoUrl = (note: string, type: 'OLD' | 'NEW') => {
     if (!note) return null;
     const regex = new RegExp(`\\[${type}_PARTS:(.*?)\\]`);
@@ -2451,8 +2463,9 @@ export default function ProtectedOrders() {
                       <div className="flex justify-between items-start mb-4 relative z-10">
                         <div className="flex flex-col gap-1">
 	                          <div className="flex items-center gap-2">
-	                            <h3 className="text-lg font-black text-white group-hover:text-orange-400 transition-colors">{order.customer_name}</h3>
-	                            {isNewOrder(order) && <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-ping"></span>}
+                            <h3 className="text-lg font-black text-white group-hover:text-orange-400 transition-colors">{order.customer_name}</h3>
+                            {previousCustomerPhones.has(normalizeCustomerPhone(order.phone)) && <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-black text-emerald-300" title="عميل سابق">✨ سابق</span>}
+                            {isNewOrder(order) && <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-ping"></span>}
 	                            {getWarrantyStatus(order).status !== 'none' && (
 	                              <div className={`px-2 py-0.5 rounded-full text-[8px] font-black bg-${getWarrantyStatus(order).color}-500/20 text-${getWarrantyStatus(order).color}-400 border border-${getWarrantyStatus(order).color}-500/30 flex items-center gap-1`}>
 	                                <ShieldCheck size={8} /> {getWarrantyStatus(order).text}
