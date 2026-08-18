@@ -473,3 +473,56 @@ a:hover {
   background-color: #3498db;
   color: white;
 }
+
+/* نموذج تعديل الأوردر: تخطيط رأسي ثابت ومتناسق على الهاتف */
+#order-edit-modal-scroll .order-edit-fields {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 16px;
+}
+
+#order-edit-modal-scroll .order-edit-fields > div,
+#order-edit-modal-scroll .order-edit-full-field {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+#order-edit-modal-scroll .order-edit-fields > div > label:not(.flex),
+#order-edit-modal-scroll .order-edit-full-field > label:not(.flex) {
+  display: block;
+  width: 100%;
+  margin-bottom: 6px;
+  line-height: 1.5;
+  text-align: right;
+}
+
+#order-edit-modal-scroll .order-edit-fields input:not([type="checkbox"]),
+#order-edit-modal-scroll .order-edit-fields select,
+#order-edit-modal-scroll .order-edit-fields textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+#order-edit-modal-scroll .order-edit-fields label.flex {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 8px;
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  #order-edit-modal-scroll {
+    width: calc(100vw - 24px);
+    padding: 16px;
+    max-height: calc(100vh - 24px);
+  }
+
+  #order-edit-modal-scroll .order-edit-fields {
+    gap: 18px;
+  }
+}
