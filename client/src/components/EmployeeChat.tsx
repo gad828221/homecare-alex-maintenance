@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, Lock, MessageCircle, Send, Users, X } from 'lucide-react';
+import { Check, CheckCheck, Lock, MessageCircle, Send, Users, X } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { useNotification } from './EnhancedNotificationSystem';
 
@@ -11,6 +11,15 @@ const CHAT_STORAGE_PREFIX = 'employee_chat_read_';
 
 type ChatMode = 'public' | 'private';
 type ChatUser = { id: string | number; name: string; username?: string; role?: string; is_active?: boolean };
+type ChatReceipt = {
+  id: number | string;
+  messageId: string;
+  type: 'delivered' | 'read';
+  readerId: string;
+  messageSenderId: string;
+  conversationId: string;
+  created_at: string;
+};
 type ChatMessage = {
   id: number | string;
   created_at: string;
@@ -36,9 +45,36 @@ const getStoredUser = () => {
 };
 
 const normalizeId = (value: unknown) => String(value ?? '');
+const isManagementRole = (role: unknown) => ['admin', 'manager', 'مدير عام', 'مدير فرع', 'مدير العمليات', 'مدير النظام'].includes(String(role ?? '').trim().toLowerCase());
 const getConversationId = (mode: ChatMode, currentId: string, recipientId?: string) => {
   if (mode === 'public') return 'public';
   return [currentId, recipientId || ''].sort().join(':');
+};
+
+const parseChatReceipt = (row: any): ChatReceipt | null => {
+  try {
+    const details = typeof row.details === 'string' ? JSON.parse(row.details) : row.details;
+    if (!details || details.receiptVersion !== 1 || !details.messageId || !details.type) return null;
+    return {
+      id: row.id,
+      messageId: String(details.messageId),
+      type: details.type === 'read' ? 'read' : 'delivered',
+      readerId: normalizeId(details.readerId),
+      messageSenderId: normalizeId(details.messageSenderId),
+      conversationId: details.conversationId || 'public',
+      created_at: row.created_at
+    };
+  } catch {
+    return null;
+  }
+};
+
+const playChatTone = (type: 'incoming' | 'read') => {
+  try {
+    const audio = new Audio(type === 'read' ? '/notification-sound.mp3' : '/sounds/notification.mp3');
+    audio.volume = type === 'read' ? 0.22 : 0.38;
+    void audio.play().catch(() => undefined);
+  } catch { /* بعض المتصفحات تمنع الصوت قبل أول تفاعل */ }
 };
 
 const parseChatMessage = (row: any): ChatMessage | null => {
@@ -69,6 +105,7 @@ export default function EmployeeChat() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [users, setUsers] = useState<ChatUser[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [receipts, setReceipts] = useState<ChatReceipt[]>([]);
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<ChatMode>('public');
   const [selectedUserId, setSelectedUserId] = useState('');
@@ -86,14 +123,54 @@ export default function EmployeeChat() {
   const currentName = currentUser?.name || currentUser?.techName || currentUser?.username || 'مستخدم';
   const selectedUser = users.find((user) => normalizeId(user.id) === selectedUserId);
   const conversationId = getConversationId(mode, currentId, selectedUserId);
-  const isManagement = userRole === 'admin' || userRole === 'manager';
+  const isManagement = isManagementRole(userRole);
   const getKnownSenderRole = useCallback((message: ChatMessage) => message.senderRole || users.find((user) => normalizeId(user.id) === message.senderId)?.role || '', [users]);
   const canViewMessage = useCallback((message: ChatMessage) => {
-    if (message.channel !== 'public' || isManagement) return true;
+    if (message.channel === 'private') {
+      return isManagement || message.senderId === currentId || message.recipientId === currentId;
+    }
+    if (isManagement) return true;
     if (message.senderId === currentId) return true;
     const senderRole = getKnownSenderRole(message);
-    return senderRole === 'admin' || senderRole === 'manager';
+    return isManagementRole(senderRole);
   }, [currentId, getKnownSenderRole, isManagement]);
+
+  const sendReceipt = useCallback(async (message: ChatMessage, type: 'delivered' | 'read') => {
+    const isPrivateParticipant = message.channel !== 'private' || message.recipientId === currentId;
+    if (!currentId || message.senderId === currentId || !canViewMessage(message) || !isPrivateParticipant) return;
+    const receiptKey = `chat_receipt_${type}_${currentId}_${message.id}`;
+    if (localStorage.getItem(receiptKey)) return;
+    localStorage.setItem(receiptKey, 'pending');
+    const payload = {
+      receiptVersion: 1,
+      type,
+      messageId: String(message.id),
+      messageSenderId: message.senderId,
+      readerId: currentId,
+      conversationId: message.conversationId
+    };
+    try {
+      const response = await fetch(`${supabaseUrl}/rest/v1/notifications`, {
+        method: 'POST',
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: CHAT_ACTION, details: JSON.stringify(payload), user_name: currentName, created_at: new Date().toISOString() })
+      });
+      if (!response.ok) throw new Error(await response.text());
+      localStorage.setItem(receiptKey, new Date().toISOString());
+    } catch (error) {
+      localStorage.removeItem(receiptKey);
+      console.warn('تعذر إرسال إيصال الشات:', error);
+    }
+  }, [canViewMessage, currentId, currentName]);
+
+  const getReceiptStatus = useCallback((message: ChatMessage) => {
+    const messageReceipts = receipts.filter((receipt) => receipt.messageId === String(message.id) && receipt.messageSenderId === currentId);
+    if (messageReceipts.some((receipt) => receipt.type === 'read')) return 'read' as const;
+    if (messageReceipts.some((receipt) => receipt.type === 'delivered')) return 'delivered' as const;
+    return 'sent' as const;
+  }, [currentId, receipts]);
+
+  const visibleMessages = useMemo(() => messages.filter((message) => message.conversationId === conversationId && canViewMessage(message)), [canViewMessage, conversationId, messages]);
 
   useEffect(() => {
     const user = getStoredUser();
@@ -128,6 +205,7 @@ export default function EmployeeChat() {
       const userRows = await readJson(responses[1]);
       const technicianRows = await readJson(responses[2]);
       const parsed = (Array.isArray(rows) ? rows : []).map(parseChatMessage).filter(Boolean) as ChatMessage[];
+      const parsedReceipts = (Array.isArray(rows) ? rows : []).map(parseChatReceipt).filter(Boolean) as ChatReceipt[];
       const participants = new Map<string, ChatUser>();
       (Array.isArray(userRows) ? userRows : []).forEach((user: ChatUser) => {
         const id = normalizeId(user.id);
@@ -140,11 +218,13 @@ export default function EmployeeChat() {
         }
       });
       setMessages(parsed);
-      setUsers(Array.from(participants.values()).filter((user) => normalizeId(user.id) !== currentIdRef.current));
+      setReceipts(parsedReceipts);
+      const availableParticipants = Array.from(participants.values()).filter((user) => normalizeId(user.id) !== currentIdRef.current);
+      setUsers(isManagementRole(userRole) ? availableParticipants : availableParticipants.filter((user) => isManagementRole(user.role)) );
     } catch (error) {
       console.warn('تعذر تحميل شات الموظفين:', error);
     }
-  }, [canUseChat]);
+  }, [canUseChat, userRole]);
 
   useEffect(() => {
     if (!canUseChat) return;
@@ -153,6 +233,12 @@ export default function EmployeeChat() {
     const channel = supabase
       .channel('employee-chat-realtime')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `action=eq.${CHAT_ACTION}` }, (payload) => {
+        const incomingReceipt = parseChatReceipt(payload.new);
+        if (incomingReceipt) {
+          setReceipts((previous) => previous.some((item) => String(item.id) === String(incomingReceipt.id)) ? previous : [...previous, incomingReceipt]);
+          if (incomingReceipt.type === 'read' && incomingReceipt.messageSenderId === currentIdRef.current) playChatTone('read');
+          return;
+        }
         const incoming = parseChatMessage(payload.new);
         if (!incoming) return;
         setMessages((previous) => previous.some((item) => String(item.id) === String(incoming.id)) ? previous : [...previous, incoming]);
@@ -169,10 +255,18 @@ export default function EmployeeChat() {
   }, [addNotification, canUseChat, canViewMessage, fetchChatData]);
 
   useEffect(() => {
+    if (!canUseChat) return;
+    messages.filter((message) => message.senderId !== currentId && canViewMessage(message)).forEach((message) => { void sendReceipt(message, 'delivered'); });
+  }, [canUseChat, canViewMessage, currentId, messages, sendReceipt]);
+
+  useEffect(() => {
+    if (!open) return;
+    visibleMessages.filter((message) => message.senderId !== currentId).forEach((message) => { void sendReceipt(message, 'read'); });
+  }, [currentId, open, sendReceipt, visibleMessages]);
+
+  useEffect(() => {
     if (open) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, open, conversationId]);
-
-  const visibleMessages = useMemo(() => messages.filter((message) => message.conversationId === conversationId && canViewMessage(message)), [canViewMessage, conversationId, messages]);
 
   const unreadCount = useMemo(() => {
     void unreadVersion;
@@ -205,6 +299,11 @@ export default function EmployeeChat() {
   const sendMessage = async () => {
     const cleanText = text.trim();
     if (!cleanText || loading || !canUseChat || (mode === 'private' && !selectedUserId)) return;
+    const selectedIsManagement = selectedUser ? isManagementRole(selectedUser.role) : false;
+    if (userRole === 'tech' && mode === 'private' && !selectedIsManagement) {
+      addNotification({ type: 'error', title: 'المحادثة غير مسموحة', message: 'يمكنك التواصل مع المدير أو مدير العمليات فقط.', duration: 5000 });
+      return;
+    }
     const targetConversationId = getConversationId(mode, currentId, selectedUserId);
     setLoading(true);
     const payload = {
@@ -259,7 +358,7 @@ export default function EmployeeChat() {
 
           <div className="p-3 border-b border-slate-800 bg-slate-900/80 space-y-2">
             <div className="flex gap-2">
-              <button type="button" onClick={() => selectMode('public')} className={`flex-1 rounded-xl py-2 text-xs font-black flex items-center justify-center gap-1.5 ${mode === 'public' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}><Users size={14} /> عام</button>
+              <button type="button" onClick={() => selectMode('public')} className={`flex-1 rounded-xl py-2 text-xs font-black flex items-center justify-center gap-1.5 ${mode === 'public' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}><Users size={14} /> {userRole === 'tech' ? 'للإدارة' : 'عام'}</button>
               <button type="button" onClick={() => setMode('private')} className={`flex-1 rounded-xl py-2 text-xs font-black flex items-center justify-center gap-1.5 ${mode === 'private' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}><Lock size={14} /> خاص</button>
             </div>
             {mode === 'private' && (
@@ -282,7 +381,8 @@ export default function EmployeeChat() {
             {mode === 'private' && selectedUserId && visibleMessages.length === 0 && <div className="h-full flex items-center justify-center text-slate-500 text-xs">لا توجد رسائل بعد. ابدأ المحادثة.</div>}
             {visibleMessages.map((message) => {
               const mine = message.senderId === currentId;
-              return <div key={message.id} className={`flex ${mine ? 'justify-start' : 'justify-end'}`}><div className={`max-w-[85%] rounded-2xl px-3 py-2 ${mine ? 'bg-indigo-600 text-white rounded-br-md' : 'bg-slate-800 text-slate-100 rounded-bl-md'}`}><p className="text-[9px] font-black opacity-70 mb-1">{mine ? 'أنت' : message.senderName}</p><p className="text-xs leading-5 whitespace-pre-wrap break-words">{message.text}</p><p className="text-[8px] opacity-60 mt-1">{new Date(message.created_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</p></div></div>;
+              const receiptStatus = mine ? getReceiptStatus(message) : null;
+              return <div key={message.id} className={`flex ${mine ? 'justify-start' : 'justify-end'}`}><div className={`max-w-[85%] rounded-2xl px-3 py-2 ${mine ? 'bg-indigo-600 text-white rounded-br-md' : 'bg-slate-800 text-slate-100 rounded-bl-md'}`}><p className="text-[9px] font-black opacity-70 mb-1">{mine ? 'أنت' : message.senderName}</p><p className="text-xs leading-5 whitespace-pre-wrap break-words">{message.text}</p><p className="text-[8px] opacity-70 mt-1 flex items-center gap-1">{new Date(message.created_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}{mine && receiptStatus === 'sent' && <span title="تم الإرسال"><Check size={12} className="text-slate-300" /></span>}{mine && receiptStatus === 'delivered' && <span title="تم الاستلام"><CheckCheck size={13} className="text-slate-300" /></span>}{mine && receiptStatus === 'read' && <span title="تمت القراءة"><CheckCheck size={13} className="text-sky-300" /></span>}</p></div></div>;
             })}
             <div ref={messagesEndRef} />
           </div>
