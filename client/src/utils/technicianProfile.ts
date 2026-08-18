@@ -3,6 +3,9 @@ export const TECHNICIAN_NAME_BY_CODE: Record<string, string> = {
   AM: 'أيمن مصطفى',
   SH: 'شريف',
   HARON2: 'محمد حمدي',
+  ES: 'اسلام',
+  EG: 'اسلام الجمال',
+  BEBO: 'بهاء',
 };
 
 export type TechnicianProfile = {
