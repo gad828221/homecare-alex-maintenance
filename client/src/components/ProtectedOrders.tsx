@@ -337,6 +337,11 @@ export default function ProtectedOrders() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const alertInterval = useRef<any>(null);
   const lastCheckedOrderId = useRef<number | null>(null);
+  const alertBaselineReadyRef = useRef(false);
+  const delayedAlertIdsRef = useRef<Set<number>>(new Set());
+  const escalationAlertIdsRef = useRef<Set<number>>(new Set());
+  const expiringWarrantyIdsRef = useRef<Set<number>>(new Set());
+  const highExpenseAlertIdsRef = useRef<Set<number>>(new Set());
 
   const [showSettleModal, setShowSettleModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -1025,60 +1030,67 @@ export default function ProtectedOrders() {
       const totalIncome = notDeleted.filter((o: any) => o.is_paid).reduce((sum, o) => sum + (o.company_share || 0), 0);
       setStats({ pending, inProgress, completed, cancelled, totalIncome });
 
-      // إنذار المتأخرات للمدير
+      // إنذار المتأخرات للمدير: لا نعيد تنبيه الأوردرات القديمة عند أول فتح
+      const role = userRole?.toLowerCase() || '';
+      const canEmitLiveAlerts = alertBaselineReadyRef.current;
       const delayedOrders = activeOrders.filter(o => isDelayed(o));
-            if (delayedOrders.length > 0) {
-        const role = userRole?.toLowerCase() || '';
-        if (role === 'admin' || role === 'manager') {
-          console.log("🚨 Delayed orders found! Count:", delayedOrders.length);
-          startUrgentAlert();
-          // إرسال إشعار خارجي للمدير (مرة واحدة كل ساعة لتجنب الإزعاج)
-          const lastAlert = localStorage.getItem('last_delay_alert_manager');
-          const now = new Date().getTime();
-          if (!lastAlert || (now - parseInt(lastAlert)) > 3600000) {
-            void sendExternalPush({
-              event: 'system_alert',
-              title: '⚠️ تنبيه أوردرات متأخرة',
-              message: `يوجد ${delayedOrders.length} أوردر متأخر لأكثر من يومين. يرجى المتابعة مع الفنيين.`,
-              targetRoles: ['admin', 'manager']
-            });
-            localStorage.setItem('last_delay_alert_manager', now.toString());
-          }
+      const delayedIds = new Set<number>(delayedOrders.map((order: any) => Number(order.id)));
+      const newDelayedOrders = delayedOrders.filter((order: any) => !delayedAlertIdsRef.current.has(Number(order.id)));
+      delayedAlertIdsRef.current = delayedIds;
+      if (canEmitLiveAlerts && newDelayedOrders.length > 0 && (role === 'admin' || role === 'manager')) {
+        console.log("🚨 New delayed orders found! Count:", newDelayedOrders.length);
+        startUrgentAlert();
+        const lastAlert = localStorage.getItem('last_delay_alert_manager');
+        const now = new Date().getTime();
+        if (!lastAlert || (now - parseInt(lastAlert)) > 3600000) {
+          void sendExternalPush({
+            event: 'system_alert',
+            title: '⚠️ تنبيه أوردرات متأخرة',
+            message: `يوجد ${newDelayedOrders.length} أوردر دخل مرحلة التأخير الآن. يرجى المتابعة مع الفنيين.`,
+            targetRoles: ['admin', 'manager']
+          });
+          localStorage.setItem('last_delay_alert_manager', now.toString());
         }
       }
-
-      const role = userRole?.toLowerCase() || '';
       if (role === 'admin' || role === 'manager') {
-        // تصعيد تلقائي بعد 30 دقيقة للأوردر المعيّن الذي لم يبدأ الفني العمل عليه
+        // تصعيد تلقائي بعد 30 دقيقة، مع تجاهل كل الحالات الموجودة قبل فتح اللوحة
         const escalationCandidates = activeOrders.filter((order: any) => {
           const createdAt = getOrderCreatedAt(order);
           const isAssigned = Boolean(order.technician && order.technician !== '-');
           return order.status === 'pending' && isAssigned && createdAt && (Date.now() - createdAt.getTime()) >= 30 * 60 * 1000;
         });
-        for (const order of escalationCandidates) {
-          const details = `🚨 تصعيد تلقائي\nالفني: ${order.technician}\nالأوردر: ${order.order_number}\nالعميل: ${order.customer_name}\nتم التعيين منذ أكثر من 30 دقيقة ولم يبدأ الفني العمل بعد.`;
-          const sent = await sendSmartAlertOnce(`smart_escalation_${order.id}`, 'تصعيد تعيين فني', details, {
-            title: '🚨 فني لم يبدأ الأوردر',
-            message: details,
-            data: { order_id: order.id, order_number: order.order_number, technician: order.technician }
-          });
-          if (sent) startUrgentAlert();
+        const escalationIds = new Set<number>(escalationCandidates.map((order: any) => Number(order.id)));
+        const newEscalations = escalationCandidates.filter((order: any) => !escalationAlertIdsRef.current.has(Number(order.id)));
+        escalationAlertIdsRef.current = escalationIds;
+        if (canEmitLiveAlerts) {
+          for (const order of newEscalations) {
+            const details = `🚨 تصعيد تلقائي\nالفني: ${order.technician}\nالأوردر: ${order.order_number}\nالعميل: ${order.customer_name}\nتم التعيين منذ أكثر من 30 دقيقة ولم يبدأ الفني العمل بعد.`;
+            const sent = await sendSmartAlertOnce(`smart_escalation_${order.id}`, 'تصعيد تعيين فني', details, {
+              title: '🚨 فني لم يبدأ الأوردر',
+              message: details,
+              data: { order_id: order.id, order_number: order.order_number, technician: order.technician }
+            });
+            if (sent) startUrgentAlert();
+          }
         }
 
-        // تنبيه الضمان الذي ينتهي خلال 7 أيام مرة واحدة يومياً
+        // تحضير baseline الضمان قبل السماح بالتنبيه
         const expiringOrders = notDeleted.filter((order: any) => getWarrantyStatus(order).status === 'expiring');
-        if (expiringOrders.length > 0) {
+        const expiringIds = new Set<number>(expiringOrders.map((order: any) => Number(order.id)));
+        const newExpiringOrders = expiringOrders.filter((order: any) => !expiringWarrantyIdsRef.current.has(Number(order.id)));
+        expiringWarrantyIdsRef.current = expiringIds;
+        if (canEmitLiveAlerts && newExpiringOrders.length > 0) {
           const todayKey = new Date().toISOString().split('T')[0];
-          const warrantyDetails = `🛡️ ضمانات تقترب من الانتهاء (${expiringOrders.length})\n${expiringOrders.map((order: any) => `#${order.order_number} - ${order.customer_name} - ${getWarrantyStatus(order).text}`).join('\n')}`;
+          const warrantyDetails = `🛡️ ضمانات تقترب من الانتهاء (${newExpiringOrders.length})\n${newExpiringOrders.map((order: any) => `#${order.order_number} - ${order.customer_name} - ${getWarrantyStatus(order).text}`).join('\\n')}`;
           const sent = await sendSmartAlertOnce(`smart_warranty_${todayKey}`, 'ضمان يقترب من الانتهاء', warrantyDetails, {
             title: '🛡️ ضمانات تنتهي قريباً',
             message: warrantyDetails,
-            data: { count: expiringOrders.length }
+            data: { count: newExpiringOrders.length }
           });
           if (sent) startUrgentAlert();
         }
 
-        // رادار نسب المصروفات في الفواتير المعتمدة
+        // رادار نسب المصروفات في الفواتير المعتمدة، مع تجاهل القديم عند أول فتح
         const highExpenseSettlements = notDeleted.filter((order: any) => {
           const total = Number(order.total_amount) || 0;
           if (order.status !== 'completed' || !order.invoice_approved || total <= 0) return false;
@@ -1086,25 +1098,30 @@ export default function ProtectedOrders() {
           const transportPercent = ((Number(order.transport_cost) || 0) / total) * 100;
           return partsPercent > 40 || transportPercent > 15;
         });
-        for (const order of highExpenseSettlements) {
-          const total = Number(order.total_amount) || 0;
-          const partsPercent = ((Number(order.parts_cost) || 0) / total) * 100;
-          const transportPercent = ((Number(order.transport_cost) || 0) / total) * 100;
-          const expenseWarnings = [
-            partsPercent > 40 ? `قطع الغيار ${partsPercent.toFixed(1)}% (الحد 40%)` : '',
-            transportPercent > 15 ? `المواصلات ${transportPercent.toFixed(1)}% (الحد 15%)` : ''
-          ].filter(Boolean).join('، ');
-          const details = `⚠️ مصروفات مرتفعة بالنسبة لإجمالي الفاتورة\nالفني: ${order.technician || 'غير محدد'}\nالأوردر: ${order.order_number}\nالعميل: ${order.customer_name}\nإجمالي الفاتورة: ${total.toLocaleString()} ج.م\n${expenseWarnings}`;
-          const sent = await sendSmartAlertOnce(`smart_high_expense_${order.id}`, 'مصروفات مرتفعة بالنسبة للفاتورة', details, {
-            title: '⚠️ مصروفات مرتفعة بالنسبة للفاتورة',
-            message: details,
-            data: { order_id: order.id, total_amount: total, parts_percent: partsPercent, transport_percent: transportPercent }
-          });
-          if (sent) startUrgentAlert();
+        const highExpenseIds = new Set<number>(highExpenseSettlements.map((order: any) => Number(order.id)));
+        const newHighExpenseSettlements = highExpenseSettlements.filter((order: any) => !highExpenseAlertIdsRef.current.has(Number(order.id)));
+        highExpenseAlertIdsRef.current = highExpenseIds;
+        if (canEmitLiveAlerts) {
+          for (const order of newHighExpenseSettlements) {
+            const total = Number(order.total_amount) || 0;
+            const partsPercent = ((Number(order.parts_cost) || 0) / total) * 100;
+            const transportPercent = ((Number(order.transport_cost) || 0) / total) * 100;
+            const expenseWarnings = [
+              partsPercent > 40 ? `قطع الغيار ${partsPercent.toFixed(1)}% (الحد 40%)` : '',
+              transportPercent > 15 ? `المواصلات ${transportPercent.toFixed(1)}% (الحد 15%)` : ''
+            ].filter(Boolean).join('، ');
+            const details = `⚠️ مصروفات مرتفعة بالنسبة لإجمالي الفاتورة\nالفني: ${order.technician || 'غير محدد'}\nالأوردر: ${order.order_number}\nالعميل: ${order.customer_name}\nإجمالي الفاتورة: ${total.toLocaleString()} ج.م\n${expenseWarnings}`;
+            const sent = await sendSmartAlertOnce(`smart_high_expense_${order.id}`, 'مصروفات مرتفعة بالنسبة للفاتورة', details, {
+              title: '⚠️ مصروفات مرتفعة بالنسبة للفاتورة',
+              message: details,
+              data: { order_id: order.id, total_amount: total, parts_percent: partsPercent, transport_percent: transportPercent }
+            });
+            if (sent) startUrgentAlert();
+          }
         }
 
-        // حصاد يومي للفنيين بعد الساعة 9 مساءً، مرة واحدة لكل يوم وفني
-        if (new Date().getHours() >= 21 && Array.isArray(techsData)) {
+        // حصاد يومي للفنيين بعد الساعة 9 مساءً، يبدأ بعد baseline الصامت
+        if (canEmitLiveAlerts && new Date().getHours() >= 21 && Array.isArray(techsData)) {
           const todayKey = new Date().toISOString().split('T')[0];
           for (const tech of techsData) {
             const techOrders = notDeleted.filter((order: any) => order.technician === tech.name);
@@ -1125,6 +1142,8 @@ export default function ProtectedOrders() {
           }
         }
       }
+      // بعد تخزين baseline لا نعتبر البيانات القديمة أحداثاً جديدة في التحديث التالي
+      alertBaselineReadyRef.current = true;
     } catch (err) {
       console.error(err);
     } finally {

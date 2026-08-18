@@ -43,6 +43,8 @@ export default function TechnicianPortal() {
   const [audioEnabled, setAudioEnabled] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const alertInterval = useRef<any>(null);
+  const alertBaselineReadyRef = useRef(false);
+  const delayedAlertIdsRef = useRef<Set<number>>(new Set());
   const [stats, setStats] = useState({
     active: 0,
     completed: 0,
@@ -284,10 +286,14 @@ export default function TechnicianPortal() {
       });
       void fetchAdminWarnings();
 
-      // إنذار المتأخرات للفني
+      // إنذار المتأخرات للفني: لا نعيد تنبيه الحالات القديمة عند فتح البوابة
       const delayedOrders = data.filter((o: any) => isDelayed(o));
-      if (delayedOrders.length > 0) {
-        console.log("🚨 Technician has delayed orders!", delayedOrders.length);
+      const delayedIds = new Set<number>(delayedOrders.map((order: any) => Number(order.id)));
+      const newDelayedOrders = delayedOrders.filter((order: any) => !delayedAlertIdsRef.current.has(Number(order.id)));
+      const canEmitLiveAlerts = alertBaselineReadyRef.current;
+      delayedAlertIdsRef.current = delayedIds;
+      if (canEmitLiveAlerts && newDelayedOrders.length > 0) {
+        console.log("🚨 Technician has new delayed orders!", newDelayedOrders.length);
         startUrgentAlert();
 
         // إرسال إشعار خارجي للفني نفسه (مرة واحدة كل ساعة)
@@ -299,13 +305,14 @@ export default function TechnicianPortal() {
         if (!lastAlert || (now - parseInt(lastAlert)) > 3600000) {
           void sendExternalPush({
             event: 'system_alert',
-            title: '⚠️ تنبيه أوردرات متأخرة',
-            message: `⚠️ تنبيه: يوجد لديك ${delayedOrders.length} طلب صيانة متأخر لأكثر من 48 ساعة. يرجى اتخاذ إجراء فوراً.`,
+            title: '⚠️ تنبيه أوردر دخل مرحلة التأخير',
+            message: `⚠️ يوجد لديك ${newDelayedOrders.length} طلب صيانة دخل مرحلة التأخير الآن. يرجى اتخاذ إجراء فوراً.`,
             targetUserIds: [`tech:${currentUser?.id}`]
           });
           localStorage.setItem('last_delay_alert_tech', now.toString());
         }
       }
+      alertBaselineReadyRef.current = true;
     } catch (err) { console.error(err); } finally { setLoading(false); }
   }, [techName, isActive, fetchAdminWarnings]);
 
