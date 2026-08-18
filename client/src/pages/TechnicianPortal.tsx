@@ -14,6 +14,7 @@ import { openWhatsAppDirectly } from '../utils/whatsapp';
 import { sendExternalPush } from '../utils/pushNotifications';
 import { useScreenWakeLock } from '../hooks/useScreenWakeLock';
 import { usePwaInstall } from '../hooks/usePwaInstall';
+import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, getOrderCreatedValue } from '../utils/orderTiming';
 
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -44,6 +45,11 @@ export default function TechnicianPortal() {
   const { isInstalled, installCompleted, canInstall, isIos, install } = usePwaInstall();
   const [, setLocation] = useLocation();
   const [orders, setOrders] = useState<any[]>([]);
+  const [clockNow, setClockNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setClockNow(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
   const previousCustomerPhones = useMemo(() => {
     const counts = new Map<string, number>();
     orders.forEach((order) => {
@@ -1109,6 +1115,9 @@ export default function TechnicianPortal() {
                 const baseConfig = statusConfig[order.status] || { label: order.status, Icon: AlertCircle, card: 'bg-slate-900 border-slate-700 hover:border-slate-500 hover:shadow-slate-500/10', badge: 'bg-slate-500/15 text-slate-300 border-slate-500/40', icon: 'bg-slate-500/20 text-slate-300', pulse: '' };
                 const config = delayed ? statusConfig.delayed : baseConfig;
                 const StatusIcon = config.Icon;
+                const orderCreatedValue = getOrderCreatedValue(order);
+                const elapsedTone = getElapsedTone(orderCreatedValue, clockNow);
+                const elapsedToneClass = elapsedTone === 'urgent' ? 'text-rose-300 bg-rose-500/15 border-rose-400/30' : elapsedTone === 'warning' ? 'text-amber-300 bg-amber-500/15 border-amber-400/30' : 'text-slate-300 bg-slate-950/50 border-slate-800';
 
                 return (
                     <div key={order.id} className={`group ${config.card} rounded-[1.5rem] border-2 p-5 transition-all hover:shadow-2xl relative overflow-hidden ${config.pulse} ${isNew ? "ring-4 ring-blue-500/50" : ""}`}>
@@ -1135,8 +1144,9 @@ export default function TechnicianPortal() {
                           <div className="min-w-0"><p className="text-[9px] font-bold text-slate-500 mb-1">الجهاز والماركة</p><p className="text-xs font-black text-slate-200 truncate">{order.device_type} - {order.brand}</p></div>
                         </div>
                         <div className="bg-slate-950/50 p-3 rounded-2xl border border-slate-800/50">
-                          <p className="text-[9px] font-bold text-slate-500 mb-1">تاريخ الأوردر</p>
-                          <p className="text-xs font-black text-slate-200">{new Date(order.created_at || order.date).toLocaleDateString('ar-EG')}</p>
+                          <p className="text-[9px] font-bold text-slate-500 mb-1">تاريخ ووقت الأوردر</p>
+                          <p className="text-xs font-black text-slate-200">{formatOrderDay(orderCreatedValue)} - {formatOrderDateTime(orderCreatedValue)}</p>
+                          <span className={`mt-2 inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[9px] font-black ${elapsedToneClass}`} title="المدة منذ تسجيل الأوردر"><Clock size={10} /> منذ {formatElapsed(orderCreatedValue, clockNow)}</span>
                         </div>
                       </div>
 
