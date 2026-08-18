@@ -20,6 +20,7 @@ type ChatMessage = {
   conversationId: string;
   senderId: string;
   senderName: string;
+  senderRole?: string;
   recipientId?: string;
   recipientName?: string;
   text: string;
@@ -53,6 +54,7 @@ const parseChatMessage = (row: any): ChatMessage | null => {
       conversationId: details.conversationId || 'public',
       senderId: normalizeId(details.senderId),
       senderName: details.senderName || row.user_name || 'مستخدم',
+      senderRole: details.senderRole,
       recipientId: details.recipientId ? normalizeId(details.recipientId) : undefined,
       recipientName: details.recipientName,
       text: String(details.text).slice(0, 2000)
@@ -84,6 +86,14 @@ export default function EmployeeChat() {
   const currentName = currentUser?.name || currentUser?.techName || currentUser?.username || 'مستخدم';
   const selectedUser = users.find((user) => normalizeId(user.id) === selectedUserId);
   const conversationId = getConversationId(mode, currentId, selectedUserId);
+  const isManagement = userRole === 'admin' || userRole === 'manager';
+  const getKnownSenderRole = useCallback((message: ChatMessage) => message.senderRole || users.find((user) => normalizeId(user.id) === message.senderId)?.role || '', [users]);
+  const canViewMessage = useCallback((message: ChatMessage) => {
+    if (message.channel !== 'public' || isManagement) return true;
+    if (message.senderId === currentId) return true;
+    const senderRole = getKnownSenderRole(message);
+    return senderRole === 'admin' || senderRole === 'manager';
+  }, [currentId, getKnownSenderRole, isManagement]);
 
   useEffect(() => {
     const user = getStoredUser();
@@ -146,7 +156,7 @@ export default function EmployeeChat() {
         const incoming = parseChatMessage(payload.new);
         if (!incoming) return;
         setMessages((previous) => previous.some((item) => String(item.id) === String(incoming.id)) ? previous : [...previous, incoming]);
-        if (incoming.senderId !== currentIdRef.current && incoming.conversationId !== activeConversationRef.current) {
+        if (incoming.senderId !== currentIdRef.current && canViewMessage(incoming) && incoming.conversationId !== activeConversationRef.current) {
           addNotification({ type: 'info', title: `رسالة جديدة من ${incoming.senderName}`, message: incoming.text.slice(0, 120), duration: 5000 });
           setUnreadVersion((version) => version + 1);
         }
@@ -156,22 +166,22 @@ export default function EmployeeChat() {
       window.clearInterval(interval);
       void supabase.removeChannel(channel);
     };
-  }, [addNotification, canUseChat, fetchChatData]);
+  }, [addNotification, canUseChat, canViewMessage, fetchChatData]);
 
   useEffect(() => {
     if (open) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, open, conversationId]);
 
-  const visibleMessages = useMemo(() => messages.filter((message) => message.conversationId === conversationId), [conversationId, messages]);
+  const visibleMessages = useMemo(() => messages.filter((message) => message.conversationId === conversationId && canViewMessage(message)), [canViewMessage, conversationId, messages]);
 
   const unreadCount = useMemo(() => {
     void unreadVersion;
     return messages.filter((message) => {
-      if (message.senderId === currentId) return false;
+      if (message.senderId === currentId || !canViewMessage(message)) return false;
       const readAt = localStorage.getItem(`${CHAT_STORAGE_PREFIX}${message.conversationId}`);
       return !readAt || new Date(message.created_at).getTime() > new Date(readAt).getTime();
     }).length;
-  }, [currentId, messages, unreadVersion]);
+  }, [canViewMessage, currentId, messages, unreadVersion]);
 
   const markConversationRead = (id: string) => {
     localStorage.setItem(`${CHAT_STORAGE_PREFIX}${id}`, new Date().toISOString());
@@ -203,6 +213,7 @@ export default function EmployeeChat() {
       conversationId: targetConversationId,
       senderId: currentId,
       senderName: currentName,
+      senderRole: userRole,
       recipientId: mode === 'private' ? selectedUserId : undefined,
       recipientName: mode === 'private' ? selectedUser?.name : undefined,
       text: cleanText
