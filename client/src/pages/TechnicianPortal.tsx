@@ -12,6 +12,8 @@ import TechnicianPerformance from "../components/TechnicianPerformance";
 import { createClient } from '@supabase/supabase-js';
 import { openWhatsAppDirectly } from '../utils/whatsapp';
 import { sendExternalPush } from '../utils/pushNotifications';
+import { useScreenWakeLock } from '../hooks/useScreenWakeLock';
+import { usePwaInstall } from '../hooks/usePwaInstall';
 
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -34,6 +36,8 @@ const fetchAPI = async (endpoint: string, options?: RequestInit) => {
 
 export default function TechnicianPortal() {
   const { addNotification } = useNotification();
+  const { enabled: wakeLockEnabled, isLocked: wakeLockActive, supported: wakeLockSupported, toggle: toggleWakeLock } = useScreenWakeLock();
+  const { isInstalled, installCompleted, canInstall, isIos, install } = usePwaInstall();
   const [, setLocation] = useLocation();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -790,6 +794,48 @@ export default function TechnicianPortal() {
     }] : [])
   ];
 
+  if (!isInstalled) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-200 flex items-center justify-center p-4" dir="rtl">
+        <div className="w-full max-w-md bg-slate-900 border-2 border-orange-500/40 rounded-[2rem] p-6 shadow-2xl text-center">
+          <div className="w-20 h-20 mx-auto mb-5 rounded-3xl bg-orange-600/20 border border-orange-500/40 flex items-center justify-center animate-pulse">
+            <Wrench className="text-orange-400" size={38} />
+          </div>
+          <h1 className="text-2xl font-black text-white mb-3">تثبيت برنامج الفني مطلوب</h1>
+          <p className="text-sm text-slate-300 leading-7 mb-5">
+            لا يمكن فتح بوابة الفني من المتصفح العادي. ثبّت البرنامج على الهاتف أولاً حتى تظل التنبيهات والإشعارات مرتبطة ببوابة العمل.
+          </p>
+          {canInstall ? (
+            <button
+              type="button"
+              onClick={() => { void install(); }}
+              className="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-2xl py-4 font-black text-base shadow-xl active:scale-95 transition-transform"
+            >
+              تثبيت البرنامج الآن
+            </button>
+          ) : (
+            <div className="bg-slate-950/70 border border-slate-700 rounded-2xl p-4 text-right space-y-3">
+              {isIos ? (
+                <>
+                  <p className="text-sm font-black text-white">طريقة التثبيت على iPhone</p>
+                  <p className="text-xs text-slate-300 leading-6">اضغط زر المشاركة في Safari ثم اختر <b className="text-orange-300">إضافة إلى الشاشة الرئيسية</b>، وبعدها افتح البرنامج من الأيقونة الجديدة.</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-black text-white">طريقة التثبيت من Chrome أو Edge</p>
+                  <p className="text-xs text-slate-300 leading-6">افتح قائمة المتصفح ثم اختر <b className="text-orange-300">تثبيت التطبيق</b> أو <b className="text-orange-300">إضافة إلى الشاشة الرئيسية</b>، وبعد التثبيت افتح البرنامج من الأيقونة.</p>
+                </>
+              )}
+            </div>
+          )}
+          {installCompleted && <p className="mt-4 text-xs text-emerald-300 font-bold">تم قبول التثبيت. افتح البرنامج من الأيقونة المثبتة لإكمال الدخول.</p>}
+          <button type="button" onClick={() => window.location.reload()} className="mt-5 text-xs text-slate-400 hover:text-white flex items-center justify-center gap-2 mx-auto"><RefreshCw size={14} /> فحص التثبيت مرة أخرى</button>
+          <p className="mt-5 text-[10px] text-slate-500">يجب فتح الموقع عبر HTTPS ومن متصفح يدعم تطبيقات الويب.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!isActive) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
@@ -855,7 +901,19 @@ export default function TechnicianPortal() {
               </div>
             </div>
           </div>
-          <button onClick={() => { localStorage.clear(); sessionStorage.clear(); window.location.href = "/login"; }} className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg"><LogOut className="w-5 h-5" /></button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleWakeLock}
+              disabled={!wakeLockSupported}
+              title={wakeLockSupported ? (wakeLockEnabled ? 'إيقاف إبقاء الشاشة مستيقظة' : 'تشغيل إبقاء الشاشة مستيقظة') : 'المتصفح لا يدعم إبقاء الشاشة مستيقظة'}
+              className={`px-2.5 py-2 rounded-xl border text-[9px] font-black flex items-center gap-1.5 transition-all ${wakeLockSupported && wakeLockEnabled ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300' : 'bg-slate-800 border-slate-700 text-slate-500'} disabled:opacity-50`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${wakeLockActive ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`}></span>
+              {wakeLockActive ? 'الشاشة يقظة' : wakeLockEnabled ? 'إبقاء الشاشة' : 'الشاشة مغلقة'}
+            </button>
+            <button onClick={() => { localStorage.clear(); sessionStorage.clear(); window.location.href = "/login"; }} className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg"><LogOut className="w-5 h-5" /></button>
+          </div>
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'maintenance-guide-static-v1';
+const CACHE_NAME = 'maintenance-guide-static-v1-8-6';
 const APP_SHELL = [
   '/manifest.webmanifest',
   '/pwa-192.png',
@@ -12,6 +12,10 @@ self.addEventListener('install', (event) => {
       .then((cache) => cache.addAll(APP_SHELL))
       .then(() => self.skipWaiting())
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -31,7 +35,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith('/rest/') || url.pathname.startsWith('/functions/')) return;
+  if (url.pathname.startsWith('/rest/') || url.pathname.startsWith('/functions/') || url.pathname.startsWith('/api/')) return;
 
   if (request.mode === 'navigate') {
     event.respondWith(

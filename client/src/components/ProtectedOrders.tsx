@@ -9,6 +9,7 @@ import {
 import { createClient } from '@supabase/supabase-js';
 import { Helmet } from 'react-helmet-async';
 import { sendExternalPush } from '../utils/pushNotifications';
+import { useScreenWakeLock } from '../hooks/useScreenWakeLock';
 
 const runWithOneSignal = (callback: (OneSignal: any) => void | Promise<void>) => {
   if (typeof window === 'undefined') return;
@@ -268,6 +269,7 @@ const sendSmartAlertOnce = async (key: string, action: string, details: string, 
 
 // ==================== المكون الرئيسي ====================
 export default function ProtectedOrders() {
+  const { enabled: wakeLockEnabled, isLocked: wakeLockActive, supported: wakeLockSupported, toggle: toggleWakeLock } = useScreenWakeLock();
   const [orders, setOrders] = useState<any[]>([]);
   const [archivedOrders, setArchivedOrders] = useState<any[]>([]);
   const getPhotoUrl = (note: string, type: 'OLD' | 'NEW') => {
@@ -2083,7 +2085,19 @@ export default function ProtectedOrders() {
             </div>
           </div>
 
-          <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"><LogOut className="w-5 h-5" /></button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleWakeLock}
+              disabled={!wakeLockSupported}
+              title={wakeLockSupported ? (wakeLockEnabled ? 'إيقاف إبقاء الشاشة مستيقظة' : 'تشغيل إبقاء الشاشة مستيقظة') : 'المتصفح لا يدعم إبقاء الشاشة مستيقظة'}
+              className={`px-2.5 py-2 rounded-xl border text-[9px] font-black flex items-center gap-1.5 transition-all ${wakeLockSupported && wakeLockEnabled ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300' : 'bg-slate-800 border-slate-700 text-slate-500'} disabled:opacity-50`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${wakeLockActive ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`}></span>
+              {wakeLockActive ? 'الشاشة يقظة' : wakeLockEnabled ? 'إبقاء الشاشة' : 'الشاشة مغلقة'}
+            </button>
+            <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"><LogOut className="w-5 h-5" /></button>
+          </div>
         </div>
         
         {/* نسخة الموبايل من المتواجدين */}
