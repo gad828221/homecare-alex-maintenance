@@ -4,7 +4,7 @@ import {
   RefreshCw, Phone, MapPin, ClipboardList,
   Calendar, X, Trash2, Eye, ClockArrowUp, StickyNote,
   Play, FileCheck, DollarSign, CalendarX, Ban, MessageSquare, Search,
-  Camera, TrendingUp, Award, Wallet, Send, ExternalLink, Bell, Upload, Cpu
+  Camera, TrendingUp, Award, Wallet, Send, ExternalLink, Bell, Upload, Cpu, UserCircle, ImagePlus
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useNotification } from "../components/EnhancedNotificationSystem";
@@ -16,6 +16,7 @@ import { useScreenWakeLock } from '../hooks/useScreenWakeLock';
 import { usePwaInstall } from '../hooks/usePwaInstall';
 import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, getOrderCreatedValue } from '../utils/orderTiming';
 import { createPickupMarker, getPickupTypeLabel } from '../utils/pickupReceipt';
+import { getTechnicianDisplayName, getTechnicianPhotoUrl, parseTechnicianProfileNotification, profileNotificationPayload } from '../utils/technicianProfile';
 
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -61,6 +62,8 @@ export default function TechnicianPortal() {
   }, [orders]);
   const [loading, setLoading] = useState(true);
   const [techName, setTechName] = useState("");
+  const [techProfilePhoto, setTechProfilePhoto] = useState('');
+  const [isUploadingProfilePhoto, setIsUploadingProfilePhoto] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [isUrgentAlert, setIsUrgentAlert] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
@@ -124,7 +127,8 @@ export default function TechnicianPortal() {
     const currentUser = localStorage.getItem("currentUser");
     if (userRole === "tech" && currentUser) {
       const user = JSON.parse(currentUser);
-      if (user.techName) setTechName(user.techName);
+      if (user.techName || user.name) setTechName(user.techName || user.name);
+      setTechProfilePhoto(getTechnicianPhotoUrl(user));
       return;
     }
     const params = new URLSearchParams(window.location.search);
@@ -207,8 +211,17 @@ export default function TechnicianPortal() {
     const checkActiveStatus = async () => {
       if (!techName) return;
       try {
-        const data = await fetchAPI(`technicians?select=is_active&name=eq.${encodeURIComponent(techName)}`);
-        if (data && data[0]) setIsActive(data[0].is_active !== false);
+        const data = await fetchAPI(`technicians?select=*&name=eq.${encodeURIComponent(techName)}`);
+        if (data && data[0]) {
+          setIsActive(data[0].is_active !== false);
+          setTechProfilePhoto((currentPhoto) => currentPhoto || getTechnicianPhotoUrl(data[0]));
+        }
+        const storedUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        const profileRows = await fetchAPI('notifications?select=action,details,created_at&action=eq.technician_profile_updated&order=created_at.desc&limit=100');
+        const matchingProfile = (Array.isArray(profileRows) ? profileRows : []).map(parseTechnicianProfileNotification).filter(Boolean).find((profile: any) => {
+          return [profile.id, profile.code, profile.username, profile.name].filter(Boolean).some((value) => String(value).trim().toLowerCase() === String(storedUser.id || storedUser.username || techName).trim().toLowerCase());
+        });
+        if (matchingProfile?.photoUrl) setTechProfilePhoto((currentPhoto) => currentPhoto || matchingProfile.photoUrl);
       } catch (err) { console.error(err); }
     };
     checkActiveStatus();
@@ -615,6 +628,55 @@ export default function TechnicianPortal() {
     } finally {
       setIsUploadingPickupPhoto(false);
       e.target.value = '';
+    }
+  };
+
+  const handleProfilePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) {
+      addNotification({ type: 'error', title: '❌ صورة غير صالحة', message: 'اختر صورة JPG أو PNG أو WEBP بحجم لا يتجاوز 5 ميجابايت.', duration: 5000 });
+      event.target.value = '';
+      return;
+    }
+
+    setIsUploadingProfilePhoto(true);
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      const profileId = storedUser.id || storedUser.username || techName;
+      const safeName = String(techName || 'technician').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const filePath = `technician_profiles/${String(profileId)}_${safeName}.${file.name.split('.').pop() || 'jpg'}`;
+      const { error: uploadError } = await supabase.storage.from('order-photos').upload(filePath, file, { upsert: true, contentType: file.type });
+      if (uploadError) throw uploadError;
+      const { data: publicData } = supabase.storage.from('order-photos').getPublicUrl(filePath);
+      const photoUrl = publicData.publicUrl;
+      const displayName = getTechnicianDisplayName({ ...storedUser, name: techName, techName });
+      setTechProfilePhoto(photoUrl);
+      localStorage.setItem('currentUser', JSON.stringify({ ...storedUser, profile_photo: photoUrl }));
+
+      // الحقل الاختياري يحفظ الصورة في سجل الفني عند توفره.
+      try {
+        await fetchAPI(`technicians?name=eq.${encodeURIComponent(techName)}`, { method: 'PATCH', body: JSON.stringify({ profile_photo: photoUrl }) });
+      } catch (optionalError) {
+        console.warn('حقل profile_photo غير متاح؛ سيتم الاعتماد على سجل الملف الشخصي.', optionalError);
+      }
+
+      await fetchAPI('notifications', {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'technician_profile_updated',
+          details: profileNotificationPayload({ id: storedUser.id, code: storedUser.username || techName, username: storedUser.username, name: displayName, photoUrl }),
+          user_name: displayName,
+          created_at: new Date().toISOString()
+        })
+      });
+      addNotification({ type: 'success', title: '✅ تم تحديث صورتك', message: 'ستظهر صورتك للإدارة وللعميل عند تعيينك على أوردر جديد.', duration: 5000 });
+    } catch (error) {
+      console.error(error);
+      addNotification({ type: 'error', title: '❌ تعذر رفع الصورة', message: 'تحقق من الاتصال وحاول مرة أخرى.', duration: 5000 });
+    } finally {
+      setIsUploadingProfilePhoto(false);
+      event.target.value = '';
     }
   };
 
@@ -1034,12 +1096,17 @@ export default function TechnicianPortal() {
       <div className="bg-slate-800/80 border-b border-slate-700 sticky top-0 z-40 px-4 py-3">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <Wrench className="w-6 h-6 text-orange-400" />
+            <label htmlFor="technician-profile-photo" className="relative w-12 h-12 rounded-2xl overflow-hidden bg-slate-700 border-2 border-orange-500/50 flex items-center justify-center cursor-pointer group shadow-lg" title="تحديث الصورة الشخصية">
+              {techProfilePhoto ? <img src={techProfilePhoto} alt={`صورة ${getTechnicianDisplayName({ name: techName })}`} className="w-full h-full object-cover" /> : <UserCircle className="w-8 h-8 text-slate-300" />}
+              <span className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><ImagePlus size={17} className="text-white" /></span>
+              {isUploadingProfilePhoto && <span className="absolute inset-0 bg-slate-950/80 flex items-center justify-center"><RefreshCw size={16} className="animate-spin text-orange-300" /></span>}
+            </label>
+            <input id="technician-profile-photo" type="file" accept="image/*" capture="user" onChange={handleProfilePhotoUpload} className="sr-only" disabled={isUploadingProfilePhoto} />
             <div>
               <h1 className="text-lg font-bold text-white">بوابة الفنيين</h1>
               <div className="flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                <p className="text-xs text-orange-400">{techName}</p>
+                <p className="text-xs text-orange-400">{getTechnicianDisplayName({ name: techName })}</p>
               </div>
             </div>
           </div>

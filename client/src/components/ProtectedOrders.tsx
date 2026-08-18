@@ -12,6 +12,7 @@ import { sendExternalPush } from '../utils/pushNotifications';
 import { useScreenWakeLock } from '../hooks/useScreenWakeLock';
 import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, getOrderCreatedValue } from '../utils/orderTiming';
 import { getPickupTypeLabel, parsePickupReceipt } from '../utils/pickupReceipt';
+import { findTechnicianByIdentity, getTechnicianDisplayName, getTechnicianPhotoUrl, getTechnicianSpecialty, parseTechnicianProfileNotification } from '../utils/technicianProfile';
 
 const runWithOneSignal = (callback: (OneSignal: any) => void | Promise<void>) => {
   if (typeof window === 'undefined') return;
@@ -329,6 +330,7 @@ export default function ProtectedOrders() {
   };
 
   const [technicians, setTechnicians] = useState<any[]>([]);
+  const [technicianProfiles, setTechnicianProfiles] = useState<Record<string, any>>({});
   const [notifications, setNotifications] = useState<any[]>([]);
   const [partners, setPartners] = useState<any[]>([]);
   const [cashLedger, setCashLedger] = useState<any[]>([]);
@@ -741,6 +743,34 @@ export default function ProtectedOrders() {
   const sendWhatsAppToCustomerOnCreate = (order: any) => {
     if (isViewer) return;
     const message = `📝 *تم استلام طلب الصيانة بنجاح* 📝\n\n🔢 *رقم الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n🔧 *الجهاز:* ${order.device_type} - ${order.brand}\n📍 *العنوان:* ${order.address || 'غير محدد'}\n\n✅ تم تسجيل طلبك وسيتم التواصل معك قريباً.`;
+    openWhatsApp(order.phone, message);
+  };
+
+  const getOrderTechnicianProfile = (technicianIdentity: any) => {
+    const technician = findTechnicianByIdentity(technicians, technicianIdentity);
+    const lookupKeys = [
+      technicianIdentity,
+      technician?.id,
+      technician?.username,
+      technician?.code,
+      technician?.name,
+      getTechnicianDisplayName(technician || { name: technicianIdentity })
+    ].filter(Boolean).map((value) => String(value).trim().toLowerCase());
+    const storedProfile = lookupKeys.map((key) => technicianProfiles[key]).find(Boolean);
+    return {
+      technician,
+      displayName: storedProfile?.name || getTechnicianDisplayName(technician || { name: technicianIdentity }),
+      photoUrl: storedProfile?.photoUrl || getTechnicianPhotoUrl(technician),
+      specialty: getTechnicianSpecialty(technician, undefined)
+    };
+  };
+
+  const sendTechnicianAssignmentToCustomer = (order: any, technicianIdentity: any) => {
+    if (!['admin', 'manager'].includes(userRole?.toLowerCase() || '') || !order?.phone || !technicianIdentity) return;
+    const profile = getOrderTechnicianProfile(technicianIdentity);
+    const specialty = getTechnicianSpecialty(profile.technician, order.device_type);
+    const photoLine = profile.photoUrl ? `🖼️ *صورة الفني:*\n${profile.photoUrl}\n` : '';
+    const message = `👨‍🔧 *تم تعيين الفني المسؤول عن طلبك* 👨‍🔧\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n\n✅ *الفني المتوجه إليك:* ${profile.displayName}\n🛠️ *التخصص:* متخصص ${specialty}\n${photoLine}\n📍 سيقوم الفني بالتواصل معك والتوجه إلى العنوان المسجل في الطلب.\n\nشكراً لثقتكم في HomeCare Maintenance.`;
     openWhatsApp(order.phone, message);
   };
 
@@ -1159,8 +1189,21 @@ export default function ProtectedOrders() {
         fetchAPI('users?select=*&order=created_at.desc')
       ]);
 
-      setTechnicians(Array.isArray(techsData) ? techsData : []);
-      setNotifications(Array.isArray(notificationsData) ? notificationsData : []);
+      const nextTechnicians = Array.isArray(techsData) ? techsData : [];
+      const nextNotifications = Array.isArray(notificationsData) ? notificationsData : [];
+      setTechnicians(nextTechnicians);
+      setNotifications(nextNotifications);
+      const nextProfiles: Record<string, any> = {};
+      nextNotifications.filter((row: any) => row.action === 'technician_profile_updated').forEach((row: any) => {
+        const profile = parseTechnicianProfileNotification(row);
+        if (!profile) return;
+        [profile.id, profile.code, profile.username, profile.name].filter(Boolean).forEach((key) => {
+          const normalizedKey = String(key).trim().toLowerCase();
+          const current = nextProfiles[normalizedKey];
+          if (!current || new Date(profile.updatedAt || 0).getTime() >= new Date(current.updatedAt || 0).getTime()) nextProfiles[normalizedKey] = profile;
+        });
+      });
+      setTechnicianProfiles(nextProfiles);
       setPartners(Array.isArray(partnersData) ? partnersData : []);
       setCashLedger(Array.isArray(cashData) ? cashData : []);
       setUsers(Array.isArray(usersData) ? usersData : []);
@@ -1603,9 +1646,11 @@ export default function ProtectedOrders() {
         if (oldOrder?.status === 'completed' && oldOrder?.is_paid && oldOrder?.profit_added_to_cash) await deleteOrderProfitFromCash(oldOrder);
         await fetchAPI(`orders?id=eq.${editingOrder.id}`, { method: 'PATCH', body: JSON.stringify(orderToSave) });
         await addNotification('تعديل أوردر', `تم تعديل أوردر ${formData.customer_name}`);
+        const technicianChanged = String(oldOrder?.technician || '').trim().toLowerCase() !== String(orderToSave.technician || '').trim().toLowerCase();
+        if (technicianChanged && orderToSave.technician) sendTechnicianAssignmentToCustomer({ ...orderToSave, id: editingOrder.id }, orderToSave.technician);
 
         if (orderToSave.technician) {
-          const tech = technicians.find(t => t.name === orderToSave.technician);
+          const tech = findTechnicianByIdentity(technicians, orderToSave.technician);
           if (tech && tech.phone) {
             const techMsg = `📝 *تحديث بيانات الأوردر* 📝\n━━━━━━━━━━━━━━━━━━━━━━\n👤 *العميل:* ${formData.customer_name}\n🔧 *الجهاز:* ${finalDevice}\n📍 *العنوان:* ${formData.address}\n📌 تم تحديث البيانات، يرجى المراجعة.`;
             notifyTechnician(tech.phone, tech.name, techMsg);
@@ -1636,7 +1681,7 @@ export default function ProtectedOrders() {
         });
 
         if (orderToSave.technician) {
-          const tech = technicians.find(t => t.name === orderToSave.technician);
+          const tech = findTechnicianByIdentity(technicians, orderToSave.technician);
           if (tech && tech.phone) {
             const techMsg = `🔧 *تنبيه: أوردر جديد لك* 🔧\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الطلب:* ${orderToSave.order_number}\n👤 *العميل:* ${formData.customer_name}\n🔧 *الجهاز:* ${finalDevice}\n📍 *العنوان:* ${formData.address}\n📌 يرجى مراجعة التفاصيل في بوابتك الخاصة.`;
             notifyTechnician(tech.phone, tech.name, techMsg);
@@ -1651,7 +1696,8 @@ export default function ProtectedOrders() {
         }
 
         showToast('تم إضافة الأوردر بنجاح', 'success');
-        sendWhatsAppToCustomerOnCreate(orderToSave);
+        if (orderToSave.technician) sendTechnicianAssignmentToCustomer(orderToSave, orderToSave.technician);
+        else sendWhatsAppToCustomerOnCreate(orderToSave);
       }
       setShowOrderModal(false); setEditingOrder(null);
       setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") });
