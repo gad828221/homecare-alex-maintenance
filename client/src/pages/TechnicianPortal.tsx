@@ -310,15 +310,19 @@ export default function TechnicianPortal() {
     try {
       // ✅ إضافة شرط deleted_at=is.null لاستبعاد الأوردرات المحذوفة
       const data = await fetchAPI(`orders?select=*&technician=eq.${encodeURIComponent(techName)}&deleted_at=is.null&order=created_at.desc`);
-      setOrders(data);
-      const active = data.filter((o: any) => o.status === 'pending' || o.status === 'in-progress').length;
-      const completed = data.filter((o: any) => o.status === 'completed').length;
-      const earnings = data.filter((o: any) => o.status === 'completed').reduce((acc: number, o: any) => acc + (Number(o.technician_share) || 0), 0);
-      const invoicedOrders = data.filter((o: any) => Number(o.total_amount) > 0);
+      const visibleOrders = (Array.isArray(data) ? data : []).filter((o: any) => {
+        const status = String(o.status || '').trim().toLowerCase();
+        return !['cancelled', 'canceled', 'inspected'].includes(status);
+      });
+      setOrders(visibleOrders);
+      const active = visibleOrders.filter((o: any) => o.status === 'pending' || o.status === 'in-progress').length;
+      const completed = visibleOrders.filter((o: any) => o.status === 'completed').length;
+      const earnings = visibleOrders.filter((o: any) => o.status === 'completed').reduce((acc: number, o: any) => acc + (Number(o.technician_share) || 0), 0);
+      const invoicedOrders = visibleOrders.filter((o: any) => Number(o.total_amount) > 0);
       const totalInvoice = invoicedOrders.reduce((sum: number, o: any) => sum + (Number(o.total_amount) || 0), 0);
       const totalParts = invoicedOrders.reduce((sum: number, o: any) => sum + (Number(o.parts_cost) || 0), 0);
       const totalTransport = invoicedOrders.reduce((sum: number, o: any) => sum + (Number(o.transport_cost) || 0), 0);
-      const successRate = data.length > 0 ? Math.round((completed / data.length) * 100) : 0;
+      const successRate = visibleOrders.length > 0 ? Math.round((completed / visibleOrders.length) * 100) : 0;
       setStats({
         active,
         completed,
