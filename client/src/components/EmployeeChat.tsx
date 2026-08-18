@@ -172,6 +172,50 @@ export default function EmployeeChat() {
 
   const visibleMessages = useMemo(() => messages.filter((message) => message.conversationId === conversationId && canViewMessage(message)), [canViewMessage, conversationId, messages]);
 
+  const privateChatPeople = useMemo(() => {
+    const conversations = new Map<string, { id: string; name: string; role?: string; lastText: string; lastAt: number; unread: number }>();
+    const visiblePrivateMessages = messages.filter((message) => message.channel === 'private' && canViewMessage(message));
+
+    visiblePrivateMessages.forEach((message) => {
+      const participantId = message.senderId === currentId ? message.recipientId : message.senderId;
+      if (!participantId || participantId === currentId) return;
+      const id = normalizeId(participantId);
+      const matchingUser = users.find((user) => normalizeId(user.id) === id);
+      const messageTime = new Date(message.created_at).getTime() || 0;
+      const existing = conversations.get(id);
+      const conversationIdForRead = getConversationId('private', currentId, id);
+      const readAt = localStorage.getItem(`${CHAT_STORAGE_PREFIX}${conversationIdForRead}`);
+      const isUnread = message.senderId !== currentId && (!readAt || messageTime > new Date(readAt).getTime());
+      if (!existing) {
+        conversations.set(id, {
+          id,
+          name: matchingUser?.name || (message.senderId === currentId ? message.recipientName : message.senderName) || 'موظف',
+          role: matchingUser?.role || message.senderRole,
+          lastText: message.text,
+          lastAt: messageTime,
+          unread: isUnread ? 1 : 0
+        });
+      } else {
+        if (messageTime >= existing.lastAt) {
+          existing.lastAt = messageTime;
+          existing.lastText = message.text;
+        }
+        if (isUnread) existing.unread += 1;
+      }
+    });
+
+    users.forEach((user) => {
+      const id = normalizeId(user.id);
+      if (id && id !== currentId && !conversations.has(id)) {
+        conversations.set(id, { id, name: user.name, role: user.role, lastText: 'لا توجد رسائل بعد', lastAt: 0, unread: 0 });
+      }
+    });
+
+    return Array.from(conversations.values()).sort((a, b) => b.unread - a.unread || b.lastAt - a.lastAt || a.name.localeCompare(b.name, 'ar'));
+  }, [canViewMessage, currentId, messages, unreadVersion, users]);
+
+  const latestUnreadPrivate = privateChatPeople.find((person) => person.unread > 0);
+
   useEffect(() => {
     const user = getStoredUser();
     setCurrentUser(user);
@@ -359,6 +403,7 @@ export default function EmployeeChat() {
         type="button"
         onClick={() => { setOpen((value) => !value); if (!open) markConversationRead(conversationId); }}
         aria-label="فتح شات الموظفين"
+        title={latestUnreadPrivate ? `رسالة جديدة من ${latestUnreadPrivate.name}` : 'فتح شات الموظفين'}
         className="fixed bottom-24 left-4 z-[80] w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-2xl shadow-indigo-950/40 flex items-center justify-center transition-all active:scale-95"
       >
         <MessageCircle size={25} />
@@ -371,20 +416,30 @@ export default function EmployeeChat() {
             <div className="flex items-center gap-2"><MessageCircle size={20} className="text-indigo-200" /><div><p className="text-sm font-black text-white">شات الموظفين</p><p className="text-[10px] text-indigo-200">تواصل سريع داخل النظام</p></div></div>
             <button type="button" onClick={() => setOpen(false)} className="p-2 rounded-lg text-indigo-100 hover:bg-white/10" aria-label="إغلاق الشات"><X size={17} /></button>
           </div>
+          {latestUnreadPrivate && (
+            <button type="button" onClick={() => { setOpen(true); selectUser(latestUnreadPrivate.id); }} className="w-full px-4 py-2.5 bg-rose-950/70 border-b border-rose-500/40 text-right text-xs text-rose-100 font-black flex items-center justify-between gap-2 hover:bg-rose-900/70 transition-colors">
+              <span className="truncate">رسالة جديدة من <b>{latestUnreadPrivate.name}</b> ({latestUnreadPrivate.unread})</span>
+              <span className="shrink-0 underline underline-offset-2">فتح المحادثة</span>
+            </button>
+          )}
 
           <div className="p-3 border-b border-slate-800 bg-slate-900/80 space-y-2">
             <div className="flex gap-2">
               <button type="button" onClick={() => selectMode('public')} className={`flex-1 rounded-xl py-2 text-xs font-black flex items-center justify-center gap-1.5 ${mode === 'public' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}><Users size={14} /> {userRole === 'tech' ? 'للإدارة' : 'عام'}</button>
-              <button type="button" onClick={() => setMode('private')} className={`flex-1 rounded-xl py-2 text-xs font-black flex items-center justify-center gap-1.5 ${mode === 'private' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}><Lock size={14} /> خاص</button>
+              <button type="button" onClick={() => setMode('private')} className={`flex-1 rounded-xl py-2 text-xs font-black flex items-center justify-center gap-1.5 ${mode === 'private' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}><Lock size={14} /> خاص {privateChatPeople.reduce((sum, person) => sum + person.unread, 0) > 0 && <span className="min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] flex items-center justify-center">{privateChatPeople.reduce((sum, person) => sum + person.unread, 0)}</span>}</button>
             </div>
             {mode === 'private' && (
               <div className="space-y-2">
                 <p className="text-[10px] text-slate-400 font-bold">اختر موظفاً للمحادثة الخاصة:</p>
                 <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto pr-1">
-                  {users.map((user) => {
-                    const userId = normalizeId(user.id);
-                    const selected = selectedUserId === userId;
-                    return <button key={userId} type="button" onClick={() => selectUser(userId)} className={`text-right rounded-xl border px-2.5 py-2 transition-all ${selected ? 'bg-indigo-600 border-indigo-400 text-white shadow-lg' : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-indigo-500/60'}`}><span className="block text-[11px] font-black truncate">{user.name}</span><span className="block text-[9px] opacity-70 mt-0.5">{user.role === 'tech' ? 'فني' : user.role === 'manager' ? 'مدير فرع' : user.role === 'admin' ? 'مدير عام' : 'موظف'}</span></button>;
+                  {privateChatPeople.map((person) => {
+                    const selected = selectedUserId === person.id;
+                    return <button key={person.id} type="button" onClick={() => selectUser(person.id)} className={`relative text-right rounded-xl border px-2.5 py-2 transition-all ${selected ? 'bg-indigo-600 border-indigo-400 text-white shadow-lg' : person.unread > 0 ? 'bg-rose-950/60 border-rose-400/70 text-white shadow-lg shadow-rose-950/30' : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-indigo-500/60'}`}>
+                      <span className="flex items-center justify-between gap-1"><span className="block text-[11px] font-black truncate">{person.name}</span>{person.unread > 0 && <span className="min-w-5 h-5 px-1 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center">{person.unread > 99 ? '99+' : person.unread}</span>}</span>
+                      <span className="block text-[9px] opacity-70 mt-0.5">{person.role === 'tech' ? 'فني' : person.role === 'manager' ? 'مدير فرع' : person.role === 'admin' ? 'مدير عام' : 'موظف'}</span>
+                      <span className={`block text-[9px] mt-1 truncate ${person.unread > 0 ? 'text-rose-200' : 'opacity-60'}`}>{person.lastText}</span>
+                      {person.lastAt > 0 && <span className="block text-[8px] opacity-50 mt-1">{new Date(person.lastAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</span>}
+                    </button>;
                   })}
                   {users.length === 0 && <p className="col-span-2 text-center text-[10px] text-amber-300 py-3">لا توجد قائمة موظفين حالياً. اضغط تحديث الصفحة.</p>}
                 </div>
