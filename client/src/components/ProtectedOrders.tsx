@@ -4,7 +4,7 @@ import {
   CheckCircle2, AlertCircle,
   Edit, Trash2, RefreshCw, Phone,
   Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut, Send, Play, LogIn,
-  RotateCcw, Clock, MapPin, Star, Cpu, ShieldCheck, Wrench
+  RotateCcw, Clock, MapPin, Star, Cpu, ShieldCheck, Wrench, UserCircle
 } from "lucide-react";
 import { createClient } from '@supabase/supabase-js';
 import { Helmet } from 'react-helmet-async';
