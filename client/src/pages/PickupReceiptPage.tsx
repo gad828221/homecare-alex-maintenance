@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import jsPDF from "jspdf";
 import { openWhatsAppDirectly } from '../utils/whatsapp';
-import { Download, Printer, Send, Copy, Check, MapPin, Phone, MessageCircle, Clock, ShieldCheck, User, Wrench, AlertCircle, Edit2, Save, X } from "lucide-react";
+import { getPickupTypeLabel, parsePickupReceipt } from '../utils/pickupReceipt';
+import { Download, Printer, Send, Copy, Check, MapPin, Phone, MessageCircle, Clock, ShieldCheck, User, Wrench, AlertCircle, Edit2, Save, X, ClipboardList, Camera, Package } from "lucide-react";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -246,6 +247,8 @@ export default function PickupReceiptPage() {
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
   if (!order) return <div className="p-8 text-center">لا توجد بيانات</div>;
 
+  const pickup = parsePickupReceipt(order);
+
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8" dir="rtl">
       <div className="max-w-3xl mx-auto">
@@ -293,6 +296,59 @@ export default function PickupReceiptPage() {
                 </div>
               </div>
             </div>
+
+            {pickup && (
+              <section className="mb-10 rounded-3xl border-2 border-purple-100 bg-gradient-to-br from-purple-50 via-white to-slate-50 p-5 md:p-6">
+                <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
+                  <h3 className="flex items-center gap-2 text-purple-700 font-black text-lg">
+                    <ClipboardList className="w-5 h-5" /> تفاصيل السحب والتوثيق
+                  </h3>
+                  <span className={`rounded-full px-3 py-1 text-xs font-black ${pickup.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
+                    {pickup.status === 'active' ? 'الجهاز/القطعة خارج موقع العميل' : pickup.status === 'returned' ? 'تمت الإعادة' : 'ملغى'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+                  <div className="rounded-2xl bg-white border border-purple-100 p-4">
+                    <p className="text-xs text-slate-500 font-bold mb-1">نوع السحب</p>
+                    <p className="text-base text-purple-700 font-black flex items-center gap-2"><Package size={17} /> {getPickupTypeLabel(pickup.type)}</p>
+                  </div>
+                  <div className="rounded-2xl bg-white border border-purple-100 p-4">
+                    <p className="text-xs text-slate-500 font-bold mb-1">تاريخ ووقت السحب</p>
+                    <p className="text-sm text-slate-900 font-black">{pickup.pickupDate ? new Date(pickup.pickupDate).toLocaleString('ar-EG') : 'غير مسجل'}</p>
+                  </div>
+                  {pickup.partName && (
+                    <div className="rounded-2xl bg-white border border-purple-100 p-4">
+                      <p className="text-xs text-slate-500 font-bold mb-1">قطعة الغيار</p>
+                      <p className="text-sm text-slate-900 font-black">{pickup.partName}</p>
+                    </div>
+                  )}
+                  <div className="rounded-2xl bg-white border border-purple-100 p-4">
+                    <p className="text-xs text-slate-500 font-bold mb-1">العربون أو المبلغ المستلم</p>
+                    <p className="text-lg text-emerald-700 font-black">{pickup.deposit} ج.م</p>
+                  </div>
+                </div>
+                {pickup.notes && (
+                  <div className="rounded-2xl bg-white border border-slate-100 p-4 mb-5">
+                    <p className="text-xs text-slate-500 font-bold mb-1">ملاحظات حالة الجهاز أو القطعة</p>
+                    <p className="text-sm text-slate-700 leading-7 whitespace-pre-wrap">{pickup.notes}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="flex items-center gap-2 text-sm text-slate-700 font-black mb-3"><Camera size={17} className="text-purple-600" /> صور الحالة قبل السحب ({pickup.photos.length})</p>
+                  {pickup.photos.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {pickup.photos.map((photo, index) => (
+                        <a key={`${photo}-${index}`} href={photo} target="_blank" rel="noreferrer" className="group aspect-square rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 block">
+                          <img src={photo} alt={`صورة حالة السحب ${index + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" loading="lazy" />
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500">لا توجد صور مرفقة.</p>
+                  )}
+                </div>
+              </section>
+            )}
 
             {/* قسم العربون والملاحظات القابلة للتعديل */}
             <div className="border-t border-b border-purple-100 py-6 mb-10">

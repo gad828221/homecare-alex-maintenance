@@ -15,6 +15,7 @@ import { sendExternalPush } from '../utils/pushNotifications';
 import { useScreenWakeLock } from '../hooks/useScreenWakeLock';
 import { usePwaInstall } from '../hooks/usePwaInstall';
 import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, getOrderCreatedValue } from '../utils/orderTiming';
+import { createPickupMarker, getPickupTypeLabel } from '../utils/pickupReceipt';
 
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -83,7 +84,7 @@ export default function TechnicianPortal() {
   const [showActionModal, setShowActionModal] = useState(false);
   const [showActionsModal, setShowActionsModal] = useState(false);
   const [selectedOrderForActions, setSelectedOrderForActions] = useState<any>(null);
-  const [actionType, setActionType] = useState<'cancel' | 'inspect' | 'defer' | 'note'>('note');
+  const [actionType, setActionType] = useState<'cancel' | 'inspect' | 'defer' | 'note' | 'pickup'>('note');
   const [actionValue, setActionValue] = useState("");
   const [currentOrder, setCurrentOrder] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'orders' | 'performance'>('orders');
@@ -108,6 +109,15 @@ export default function TechnicianPortal() {
     warranty_period: '6 أشهر',
     parts_used: ''
   });
+
+  const [pickupForm, setPickupForm] = useState({
+    type: 'full_device',
+    part_name: '',
+    deposit: 0,
+    notes: '',
+    photos: [] as string[]
+  });
+  const [isUploadingPickupPhoto, setIsUploadingPickupPhoto] = useState(false);
 
   useEffect(() => {
     const userRole = localStorage.getItem("userRole");
@@ -488,13 +498,124 @@ export default function TechnicianPortal() {
         body: JSON.stringify({ technician_note: newNote })
       });
       await addNotification('📝 ملاحظة فنية', `أضاف الفني ملاحظة للأوردر رقم ${order.order_number}: ${note}`);
-
-      // إشعار Push للمدير
-
-
       await fetchData();
       addNotification({ type: 'success', title: '✅ تم الإضافة', message: 'تم حفظ الملاحظة', duration: 3000 });
     } catch (err) { console.error(err); }
+  };
+
+  const handlePickup = async (order: any) => {
+    const typeAr = getPickupTypeLabel(pickupForm.type);
+    const partName = pickupForm.part_name.trim();
+    if (pickupForm.type !== 'full_device' && !partName) {
+      addNotification({ type: 'error', title: '⚠️ اسم القطعة مطلوب', message: 'اكتب اسم أو وصف قطعة الغيار المسحوبة أولاً.', duration: 4000 });
+      return;
+    }
+    if (pickupForm.photos.length === 0) {
+      addNotification({ type: 'error', title: '📸 الصور مطلوبة', message: 'أرفق صورة واحدة على الأقل لحالة الجهاز أو القطعة قبل السحب.', duration: 5000 });
+      return;
+    }
+
+    const pickupDate = new Date().toISOString();
+    const pickupRecord = {
+      type: pickupForm.type,
+      partName,
+      deposit: Number(pickupForm.deposit) || 0,
+      notes: pickupForm.notes.trim(),
+      photos: pickupForm.photos,
+      pickupDate,
+      status: 'active' as const
+    };
+    const previousNotes = order.technician_notes || order.technician_note || '';
+    const marker = createPickupMarker(pickupRecord);
+    const mergedNotes = previousNotes.replace(/\n?\[PICKUP_RECEIPT\].*?\[\/PICKUP_RECEIPT\]/s, '').trim();
+    const finalNotes = `${mergedNotes}${mergedNotes ? '\\n' : ''}${marker}`;
+
+    try {
+      // حفظ أساسي يعتمد على الحقول الموجودة بالفعل في النظام.
+      await fetchAPI(`orders?id=eq.${order.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ technician_notes: finalNotes, status: 'in-progress' })
+      });
+
+      // حفظ الحقول الجديدة عند توفرها، مع بقاء العلامة النصية كخطة توافق احتياطية.
+      try {
+        await fetchAPI(`orders?id=eq.${order.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            pickup_type: pickupForm.type,
+            pickup_part_name: partName,
+            pickup_notes: pickupForm.notes.trim(),
+            pickup_photos: pickupForm.photos,
+            pickup_date: pickupDate,
+            pickup_status: 'active',
+            deposit_amount: Number(pickupForm.deposit) || 0
+          })
+        });
+      } catch (optionalError) {
+        console.warn('Optional pickup columns are not available; marker data was saved in technician_notes.', optionalError);
+      }
+
+      const details = `نوع السحب: ${typeAr}${partName ? `\\nالقطعة: ${partName}` : ''}\\nالعربون: ${Number(pickupForm.deposit) || 0} ج.م\\nعدد الصور: ${pickupForm.photos.length}\\nرابط الإيصال: ${window.location.origin}/pickup-receipt?id=${order.id}`;
+      notifyAdmin('📋 إيصال سحب جديد', order, details);
+      void sendExternalPush({
+        event: 'system_alert',
+        title: '📋 إيصال سحب جديد',
+        message: `تم تسجيل ${typeAr} للأوردر ${order.order_number} بواسطة الفني ${techName}.`,
+        targetRoles: ['admin', 'manager'],
+        data: { order_id: order.id, pickup_type: pickupForm.type, pickup_photos: pickupForm.photos.length }
+      });
+
+      await fetchData();
+      setShowActionModal(false);
+      setPickupForm({ type: 'full_device', part_name: '', deposit: 0, notes: '', photos: [] });
+      addNotification({ type: 'success', title: '✅ تم تسجيل السحب', message: 'تم حفظ إيصال السحب وإبلاغ الإدارة. يمكن للمدير إرسال الرابط للعميل.', duration: 5000 });
+    } catch (err) {
+      console.error(err);
+      addNotification({ type: 'error', title: '❌ تعذر حفظ الإيصال', message: 'حدث خطأ أثناء تسجيل إيصال السحب، حاول مرة أخرى.', duration: 5000 });
+    }
+  };
+
+  const handlePickupPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const selectedFiles = Array.from(files);
+    const invalidFile = selectedFiles.find((file) => !file.type.startsWith('image/') || file.size > 5 * 1024 * 1024);
+    if (invalidFile) {
+      addNotification({ type: 'error', title: '❌ صورة غير صالحة', message: 'اختر صوراً بصيغة JPG أو PNG أو WEBP وبحجم لا يتجاوز 5 ميجابايت للصورة.', duration: 5000 });
+      e.target.value = '';
+      return;
+    }
+    if (pickupForm.photos.length + selectedFiles.length > 8) {
+      addNotification({ type: 'error', title: '⚠️ عدد الصور كبير', message: 'يمكن إرفاق 8 صور كحد أقصى لإيصال السحب.', duration: 4000 });
+      e.target.value = '';
+      return;
+    }
+
+    setIsUploadingPickupPhoto(true);
+    addNotification({ type: 'info', title: '📸 جاري الرفع', message: 'يتم الآن رفع صور السحب...', duration: 2000 });
+
+    try {
+      const uploadedUrls: string[] = [...pickupForm.photos];
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        const fileName = `${Date.now()}_pickup_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+        const { data, error } = await supabase.storage.from('order-photos').upload(fileName, file);
+        
+        if (error) throw error;
+        
+        const { data: { publicUrl } } = supabase.storage.from('order-photos').getPublicUrl(fileName);
+        uploadedUrls.push(publicUrl);
+      }
+      
+      setPickupForm(prev => ({ ...prev, photos: uploadedUrls }));
+      addNotification({ type: 'success', title: '✅ تم الرفع', message: `تم رفع ${selectedFiles.length} صورة بنجاح`, duration: 3000 });
+    } catch (err) {
+      console.error(err);
+      addNotification({ type: 'error', title: '❌ خطأ في الرفع', message: 'فشل رفع بعض الصور', duration: 5000 });
+    } finally {
+      setIsUploadingPickupPhoto(false);
+      e.target.value = '';
+    }
   };
 
   const handleSettleChange = (field: string, value: any) => {
@@ -616,10 +737,13 @@ export default function TechnicianPortal() {
   };
 
 
-  const openActionModal = (order: any, type: 'cancel' | 'inspect' | 'defer' | 'note') => {
+  const openActionModal = (order: any, type: 'cancel' | 'inspect' | 'defer' | 'note' | 'pickup') => {
     setCurrentOrder(order);
     setActionType(type);
     setActionValue('');
+    if (type === 'pickup') {
+      setPickupForm({ type: 'full_device', part_name: '', deposit: Number(order.deposit_amount) || 0, notes: '', photos: [] });
+    }
     setShowActionModal(true);
   };
 
@@ -1212,6 +1336,7 @@ export default function TechnicianPortal() {
                            <button onClick={() => openActionModal(order, 'inspect')} className="flex-1 py-2 bg-slate-800/50 hover:bg-slate-800 text-slate-400 rounded-lg text-[9px] font-bold transition-all">🔍 كشف</button>
                            <button onClick={() => openActionModal(order, 'defer')} className="flex-1 py-2 bg-slate-800/50 hover:bg-slate-800 text-slate-400 rounded-lg text-[9px] font-bold transition-all">⏰ تأجيل</button>
                            <button onClick={() => openActionModal(order, 'cancel')} className="flex-1 py-2 bg-slate-800/50 hover:bg-slate-800 text-rose-500/50 hover:text-rose-500 rounded-lg text-[9px] font-bold transition-all">❌ إلغاء</button>
+                           <button onClick={() => openActionModal(order, 'pickup')} className="flex-1 py-2 bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 rounded-lg text-[9px] font-black transition-all border border-purple-500/20">📋 إيصال سحب</button>
                         </div>
                       </div>
                     </div>
@@ -1243,21 +1368,74 @@ export default function TechnicianPortal() {
 
       {showActionModal && currentOrder && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md">
+          <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto border border-slate-700 shadow-2xl">
             <div className="flex justify-between mb-4"><h3 className="text-xl font-bold text-white">
               {actionType === 'cancel' && 'إلغاء الأوردر'}
               {actionType === 'inspect' && 'كشف بقيمة'}
               {actionType === 'defer' && 'تأجيل الأوردر'}
               {actionType === 'note' && 'إضافة ملاحظة'}
+              {actionType === 'pickup' && '📋 إيصال سحب جهاز أو قطعة'}
             </h3><button onClick={() => setShowActionModal(false)} className="text-slate-400"><X className="w-5 h-5" /></button></div>
-            <div className="space-y-4">
-              {actionType === 'inspect' ? (
-                <input type="number" placeholder="المبلغ (ج.م)" value={actionValue} onChange={e => setActionValue(e.target.value)} className="w-full p-2 bg-slate-700 rounded-lg text-white" autoFocus />
-              ) : (
-                <textarea placeholder={actionType === 'cancel' ? 'سبب الإلغاء' : actionType === 'defer' ? 'سبب التأجيل' : 'نص الملاحظة'} rows={3} value={actionValue} onChange={e => setActionValue(e.target.value)} className="w-full p-2 bg-slate-700 rounded-lg text-white" autoFocus />
-              )}
-              <button onClick={confirmAction} className="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 rounded-lg font-bold">تأكيد</button>
-            </div>
+            {actionType === 'pickup' ? (
+              <form onSubmit={(e) => { e.preventDefault(); void handlePickup(currentOrder); }} className="space-y-4">
+                <div className="rounded-2xl bg-purple-950/40 border border-purple-500/30 p-3">
+                  <p className="text-xs text-purple-200 font-bold leading-6">سجّل حالة الجهاز أو القطعة قبل خروجها من موقع العميل، وأرفق صوراً واضحة لتوثيق الاستلام.</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-300 mb-2">نوع السحب</label>
+                  <select value={pickupForm.type} onChange={(e) => setPickupForm(prev => ({ ...prev, type: e.target.value as typeof prev.type, part_name: e.target.value === 'full_device' ? '' : prev.part_name }))} className="w-full bg-slate-700 rounded-xl px-3 py-3 text-white border border-slate-600 outline-none">
+                    <option value="full_device">سحب الجهاز بالكامل</option>
+                    <option value="part_repair">سحب قطعة للإصلاح</option>
+                    <option value="part_replacement">سحب قطعة للاستبدال</option>
+                  </select>
+                </div>
+                {pickupForm.type !== 'full_device' && (
+                  <div>
+                    <label className="block text-xs font-black text-slate-300 mb-2">اسم أو وصف قطعة الغيار</label>
+                    <input required value={pickupForm.part_name} onChange={(e) => setPickupForm(prev => ({ ...prev, part_name: e.target.value }))} placeholder="مثال: كارتة تشغيل / موتور / طلمبة" className="w-full bg-slate-700 rounded-xl px-3 py-3 text-white border border-slate-600 outline-none" />
+                  </div>
+                )}
+                <div>
+                  <label className="block text-xs font-black text-slate-300 mb-2">العربون أو المبلغ المستلم (اختياري)</label>
+                  <input type="number" min="0" value={pickupForm.deposit || ''} onChange={(e) => setPickupForm(prev => ({ ...prev, deposit: Number(e.target.value) || 0 }))} placeholder="0" className="w-full bg-slate-700 rounded-xl px-3 py-3 text-white border border-slate-600 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-300 mb-2">صور الحالة قبل السحب <span className="text-rose-300">(مطلوبة)</span></label>
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <label htmlFor={`pickup-camera-${currentOrder.id}`} className="cursor-pointer rounded-xl bg-purple-600/30 border border-purple-400/40 text-purple-100 py-3 text-xs font-black flex items-center justify-center gap-2 active:scale-95 transition-transform"><Camera size={15} /> تصوير الآن</label>
+                    <label htmlFor={`pickup-gallery-${currentOrder.id}`} className="cursor-pointer rounded-xl bg-slate-700 border border-slate-600 text-slate-200 py-3 text-xs font-black flex items-center justify-center gap-2 active:scale-95 transition-transform"><Upload size={15} /> من الهاتف</label>
+                    <input id={`pickup-camera-${currentOrder.id}`} type="file" accept="image/*" capture="environment" onChange={handlePickupPhotoUpload} className="sr-only" disabled={isUploadingPickupPhoto} />
+                    <input id={`pickup-gallery-${currentOrder.id}`} type="file" accept="image/*" multiple onChange={handlePickupPhotoUpload} className="sr-only" disabled={isUploadingPickupPhoto} />
+                  </div>
+                  {isUploadingPickupPhoto && <div className="flex items-center justify-center gap-2 text-xs text-orange-300 py-2"><RefreshCw size={15} className="animate-spin" /> جاري رفع الصور...</div>}
+                  {pickupForm.photos.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2">
+                      {pickupForm.photos.map((photo, index) => (
+                        <div key={`${photo}-${index}`} className="relative aspect-square rounded-xl overflow-hidden border border-slate-600 bg-slate-950">
+                          <img src={photo} alt={`صورة السحب ${index + 1}`} className="w-full h-full object-cover" />
+                          <button type="button" onClick={() => setPickupForm(prev => ({ ...prev, photos: prev.photos.filter((_, photoIndex) => photoIndex !== index) }))} className="absolute top-1 left-1 w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center" aria-label="حذف الصورة"><X size={13} /></button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-[10px] text-slate-500 mt-2">يمكن اختيار أكثر من صورة من المعرض، بحد أقصى 5 ميجابايت للصورة.</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-300 mb-2">ملاحظات حالة الجهاز أو القطعة</label>
+                  <textarea rows={3} value={pickupForm.notes} onChange={(e) => setPickupForm(prev => ({ ...prev, notes: e.target.value }))} placeholder="خدوش، كسر، ملحقات، رقم مسلسل أو أي ملاحظة مهمة" className="w-full bg-slate-700 rounded-xl px-3 py-3 text-white border border-slate-600 outline-none resize-none" />
+                </div>
+                <button type="submit" disabled={isUploadingPickupPhoto} className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white py-3 rounded-xl font-black shadow-lg active:scale-95 transition-all">تأكيد تسجيل إيصال السحب</button>
+              </form>
+            ) : (
+              <div className="space-y-4">
+                {actionType === 'inspect' ? (
+                  <input type="number" placeholder="المبلغ (ج.م)" value={actionValue} onChange={e => setActionValue(e.target.value)} className="w-full p-2 bg-slate-700 rounded-lg text-white" autoFocus />
+                ) : (
+                  <textarea placeholder={actionType === 'cancel' ? 'سبب الإلغاء' : actionType === 'defer' ? 'سبب التأجيل' : 'نص الملاحظة'} rows={3} value={actionValue} onChange={e => setActionValue(e.target.value)} className="w-full p-2 bg-slate-700 rounded-lg text-white" autoFocus />
+                )}
+                <button onClick={confirmAction} className="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 rounded-lg font-bold">تأكيد</button>
+              </div>
+            )}
           </div>
         </div>
       )}

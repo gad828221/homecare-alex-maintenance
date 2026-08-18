@@ -11,6 +11,7 @@ import { Helmet } from 'react-helmet-async';
 import { sendExternalPush } from '../utils/pushNotifications';
 import { useScreenWakeLock } from '../hooks/useScreenWakeLock';
 import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, getOrderCreatedValue } from '../utils/orderTiming';
+import { getPickupTypeLabel, parsePickupReceipt } from '../utils/pickupReceipt';
 
 const runWithOneSignal = (callback: (OneSignal: any) => void | Promise<void>) => {
   if (typeof window === 'undefined') return;
@@ -772,9 +773,12 @@ export default function ProtectedOrders() {
   };
 
   const isOldAndShouldArchive = (order: any) => {
-    const archiveStatuses = ['pending', 'in-progress', 'cancelled', 'inspected'];
-    if (!archiveStatuses.includes(order.status)) return false;
-    return getDaysDifference(order.date, order.status) > 30;
+    // الحالات النهائية/غير النشطة تظهر في الأرشيف فوراً للحفاظ على نظافة لوحة التشغيل.
+    if (order.status === 'cancelled' || order.status === 'inspected') return true;
+
+    // الأوردرات غير المكتملة تُنقل بعد مرور 30 يوماً كما هو معمول به سابقاً.
+    if (!['pending', 'in-progress'].includes(order.status)) return false;
+    return getDaysDifference(order.date || order.created_at, order.status) > 30;
   };
 
   const isNewOrder = (order: any) => {
@@ -2487,6 +2491,7 @@ export default function ProtectedOrders() {
                   const StatusIcon = config.Icon;
                   const orderCreatedValue = getOrderCreatedValue(order);
                   const elapsedTone = getElapsedTone(orderCreatedValue, clockNow);
+                  const pickup = parsePickupReceipt(order);
                   const elapsedToneClass = elapsedTone === 'urgent' ? 'text-rose-200 bg-rose-500/20 border-rose-400/50 shadow-lg shadow-rose-500/20 animate-pulse' : elapsedTone === 'warning' ? 'text-amber-200 bg-amber-500/20 border-amber-400/40 shadow-lg shadow-amber-500/10' : 'text-slate-200 bg-slate-950/70 border-slate-700';
 
                   return (
@@ -2509,6 +2514,12 @@ export default function ProtectedOrders() {
                         </div>
                         <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black border flex items-center gap-1.5 ${config.badge}`}><StatusIcon size={13} strokeWidth={2.5} />{config.label}</div>
                       </div>
+                      {pickup && pickup.status === 'active' && (
+                        <div className="mb-4 relative z-10 flex items-center justify-between gap-2 rounded-xl border border-purple-400/40 bg-purple-500/15 px-3 py-2 text-purple-200">
+                          <span className="flex items-center gap-2 text-[10px] font-black"><ClipboardList size={14} /> {getPickupTypeLabel(pickup.type)}</span>
+                          <button type="button" onClick={() => window.open(`/pickup-receipt?id=${order.id}`, '_blank')} className="text-[9px] font-black text-purple-100 underline underline-offset-2">فتح الإيصال</button>
+                        </div>
+                      )}
 
                       <div className="grid grid-cols-2 gap-3 mb-5 relative z-10">
                         <div className="bg-slate-950/50 p-3 rounded-2xl border border-white/10 flex items-center gap-3">
