@@ -2641,6 +2641,18 @@ export default function ProtectedOrders() {
                         <button onClick={() => sendWhatsApp(order.phone, `مرحباً أ/ ${order.customer_name}، معك مركز الصيانة بخصوص طلبك رقم ${order.order_number}`)} className="flex-1 h-10 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-500 hover:text-white rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95">
                           <Send size={14} /> <span className="text-[10px] font-black">واتساب</span>
                         </button>
+                        {canEditDelete() && order.technician && <button
+                          type="button"
+                          onClick={() => {
+                            if (!order.phone) return showToast('رقم العميل غير مسجل', 'error');
+                            sendTechnicianAssignmentToCustomer(order, order.technician);
+                            showToast('تم تجهيز رسالة بيانات الفني للعميل', 'success');
+                          }}
+                          className="flex-1 h-10 bg-orange-600/10 hover:bg-orange-600 text-orange-400 hover:text-white rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                          title="إرسال اسم الفني وتخصصه وصورته للعميل"
+                        >
+                          <UserCircle size={14} /> <span className="text-[9px] font-black">بيانات الفني</span>
+                        </button>}
                         {canEditDelete() && <div className="flex gap-1.5">
                           <button onClick={() => { setEditingOrder(order); setFormData(order); setShowOrderModal(true); }} className="w-10 h-10 bg-slate-800 text-blue-400 hover:bg-blue-600 hover:text-white rounded-xl flex items-center justify-center transition-all active:scale-95"><Edit size={16} /></button>
                           <button onClick={() => deleteOrder(order.id)} className="w-10 h-10 bg-slate-800 text-rose-400 hover:bg-rose-600 hover:text-white rounded-xl flex items-center justify-center transition-all active:scale-95"><Trash2 size={16} /></button>
