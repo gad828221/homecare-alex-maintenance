@@ -385,7 +385,10 @@ export default function ProtectedOrders() {
     allOrders.forEach((order) => {
       const timestamp = order.created_at || order.createdAt;
       if (!timestamp) return;
-      const date = new Date(timestamp);
+      const rawTimestamp = String(timestamp).trim();
+      const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(rawTimestamp);
+      // created_at القديم محفوظ أحياناً بدون Z رغم أنه UTC؛ نضيف Z قبل التحويل حتى لا يُفسَّر بتوقيت الجهاز المحلي.
+      const date = new Date(hasTimezone ? rawTimestamp : `${rawTimestamp}Z`);
       if (Number.isNaN(date.getTime())) return;
       const parts = formatter.formatToParts(date);
       const dayPart = parts.find((part) => part.type === 'weekday')?.value;
