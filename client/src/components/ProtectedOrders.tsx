@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Plus, Search, LayoutDashboard, Users,
   CheckCircle2, AlertCircle,
@@ -374,6 +374,31 @@ export default function ProtectedOrders() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const peakTimes = useMemo(() => {
+    const dayNames: Record<string, string> = { Sun: 'الأحد', Mon: 'الاثنين', Tue: 'الثلاثاء', Wed: 'الأربعاء', Thu: 'الخميس', Fri: 'الجمعة', Sat: 'السبت' };
+    const dayCounts: Record<string, number> = { الأحد: 0, الاثنين: 0, الثلاثاء: 0, الأربعاء: 0, الخميس: 0, الجمعة: 0, السبت: 0 };
+    const hourCounts: Record<number, number> = {};
+    const allOrders = [...orders, ...archivedOrders];
+    const formatter = new Intl.DateTimeFormat('en-US', { timeZone: 'Africa/Cairo', weekday: 'short', hour: 'numeric', hourCycle: 'h23' });
+
+    allOrders.forEach((order) => {
+      const timestamp = order.created_at || order.createdAt;
+      if (!timestamp) return;
+      const date = new Date(timestamp);
+      if (Number.isNaN(date.getTime())) return;
+      const parts = formatter.formatToParts(date);
+      const dayPart = parts.find((part) => part.type === 'weekday')?.value;
+      const hourPart = parts.find((part) => part.type === 'hour')?.value;
+      const hour = Number(hourPart);
+      if (dayPart && dayNames[dayPart]) dayCounts[dayNames[dayPart]] += 1;
+      if (Number.isInteger(hour) && hour >= 0 && hour <= 23) hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+    });
+
+    const days = Object.entries(dayCounts).map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count);
+    const hours = Object.entries(hourCounts).map(([hour, count]) => ({ hour: Number(hour), count })).sort((a, b) => b.count - a.count);
+    return { days, hours, totalWithTime: hours.reduce((sum, item) => sum + item.count, 0) };
+  }, [archivedOrders, orders]);
 
   const [reportType, setReportType] = useState<'cash' | 'pending_orders' | 'cancelled_orders' | 'tech_performance' | 'profits' | 'expenses' | 'comparison'>('cash');
   const [startDate, setStartDate] = useState(() => {
@@ -2632,6 +2657,42 @@ export default function ProtectedOrders() {
               <button onClick={generateReport} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-bold">عرض التقرير</button>
               <button onClick={exportToCSV} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold">📎 تصدير CSV</button>
             </div>
+
+            <div className="rounded-2xl border border-indigo-500/20 bg-slate-950/50 p-4 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-base font-black text-white flex items-center gap-2"><Clock size={18} className="text-orange-400" /> أوقات تسجيل الأوردرات</h3>
+                  <p className="text-[11px] text-slate-500 mt-1">تحليل تلقائي من تاريخ تسجيل الأوردر، بتوقيت القاهرة</p>
+                </div>
+                <div className="text-[11px] text-slate-400">{peakTimes.totalWithTime} أوردر له وقت تسجيل</div>
+              </div>
+              {peakTimes.totalWithTime === 0 ? (
+                <div className="rounded-xl bg-slate-900 p-4 text-center text-sm text-slate-500">لا توجد تواريخ تسجيل تحتوي على وقت يمكن تحليله.</div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="rounded-xl bg-slate-900 border border-slate-800 p-3">
+                    <div className="flex items-center justify-between mb-3"><h4 className="text-sm font-black text-slate-200">أكثر الأيام ازدحاماً</h4><span className="text-[10px] text-orange-400">الأعلى: {peakTimes.days[0]?.label}</span></div>
+                    <div className="space-y-2">
+                      {peakTimes.days.map((item) => {
+                        const width = peakTimes.days[0]?.count ? Math.max(4, (item.count / peakTimes.days[0].count) * 100) : 0;
+                        return <div key={item.label} className="flex items-center gap-2 text-xs"><span className="w-16 text-slate-400">{item.label}</span><div className="flex-1 h-2 rounded-full bg-slate-800 overflow-hidden"><div className="h-full rounded-full bg-gradient-to-l from-orange-500 to-amber-300" style={{ width: `${width}%` }} /></div><span className="w-8 text-left font-black text-slate-200">{item.count}</span></div>;
+                      })}
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-slate-900 border border-slate-800 p-3">
+                    <div className="flex items-center justify-between mb-3"><h4 className="text-sm font-black text-slate-200">ساعات الذروة</h4><span className="text-[10px] text-indigo-300">الأعلى: {peakTimes.hours[0] ? `${peakTimes.hours[0].hour}:00` : '-'}</span></div>
+                    <div className="space-y-2">
+                      {peakTimes.hours.slice(0, 8).map((item) => {
+                        const width = peakTimes.hours[0]?.count ? Math.max(4, (item.count / peakTimes.hours[0].count) * 100) : 0;
+                        const hourLabel = item.hour === 0 ? '12 ص' : item.hour < 12 ? `${item.hour} ص` : item.hour === 12 ? '12 م' : `${item.hour - 12} م`;
+                        return <div key={item.hour} className="flex items-center gap-2 text-xs"><span className="w-12 text-slate-400">{hourLabel}</span><div className="flex-1 h-2 rounded-full bg-slate-800 overflow-hidden"><div className="h-full rounded-full bg-gradient-to-l from-indigo-500 to-cyan-300" style={{ width: `${width}%` }} /></div><span className="w-8 text-left font-black text-slate-200">{item.count}</span></div>;
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {reportLoading && <div className="text-center py-8 text-slate-400">جاري تحميل البيانات...</div>}
             {!reportLoading && reportData.length === 0 && <div className="text-center py-8 text-slate-400">لا توجد بيانات للفترة المحددة</div>}
             {!reportLoading && reportData.length > 0 && (
