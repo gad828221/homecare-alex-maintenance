@@ -1096,12 +1096,19 @@ export default function TechnicianPortal() {
       <div className="bg-slate-800/80 border-b border-slate-700 sticky top-0 z-40 px-4 py-3">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <label htmlFor="technician-profile-photo" className="relative w-12 h-12 rounded-2xl overflow-hidden bg-slate-700 border-2 border-orange-500/50 flex items-center justify-center cursor-pointer group shadow-lg" title="تحديث الصورة الشخصية">
-              {techProfilePhoto ? <img src={techProfilePhoto} alt={`صورة ${getTechnicianDisplayName({ name: techName })}`} className="w-full h-full object-cover" /> : <UserCircle className="w-8 h-8 text-slate-300" />}
-              <span className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><ImagePlus size={17} className="text-white" /></span>
-              {isUploadingProfilePhoto && <span className="absolute inset-0 bg-slate-950/80 flex items-center justify-center"><RefreshCw size={16} className="animate-spin text-orange-300" /></span>}
-            </label>
-            <input id="technician-profile-photo" type="file" accept="image/*" capture="user" onChange={handleProfilePhotoUpload} className="sr-only" disabled={isUploadingProfilePhoto} />
+            <div className="flex flex-col items-center gap-1">
+              <label htmlFor="technician-profile-gallery" className="relative w-12 h-12 rounded-2xl overflow-hidden bg-slate-700 border-2 border-orange-500/50 flex items-center justify-center cursor-pointer group shadow-lg" title="اختيار صورة من معرض الهاتف">
+                {techProfilePhoto ? <img src={techProfilePhoto} alt={`صورة ${getTechnicianDisplayName({ name: techName })}`} className="w-full h-full object-cover" /> : <UserCircle className="w-8 h-8 text-slate-300" />}
+                <span className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><ImagePlus size={17} className="text-white" /></span>
+                {isUploadingProfilePhoto && <span className="absolute inset-0 bg-slate-950/80 flex items-center justify-center"><RefreshCw size={16} className="animate-spin text-orange-300" /></span>}
+              </label>
+              <div className="flex gap-1">
+                <label htmlFor="technician-profile-gallery" className="cursor-pointer rounded-md bg-slate-700 px-1.5 py-0.5 text-[8px] font-black text-slate-200">المعرض</label>
+                <label htmlFor="technician-profile-camera" className="cursor-pointer rounded-md bg-orange-600/80 px-1.5 py-0.5 text-[8px] font-black text-white">الكاميرا</label>
+              </div>
+            </div>
+            <input id="technician-profile-gallery" type="file" accept="image/*" onChange={handleProfilePhotoUpload} className="sr-only" disabled={isUploadingProfilePhoto} />
+            <input id="technician-profile-camera" type="file" accept="image/*" capture="user" onChange={handleProfilePhotoUpload} className="sr-only" disabled={isUploadingProfilePhoto} />
             <div>
               <h1 className="text-lg font-bold text-white">بوابة الفنيين</h1>
               <div className="flex items-center gap-1.5">
