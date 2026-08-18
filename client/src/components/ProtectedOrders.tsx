@@ -41,13 +41,13 @@ function AdminPermissions({ users, onEdit, onDelete, onToggle, canEdit, onSync }
         <div className="flex gap-2 w-full md:w-auto">
           {canEdit && (
             <>
-              <button 
+              <button
                 onClick={onSync}
                 className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-[10px] font-black flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95"
               >
                 <RefreshCw size={14} /> مزامنة الفنيين
               </button>
-              <button 
+              <button
                 onClick={() => onEdit(null)}
                 className="flex-1 md:flex-none bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl text-[10px] font-black flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95"
               >
@@ -74,10 +74,10 @@ function AdminPermissions({ users, onEdit, onDelete, onToggle, canEdit, onSync }
                 </div>
               </div>
               <div className={`px-2 py-0.5 rounded-full text-[9px] font-black ${
-                user.role === 'admin' ? 'bg-orange-500/20 text-orange-400' : 
-                user.role === 'manager' ? 'bg-blue-500/20 text-blue-400' : 
-                user.role === 'data-entry' ? 'bg-emerald-500/20 text-emerald-400' : 
-                user.role === 'tech' ? 'bg-indigo-500/20 text-indigo-400' : 
+                user.role === 'admin' ? 'bg-orange-500/20 text-orange-400' :
+                user.role === 'manager' ? 'bg-blue-500/20 text-blue-400' :
+                user.role === 'data-entry' ? 'bg-emerald-500/20 text-emerald-400' :
+                user.role === 'tech' ? 'bg-indigo-500/20 text-indigo-400' :
                 'bg-slate-800 text-slate-400'
               }`}>
                 {user.role === 'admin' ? 'مدير عام' : user.role === 'manager' ? 'مدير فرع' : user.role === 'data-entry' ? 'مدخل بيانات' : user.role === 'tech' ? 'فني' : 'مشاهد'}
@@ -208,7 +208,7 @@ const openWhatsApp = (phone: string, message: string) => {
   const cleanedPhone = formatPhoneForWhatsApp(phone);
   if (!cleanedPhone) return;
   const encodedMsg = encodeURIComponent(message);
-  
+
   // محاولة استخدام الرابط العميق لفتح التطبيق مباشرة على الموبايل
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   if (isMobile) {
@@ -385,17 +385,24 @@ export default function ProtectedOrders() {
     allOrders.forEach((order) => {
       const timestamp = order.created_at || order.createdAt;
       if (!timestamp) return;
-      const rawTimestamp = String(timestamp).trim();
-      const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(rawTimestamp);
-      // created_at القديم محفوظ أحياناً بدون Z رغم أنه UTC؛ نضيف Z قبل التحويل حتى لا يُفسَّر بتوقيت الجهاز المحلي.
-      const date = new Date(hasTimezone ? rawTimestamp : `${rawTimestamp}Z`);
-      if (Number.isNaN(date.getTime())) return;
-      const parts = formatter.formatToParts(date);
-      const dayPart = parts.find((part) => part.type === 'weekday')?.value;
-      const hourPart = parts.find((part) => part.type === 'hour')?.value;
-      const hour = Number(hourPart);
-      if (dayPart && dayNames[dayPart]) dayCounts[dayNames[dayPart]] += 1;
-      if (Number.isInteger(hour) && hour >= 0 && hour <= 23) hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+
+      try {
+        // البيانات مخزنة بتوقيت شرق أمريكا (EST/UTC-5)
+        // توقيت القاهرة هو (UTC+3)، الفارق هو +8 ساعات
+        const date = new Date(timestamp);
+        if (Number.isNaN(date.getTime())) return;
+
+        // إضافة 8 ساعات للتصحيح
+        const localDate = new Date(date.getTime() + (8 * 60 * 60 * 1000));
+
+        const dayNameEn = localDate.toLocaleDateString('en-US', { weekday: 'short' });
+        const hour = localDate.getHours();
+
+        if (dayNameEn && dayNames[dayNameEn]) dayCounts[dayNames[dayNameEn]] += 1;
+        hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+      } catch (e) {
+        console.error('Error parsing date:', e);
+      }
     });
 
     const days = Object.entries(dayCounts).map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count);
@@ -440,7 +447,7 @@ export default function ProtectedOrders() {
     try {
       const ctx = audioContextRef.current || new (window.AudioContext || (window as any).webkitAudioContext)();
       if (!audioContextRef.current) audioContextRef.current = ctx;
-      
+
       if (ctx.state === 'suspended') {
         ctx.resume();
       }
@@ -449,14 +456,14 @@ export default function ProtectedOrders() {
       const gainNode = ctx.createGain();
       oscillator.connect(gainNode);
       gainNode.connect(ctx.destination);
-      
+
       oscillator.frequency.value = isUrgent ? 1200 : 880;
       oscillator.type = isUrgent ? 'square' : 'sine';
-      
+
       gainNode.gain.setValueAtTime(0, ctx.currentTime);
       gainNode.gain.linearRampToValueAtTime(isUrgent ? 0.4 : 0.2, ctx.currentTime + 0.05);
       gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + (isUrgent ? 0.8 : 0.5));
-      
+
       oscillator.start(ctx.currentTime);
       oscillator.stop(ctx.currentTime + (isUrgent ? 0.8 : 0.5));
     } catch (e) { console.warn("Audio error", e); }
@@ -515,14 +522,14 @@ export default function ProtectedOrders() {
   const canManagePartners = isAdmin;
   const isViewer = userRole?.toLowerCase() === 'viewer';
   const viewerBlockedTabs = ['technicians', 'reports', 'invoicesReview', 'partners', 'performance', 'feedback', 'permissions'];
-  
+
   const saveUserAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     if (userRole !== 'admin') return showToast("ليس لديك صلاحية", "error");
-    
+
     // 🛡️ حماية من التكرار
-    const isDuplicate = !editingUserAccount && users.some(u => 
-      u.username.toLowerCase() === userForm.username.toLowerCase() || 
+    const isDuplicate = !editingUserAccount && users.some(u =>
+      u.username.toLowerCase() === userForm.username.toLowerCase() ||
       u.name.toLowerCase() === userForm.name.toLowerCase()
     );
     if (isDuplicate) return showToast("⚠️ هذا المستخدم موجود بالفعل بنفس الاسم أو اسم المستخدم", "error");
@@ -530,7 +537,7 @@ export default function ProtectedOrders() {
     try {
       if (editingUserAccount) {
         await fetchAPI(`users?id=eq.${editingUserAccount.id}`, { method: 'PATCH', body: JSON.stringify(userForm) });
-        
+
         if (userForm.role === 'tech') {
           const techData = { name: userForm.name, username: userForm.username, password: userForm.password, is_active: userForm.is_active };
           const existingTechs = await fetchAPI(`technicians?username=eq.${encodeURIComponent(userForm.username)}`);
@@ -543,18 +550,18 @@ export default function ProtectedOrders() {
         showToast("✅ تم تحديث المستخدم", "success");
       } else {
         await fetchAPI('users', { method: 'POST', body: JSON.stringify(userForm) });
-        
+
         if (userForm.role === 'tech') {
-          await fetchAPI('technicians', { 
-            method: 'POST', 
-            body: JSON.stringify({ 
-              name: userForm.name, 
-              username: userForm.username, 
-              password: userForm.password, 
+          await fetchAPI('technicians', {
+            method: 'POST',
+            body: JSON.stringify({
+              name: userForm.name,
+              username: userForm.username,
+              password: userForm.password,
               is_active: userForm.is_active,
               specialization: 'عام',
               profit_percentage: 50
-            }) 
+            })
           });
         }
         showToast("✅ تم إضافة المستخدم بنجاح", "success");
@@ -695,11 +702,11 @@ export default function ProtectedOrders() {
     if (!order.invoice_approved || !order.warranty_period || order.status !== 'completed') {
       return { status: 'none', text: 'لا يوجد ضمان', color: 'slate' };
     }
-    
+
     // استخدام تاريخ الفاتورة أو تاريخ الإكمال أو تاريخ الإنشاء
     const dateSource = order.invoice_date || order.completed_at || order.created_at || order.date;
     if (!dateSource) return { status: 'none', text: 'لا يوجد ضمان', color: 'slate' };
-    
+
     const orderDate = new Date(dateSource);
     if (isNaN(orderDate.getTime())) return { status: 'none', text: 'تاريخ غير صالح', color: 'slate' };
 
@@ -713,20 +720,20 @@ export default function ProtectedOrders() {
     } else if (order.warranty_period === 'بدون ضمان') {
       return { status: 'none', text: 'بدون ضمان', color: 'slate' };
     }
-    
+
     const endDate = new Date(orderDate);
     endDate.setMonth(endDate.getMonth() + months);
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const endCompare = new Date(endDate);
     endCompare.setHours(0, 0, 0, 0);
-    
+
     if (today > endCompare) return { status: 'expired', text: 'منتهي', color: 'red' };
-    
+
     const diffTime = endCompare.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays <= 7 && diffDays >= 0) return { status: 'expiring', text: `ينتهي خلال ${diffDays} يوم`, color: 'orange' };
     return { status: 'active', text: 'ساري', color: 'emerald' };
   };
@@ -1015,7 +1022,7 @@ export default function ProtectedOrders() {
         : '*';
       const allOrders = await fetchAPI(`orders?select=${orderFields}&order=created_at.desc`);
       const ordersArray = Array.isArray(allOrders) ? allOrders : [];
-      
+
       // نظام المراقب الذكي: إذا وجدنا أوردر جديد برقم ID أكبر من آخر واحد رأيناه
       if (ordersArray.length > 0) {
         const newestId = Math.max(...ordersArray.map((o: any) => o.id));
@@ -1206,7 +1213,7 @@ export default function ProtectedOrders() {
       fetchData(true);
       fetchNotifications();
     }, 10000);
-    
+
     // اشتراك حي للأوردرات الجديدة لإصدار صوت تنبيه ملح للمدير
     console.log("🔔 Realtime subscription active for role:", userRole);
     const channel = supabase
@@ -1224,7 +1231,7 @@ export default function ProtectedOrders() {
       .subscribe((status) => {
         console.log("📡 Realtime status:", status);
       });
-      
+
     // اشتراك حي لتنبيهات الأوردرات والتصفية والفواتير (Fallback)
     const alertChannel = supabase
       .channel('admin-operation-alerts')
@@ -1262,9 +1269,9 @@ export default function ProtectedOrders() {
       })
       .subscribe();
 
-    return () => { 
+    return () => {
       clearInterval(interval);
-      supabase.removeChannel(channel); 
+      supabase.removeChannel(channel);
       supabase.removeChannel(alertChannel);
       supabase.removeChannel(presenceChannel);
     };
@@ -1400,7 +1407,7 @@ export default function ProtectedOrders() {
     }
     try {
       await addNotification('tech_ping', techName);
-      
+
       // ✅ إرسال إشعار Push للفني لضمان وصول التنبيه حتى لو التطبيق مغلق
       const tech = technicians.find(t => t.name === techName);
       if (tech) {
@@ -1411,7 +1418,7 @@ export default function ProtectedOrders() {
           targetUserIds: [`tech:${tech.id}`]
         });
       }
-      
+
       showToast(`جاري تنبيه الفني ${techName}...`, 'success');
     } catch (err) { console.error(err); }
   };
@@ -1568,10 +1575,10 @@ export default function ProtectedOrders() {
   const saveTechnician = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canManageTechnicians) return showToast("مدير العمليات لا يملك صلاحية تعديل الفنيين", "error");
-    
+
     // 🛡️ حماية من التكرار
-    const isDuplicate = !editingTech && technicians.some(t => 
-      t.name.toLowerCase() === techForm.name.toLowerCase() || 
+    const isDuplicate = !editingTech && technicians.some(t =>
+      t.name.toLowerCase() === techForm.name.toLowerCase() ||
       (techForm.username && t.username?.toLowerCase() === techForm.username.toLowerCase())
     );
     if (isDuplicate) return showToast("⚠️ هذا الفني موجود بالفعل بنفس الاسم", "error");
@@ -1692,7 +1699,7 @@ export default function ProtectedOrders() {
     }
 
     if (filterDelay === 'delayed' && !isDelayed(o)) return false;
-    
+
     if (filterWarranty !== 'all') {
       const warrantyInfo = getWarrantyStatus(o);
       if (filterWarranty === 'active' && warrantyInfo.status !== 'active') return false;
@@ -2034,7 +2041,7 @@ export default function ProtectedOrders() {
 
   return (
     <div className={`min-h-screen bg-slate-950 text-slate-200 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`}>
-      
+
       {/* ✅ قفل الشاشة الإجباري للمدير لتفعيل الصوت */}
       {!audioEnabled && (
         <div className="fixed inset-0 z-[200] bg-slate-950 flex items-center justify-center p-6 text-center backdrop-blur-xl">
@@ -2046,7 +2053,7 @@ export default function ProtectedOrders() {
             <p className="text-slate-400 text-sm mb-8 leading-relaxed">
               يجب تفعيل التنبيهات الصوتية الإجبارية لمراقبة سير العمل واستقبال إشعارات الفنيين والعملاء فوراً.
             </p>
-            <button 
+            <button
               onClick={initAudio}
               className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-black py-5 rounded-2xl transition-all active:scale-95 shadow-xl shadow-orange-900/20 text-lg flex items-center justify-center gap-3"
             >
@@ -2059,8 +2066,8 @@ export default function ProtectedOrders() {
 
       {isUrgentAlert && (
         <div className="fixed top-0 left-0 w-full z-[100] animate-bounce pt-4 flex justify-center pointer-events-none">
-          <button 
-            onClick={(e) => { e.stopPropagation(); stopUrgentAlert(); }} 
+          <button
+            onClick={(e) => { e.stopPropagation(); stopUrgentAlert(); }}
             className="pointer-events-auto bg-red-600 text-white px-8 py-4 rounded-full font-black shadow-2xl flex items-center gap-3 border-4 border-white animate-pulse text-xl"
           >
             <Bell className="animate-spin" /> إيقاف صوت الإنذار (أوردر جديد!)
@@ -2084,7 +2091,7 @@ export default function ProtectedOrders() {
             <Bell size={16} />
             <span className="text-xs font-black">تنبيهات الصوت معطلة من المتصفح</span>
           </div>
-          <button 
+          <button
             onClick={initAudio}
             className="bg-white text-orange-600 px-4 py-1 rounded-full text-[10px] font-black hover:bg-slate-100 transition-all shadow-lg active:scale-95"
           >
@@ -2095,7 +2102,7 @@ export default function ProtectedOrders() {
       <div className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 px-4 py-3">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3"><LayoutDashboard className="w-6 h-6 text-orange-500" /><div><h1 className="text-lg font-bold text-white">لوحة تحكم المدير</h1><p className="text-xs text-slate-400">{currentUser?.name || 'مدير النظام'}</p></div></div>
-          
+
           {/* قسم المتواجدين حالياً */}
           <div className="hidden md:flex items-center gap-4 bg-slate-800/50 px-4 py-2 rounded-2xl border border-slate-700">
             <div className="flex items-center gap-2">
@@ -2104,8 +2111,8 @@ export default function ProtectedOrders() {
             </div>
             <div className="flex -space-x-2 rtl:space-x-reverse">
               {onlineUsers.slice(0, 5).map((user, idx) => (
-                <div 
-                  key={idx} 
+                <div
+                  key={idx}
                   className="w-8 h-8 rounded-full bg-slate-700 border-2 border-slate-900 flex items-center justify-center text-[10px] font-bold text-white shadow-lg"
                   title={`${user.name} (${user.role})`}
                 >
@@ -2134,7 +2141,7 @@ export default function ProtectedOrders() {
             <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"><LogOut className="w-5 h-5" /></button>
           </div>
         </div>
-        
+
         {/* نسخة الموبايل من المتواجدين */}
         <div className="md:hidden mt-2 flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
           <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
@@ -2444,7 +2451,7 @@ export default function ProtectedOrders() {
 	                          <div className="flex-1 flex items-center justify-between">
 	                            <span>الفني: <span className={noTechnician ? 'text-orange-500 font-black animate-pulse' : 'text-slate-200 font-bold'}>{order.technician || 'لم يتم التعيين بعد'}</span></span>
 	                            {!noTechnician && canEditDelete() && (
-	                              <button 
+	                              <button
 	                                onClick={() => pingTechnician(order.technician)}
 	                                className="p-1 bg-orange-600/20 text-orange-500 rounded-lg hover:bg-orange-600 hover:text-white transition-all"
 	                                title="تنبيه الفني الآن"
@@ -2590,7 +2597,7 @@ export default function ProtectedOrders() {
                     <div className="mt-4 pt-4 border-t border-slate-800 flex gap-2">
                       {!isViewer && <a href={`tel:${order.phone}`} className="flex-1 bg-slate-800 text-white py-2 rounded-xl text-center text-[10px] font-bold">اتصال</a>}
                       {canEditDelete() && (
-                        <button 
+                        <button
                           onClick={() => { setEditingOrder(order); setFormData(order); setShowOrderModal(true); }}
                           className="px-3 bg-slate-800 text-blue-400 rounded-xl"
                         >
@@ -2598,7 +2605,7 @@ export default function ProtectedOrders() {
                         </button>
                       )}
                       {canEditDelete() && (
-                        <button 
+                        <button
                           onClick={() => deleteOrder(order.id)}
                           className="px-3 bg-slate-800 text-rose-400 rounded-xl"
                         >
@@ -2812,8 +2819,8 @@ export default function ProtectedOrders() {
             <div className="flex justify-between items-center bg-slate-900/50 border border-slate-800 p-4 rounded-2xl">
               <h2 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">🔔 سجل الإشعارات</h2>
               {userRole === 'admin' && notifications.length > 0 && (
-                <button 
-                  onClick={deleteAllNotifications} 
+                <button
+                  onClick={deleteAllNotifications}
                   className="bg-red-500/20 hover:bg-red-500/30 text-red-400 px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all shadow-lg active:scale-95"
                 >
                   <Trash size={14}/> مسح الكل (فوري)
@@ -2825,7 +2832,7 @@ export default function ProtectedOrders() {
                 const isLogin = notif.action?.includes('دخول');
                 const isOrder = notif.action?.includes('أوردر') || notif.action?.includes('طلب');
                 const isMoney = notif.action?.includes('خزنة') || notif.action?.includes('أرباح');
-                
+
                 return (
                   <div key={notif.id} className={`bg-slate-900 rounded-2xl p-4 flex justify-between items-center border-l-4 w-full ${
                     isLogin ? 'border-blue-500' : isOrder ? 'border-orange-500' : isMoney ? 'border-emerald-500' : 'border-slate-700'
@@ -2870,7 +2877,7 @@ export default function ProtectedOrders() {
                 <h2 className="text-xl font-black text-white">⭐ تقييمات العملاء</h2>
                 <p className="text-sm text-slate-400 mt-2">تظهر هنا التقييمات التي يرسلها العملاء من رابط التقييم بعد إتمام الخدمة.</p>
               </div>
-              <button 
+              <button
                 onClick={() => { fetchNotifications(); showToast("🔄 جاري تحديث التقييمات...", "info"); }}
                 className="p-3 bg-slate-800 hover:bg-slate-700 text-orange-500 rounded-xl transition-all active:scale-95"
                 title="تحديث البيانات"
@@ -3031,9 +3038,9 @@ export default function ProtectedOrders() {
 
         {activeTab === 'performance' && userRole !== 'viewer' && <TechnicianPerformance orders={[...orders, ...archivedOrders]} technicians={technicians} />}
         {activeTab === 'permissions' && userRole === 'admin' && (
-          <AdminPermissions 
-            users={users} 
-            canEdit={userRole === 'admin'} 
+          <AdminPermissions
+            users={users}
+            canEdit={userRole === 'admin'}
             onEdit={(u) => { setEditingUserAccount(u); setUserForm(u || { name: '', username: '', password: '', role: 'viewer', is_active: true }); setShowUserModal(true); }}
             onDelete={deleteUserAccount}
             onToggle={toggleUserAccountStatus}
@@ -3066,7 +3073,7 @@ export default function ProtectedOrders() {
                 <div><label className="text-sm text-slate-400">قطع غيار</label><input type="number" value={formData.parts_cost} onChange={e => handleFormChange('parts_cost', parseFloat(e.target.value))} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" /></div>
                 <div><label className="text-sm text-slate-400">مواصلات</label><input type="number" value={formData.transport_cost} onChange={e => handleFormChange('transport_cost', parseFloat(e.target.value))} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" /></div>
                 <div className="order-edit-full-field"><label className="flex items-center gap-2 text-slate-300"><input type="checkbox" checked={formData.is_paid} onChange={e => handleFormChange('is_paid', e.target.checked)} /> تم التحصيل</label></div>
-                
+
                 {editingOrder && (
                   <>
                     <div className="col-span-2 border-t border-slate-800 pt-4 mt-2">
