@@ -12,6 +12,7 @@ import { sendExternalPush } from '../utils/pushNotifications';
 import { useScreenWakeLock } from '../hooks/useScreenWakeLock';
 import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, getOrderCreatedValue } from '../utils/orderTiming';
 import { getPickupTypeLabel, parsePickupReceipt } from '../utils/pickupReceipt';
+import TechnicianPerformanceAdmin from './TechnicianPerformanceAdmin';
 import { findTechnicianByIdentity, getTechnicianDisplayName, getTechnicianPhotoUrl, getTechnicianSpecialty, parseTechnicianProfileNotification } from '../utils/technicianProfile';
 
 const runWithOneSignal = (callback: (OneSignal: any) => void | Promise<void>) => {
@@ -3272,7 +3273,7 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {activeTab === 'performance' && userRole !== 'viewer' && <TechnicianPerformance orders={[...orders, ...archivedOrders]} technicians={technicians} />}
+        {activeTab === 'performance' && userRole !== 'viewer' && <TechnicianPerformanceAdmin orders={[...orders, ...archivedOrders]} technicians={technicians} />}
         {activeTab === 'permissions' && userRole === 'admin' && (
           <AdminPermissions
             users={users}

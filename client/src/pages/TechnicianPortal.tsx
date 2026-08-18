@@ -314,7 +314,8 @@ export default function TechnicianPortal() {
         const status = String(o.status || '').trim().toLowerCase();
         return !['cancelled', 'canceled', 'inspected'].includes(status);
       });
-      setOrders(visibleOrders);
+      // نحتفظ بالسجل الكامل للأداء والنتائج، بينما تُفلتر قائمة العمل أسفل الصفحة فقط.
+      setOrders(Array.isArray(data) ? data : []);
       const active = visibleOrders.filter((o: any) => o.status === 'pending' || o.status === 'in-progress').length;
       const completed = visibleOrders.filter((o: any) => o.status === 'completed').length;
       const earnings = visibleOrders.filter((o: any) => o.status === 'completed').reduce((acc: number, o: any) => acc + (Number(o.technician_share) || 0), 0);
@@ -957,7 +958,12 @@ export default function TechnicianPortal() {
 
   // ✅ دالة الفلترة للأوردرات
 
-  const searchFilteredOrders = orders.filter(order => {
+  const operationalOrders = orders.filter((order) => {
+    const status = String(order.status || '').trim().toLowerCase();
+    return !['cancelled', 'canceled', 'inspected'].includes(status);
+  });
+
+  const searchFilteredOrders = operationalOrders.filter(order => {
     if (searchTerm && !order.customer_name?.includes(searchTerm) && !order.order_number?.includes(searchTerm) && !order.phone?.includes(searchTerm)) return false;
     return true;
   });
