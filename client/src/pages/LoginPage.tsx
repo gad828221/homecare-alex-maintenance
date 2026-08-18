@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { LogIn, User, Lock, AlertCircle, Wrench, LayoutDashboard } from 'lucide-react';
+import { LogIn, User, Lock, AlertCircle, Wrench, LayoutDashboard, Download, Share2 } from 'lucide-react';
+import { usePwaInstall } from '../hooks/usePwaInstall';
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -10,8 +11,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-
+  const { isInstalled, canInstall, isIos, install, installCompleted } = usePwaInstall();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,6 +144,33 @@ export default function Login() {
           <h1 className="text-2xl font-bold text-white">🔧 Maintenance Guide</h1>
           <p className="text-slate-400 text-sm mt-1">نظام إدارة الصيانة</p>
         </div>
+
+        {!isInstalled && (
+          <div className="mb-6 rounded-2xl border border-orange-500/40 bg-orange-500/10 p-4 text-right">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 shrink-0 rounded-xl bg-orange-600 flex items-center justify-center">
+                {isIos ? <Share2 className="w-5 h-5 text-white" /> : <Download className="w-5 h-5 text-white" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-black text-white">ثبّت البرنامج للوصول السريع والتنبيهات</p>
+                {canInstall ? (
+                  <button
+                    type="button"
+                    onClick={() => { void install(); }}
+                    className="mt-3 w-full bg-orange-600 hover:bg-orange-700 text-white rounded-xl py-3 font-black text-sm transition-all active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    <Download size={17} /> تثبيت البرنامج الآن
+                  </button>
+                ) : isIos ? (
+                  <p className="mt-2 text-[11px] text-slate-300 leading-6">من Safari اضغط <b className="text-orange-300">مشاركة</b> ثم <b className="text-orange-300">إضافة إلى الشاشة الرئيسية</b>، وبعدها افتح التطبيق من الأيقونة.</p>
+                ) : (
+                  <p className="mt-2 text-[11px] text-slate-300 leading-6">من قائمة Chrome أو Edge اختر <b className="text-orange-300">تثبيت التطبيق</b> أو <b className="text-orange-300">إضافة إلى الشاشة الرئيسية</b>.</p>
+                )}
+                {installCompleted && <p className="mt-2 text-[11px] text-emerald-300 font-bold">تم قبول التثبيت. افتح التطبيق من الأيقونة الجديدة.</p>}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-3 mb-6">
           <button

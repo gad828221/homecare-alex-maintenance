@@ -5,7 +5,8 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { EnhancedNotificationProvider } from "./components/EnhancedNotificationSystem";
-import { Phone, MessageCircle } from "lucide-react";
+import { Phone, MessageCircle, Download } from "lucide-react";
+import { usePwaInstall } from './hooks/usePwaInstall';
 import NotificationPermissionButton from "./components/NotificationPermissionButton";
 import PresenceManager from "./components/PresenceManager";
 
@@ -98,6 +99,26 @@ function FloatingButtons() {
   );
 }
 
+function PwaInstallBanner() {
+  const { isInstalled, canInstall, install } = usePwaInstall();
+  const currentPath = window.location.pathname;
+  const isLoginOrTechGate = currentPath === '/login' || currentPath === '/tech-portal';
+  if (isInstalled || !canInstall || isLoginOrTechGate) return null;
+
+  return (
+    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:w-[360px] z-[90] bg-slate-900 border border-orange-500/50 rounded-2xl p-3 shadow-2xl" dir="rtl">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 shrink-0 rounded-xl bg-orange-600 flex items-center justify-center"><Download className="text-white" size={19} /></div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-black text-white">ثبّت البرنامج للتنبيهات</p>
+          <p className="text-[10px] text-slate-400 mt-0.5">وصول أسرع وتشغيل كتطبيق مستقل</p>
+        </div>
+        <button type="button" onClick={() => { void install(); }} className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded-xl text-xs font-black whitespace-nowrap active:scale-95 transition-all">تثبيت</button>
+      </div>
+    </div>
+  );
+}
+
 function AppContent() {
   const currentPath = window.location.pathname;
   // إخفاء أزرار الاتصال في صفحات الإدارة والعمل
@@ -113,6 +134,7 @@ function AppContent() {
       {!hideFloatingButtons && <FloatingButtons />}
       <NotificationPermissionButton />
       <PresenceManager />
+      <PwaInstallBanner />
     </>
   );
 }
