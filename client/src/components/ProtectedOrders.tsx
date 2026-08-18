@@ -2487,7 +2487,7 @@ export default function ProtectedOrders() {
                   const StatusIcon = config.Icon;
                   const orderCreatedValue = getOrderCreatedValue(order);
                   const elapsedTone = getElapsedTone(orderCreatedValue, clockNow);
-                  const elapsedToneClass = elapsedTone === 'urgent' ? 'text-rose-300 bg-rose-500/15 border-rose-400/30' : elapsedTone === 'warning' ? 'text-amber-300 bg-amber-500/15 border-amber-400/30' : 'text-slate-300 bg-slate-950/50 border-slate-800';
+                  const elapsedToneClass = elapsedTone === 'urgent' ? 'text-rose-200 bg-rose-500/20 border-rose-400/50 shadow-lg shadow-rose-500/20 animate-pulse' : elapsedTone === 'warning' ? 'text-amber-200 bg-amber-500/20 border-amber-400/40 shadow-lg shadow-amber-500/10' : 'text-slate-200 bg-slate-950/70 border-slate-700';
 
                   return (
                     <div key={order.id} className={`group ${config.card} rounded-[1.5rem] border-2 p-5 transition-all hover:shadow-2xl relative overflow-hidden ${config.pulse}`}>
@@ -2572,7 +2572,7 @@ export default function ProtectedOrders() {
                           <div className="w-6 h-6 rounded-lg bg-slate-800 flex items-center justify-center text-slate-500"><Clock size={12} /></div>
                           <div className="flex flex-wrap items-center gap-2">
                             <span>{formatOrderDay(orderCreatedValue)} - {formatOrderDateTime(orderCreatedValue)}</span>
-                            <span className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[9px] font-black ${elapsedToneClass}`} title="المدة منذ تسجيل الأوردر"><Clock size={10} /> منذ {formatElapsed(orderCreatedValue, clockNow)}</span>
+                            <span className={`inline-flex min-w-[145px] justify-center items-center gap-1.5 rounded-xl border px-3 py-2 text-xs sm:text-sm font-black tracking-wide ${elapsedToneClass}`} title="المدة منذ تسجيل الأوردر"><Clock size={14} /> منذ {formatElapsed(orderCreatedValue, clockNow)}</span>
                           </div>
                         </div>
                       </div>
