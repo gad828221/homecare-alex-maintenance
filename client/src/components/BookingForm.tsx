@@ -38,6 +38,38 @@ export default function BookingForm() {
   const [customBrand, setCustomBrand] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
+  const [previousCustomer, setPreviousCustomer] = useState<any>(null);
+  const [customerLookupLoading, setCustomerLookupLoading] = useState(false);
+
+  useEffect(() => {
+    const phone = formData.phone.trim();
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length < 10) {
+      setPreviousCustomer(null);
+      setCustomerLookupLoading(false);
+      return;
+    }
+
+    const variants = Array.from(new Set([
+      phone,
+      digits,
+      digits.startsWith('0') ? `+20${digits.slice(1)}` : '',
+      digits.startsWith('0') ? `20${digits.slice(1)}` : '',
+      digits.startsWith('20') ? `0${digits.slice(2)}` : ''
+    ].filter(Boolean)));
+    let cancelled = false;
+    setCustomerLookupLoading(true);
+    Promise.all(variants.map((variant) => supabase.from('orders').select('customer_name,address,phone').eq('phone', variant).order('created_at', { ascending: false }).limit(1)))
+      .then((responses) => {
+        if (cancelled) return;
+        const match = responses.map((response) => response.data?.[0]).find(Boolean) || null;
+        setPreviousCustomer(match);
+      })
+      .catch(() => { if (!cancelled) setPreviousCustomer(null); })
+      .finally(() => { if (!cancelled) setCustomerLookupLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [formData.phone]);
 
   const nextStep = () => {
     if (step === 1 && (!formData.device_type && !isOtherDevice)) return alert("يرجى اختيار نوع الجهاز");
@@ -281,6 +313,12 @@ export default function BookingForm() {
                     className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg text-slate-900 font-medium outline-none focus:border-orange-500 transition-all text-left" 
                     placeholder="01xxxxxxxxx" 
                   />
+                  {customerLookupLoading && <p className="text-xs text-slate-400 font-bold">جاري التحقق من الرقم...</p>}
+                  {previousCustomer && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 space-y-2" role="status">
+                    <p className="text-sm font-black text-emerald-700">✨ عميل سابق</p>
+                    <p className="text-xs text-emerald-700">تم تسجيل هذا الرقم من قبل{previousCustomer.customer_name ? ` باسم ${previousCustomer.customer_name}` : ''}.</p>
+                    {(previousCustomer.customer_name || previousCustomer.address) && <button type="button" onClick={() => setFormData((current) => ({ ...current, customer_name: previousCustomer.customer_name || current.customer_name, address: previousCustomer.address || current.address }))} className="text-xs font-black text-emerald-800 underline">استخدام البيانات السابقة</button>}
+                  </div>}
                 </div>
               </div>
               

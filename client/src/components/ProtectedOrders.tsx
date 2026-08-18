@@ -26,6 +26,13 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const DEVICE_TYPES = ['غسالة', 'ثلاجة', 'بوتاجاز', 'سخان', 'تكييف', 'ميكروويف', 'غسالة أطباق'];
 const BRANDS = ['سامسونج', 'LG', 'شارب', 'توشيبا', 'زانوسي', 'يونيون إير', 'فريش', 'وايت ويل', 'أريستون', 'بيكو', 'هوفر', 'إنديست', 'كريازي'];
+const REPORT_TIME_OFFSET_MS = 8 * 60 * 60 * 1000;
+const getReportingDate = (timestamp: any) => {
+  if (!timestamp) return null;
+  const date = new Date(String(timestamp));
+  if (Number.isNaN(date.getTime())) return null;
+  return new Date(date.getTime() + REPORT_TIME_OFFSET_MS);
+};
 
 // ==================== إدارة المستخدمين والصلاحيات (النسخة المتكاملة) ====================
 function AdminPermissions({ users, onEdit, onDelete, onToggle, canEdit, onSync }: { users: any[], onEdit: (u: any) => void, onDelete: (id: number, name: string) => void, onToggle: (u: any) => void, canEdit: boolean, onSync: () => void }) {
@@ -324,6 +331,34 @@ export default function ProtectedOrders() {
     status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false,
     date: new Date().toLocaleDateString("ar-EG")
   });
+  const [previousCustomer, setPreviousCustomer] = useState<any>(null);
+  const [customerLookupLoading, setCustomerLookupLoading] = useState(false);
+
+  useEffect(() => {
+    if (editingOrder) {
+      setPreviousCustomer(null);
+      setCustomerLookupLoading(false);
+      return;
+    }
+    const phone = String(formData.phone || '').trim();
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length < 10) {
+      setPreviousCustomer(null);
+      setCustomerLookupLoading(false);
+      return;
+    }
+    const variants = Array.from(new Set([phone, digits, digits.startsWith('0') ? `+20${digits.slice(1)}` : '', digits.startsWith('0') ? `20${digits.slice(1)}` : '', digits.startsWith('20') ? `0${digits.slice(2)}` : ''].filter(Boolean)));
+    let cancelled = false;
+    setCustomerLookupLoading(true);
+    Promise.all(variants.map((variant) => supabase.from('orders').select('customer_name,address,phone').eq('phone', variant).order('created_at', { ascending: false }).limit(1)))
+      .then((responses) => {
+        if (cancelled) return;
+        setPreviousCustomer(responses.map((response) => response.data?.[0]).find(Boolean) || null);
+      })
+      .catch(() => { if (!cancelled) setPreviousCustomer(null); })
+      .finally(() => { if (!cancelled) setCustomerLookupLoading(false); });
+    return () => { cancelled = true; };
+  }, [editingOrder, formData.phone]);
   const [techForm, setTechForm] = useState({
     name: '', phone: '', specialization: '', is_active: true,
     username: '', password: '', profit_percentage: 50
@@ -374,41 +409,67 @@ export default function ProtectedOrders() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [monthlyYear, setMonthlyYear] = useState(new Date().getFullYear());
+  const [monthlyMonth, setMonthlyMonth] = useState(new Date().getMonth() + 1);
+  const [monthlyPeriod, setMonthlyPeriod] = useState<'all' | 'start' | 'middle' | 'end'>('all');
 
   const peakTimes = useMemo(() => {
     const dayNames: Record<string, string> = { Sun: 'الأحد', Mon: 'الاثنين', Tue: 'الثلاثاء', Wed: 'الأربعاء', Thu: 'الخميس', Fri: 'الجمعة', Sat: 'السبت' };
     const dayCounts: Record<string, number> = { الأحد: 0, الاثنين: 0, الثلاثاء: 0, الأربعاء: 0, الخميس: 0, الجمعة: 0, السبت: 0 };
     const hourCounts: Record<number, number> = {};
     const allOrders = [...orders, ...archivedOrders];
-    const formatter = new Intl.DateTimeFormat('en-US', { timeZone: 'Africa/Cairo', weekday: 'short', hour: 'numeric', hourCycle: 'h23' });
-
-    allOrders.forEach((order) => {
-      const timestamp = order.created_at || order.createdAt;
-      if (!timestamp) return;
-
-      try {
-        // البيانات مخزنة بتوقيت شرق أمريكا (EST/UTC-5)
-        // توقيت القاهرة هو (UTC+3)، الفارق هو +8 ساعات
-        const date = new Date(timestamp);
-        if (Number.isNaN(date.getTime())) return;
-
-        // إضافة 8 ساعات للتصحيح
-        const localDate = new Date(date.getTime() + (8 * 60 * 60 * 1000));
-
-        const dayNameEn = localDate.toLocaleDateString('en-US', { weekday: 'short' });
-        const hour = localDate.getHours();
-
-        if (dayNameEn && dayNames[dayNameEn]) dayCounts[dayNames[dayNameEn]] += 1;
-        hourCounts[hour] = (hourCounts[hour] || 0) + 1;
-      } catch (e) {
-        console.error('Error parsing date:', e);
-      }
+        allOrders.forEach((order) => {
+      const localDate = getReportingDate(order.created_at || order.createdAt);
+      if (!localDate) return;
+      const dayNameEn = localDate.toLocaleDateString('en-US', { weekday: 'short' });
+      const hour = localDate.getHours();
+      if (dayNameEn && dayNames[dayNameEn]) dayCounts[dayNames[dayNameEn]] += 1;
+      hourCounts[hour] = (hourCounts[hour] || 0) + 1;
     });
 
     const days = Object.entries(dayCounts).map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count);
     const hours = Object.entries(hourCounts).map(([hour, count]) => ({ hour: Number(hour), count })).sort((a, b) => b.count - a.count);
     return { days, hours, totalWithTime: hours.reduce((sum, item) => sum + item.count, 0) };
   }, [archivedOrders, orders]);
+
+  const monthlyStats = useMemo(() => {
+    const monthNames = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+    const allOrders = [...orders, ...archivedOrders];
+    const daysInMonth = new Date(monthlyYear, monthlyMonth, 0).getDate();
+    const periodStart = monthlyPeriod === 'start' ? 1 : monthlyPeriod === 'middle' ? 11 : monthlyPeriod === 'end' ? 21 : 1;
+    const periodEnd = monthlyPeriod === 'start' ? 10 : monthlyPeriod === 'middle' ? 20 : monthlyPeriod === 'end' ? daysInMonth : daysInMonth;
+    const ordersInSelectedPeriod = allOrders.filter((order) => {
+      const date = getReportingDate(order.created_at || order.createdAt);
+      return date && date.getFullYear() === monthlyYear && date.getMonth() + 1 === monthlyMonth && date.getDate() >= periodStart && date.getDate() <= periodEnd;
+    });
+    const monthCounts = monthNames.map((label, index) => ({
+      label,
+      month: index + 1,
+      count: allOrders.filter((order) => {
+        const date = getReportingDate(order.created_at || order.createdAt);
+        return date && date.getFullYear() === monthlyYear && date.getMonth() === index;
+      }).length
+    }));
+    const dayCounts: Record<number, number> = {};
+    ordersInSelectedPeriod.forEach((order) => {
+      const date = getReportingDate(order.created_at || order.createdAt);
+      if (date) dayCounts[date.getDate()] = (dayCounts[date.getDate()] || 0) + 1;
+    });
+    const busiestDay = Object.entries(dayCounts).sort((a, b) => Number(b[1]) - Number(a[1]))[0];
+    return {
+      monthName: monthNames[monthlyMonth - 1],
+      periodStart,
+      periodEnd,
+      orders: ordersInSelectedPeriod,
+      total: ordersInSelectedPeriod.length,
+      completed: ordersInSelectedPeriod.filter((order) => order.status === 'completed').length,
+      pending: ordersInSelectedPeriod.filter((order) => ['pending', 'in-progress'].includes(order.status)).length,
+      cancelled: ordersInSelectedPeriod.filter((order) => order.status === 'cancelled').length,
+      busiestDay: busiestDay ? Number(busiestDay[0]) : null,
+      monthCounts,
+      busiestMonth: [...monthCounts].sort((a, b) => b.count - a.count)[0]
+    };
+  }, [archivedOrders, monthlyMonth, monthlyPeriod, monthlyYear, orders]);
 
   const [reportType, setReportType] = useState<'cash' | 'pending_orders' | 'cancelled_orders' | 'tech_performance' | 'profits' | 'expenses' | 'comparison'>('cash');
   const [startDate, setStartDate] = useState(() => {
@@ -2668,6 +2729,37 @@ export default function ProtectedOrders() {
               <button onClick={exportToCSV} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold">📎 تصدير CSV</button>
             </div>
 
+            <div className="rounded-2xl border border-orange-500/20 bg-slate-950/50 p-4 space-y-4">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div>
+                  <h3 className="text-base font-black text-white">تحليل الشهر والسنة</h3>
+                  <p className="text-[11px] text-slate-500 mt-1">اختر الشهر والفترة لمعرفة ضغط التسجيل ومقارنة الشهور</p>
+                </div>
+                <span className="text-[11px] font-black text-orange-300">أعلى شهر: {monthlyStats.busiestMonth?.label || '-'} ({monthlyStats.busiestMonth?.count || 0})</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <label className="text-xs text-slate-400">السنة<select value={monthlyYear} onChange={(event) => setMonthlyYear(Number(event.target.value))} className="mt-1 w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value={new Date().getFullYear() - 2}>{new Date().getFullYear() - 2}</option><option value={new Date().getFullYear() - 1}>{new Date().getFullYear() - 1}</option><option value={new Date().getFullYear()}>{new Date().getFullYear()}</option><option value={new Date().getFullYear() + 1}>{new Date().getFullYear() + 1}</option></select></label>
+                <label className="text-xs text-slate-400">الشهر<select value={monthlyMonth} onChange={(event) => setMonthlyMonth(Number(event.target.value))} className="mt-1 w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">{['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'].map((month, index) => <option key={month} value={index + 1}>{month}</option>)}</select></label>
+                <label className="text-xs text-slate-400">الفترة<select value={monthlyPeriod} onChange={(event) => setMonthlyPeriod(event.target.value as typeof monthlyPeriod)} className="mt-1 w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="all">الشهر بالكامل</option><option value="start">بداية الشهر (1 - 10)</option><option value="middle">منتصف الشهر (11 - 20)</option><option value="end">نهاية الشهر (21 - آخر الشهر)</option></select></label>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                <div className="rounded-xl bg-slate-900 border border-slate-800 p-3"><p className="text-[10px] text-slate-500">الفترة المحددة</p><p className="text-sm font-black text-white mt-1">{monthlyStats.monthName}</p><p className="text-[10px] text-orange-300">{monthlyStats.periodStart} - {monthlyStats.periodEnd}</p></div>
+                <div className="rounded-xl bg-slate-900 border border-slate-800 p-3"><p className="text-[10px] text-slate-500">إجمالي الأوردرات</p><p className="text-xl font-black text-orange-400 mt-1">{monthlyStats.total}</p></div>
+                <div className="rounded-xl bg-slate-900 border border-slate-800 p-3"><p className="text-[10px] text-slate-500">مكتمل</p><p className="text-xl font-black text-emerald-400 mt-1">{monthlyStats.completed}</p></div>
+                <div className="rounded-xl bg-slate-900 border border-slate-800 p-3"><p className="text-[10px] text-slate-500">قيد المتابعة</p><p className="text-xl font-black text-blue-400 mt-1">{monthlyStats.pending}</p></div>
+                <div className="rounded-xl bg-slate-900 border border-slate-800 p-3"><p className="text-[10px] text-slate-500">أكثر يوم</p><p className="text-xl font-black text-purple-400 mt-1">{monthlyStats.busiestDay ? `يوم ${monthlyStats.busiestDay}` : '-'}</p></div>
+              </div>
+              <div className="rounded-xl bg-slate-900 border border-slate-800 p-3">
+                <h4 className="text-sm font-black text-slate-200 mb-3">الأوردرات خلال شهور {monthlyYear}</h4>
+                <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-12 gap-2 items-end min-h-[150px]">
+                  {monthlyStats.monthCounts.map((item) => {
+                    const height = monthlyStats.busiestMonth?.count ? Math.max(8, (item.count / monthlyStats.busiestMonth.count) * 100) : 8;
+                    return <div key={item.month} className="flex flex-col items-center justify-end gap-1 h-32"><span className="text-[9px] text-slate-400">{item.count}</span><div className="w-full max-w-8 rounded-t-lg bg-gradient-to-t from-orange-600 to-amber-300" style={{ height: `${height}%` }} title={`${item.label}: ${item.count}`} /><span className="text-[9px] text-slate-500 truncate max-w-full">{item.label.slice(0, 3)}</span></div>;
+                  })}
+                </div>
+              </div>
+            </div>
+
             <div className="rounded-2xl border border-indigo-500/20 bg-slate-950/50 p-4 space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
@@ -3063,7 +3155,7 @@ export default function ProtectedOrders() {
               <div className="rounded-xl border border-orange-500/30 bg-orange-500/10 px-3 py-2 text-orange-300 text-sm font-black">بيانات العميل</div>
               <div className="order-edit-fields space-y-4">
                 <div><label className="text-sm text-slate-400">اسم العميل</label><input type="text" value={formData.customer_name || ''} onChange={e => handleFormChange('customer_name', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white" required /></div>
-                <div><label className="text-sm text-slate-400">رقم الهاتف</label><input type="text" value={formData.phone || ''} onChange={e => handleFormChange('phone', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white" required /></div>
+                <div><label className="text-sm text-slate-400">رقم الهاتف</label><input type="text" value={formData.phone || ''} onChange={e => handleFormChange('phone', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white" required />{customerLookupLoading && <p className="text-xs text-slate-500 mt-1">جاري التحقق من الرقم...</p>}{previousCustomer && <div className="mt-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 space-y-2" role="status"><p className="text-sm font-black text-emerald-300">✨ عميل سابق</p><p className="text-xs text-emerald-200">تم تسجيل الرقم من قبل{previousCustomer.customer_name ? ` باسم ${previousCustomer.customer_name}` : ''}.</p>{(previousCustomer.customer_name || previousCustomer.address) && <button type="button" onClick={() => setFormData((current) => ({ ...current, customer_name: previousCustomer.customer_name || current.customer_name, address: previousCustomer.address || current.address }))} className="text-xs font-black text-emerald-200 underline">استخدام البيانات السابقة</button>}</div>}</div>
                 <div><label className="text-sm text-slate-400">نوع الجهاز</label><select value={formData.device_type} onChange={e => handleFormChange('device_type', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="">اختر</option>{DEVICE_TYPES.map(d => <option key={d}>{d}</option>)}<option value="other">أخرى</option></select>{isOtherDevice && <input type="text" placeholder="جهاز مخصص" value={customDevice} onChange={e => setCustomDevice(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 mt-2 text-white" required />}</div>
                 <div><label className="text-sm text-slate-400">الماركة</label><select value={formData.brand} onChange={e => handleFormChange('brand', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="">اختر</option>{BRANDS.map(b => <option key={b}>{b}</option>)}<option value="other">أخرى</option></select>{isOtherBrand && <input type="text" placeholder="ماركة مخصصة" value={customBrand} onChange={e => setCustomBrand(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 mt-2 text-white" required />}</div>
                 <div className="order-edit-full-field"><label className="text-sm text-slate-400">العنوان</label><input type="text" value={formData.address || ''} onChange={e => handleFormChange('address', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white" /></div>
