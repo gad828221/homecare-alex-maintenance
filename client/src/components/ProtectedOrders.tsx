@@ -331,6 +331,12 @@ export default function ProtectedOrders() {
   const [stats, setStats] = useState({ pending: 0, inProgress: 0, completed: 0, cancelled: 0, totalIncome: 0 });
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
+  const orderModalScrollRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!showOrderModal) return;
+    requestAnimationFrame(() => orderModalScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' }));
+  }, [showOrderModal, editingOrder]);
 
 
   const [userRole, setUserRole] = useState<string>('');
@@ -2979,17 +2985,18 @@ export default function ProtectedOrders() {
       </div>
 
       {showOrderModal && canEditDelete() && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-2xl shadow-xl">
-            <div className="flex justify-between mb-4"><h3 className="text-xl font-bold text-white">{editingOrder ? 'تعديل أوردر' : 'أوردر جديد'}</h3><button onClick={() => setShowOrderModal(false)} className="text-slate-400"><X size={20} /></button></div>
-            <form onSubmit={saveOrder} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="text-sm text-slate-400">اسم العميل</label><input type="text" value={formData.customer_name} onChange={e => handleFormChange('customer_name', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required /></div>
-                <div><label className="text-sm text-slate-400">رقم الهاتف</label><input type="text" value={formData.phone} onChange={e => handleFormChange('phone', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required /></div>
+        <div className="fixed inset-0 bg-black/80 flex items-start justify-center z-50 p-3 sm:p-4 overflow-y-auto">
+          <div ref={orderModalScrollRef} id="order-edit-modal-scroll" className="bg-slate-900 rounded-2xl p-4 sm:p-6 w-full max-w-2xl max-h-[calc(100vh-1.5rem)] overflow-y-auto shadow-xl">
+            <div className="flex justify-between mb-4 sticky top-0 bg-slate-900/95 backdrop-blur-sm z-10 pb-3 border-b border-slate-800"><h3 className="text-xl font-bold text-white">{editingOrder ? 'تعديل أوردر' : 'أوردر جديد'}</h3><button type="button" onClick={() => setShowOrderModal(false)} className="text-slate-400 hover:text-white" aria-label="إغلاق نافذة الأوردر"><X size={20} /></button></div>
+            <form onSubmit={saveOrder} className="space-y-4 pt-3">
+              <div className="rounded-xl border border-orange-500/30 bg-orange-500/10 px-3 py-2 text-orange-300 text-sm font-black">بيانات العميل</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div><label className="text-sm text-slate-400">اسم العميل</label><input type="text" value={formData.customer_name || ''} onChange={e => handleFormChange('customer_name', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white" required /></div>
+                <div><label className="text-sm text-slate-400">رقم الهاتف</label><input type="text" value={formData.phone || ''} onChange={e => handleFormChange('phone', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white" required /></div>
                 <div><label className="text-sm text-slate-400">نوع الجهاز</label><select value={formData.device_type} onChange={e => handleFormChange('device_type', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="">اختر</option>{DEVICE_TYPES.map(d => <option key={d}>{d}</option>)}<option value="other">أخرى</option></select>{isOtherDevice && <input type="text" placeholder="جهاز مخصص" value={customDevice} onChange={e => setCustomDevice(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 mt-2 text-white" required />}</div>
                 <div><label className="text-sm text-slate-400">الماركة</label><select value={formData.brand} onChange={e => handleFormChange('brand', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="">اختر</option>{BRANDS.map(b => <option key={b}>{b}</option>)}<option value="other">أخرى</option></select>{isOtherBrand && <input type="text" placeholder="ماركة مخصصة" value={customBrand} onChange={e => setCustomBrand(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 mt-2 text-white" required />}</div>
-                <div className="col-span-2"><label className="text-sm text-slate-400">العنوان</label><input type="text" value={formData.address} onChange={e => handleFormChange('address', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" /></div>
-                <div className="col-span-2"><label className="text-sm text-slate-400">وصف المشكلة</label><textarea rows={3} value={formData.problem_description} onChange={e => handleFormChange('problem_description', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" /></div>
+                <div className="col-span-1 sm:col-span-2"><label className="text-sm text-slate-400">العنوان</label><input type="text" value={formData.address || ''} onChange={e => handleFormChange('address', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white" /></div>
+                <div className="col-span-1 sm:col-span-2"><label className="text-sm text-slate-400">وصف المشكلة</label><textarea rows={3} value={formData.problem_description || ''} onChange={e => handleFormChange('problem_description', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white" /></div>
                 <div><label className="text-sm text-slate-400">الفني</label><select value={formData.technician} onChange={e => handleFormChange('technician', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="">اختر فني</option>{technicians.map(t => <option key={t.id}>{t.name}</option>)}</select></div>
                 <div><label className="text-sm text-slate-400">إجمالي المبلغ</label><input type="number" value={formData.total_amount} onChange={e => handleFormChange('total_amount', parseFloat(e.target.value))} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" /></div>
                 <div><label className="text-sm text-slate-400">قطع غيار</label><input type="number" value={formData.parts_cost} onChange={e => handleFormChange('parts_cost', parseFloat(e.target.value))} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" /></div>
