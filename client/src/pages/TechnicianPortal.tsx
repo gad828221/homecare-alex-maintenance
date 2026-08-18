@@ -528,8 +528,16 @@ export default function TechnicianPortal() {
 
     setShowSettleModal(false);
 
-    // إشعار تصفية فاتورة فوري ومستمر للمديرين
-    const settlementDetails = `💰 تصفية فاتورة جديدة\nالفني: ${techName}\nرقم الأوردر: ${selectedOrder.order_number}\nالعميل: ${selectedOrder.customer_name}\nالجهاز: ${selectedOrder.device_type}\nإجمالي الفاتورة: ${settleForm.total_amount} ج.م\nقطع الغيار: ${settleForm.parts_cost} ج.م\nالمواصلات: ${settleForm.transport_cost} ج.م\nالوقت: ${new Date().toLocaleString('ar-EG')}`;
+    // إشعار تصفية فاتورة فوري ومستمر للمديرين مع رادار نسب المصروفات
+    const settlementTotal = Number(settleForm.total_amount) || 0;
+    const partsPercent = settlementTotal > 0 ? ((Number(settleForm.parts_cost) || 0) / settlementTotal) * 100 : 0;
+    const transportPercent = settlementTotal > 0 ? ((Number(settleForm.transport_cost) || 0) / settlementTotal) * 100 : 0;
+    const expenseWarnings = [
+      partsPercent > 40 ? `⚠️ قطع الغيار ${partsPercent.toFixed(1)}% من الإجمالي (الحد 40%)` : '',
+      transportPercent > 15 ? `⚠️ المواصلات ${transportPercent.toFixed(1)}% من الإجمالي (الحد 15%)` : ''
+    ].filter(Boolean);
+    const settlementTitle = expenseWarnings.length > 0 ? '⚠️ تصفية بمصاريف مرتفعة' : '💰 تصفية فاتورة جديدة';
+    const settlementDetails = `${settlementTitle}\nالفني: ${techName}\nرقم الأوردر: ${selectedOrder.order_number}\nالعميل: ${selectedOrder.customer_name}\nالجهاز: ${selectedOrder.device_type}\nإجمالي الفاتورة: ${settlementTotal} ج.م\nقطع الغيار: ${settleForm.parts_cost} ج.م (${partsPercent.toFixed(1)}%)\nالمواصلات: ${settleForm.transport_cost} ج.م (${transportPercent.toFixed(1)}%)${expenseWarnings.length > 0 ? `\n${expenseWarnings.join('\n')}` : ''}\nالوقت: ${new Date().toLocaleString('ar-EG')}`;
     try {
       await fetch(`${supabaseUrl}/rest/v1/notifications`, {
         method: 'POST',
@@ -543,10 +551,10 @@ export default function TechnicianPortal() {
       });
       void sendExternalPush({
         event: 'system_alert',
-        title: '💰 تصفية فاتورة جديدة',
+        title: settlementTitle,
         message: settlementDetails,
         targetRoles: ['admin', 'manager'],
-        data: { order_id: selectedOrder.id, order_number: selectedOrder.order_number, total_amount: settleForm.total_amount, technician: techName }
+        data: { order_id: selectedOrder.id, order_number: selectedOrder.order_number, total_amount: settlementTotal, parts_percent: partsPercent, transport_percent: transportPercent, high_expense: expenseWarnings.length > 0, technician: techName }
       });
     } catch (e) { console.error('Settlement alert error:', e); }
 

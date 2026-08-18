@@ -1078,14 +1078,27 @@ export default function ProtectedOrders() {
           if (sent) startUrgentAlert();
         }
 
-        // تنبيه مستقل للفواتير الكبيرة بعد اعتمادها
-        const largeSettlements = notDeleted.filter((order: any) => order.status === 'completed' && order.invoice_approved && Number(order.total_amount) >= 5000);
-        for (const order of largeSettlements) {
-          const details = `💰 فاتورة مرتفعة القيمة\nالأوردر: ${order.order_number}\nالعميل: ${order.customer_name}\nالفني: ${order.technician || 'غير محدد'}\nالإجمالي: ${Number(order.total_amount).toLocaleString()} ج.م`;
-          const sent = await sendSmartAlertOnce(`smart_large_invoice_${order.id}`, 'فاتورة مرتفعة القيمة', details, {
-            title: '💰 فاتورة تتطلب مراجعة',
+        // رادار نسب المصروفات في الفواتير المعتمدة
+        const highExpenseSettlements = notDeleted.filter((order: any) => {
+          const total = Number(order.total_amount) || 0;
+          if (order.status !== 'completed' || !order.invoice_approved || total <= 0) return false;
+          const partsPercent = ((Number(order.parts_cost) || 0) / total) * 100;
+          const transportPercent = ((Number(order.transport_cost) || 0) / total) * 100;
+          return partsPercent > 40 || transportPercent > 15;
+        });
+        for (const order of highExpenseSettlements) {
+          const total = Number(order.total_amount) || 0;
+          const partsPercent = ((Number(order.parts_cost) || 0) / total) * 100;
+          const transportPercent = ((Number(order.transport_cost) || 0) / total) * 100;
+          const expenseWarnings = [
+            partsPercent > 40 ? `قطع الغيار ${partsPercent.toFixed(1)}% (الحد 40%)` : '',
+            transportPercent > 15 ? `المواصلات ${transportPercent.toFixed(1)}% (الحد 15%)` : ''
+          ].filter(Boolean).join('، ');
+          const details = `⚠️ مصروفات مرتفعة بالنسبة لإجمالي الفاتورة\nالفني: ${order.technician || 'غير محدد'}\nالأوردر: ${order.order_number}\nالعميل: ${order.customer_name}\nإجمالي الفاتورة: ${total.toLocaleString()} ج.م\n${expenseWarnings}`;
+          const sent = await sendSmartAlertOnce(`smart_high_expense_${order.id}`, 'مصروفات مرتفعة بالنسبة للفاتورة', details, {
+            title: '⚠️ مصروفات مرتفعة بالنسبة للفاتورة',
             message: details,
-            data: { order_id: order.id, total_amount: Number(order.total_amount) }
+            data: { order_id: order.id, total_amount: total, parts_percent: partsPercent, transport_percent: transportPercent }
           });
           if (sent) startUrgentAlert();
         }
