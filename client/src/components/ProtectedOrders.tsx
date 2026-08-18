@@ -233,6 +233,24 @@ const openWhatsApp = (phone: string, message: string) => {
   }
 };
 
+const shareImageAsFile = async (photoUrl: string, text: string, fileName: string): Promise<boolean> => {
+  try {
+    if (typeof navigator === 'undefined' || typeof navigator.share !== 'function') return false;
+    const response = await fetch(photoUrl);
+    if (!response.ok) return false;
+    const blob = await response.blob();
+    const mimeType = blob.type.startsWith('image/') ? blob.type : 'image/png';
+    const extension = mimeType.split('/')[1] || 'png';
+    const file = new File([blob], `${fileName}.${extension}`, { type: mimeType });
+    const shareData: ShareData = { title: 'Maintenance Guide (MG)', text, files: [file] };
+    if (typeof navigator.canShare === 'function' && !navigator.canShare({ files: [file] })) return false;
+    await navigator.share(shareData);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 const notifyAdmin = (message: string) => {
   openWhatsApp(ADMIN_PHONE, message);
 };
@@ -765,13 +783,18 @@ export default function ProtectedOrders() {
     };
   };
 
-  const sendTechnicianAssignmentToCustomer = (order: any, technicianIdentity: any) => {
-    if (!['admin', 'manager'].includes(userRole?.toLowerCase() || '') || !order?.phone || !technicianIdentity) return;
+  const sendTechnicianAssignmentToCustomer = async (order: any, technicianIdentity: any, preferImage = false): Promise<'shared' | 'link' | 'none'> => {
+    if (!['admin', 'manager'].includes(userRole?.toLowerCase() || '') || !order?.phone || !technicianIdentity) return 'none';
     const profile = getOrderTechnicianProfile(technicianIdentity);
     const specialty = getTechnicianSpecialty(profile.technician, order.device_type);
+    const baseMessage = `👨‍🔧 *تم تعيين الفني المسؤول عن طلبك* 👨‍🔧\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n\n✅ *الفني المتوجه إليك:* ${profile.displayName}\n🛠️ *التخصص:* متخصص ${specialty}\n\n📍 سيقوم الفني بالتواصل معك والتوجه إلى العنوان المسجل في الطلب.\n\n🏢 *Maintenance Guide (MG)*\nشكراً لثقتكم.`;
+    if (preferImage && profile.photoUrl) {
+      const shared = await shareImageAsFile(profile.photoUrl, baseMessage, `maintenance-guide-${profile.displayName}`);
+      if (shared) return 'shared';
+    }
     const photoLine = profile.photoUrl ? `🖼️ *صورة الفني:*\n${profile.photoUrl}\n` : '';
-    const message = `👨‍🔧 *تم تعيين الفني المسؤول عن طلبك* 👨‍🔧\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n\n✅ *الفني المتوجه إليك:* ${profile.displayName}\n🛠️ *التخصص:* متخصص ${specialty}\n${photoLine}\n📍 سيقوم الفني بالتواصل معك والتوجه إلى العنوان المسجل في الطلب.\n\nشكراً لثقتكم في HomeCare Maintenance.`;
-    openWhatsApp(order.phone, message);
+    openWhatsApp(order.phone, `${baseMessage.replace('📍 سيقوم', `${photoLine}📍 سيقوم`)}`);
+    return profile.photoUrl ? 'link' : 'link';
   };
 
   const getDaysDifference = (dateStr: string, status: string) => {
@@ -2643,10 +2666,12 @@ export default function ProtectedOrders() {
                         </button>
                         {canEditDelete() && order.technician && <button
                           type="button"
-                          onClick={() => {
+                          onClick={async () => {
                             if (!order.phone) return showToast('رقم العميل غير مسجل', 'error');
-                            sendTechnicianAssignmentToCustomer(order, order.technician);
-                            showToast('تم تجهيز رسالة بيانات الفني للعميل', 'success');
+                            const result = await sendTechnicianAssignmentToCustomer(order, order.technician, true);
+                            if (result === 'shared') showToast('تم فتح مشاركة الصورة الفعلية للفني؛ اختر واتساب ثم محادثة العميل', 'success');
+                            else if (result === 'link') showToast('تعذر مشاركة الملف مباشرة؛ تم فتح واتساب مع رابط الصورة', 'info');
+                            else showToast('تعذر تجهيز رسالة بيانات الفني', 'error');
                           }}
                           className="flex-1 h-10 bg-orange-600/10 hover:bg-orange-600 text-orange-400 hover:text-white rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95"
                           title="إرسال اسم الفني وتخصصه وصورته للعميل"
