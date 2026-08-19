@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
-  Plus, Search, LayoutDashboard, Users,
+  Plus, Search, LayoutDashboard, Users, SlidersHorizontal, ChevronDown, ChevronUp,
   CheckCircle2, AlertCircle, Eye, EyeOff,
   Edit, Trash2, RefreshCw, Phone,
   Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut, Send, Play, LogIn,
@@ -368,6 +368,7 @@ export default function ProtectedOrders() {
   const [filterDelay, setFilterDelay] = useState<'all' | 'delayed'>('all');
   const [filterWarranty, setFilterWarranty] = useState<'all' | 'active' | 'expired' | 'expiring'>('all');
   const [showCompletedOrders, setShowCompletedOrders] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
   const [deletedOrders, setDeletedOrders] = useState<any[]>([]);
   const [customDevice, setCustomDevice] = useState('');
@@ -2561,7 +2562,7 @@ export default function ProtectedOrders() {
 	                      <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">قيد التنفيذ</div>
 	                      <div className="text-2xl font-black text-blue-400">{orders.filter(o => o.status === 'in-progress').length}</div>
 	                    </div>
-		                    <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/50 hover:border-emerald-500/30 transition-all group cursor-pointer" onClick={() => { clearFilters(); setFilterWarranty('active'); setFilterStatus('completed'); }}>
+		                    <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/50 hover:border-emerald-500/30 transition-all group cursor-pointer" onClick={() => { clearFilters(); setShowCompletedOrders(true); setFilterWarranty('active'); setFilterStatus('completed'); }}>
 		                      <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">ضمان ساري 🛡️</div>
 		                      <div className="text-2xl font-black text-emerald-400">{[...orders, ...archivedOrders].filter(o => getWarrantyStatus(o).status === 'active').length}</div>
 		                    </div>
@@ -2582,17 +2583,18 @@ export default function ProtectedOrders() {
                   </div>
                 </div>
               </div>
-	            <div className="bg-slate-900 rounded-xl p-4 flex flex-col gap-4">
+	            <div className="bg-slate-900 rounded-xl p-3 sm:p-4 flex flex-col gap-3">
 		              <div className="flex flex-wrap gap-3 items-center">
 		                <div className="relative flex-1 min-w-[200px]"><Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} /><input type="text" placeholder={isViewer ? "بحث بالاسم أو رقم الأوردر..." : "بحث بالاسم أو الهاتف أو رقم الأوردر..."} className="w-full pr-10 p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
-		                <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+			                <button type="button" onClick={() => setShowAdvancedFilters(!showAdvancedFilters)} className={`shrink-0 flex items-center justify-center gap-2 rounded-xl border px-4 py-2 text-sm font-black transition ${showAdvancedFilters ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-indigo-500'}`} aria-expanded={showAdvancedFilters} aria-label="تصفية متقدمة"><SlidersHorizontal size={17} /> تصفية متقدمة {showAdvancedFilters ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</button>
+		                <select value={filterStatus} onChange={e => { const nextStatus = e.target.value; setFilterStatus(nextStatus); if (nextStatus === 'completed') setShowCompletedOrders(true); }} className={`p-2 bg-slate-800 border border-slate-700 rounded-lg text-white ${showAdvancedFilters ? '' : 'hidden'}`} aria-hidden={!showAdvancedFilters}>
 		                  <option value="all">جميع الحالات</option><option value="pending">قيد الانتظار</option><option value="in-progress">قيد التنفيذ</option><option value="inspected">تم الكشف</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option><option value="deferred">مؤجل</option>
 		                </select>
-		                <select value={filterTechnician} onChange={e => setFilterTechnician(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"><option value="">جميع الفنيين</option>{technicians.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}</select>
-		                <select value={filterDeviceType} onChange={e => setFilterDeviceType(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"><option value="">جميع الأجهزة</option>{DEVICE_TYPES.map(d => <option key={d}>{d}</option>)}</select>
+		                <select value={filterTechnician} onChange={e => setFilterTechnician(e.target.value)} className={`p-2 bg-slate-800 border border-slate-700 rounded-lg text-white ${showAdvancedFilters ? '' : 'hidden'}`} aria-hidden={!showAdvancedFilters}><option value="">جميع الفنيين</option>{technicians.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}</select>
+		                <select value={filterDeviceType} onChange={e => setFilterDeviceType(e.target.value)} className={`p-2 bg-slate-800 border border-slate-700 rounded-lg text-white ${showAdvancedFilters ? '' : 'hidden'}`} aria-hidden={!showAdvancedFilters}><option value="">جميع الأجهزة</option>{DEVICE_TYPES.map(d => <option key={d}>{d}</option>)}</select>
 		              </div>
 
-		              <div className="flex flex-wrap gap-2 items-center border-t border-slate-800 pt-3">
+		              <div className="flex flex-nowrap gap-2 items-center overflow-x-auto no-scrollbar border-t border-slate-800 pt-3 pb-1">
 		                <span className="text-xs text-slate-500 ml-2">فلترة سريعة:</span>
 		                <button onClick={() => { clearFilters(); const today = new Date().toISOString().split('T')[0]; setFilterDateFrom(today); setFilterDateTo(today); }} className="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 px-3 py-1 rounded-full text-xs border border-blue-600/30 transition">📅 أوردرات اليوم</button>
 		                <button onClick={() => { clearFilters(); setFilterStatus('all'); setSearchTerm('');
@@ -2600,7 +2602,7 @@ export default function ProtectedOrders() {
 		                }} className="bg-orange-600/20 hover:bg-orange-600/40 text-orange-400 px-3 py-1 rounded-full text-xs border border-orange-600/30 transition">👨‍🔧 بدون فني</button>
 			                <button onClick={() => { clearFilters(); setFilterStatus('__UNPAID__');
 			                }} className="bg-red-600/20 hover:bg-red-600/40 text-red-400 px-3 py-1 rounded-full text-xs border border-red-600/30 transition">💰 بانتظار التحصيل</button>
-			                <button onClick={() => { clearFilters(); setFilterWarranty('expiring'); setFilterStatus('completed'); }} className="bg-orange-600/20 hover:bg-orange-600/40 text-orange-400 px-3 py-1 rounded-full text-xs border border-orange-600/30 transition">🛡️ ينتهي قريباً</button>
+			                <button onClick={() => { clearFilters(); setShowCompletedOrders(true); setFilterWarranty('expiring'); setFilterStatus('completed'); }} className="bg-orange-600/20 hover:bg-orange-600/40 text-orange-400 px-3 py-1 rounded-full text-xs border border-orange-600/30 transition">🛡️ ينتهي قريباً</button>
 			                <div className="h-4 w-[1px] bg-slate-700 mx-1"></div>
 		                <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} className="p-1 bg-slate-800 border border-slate-700 rounded text-xs text-white" />
 		                <span className="text-slate-600 text-xs">إلى</span>
