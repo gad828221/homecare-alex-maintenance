@@ -933,8 +933,9 @@ export default function ProtectedOrders() {
     if (pushResult.ok) {
       showToast('✅ تم إرسال التقرير داخل البرنامج وPush بنجاح', 'success');
     } else {
-      showToast('✅ تم حفظ التقرير داخلياً. تأكد من تفعيل الإشعارات من زر الجرس أسفل الشاشة.', 'info');
-      console.warn('Push failed:', pushResult.error);
+      const errorMsg = pushResult.error || 'فشل غير معروف';
+      showToast(`✅ تم الحفظ داخلياً (فشل Push: ${errorMsg}). تأكد من الجرس أسفل الشاشة.`, 'info');
+      console.warn('Push failed:', errorMsg);
     }
   };
 
