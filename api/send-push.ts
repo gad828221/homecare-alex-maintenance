@@ -215,8 +215,14 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 	                    web_url: deepLink,
 	                    custom_data: { event, ...safeData, deep_link: deepLink },
 	                    priority: 10,
-	                    lock_screen_visibility: 1, // 1 = Public: إظهار المحتوى كاملاً على شاشة القفل
+	                    lock_screen_visibility: 1,
 	                    android_visibility: 1,
+	                    android_accent_color: "FFf97316", // اللون البرتقالي للبرنامج
+	                    android_led_color: "FFf97316",
+	                    android_sound: "notification",
+	                    huawei_sound: "notification",
+	                    vibrate: [200, 100, 200], // نمط اهتزاز قوي
+	                    renotify: true, // إعادة التنبيه إذا كان هناك إشعار قديم
 		          }),
 	        })
 	      ));
