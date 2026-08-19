@@ -75,6 +75,8 @@ export default function TechnicianPortal() {
   const [stats, setStats] = useState({
     active: 0,
     completed: 0,
+    cancelled: 0,
+    inspected: 0,
     earnings: 0,
     totalOrders: 0,
     successRate: 0,
@@ -318,17 +320,21 @@ export default function TechnicianPortal() {
       });
       // نحتفظ بالسجل الكامل للأداء والنتائج، بينما تُفلتر قائمة العمل أسفل الصفحة فقط.
       setOrders(Array.isArray(data) ? data : []);
-      const active = visibleOrders.filter((o: any) => o.status === 'pending' || o.status === 'in-progress').length;
-      const completed = visibleOrders.filter((o: any) => o.status === 'completed').length;
-      const earnings = visibleOrders.filter((o: any) => o.status === 'completed').reduce((acc: number, o: any) => acc + (Number(o.technician_share) || 0), 0);
+      const active = visibleOrders.filter((o: any) => ['pending', 'in-progress', 'deferred'].includes(String(o.status || '').toLowerCase())).length;
+      const completed = data.filter((o: any) => String(o.status || '').toLowerCase() === 'completed').length;
+      const cancelled = data.filter((o: any) => ['cancelled', 'canceled'].includes(String(o.status || '').toLowerCase())).length;
+      const inspected = data.filter((o: any) => String(o.status || '').toLowerCase() === 'inspected').length;
+      const earnings = data.filter((o: any) => String(o.status || '').toLowerCase() === 'completed').reduce((acc: number, o: any) => acc + (Number(o.technician_share) || 0), 0);
       const invoicedOrders = visibleOrders.filter((o: any) => Number(o.total_amount) > 0);
       const totalInvoice = invoicedOrders.reduce((sum: number, o: any) => sum + (Number(o.total_amount) || 0), 0);
       const totalParts = invoicedOrders.reduce((sum: number, o: any) => sum + (Number(o.parts_cost) || 0), 0);
       const totalTransport = invoicedOrders.reduce((sum: number, o: any) => sum + (Number(o.transport_cost) || 0), 0);
-      const successRate = visibleOrders.length > 0 ? Math.round((completed / visibleOrders.length) * 100) : 0;
+      const successRate = data.length > 0 ? Math.round((completed / data.length) * 100) : 0;
       setStats({
         active,
         completed,
+        cancelled,
+        inspected,
         earnings,
         totalOrders: data.length,
         successRate,
@@ -1266,7 +1272,7 @@ export default function TechnicianPortal() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                 <div className="bg-slate-950/40 p-3 rounded-xl border border-slate-800/50 text-center">
                   <div className="text-2xl font-black text-blue-400">{stats.active}</div>
                   <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mt-1">أوردرات نشطة</div>
@@ -1278,6 +1284,14 @@ export default function TechnicianPortal() {
                 <div className="bg-slate-950/40 p-3 rounded-xl border border-slate-800/50 text-center">
                   <div className="text-lg font-black text-emerald-400">{stats.earnings.toLocaleString()}</div>
                   <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mt-1">أرباحي (ج.م)</div>
+                </div>
+                <div className="bg-rose-950/30 p-3 rounded-xl border border-rose-500/20 text-center">
+                  <div className="text-2xl font-black text-rose-300">{stats.cancelled}</div>
+                  <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mt-1">ملغي محسوب</div>
+                </div>
+                <div className="bg-yellow-950/30 p-3 rounded-xl border border-yellow-500/20 text-center">
+                  <div className="text-2xl font-black text-yellow-300">{stats.inspected}</div>
+                  <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mt-1">كشف محسوب</div>
                 </div>
               </div>
 

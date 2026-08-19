@@ -104,7 +104,8 @@ function buildStats(orders: any[]) {
     companyProfit,
     partsPercent: invoice ? (parts / invoice) * 100 : 0,
     transportPercent: invoice ? (transport / invoice) * 100 : 0,
-    successRate: operational.length ? (completed.length / operational.length) * 100 : 0,
+    // نسبة النجاح من إجمالي أوردرات الفني، بما فيها الملغي والكشف المؤرشفين.
+    successRate: orders.length ? (completed.length / orders.length) * 100 : 0,
     averageRating: ratings.length ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length : 0,
     ratingCount: ratings.length,
     averageDays: durations.length ? durations.reduce((sum, days) => sum + days, 0) / durations.length : 0,
@@ -204,7 +205,7 @@ export default function TechnicianPerformanceAdmin({ orders, technicians }: { or
           <div>
             <p className="text-xs font-bold text-orange-300">لوحة المدير · نتائج فردية</p>
             <h2 className="mt-1 flex items-center gap-2 text-2xl font-black text-white"><Wrench className="text-orange-400" /> أداء كل فني</h2>
-            <p className="mt-2 text-xs leading-6 text-slate-400">كل فني في بطاقة مستقلة، مع فصل قائمة العمل عن النتائج التاريخية للملغي والكشف.</p>
+            <p className="mt-2 text-xs leading-6 text-slate-400">كل فني في بطاقة مستقلة، مع احتساب المكتمل والملغي والكشف المؤرشفين داخل إجمالي النتائج ونسبة النجاح.</p>
             <p className="mt-1 text-[11px] font-bold text-orange-300">الفترة المعروضة: {dateBounds.label} · {periodOrders.length} أوردر</p>
             <p className="mt-1 text-[10px] text-slate-500">الحساب المالي من الأوردرات المكتملة والمصفاة فقط؛ الملغي والكشف والنشط ضمن النتائج التشغيلية لا الأرباح.</p>
           </div>
