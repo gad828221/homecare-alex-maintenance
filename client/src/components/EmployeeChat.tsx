@@ -314,15 +314,25 @@ export default function EmployeeChat() {
     };
   }, [addNotification, canUseChat, canViewMessage, fetchChatData]);
 
+  const markConversationRead = useCallback((id: string, readUntil?: number) => {
+    const currentReadAt = Number.isFinite(readUntil) ? Number(readUntil) : Date.now();
+    localStorage.setItem(`${CHAT_STORAGE_PREFIX}${id}`, new Date(currentReadAt).toISOString());
+    setUnreadVersion((version) => version + 1);
+  }, []);
+
   useEffect(() => {
     if (!canUseChat) return;
     messages.filter((message) => message.senderId !== currentId && canViewMessage(message)).forEach((message) => { void sendReceipt(message, 'delivered'); });
   }, [canUseChat, canViewMessage, currentId, messages, sendReceipt]);
 
   useEffect(() => {
-    if (!open) return;
-    visibleMessages.filter((message) => message.senderId !== currentId).forEach((message) => { void sendReceipt(message, 'read'); });
-  }, [currentId, open, sendReceipt, visibleMessages]);
+    if (!open || !visibleMessages.length) return;
+    const unreadVisibleMessages = visibleMessages.filter((message) => message.senderId !== currentId);
+    if (!unreadVisibleMessages.length) return;
+    const latestMessageAt = Math.max(Date.now(), ...unreadVisibleMessages.map((message) => new Date(message.created_at).getTime() || 0));
+    markConversationRead(conversationId, latestMessageAt);
+    unreadVisibleMessages.forEach((message) => { void sendReceipt(message, 'read'); });
+  }, [conversationId, currentId, markConversationRead, open, sendReceipt, visibleMessages]);
 
   useEffect(() => {
     if (open) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -336,11 +346,6 @@ export default function EmployeeChat() {
       return !readAt || new Date(message.created_at).getTime() > new Date(readAt).getTime();
     }).length;
   }, [canViewMessage, currentId, messages, unreadVersion]);
-
-  const markConversationRead = (id: string) => {
-    localStorage.setItem(`${CHAT_STORAGE_PREFIX}${id}`, new Date().toISOString());
-    setUnreadVersion((version) => version + 1);
-  };
 
   const selectMode = (nextMode: ChatMode) => {
     setMode(nextMode);
