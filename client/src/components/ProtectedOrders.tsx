@@ -336,7 +336,6 @@ export default function ProtectedOrders() {
   const [partners, setPartners] = useState<any[]>([]);
   const [cashLedger, setCashLedger] = useState<any[]>([]);
   const [cashBalance, setCashBalance] = useState(0);
-  const [cashReserveBalance, setCashReserveBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'orders' | 'archived' | 'technicians' | 'reports' | 'repeatCustomers' | 'invoicesReview' | 'cash' | 'partners' | 'notifications' | 'permissions' | 'performance' | 'analytics' | 'feedback'>('orders');
   const [showOrderModal, setShowOrderModal] = useState(false);
@@ -915,13 +914,6 @@ export default function ProtectedOrders() {
         else if (entry.type === 'expense' || entry.type === 'profit_distribution') balance -= entry.amount;
       });
       setCashBalance(balance);
-      const reserveBeforeExpenses = all.reduce((sum: number, entry: any) => {
-        const amount = Number(entry.amount) || 0;
-        if (entry.type === 'income') return sum + amount;
-        if (entry.type === 'profit_distribution') return sum - amount;
-        return sum;
-      }, 0);
-      setCashReserveBalance(Number(reserveBeforeExpenses.toFixed(2)));
       let displayData = all;
       if (cashFilterDate) {
         displayData = all.filter(entry => entry.date === cashFilterDate);
@@ -1036,8 +1028,8 @@ export default function ProtectedOrders() {
       }
 
       const confirmMsg = totalDistributedSoFar > 0
-        ? `💰 دخل اليوم: ${totalIncome.toLocaleString()} ج.م\n💸 مصروفات اليوم: ${totalExpenses.toLocaleString()} ج.م (لا تُخصم من وعاء التوزيع)\n📤 تم توزيع سابقاً: ${totalDistributedSoFar.toLocaleString()} ج.م\n🔄 المتبقي للتوزيع الآن: ${amountToDistribute.toLocaleString()} ج.م\n\nهل تريد الاستمرار؟`
-        : `💰 دخل يوم ${targetDate}: ${totalIncome.toLocaleString()} ج.م\n💸 مصروفات اليوم: ${totalExpenses.toLocaleString()} ج.م (تخصم من الرصيد العام فقط)\n📤 نسبة التوزيع: ${totalPartnerShares}%\n💰 سيتم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء\n\nهل تريد الاستمرار؟`;
+        ? `💰 صافي دخل اليوم: ${totalIncome.toLocaleString()} ج.م\n👥 نسبة الشركاء: ${totalPartnerShares}%\n🏦 نسبة الخزنة: ${Math.max(0, 100 - totalPartnerShares)}%\n💸 مصروفات اليوم: ${totalExpenses.toLocaleString()} ج.م (تُخصم من نصيب الخزنة)\n📤 تم توزيع سابقاً: ${totalDistributedSoFar.toLocaleString()} ج.م\n🔄 المتبقي لتوزيعه على الشركاء الآن: ${amountToDistribute.toLocaleString()} ج.م\n\nهل تريد الاستمرار؟`
+        : `💰 صافي دخل يوم ${targetDate}: ${totalIncome.toLocaleString()} ج.م\n👥 نسبة الشركاء: ${totalPartnerShares}%\n🏦 نسبة الخزنة: ${Math.max(0, 100 - totalPartnerShares)}%\n💸 مصروفات اليوم: ${totalExpenses.toLocaleString()} ج.م (تُخصم من نصيب الخزنة)\n💰 سيتم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء\n\nهل تريد الاستمرار؟`;
 
       if (!confirm(confirmMsg)) return;
 
@@ -1228,13 +1220,6 @@ export default function ProtectedOrders() {
         else if (entry.type === 'expense' || entry.type === 'profit_distribution') balance -= entry.amount;
       });
       setCashBalance(balance);
-      const reserveBeforeExpenses = (cashData || []).reduce((sum: number, entry: any) => {
-        const amount = Number(entry.amount) || 0;
-        if (entry.type === 'income') return sum + amount;
-        if (entry.type === 'profit_distribution') return sum - amount;
-        return sum;
-      }, 0);
-      setCashReserveBalance(Number(reserveBeforeExpenses.toFixed(2)));
 
       const pending = notDeleted.filter((o: any) => o.status === 'pending').length;
       const inProgress = notDeleted.filter((o: any) => o.status === 'in_progress').length;
@@ -3077,9 +3062,8 @@ export default function ProtectedOrders() {
 
         {activeTab === 'cash' && (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="bg-emerald-500/20 p-4 rounded-xl border border-emerald-500/20"><p className="text-slate-400">رصيد الخزنة الحالي</p><p className="text-3xl font-bold text-emerald-400">{cashBalance.toLocaleString()} ج.م</p><p className="text-[11px] text-slate-500 mt-1">يتأثر بالمصروفات والتوزيعات</p></div>
-              <div className="bg-purple-500/20 p-4 rounded-xl border border-purple-500/20"><p className="text-slate-400">الاحتياطي غير الموزع</p><p className="text-3xl font-bold text-purple-300">{cashReserveBalance.toLocaleString()} ج.م</p><p className="text-[11px] text-slate-500 mt-1">الدخل ناقص التوزيعات — المصروفات لا تخصمه</p></div>
+            <div className="flex justify-between items-center flex-wrap gap-3">
+              <div className="bg-emerald-500/20 p-4 rounded-xl border border-emerald-500/20"><p className="text-slate-400">صافي نصيب الخزنة (المحل)</p><p className="text-3xl font-bold text-emerald-400">{cashBalance.toLocaleString()} ج.م</p><p className="text-[11px] text-slate-500 mt-1">الربع المخصص للخزنة بعد خصم المصروفات والتوزيعات</p></div>
               <div className="flex gap-2">
                 <input type="date" value={cashFilterDate} onChange={e=>setCashFilterDate(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"/>
                 <button onClick={()=>setCashFilterDate('')} className="bg-slate-700 text-white px-3 py-2 rounded-lg text-sm">إلغاء الفلتر</button>
@@ -3087,7 +3071,7 @@ export default function ProtectedOrders() {
               </div>
             </div>
             <div className="bg-purple-600/10 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 border border-purple-500/30">
-              <div className="flex flex-col gap-1"><p className="text-sm font-semibold text-purple-300">📅 توزيع أرباح الشركاء</p><p className="text-xs text-slate-400">اختر التاريخ ثم اضغط زر التوزيع (يتم توزيع صافي ربح اليوم بنسبة الشركاء)</p></div>
+              <div className="flex flex-col gap-1"><p className="text-sm font-semibold text-purple-300">📅 توزيع أرباح الشركاء</p><p className="text-xs text-slate-400">يتم توزيع صافي دخل اليوم على الشركاء حسب النسب، ويبقى ربع الخزنة للمحل وتُخصم المصروفات منه.</p></div>
               <div className="flex flex-wrap items-center gap-3"><input type="date" value={selectedProfitDate} onChange={e=>setSelectedProfitDate(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"/>{canManageCash && <button onClick={handleDistributeSelectedProfit} className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"><DollarSign size={16}/> توزيع أرباح التاريخ المحدد</button>}</div>
             </div>
             <div className="bg-blue-600/10 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 border border-blue-500/30">
