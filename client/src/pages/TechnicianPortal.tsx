@@ -296,7 +296,7 @@ export default function TechnicianPortal() {
     if (!techName) return;
     try {
       const data = await fetchAPI('notifications?select=id,action,details,created_at&action=neq.employee_chat&order=created_at.desc&limit=100');
-      const warningActions = new Set(['إنذار مصروفات فني', 'إنذار أداء فني']);
+      const warningActions = new Set(['إنذار مصروفات فني', 'إنذار أداء فني', 'تنبيه إغلاق أوردرات قديمة']);
       const technicianMarker = `الفني: ${techName}`;
       setAdminWarnings((data || []).filter((notification: any) => {
         const details = String(notification.details || '');
@@ -429,8 +429,8 @@ export default function TechnicianPortal() {
           startUrgentAlert();
           addNotification({
             type: 'warning',
-            title: '⚠️ إنذار من الإدارة',
-            message: 'لديك إنذار يحتاج إلى مراجعة المصاريف أو نسبة الإنجاز.',
+            title: notification?.action === 'تنبيه إغلاق أوردرات قديمة' ? '🚨 الإدارة تطلب إغلاق الأوردرات القديمة' : '⚠️ إنذار من الإدارة',
+            message: notification?.action === 'تنبيه إغلاق أوردرات قديمة' ? 'راجع الأوردرات القديمة المفتوحة واتخذ إجراءً على كل أوردر فوراً.' : 'لديك إنذار يحتاج إلى مراجعة المصاريف أو نسبة الإنجاز.',
             duration: 0
           });
         }
@@ -997,15 +997,30 @@ export default function TechnicianPortal() {
     return true;
   });
 
+  const oldOpenOrders = orders
+    .filter((order: any) => ['pending', 'in-progress', 'in_progress', 'deferred'].includes(String(order.status || '').toLowerCase()))
+    .map((order: any) => ({ ...order, ageDays: getDaysDifference(order.date || order.created_at, order.status) }))
+    .filter((order: any) => order.ageDays > 2)
+    .sort((a: any, b: any) => b.ageDays - a.ageDays);
+
   const adminWarningTypes = new Set<string>();
   adminWarnings.forEach((notification: any) => {
     const text = `${notification.action || ''} ${notification.details || ''}`;
     if (text.includes('قطع الغيار')) adminWarningTypes.add('parts');
     if (text.includes('المواصلات')) adminWarningTypes.add('transport');
     if (text.includes('نسبة النجاح') || text.includes('أداء الفني')) adminWarningTypes.add('success');
+    if (notification.action === 'تنبيه إغلاق أوردرات قديمة') adminWarningTypes.add('old-orders');
   });
 
   const technicianWarnings = [
+    ...(oldOpenOrders.length > 0 ? [{
+      id: 'old-open-orders',
+      type: 'old-orders',
+      title: '🚨 أوردرات قديمة تحتاج إلى إجراء فوري',
+      message: `${adminWarningTypes.has('old-orders') ? 'تم إرسال تنبيه مباشر من الإدارة. ' : ''}لديك ${oldOpenOrders.length} أوردر مفتوحاً منذ أكثر من يومين. راجع كل أوردر وسجّل الإجراء الصحيح: تصفية، كشف، إلغاء، أو تحديث واضح. ${oldOpenOrders.slice(0, 4).map((order: any) => order.order_number || `#${order.id}`).join('، ')}${oldOpenOrders.length > 4 ? '…' : ''}`,
+      value: Math.min(100, oldOpenOrders.length * 20),
+      source: adminWarningTypes.has('old-orders') ? 'تنبيه مباشر من الإدارة' : 'متابعة تلقائية'
+    }] : []),
     ...(stats.totalInvoice > 0 && stats.partsPercent > 40 ? [{
       id: 'parts-expense',
       type: 'parts',

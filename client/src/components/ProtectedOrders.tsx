@@ -803,7 +803,16 @@ export default function ProtectedOrders() {
   const isDelayed = (order: any) => {
     if (order.status === 'completed' || order.status === 'cancelled') return false;
     if (order.status === 'inspected') return false;
-    return getDaysDifference(order.date, order.status) > 2;
+    return getDaysDifference(order.date || order.created_at, order.status) > 2;
+  };
+
+  const getOldOpenOrdersForTechnician = (technicianName: string) => {
+    const openStatuses = new Set(['pending', 'in-progress', 'in_progress', 'deferred']);
+    return [...orders, ...archivedOrders]
+      .filter((order: any) => order.technician === technicianName && openStatuses.has(String(order.status || '').toLowerCase()))
+      .map((order: any) => ({ ...order, ageDays: getDaysDifference(order.date || order.created_at, order.status) }))
+      .filter((order: any) => order.ageDays > 2)
+      .sort((a: any, b: any) => b.ageDays - a.ageDays);
   };
 
   const isOldAndShouldArchive = (order: any) => {
@@ -1833,6 +1842,41 @@ export default function ProtectedOrders() {
     setCopiedId(tech.id);
     setTimeout(() => setCopiedId(null), 3000);
     showToast("✅ تم نسخ رابط دخول الفني", "success");
+  };
+
+  const sendOldOrdersReminderToTechnician = async (tech: any) => {
+    if (!['admin', 'manager'].includes(userRole?.toLowerCase() || '')) {
+      return showToast('لا تملك صلاحية إرسال تنبيه للفني', 'error');
+    }
+    if (!tech?.phone) return showToast(`لا يوجد رقم واتساب مسجل للفني ${tech?.name || ''}`, 'error');
+
+    const oldOrders = getOldOpenOrdersForTechnician(tech.name);
+    if (oldOrders.length === 0) {
+      return showToast(`لا توجد أوردرات مفتوحة قديمة للفني ${tech.name}`, 'info');
+    }
+
+    const statusLabels: Record<string, string> = {
+      pending: 'انتظار',
+      'in-progress': 'قيد التنفيذ',
+      in_progress: 'قيد التنفيذ',
+      deferred: 'مؤجل'
+    };
+    const orderLines = oldOrders.map((order: any, index: number) =>
+      `${index + 1}. ${order.order_number || `#${order.id}`} — ${statusLabels[order.status] || order.status} — متأخر ${order.ageDays} يوم`
+    ).join('\n');
+    const message = `🚨 *تنبيه عاجل — إغلاق الأوردرات القديمة* 🚨\n━━━━━━━━━━━━━━━━━━━━━━\n👨‍🔧 *الفني:* ${tech.name}\n📋 *عدد الأوردرات المطلوب متابعتها:* ${oldOrders.length}\n\n${orderLines}\n\n⚠️ يرجى فتح كل أوردر الآن وتحديث حالته بدقة: إكمال وتصفية، أو تسجيل كشف، أو إلغاء بسبب واضح. لا تترك أي أوردر مفتوحاً دون إجراء.\n\n✅ بعد الانتهاء، تأكد من حفظ كل تحديث داخل البرنامج وإبلاغ الإدارة.\n🏢 *Maintenance Guide (MG)*`;
+    openWhatsApp(tech.phone, message);
+
+    const pushMessage = `لديك ${oldOrders.length} أوردر قديم مفتوح. يرجى مراجعتها وإغلاقها أو تحديث حالتها فوراً.`;
+    void sendExternalPush({
+      event: 'system_alert',
+      title: '🚨 إجراء عاجل: إغلاق الأوردرات القديمة',
+      message: pushMessage,
+      targetUserIds: tech.id ? [`tech:${tech.id}`] : undefined,
+      data: { technician: tech.name, old_orders_count: oldOrders.length, order_numbers: oldOrders.map((order: any) => order.order_number) }
+    });
+    await addNotification('تنبيه إغلاق أوردرات قديمة', `تم إرسال تنبيه واتساب للفني ${tech.name} بخصوص ${oldOrders.length} أوردر مفتوح قديم: ${oldOrders.map((order: any) => order.order_number).join(', ')}`);
+    showToast(`✅ تم فتح واتساب وإرسال التنبيه للفني ${tech.name}`, 'success');
   };
 
   const printAndSendInvoice = async (order: any) => {
@@ -2951,15 +2995,18 @@ export default function ProtectedOrders() {
                   <h3 className="font-bold text-white">{tech.name}</h3>
                   <p className="text-xs text-slate-400">{tech.specialization}</p>
                   <p className="text-xs text-slate-400 mt-1">نسبة الأرباح: {tech.profit_percentage ?? 50}%</p>
-                  <div className="flex gap-2 mt-3">
-                    <button onClick={() => copyTechLink(tech)} className="flex-1 bg-slate-700 text-slate-300 py-1 rounded text-xs flex items-center justify-center gap-1">{copiedId===tech.id?<Check size={14}/>:<Copy size={14}/>} نسخ</button>
-                    {canManageTechnicians && <>
-                      <button onClick={() => { setEditingTech(tech); setTechForm(tech); setShowTechModal(true); }} className="p-1 text-blue-500"><Edit size={16}/></button>
-                      <button onClick={() => deleteTechnician(tech.id, tech.name)} className="p-1 text-red-500"><Trash2 size={16}/></button>
-                      <button onClick={() => toggleTechnicianActive(tech)} className={`p-1 ${tech.is_active!==false?'text-green-500':'text-red-500'}`}>{tech.is_active!==false?'نشط':'تعطيل'}</button>
-                      <button onClick={() => updateAllPendingOrdersProfit(tech.name, tech.profit_percentage ?? 50)} className="p-1 text-purple-500 hover:text-purple-400" title="تحديث نسب الأوردرات غير المكتملة لهذا الفني"><RefreshCw size={16}/></button>
-                    </>}
-                  </div>
+                   <div className="mt-3 space-y-2">
+                     <div className="flex gap-2">
+                       <button onClick={() => copyTechLink(tech)} className="flex-1 bg-slate-700 text-slate-300 py-2 rounded text-[10px] flex items-center justify-center gap-1"><span>{copiedId===tech.id?<Check size={14}/>:<Copy size={14}/>}</span> نسخ</button>
+                       {canEditDelete() && <button onClick={() => sendOldOrdersReminderToTechnician(tech)} disabled={!tech.phone} className="flex-[1.5] bg-emerald-600/20 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 py-2 rounded text-[10px] font-black flex items-center justify-center gap-1" title={tech.phone ? 'إرسال قائمة الأوردرات القديمة للفني عبر واتساب' : 'لا يوجد رقم هاتف مسجل'}><Send size={13} /> واتساب المتأخرات</button>}
+                     </div>
+                     {canManageTechnicians && <div className="flex items-center justify-center gap-3 border-t border-slate-700/50 pt-2">
+                       <button onClick={() => { setEditingTech(tech); setTechForm(tech); setShowTechModal(true); }} className="p-1 text-blue-500"><Edit size={16} /></button>
+                       <button onClick={() => deleteTechnician(tech.id, tech.name)} className="p-1 text-red-500"><Trash2 size={16} /></button>
+                       <button onClick={() => toggleTechnicianActive(tech)} className={`p-1 ${tech.is_active!==false?'text-green-500':'text-red-500'}`}>{tech.is_active!==false?'نشط':'تعطيل'}</button>
+                       <button onClick={() => updateAllPendingOrdersProfit(tech.name, tech.profit_percentage ?? 50)} className="p-1 text-purple-500 hover:text-purple-400" title="تحديث نسب الأوردرات غير المكتملة لهذا الفني"><RefreshCw size={16}/></button>
+                     </div>}
+                   </div>
                 </div>
               ))}
             </div>
