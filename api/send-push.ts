@@ -209,11 +209,10 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
           body: JSON.stringify({
             app_id: APP_ID,
             ...audience,
-	    headings: { en: title, ar: title },
-                    contents: { en: message, ar: message },
-                    url: deepLink,
-                    web_url: deepLink,
-                    custom_data: { event, ...safeData, deep_link: deepLink },
+	                    headings: { en: title, ar: title },
+	                    contents: { en: message, ar: message },
+	                    web_url: deepLink,
+	                    custom_data: { event, ...safeData, deep_link: deepLink },
                     priority: 10,
 	          }),
 	        })
