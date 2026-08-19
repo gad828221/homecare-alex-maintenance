@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { CheckCircle, LogOut, ClipboardList, PlusCircle, LayoutDashboard, RefreshCw, TrendingUp } from "lucide-react";
 import { useLocation } from "wouter";
 import BookingForm from "@/components/BookingForm";
+import { clearAuthSession } from "@/utils/authSession";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -49,9 +50,8 @@ export default function DataEntryPage() {
   }, [setLocation, fetchOrderCount]);
 
   const handleLogout = () => {
-    localStorage.removeItem("currentUser");
-    localStorage.removeItem("userRole");
-    setLocation("/login");
+    clearAuthSession();
+    setLocation('/login');
   };
 
   return (
@@ -79,7 +79,7 @@ export default function DataEntryPage() {
                 <TrendingUp className="w-4 h-4 text-green-500" />
               </div>
             </div>
-            <button onClick={handleLogout} className="p-2 text-slate-500 hover:text-red-500 transition-all">
+            <button onClick={handleLogout} title="تسجيل الخروج" aria-label="تسجيل الخروج" className="p-2 text-slate-500 hover:text-red-500 transition-all">
               <LogOut className="w-6 h-6" />
             </button>
           </div>

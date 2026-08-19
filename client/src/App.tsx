@@ -10,6 +10,16 @@ import { usePwaInstall } from './hooks/usePwaInstall';
 import NotificationPermissionButton from "./components/NotificationPermissionButton";
 import PresenceManager from "./components/PresenceManager";
 import EmployeeChat from "./components/EmployeeChat";
+import { readAuthSession } from './utils/authSession';
+
+const CANONICAL_ORIGIN = 'https://www.maintenanceguide.life';
+const PUBLIC_PATHS = new Set([
+  '/', '/login', '/invoice', '/pickup-receipt', '/feedback',
+  '/samsung-service', '/lg-service', '/sharp-service',
+  '/toshiba-service', '/zanussi-service', '/unionaire-service',
+  '/fresh-service', '/white-whale-service', '/ariston-service',
+  '/beko-service', '/hoover-service', '/indesit-service'
+]);
 
 const Home = lazy(() => import("./pages/Home"));
 const Login = lazy(() => import("./pages/LoginPage"));
@@ -146,42 +156,36 @@ function AppContent() {
 
 function App() {
   useEffect(() => {
-    const publicPaths = [
-      "/", "/login", "/invoice", "/pickup-receipt", "/feedback",
-      "/samsung-service", "/lg-service", "/sharp-service",
-      "/toshiba-service", "/zanussi-service", "/unionaire-service",
-      "/fresh-service", "/white-whale-service", "/ariston-service",
-      "/beko-service", "/hoover-service", "/indesit-service"
-    ];
-
     const currentPath = window.location.pathname;
-    
-    // إعطاء مهلة بسيطة للتأكد من تحميل localStorage (خاصة عند الفتح من روابط خارجية)
-    const checkAuth = () => {
-      const userRole = localStorage.getItem("userRole");
-      
-      if (publicPaths.includes(currentPath)) return;
 
-      if (!userRole) {
-        // إذا كان هناك مصدر PWA، قد نكون في طور التحميل، ننتظر قليلاً قبل التحويل
-        const isPwa = window.location.search.includes('source=pwa');
-        if (isPwa) {
-          setTimeout(() => {
-            if (!localStorage.getItem("userRole")) window.location.href = "/login";
-          }, 1000);
-        } else {
-          window.location.href = "/login";
-        }
+    // OneSignal subscriptions and localStorage are origin-scoped. Keep every staff
+    // session on the same origin used by notification deep links.
+    if (window.location.origin === 'https://maintenanceguide.life') {
+      window.location.replace(`${CANONICAL_ORIGIN}${window.location.pathname}${window.location.search}${window.location.hash}`);
+      return;
+    }
+
+    const checkAuth = () => {
+      const { role } = readAuthSession();
+      if (PUBLIC_PATHS.has(currentPath)) return;
+
+      // A missing session means this browser has never logged in on this origin.
+      // We do not clear anything automatically; only the explicit logout buttons do that.
+      if (!role) {
+        const isPwa = new URLSearchParams(window.location.search).get('source') === 'pwa';
+        window.setTimeout(() => {
+          const latest = readAuthSession();
+          if (!latest.role) window.location.replace('/login');
+        }, isPwa ? 1800 : 300);
         return;
       }
 
-      // منع التوجيه إذا كان المستخدم بالفعل في المسار الصحيح حتى لو ببارامترات مختلفة
-      if (userRole === "tech" && !currentPath.startsWith("/tech-portal")) {
-        window.location.href = "/tech-portal";
-      } else if (userRole === "data-entry" && !currentPath.startsWith("/data-entry")) {
-        window.location.href = "/data-entry";
-      } else if ((userRole === "admin" || userRole === "manager" || userRole === "viewer") && !currentPath.startsWith("/orders")) {
-        window.location.href = "/orders";
+      if (role === 'tech' && !currentPath.startsWith('/tech-portal')) {
+        window.location.replace(`/tech-portal${window.location.search}`);
+      } else if (role === 'data-entry' && !currentPath.startsWith('/data-entry')) {
+        window.location.replace(`/data-entry${window.location.search}`);
+      } else if (['admin', 'manager', 'viewer'].includes(role) && !currentPath.startsWith('/orders')) {
+        window.location.replace(`/orders${window.location.search}`);
       }
     };
 

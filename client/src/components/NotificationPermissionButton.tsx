@@ -133,8 +133,9 @@ export default function NotificationPermissionButton() {
         const externalId = getExternalId(storedUser);
         if (externalId && OneSignal?.login) await OneSignal.login(externalId);
         
-        if (OneSignal?.slidedown) {
-          await OneSignal.slidedown.promptPush();
+        // OneSignal v16 uses the capitalized Slidedown namespace.
+        if (OneSignal?.Slidedown?.promptPush) {
+          await OneSignal.Slidedown.promptPush();
         }
 
         const permission = await OneSignal?.Notifications?.requestPermission?.();
