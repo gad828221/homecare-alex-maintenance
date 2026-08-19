@@ -155,22 +155,37 @@ function App() {
     ];
 
     const currentPath = window.location.pathname;
-    const userRole = localStorage.getItem("userRole");
+    
+    // إعطاء مهلة بسيطة للتأكد من تحميل localStorage (خاصة عند الفتح من روابط خارجية)
+    const checkAuth = () => {
+      const userRole = localStorage.getItem("userRole");
+      
+      if (publicPaths.includes(currentPath)) return;
 
-    if (publicPaths.includes(currentPath)) return;
+      if (!userRole) {
+        // إذا كان هناك مصدر PWA، قد نكون في طور التحميل، ننتظر قليلاً قبل التحويل
+        const isPwa = window.location.search.includes('source=pwa');
+        if (isPwa) {
+          setTimeout(() => {
+            if (!localStorage.getItem("userRole")) window.location.href = "/login";
+          }, 1000);
+        } else {
+          window.location.href = "/login";
+        }
+        return;
+      }
 
-    if (!userRole) {
-      window.location.href = "/login";
-      return;
-    }
+      // منع التوجيه إذا كان المستخدم بالفعل في المسار الصحيح حتى لو ببارامترات مختلفة
+      if (userRole === "tech" && !currentPath.startsWith("/tech-portal")) {
+        window.location.href = "/tech-portal";
+      } else if (userRole === "data-entry" && !currentPath.startsWith("/data-entry")) {
+        window.location.href = "/data-entry";
+      } else if ((userRole === "admin" || userRole === "manager" || userRole === "viewer") && !currentPath.startsWith("/orders")) {
+        window.location.href = "/orders";
+      }
+    };
 
-    if (userRole === "tech" && currentPath !== "/tech-portal") {
-      window.location.href = "/tech-portal";
-    } else if (userRole === "data-entry" && currentPath !== "/data-entry") {
-      window.location.href = "/data-entry";
-    } else if ((userRole === "admin" || userRole === "manager" || userRole === "viewer") && currentPath !== "/orders") {
-      window.location.href = "/orders";
-    }
+    checkAuth();
   }, []);
 
   return (
