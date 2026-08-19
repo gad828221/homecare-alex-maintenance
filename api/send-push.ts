@@ -214,8 +214,10 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 	                    contents: { en: message, ar: message },
 	                    web_url: deepLink,
 	                    custom_data: { event, ...safeData, deep_link: deepLink },
-                    priority: 10,
-	          }),
+	                    priority: 10,
+	                    lock_screen_visibility: 1, // 1 = Public: إظهار المحتوى كاملاً على شاشة القفل
+	                    android_visibility: 1,
+		          }),
 	        })
 	      ));
 
