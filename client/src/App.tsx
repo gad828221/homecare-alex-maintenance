@@ -170,9 +170,20 @@ function App() {
 
     const checkAuth = () => {
       const { role } = readAuthSession();
+      const isPwaEntry = new URLSearchParams(window.location.search).get('source') === 'pwa' || 
+                         (window.matchMedia('(display-mode: standalone)').matches);
       
-      // If user is logged in and tries to access / or /login, send them to their dashboard
-      if (role && (currentPath === '/' || currentPath === '/login')) {
+      // Only auto-redirect to dashboard if coming from PWA/Notification
+      // If opening normally in browser, let them see the landing page even if logged in
+      if (role && isPwaEntry && (currentPath === '/' || currentPath === '/login')) {
+        if (role === 'tech') window.location.replace('/tech-portal' + window.location.search);
+        else if (role === 'data-entry') window.location.replace('/data-entry' + window.location.search);
+        else window.location.replace('/orders' + window.location.search);
+        return;
+      }
+
+      // If accessing /login directly while logged in, always redirect to dashboard
+      if (role && currentPath === '/login') {
         if (role === 'tech') window.location.replace('/tech-portal');
         else if (role === 'data-entry') window.location.replace('/data-entry');
         else window.location.replace('/orders');
