@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Check, CheckCheck, Lock, MessageCircle, Send, Users, X } from 'lucide-react';
+import { Check, CheckCheck, Lock, MessageCircle, Send, Trash2, Users, X } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { useNotification } from './EnhancedNotificationSystem';
 
@@ -111,6 +111,7 @@ export default function EmployeeChat() {
   const [selectedUserId, setSelectedUserId] = useState('');
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
   const [unreadVersion, setUnreadVersion] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const activeConversationRef = useRef('public');
@@ -422,6 +423,29 @@ export default function EmployeeChat() {
     }
   };
 
+  const deleteMessage = async (message: ChatMessage) => {
+    if (!isManagement || deletingMessageId === String(message.id)) return;
+    const confirmed = window.confirm('هل تريد حذف هذه الرسالة نهائياً من الشات؟');
+    if (!confirmed) return;
+
+    setDeletingMessageId(String(message.id));
+    try {
+      const response = await fetch(`${supabaseUrl}/rest/v1/notifications?id=eq.${encodeURIComponent(String(message.id))}&action=eq.${CHAT_ACTION}`, {
+        method: 'DELETE',
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, Prefer: 'return=minimal' }
+      });
+      if (!response.ok) throw new Error(await response.text());
+      setMessages((previous) => previous.filter((item) => String(item.id) !== String(message.id)));
+      setReceipts((previous) => previous.filter((receipt) => receipt.messageId !== String(message.id)));
+      addNotification({ type: 'success', title: 'تم حذف الرسالة', message: 'تم حذف الرسالة من شات الموظفين بنجاح.', duration: 3000 });
+    } catch (error) {
+      console.error('تعذر حذف رسالة الشات:', error);
+      addNotification({ type: 'error', title: 'تعذر حذف الرسالة', message: 'تحقق من الاتصال وحاول مرة أخرى.', duration: 4000 });
+    } finally {
+      setDeletingMessageId(null);
+    }
+  };
+
   if (!canUseChat) return null;
 
   return (
@@ -487,7 +511,14 @@ export default function EmployeeChat() {
             {visibleMessages.map((message) => {
               const mine = message.senderId === currentId;
               const receiptStatus = mine ? getReceiptStatus(message) : null;
-              return <div key={message.id} className={`flex ${mine ? 'justify-start' : 'justify-end'}`}><div className={`max-w-[85%] rounded-2xl px-3 py-2 ${mine ? 'bg-indigo-600 text-white rounded-br-md' : 'bg-slate-800 text-slate-100 rounded-bl-md'}`}><p className="text-[9px] font-black opacity-70 mb-1">{mine ? 'أنت' : message.senderName}</p><p className="text-xs leading-5 whitespace-pre-wrap break-words">{message.text}</p><p className="text-[8px] opacity-70 mt-1 flex items-center gap-1">{new Date(message.created_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}{mine && receiptStatus === 'sent' && <span title="تم الإرسال"><Check size={12} className="text-slate-300" /></span>}{mine && receiptStatus === 'delivered' && <span title="تم الاستلام"><CheckCheck size={13} className="text-slate-300" /></span>}{mine && receiptStatus === 'read' && <span title="تمت القراءة"><CheckCheck size={13} className="text-sky-300" /></span>}</p></div></div>;
+              return <div key={message.id} className={`flex items-end gap-1.5 ${mine ? 'justify-start' : 'justify-end'}`}>
+                {isManagement && <button type="button" onClick={() => { void deleteMessage(message); }} disabled={deletingMessageId === String(message.id)} title="حذف الرسالة" aria-label={`حذف رسالة ${mine ? 'أنت' : message.senderName}`} className="mb-1 rounded-lg p-1.5 text-slate-500 transition hover:bg-rose-950/60 hover:text-rose-300 disabled:cursor-wait disabled:opacity-40"><Trash2 size={14} /></button>}
+                <div className={`max-w-[85%] rounded-2xl px-3 py-2 ${mine ? 'bg-indigo-600 text-white rounded-br-md' : 'bg-slate-800 text-slate-100 rounded-bl-md'}`}>
+                  <p className="text-[9px] font-black opacity-70 mb-1">{mine ? 'أنت' : message.senderName}</p>
+                  <p className="text-xs leading-5 whitespace-pre-wrap break-words">{message.text}</p>
+                  <p className="text-[8px] opacity-70 mt-1 flex items-center gap-1">{new Date(message.created_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}{mine && receiptStatus === 'sent' && <span title="تم الإرسال"><Check size={12} className="text-slate-300" /></span>}{mine && receiptStatus === 'delivered' && <span title="تم الاستلام"><CheckCheck size={13} className="text-slate-300" /></span>}{mine && receiptStatus === 'read' && <span title="تمت القراءة"><CheckCheck size={13} className="text-sky-300" /></span>}</p>
+                </div>
+              </div>;
             })}
             <div ref={messagesEndRef} />
           </div>
