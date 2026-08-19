@@ -175,7 +175,7 @@ export default function TechnicianPortal() {
       });
     } catch (err) { console.error(err); }
     const message = `🔔 *تنبيه إداري* 🔔\n━━━━━━━━━━━━━━━━━━━━━━\n👤 *الفني:* ${techName}\n🔢 *كود الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n📋 *الإجراء:* ${action}\n${details ? `📝 *التفاصيل:* ${details}\n` : ''}\n⏰ *الوقت:* ${new Date().toLocaleString("ar-EG")}\n\nيرجى المراجعة من لوحة التحكم.`;
-    openWhatsAppDirectly('201558625259', message);
+    openWhatsAppDirectly('201278885772', message);
   };
 
   useEffect(() => {

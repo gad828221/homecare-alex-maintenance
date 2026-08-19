@@ -122,7 +122,7 @@ export default function InvoicePageNew() {
       pdf.setFontSize(12);
       pdf.text("فاتورة صيانة وضمان الأجهزة المنزلية", pageWidth / 2, 22, { align: "center" });
       pdf.setFontSize(10);
-      pdf.text("خدمة صيانة 24 ساعة بالمنزل | 01278885772 | 01558625259", pageWidth / 2, 30, { align: "center" });
+      pdf.text("خدمة صيانة 24 ساعة بالمنزل | 01278885772 | 01278885772", pageWidth / 2, 30, { align: "center" });
       yPosition = 40;
 
       pdf.setTextColor(0, 0, 0);
@@ -254,7 +254,7 @@ export default function InvoicePageNew() {
               <p className="text-orange-100 text-sm mb-4">خدمة صيانة 24 ساعة بالمنزل</p>
               <div className="flex justify-center gap-8 mt-4 text-sm border-t border-orange-400 pt-4">
                 <span className="flex items-center gap-1">📞 01278885772</span>
-                <span className="flex items-center gap-1">📲 01558625259</span>
+                <span className="flex items-center gap-1">📲 01278885772</span>
                 <span className="flex items-center gap-1">📍 الإسكندرية</span>
               </div>
             </div>

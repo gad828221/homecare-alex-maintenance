@@ -68,7 +68,7 @@ export const invoiceDownloadService = {
 
       // التذييل
       doc.setFontSize(8);
-      doc.text("للاستفسار: 01278885772 | 01558625259", pageWidth / 2, y, { align: "center" });
+      doc.text("للاستفسار: 01278885772 | 01278885772", pageWidth / 2, y, { align: "center" });
 
       doc.save(`فاتورة_${orderNumber}_${new Date().toLocaleDateString('ar-EG')}.pdf`);
       return true;

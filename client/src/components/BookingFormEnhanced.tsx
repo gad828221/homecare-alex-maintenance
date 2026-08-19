@@ -92,7 +92,7 @@ export default function BookingFormEnhanced() {
         });
         
         const msg = `🆕 *طلب صيانة جديد (VIP)* 🆕\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الطلب:* ${orderNumber}\n👤 *العميل:* ${formData.customer_name}\n📱 *الهاتف:* ${formData.phone}\n🔧 *الجهاز:* ${finalDeviceType} - ${formData.brand}\n📍 *العنوان:* ${formData.address}\n📝 *وصف العطل:* ${formData.problem_description}\n⏰ *التوقيت:* ${new Date().toLocaleString('ar-EG')}\n━━━━━━━━━━━━━━━━━━━━━━\n✨ *HomeCare Maintenance* ✨`;
-        openWhatsAppDirectly('201558625259', msg);
+        openWhatsAppDirectly('201278885772', msg);
       } else {
         throw new Error("فشل في إرسال الطلب");
       }
