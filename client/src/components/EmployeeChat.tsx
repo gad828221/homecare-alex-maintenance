@@ -316,14 +316,36 @@ export default function EmployeeChat() {
 
   const markConversationRead = useCallback((id: string, readUntil?: number) => {
     const currentReadAt = Number.isFinite(readUntil) ? Number(readUntil) : Date.now();
-    localStorage.setItem(`${CHAT_STORAGE_PREFIX}${id}`, new Date(currentReadAt).toISOString());
+    const key = `${CHAT_STORAGE_PREFIX}${id}`;
+    const previousReadAt = Number(new Date(localStorage.getItem(key) || 0).getTime());
+    if (previousReadAt >= currentReadAt) return;
+    localStorage.setItem(key, new Date(currentReadAt).toISOString());
     setUnreadVersion((version) => version + 1);
   }, []);
+
+  // عند فتح الشات نعتبر كل الرسائل الواردة الظاهرة في جميع المحادثات مقروءة،
+  // وليس المحادثة الحالية فقط؛ فهذا يمنع بقاء رقم قديم من محادثة خاصة.
+  const markAllConversationsRead = useCallback(() => {
+    const latestByConversation = new Map<string, number>();
+    messages.forEach((message) => {
+      if (message.senderId === currentId || !canViewMessage(message)) return;
+      const messageTime = new Date(message.created_at).getTime();
+      if (!Number.isFinite(messageTime)) return;
+      latestByConversation.set(message.conversationId, Math.max(latestByConversation.get(message.conversationId) || 0, messageTime));
+    });
+    latestByConversation.forEach((latestMessageAt, id) => markConversationRead(id, Math.max(Date.now(), latestMessageAt)));
+  }, [canViewMessage, currentId, markConversationRead, messages]);
 
   useEffect(() => {
     if (!canUseChat) return;
     messages.filter((message) => message.senderId !== currentId && canViewMessage(message)).forEach((message) => { void sendReceipt(message, 'delivered'); });
   }, [canUseChat, canViewMessage, currentId, messages, sendReceipt]);
+
+  useEffect(() => {
+    if (!open) return;
+    // إعادة التحقق بعد اكتمال تحميل الرسائل حتى لا يعود عداد قديم بعد فتح الصفحة.
+    markAllConversationsRead();
+  }, [markAllConversationsRead, open]);
 
   useEffect(() => {
     if (!open || !visibleMessages.length) return;
@@ -406,7 +428,14 @@ export default function EmployeeChat() {
     <>
       <button
         type="button"
-        onClick={() => { setOpen((value) => !value); if (!open) markConversationRead(conversationId); }}
+        onClick={() => {
+          if (open) {
+            setOpen(false);
+          } else {
+            setOpen(true);
+            markAllConversationsRead();
+          }
+        }}
         aria-label="فتح شات الموظفين"
         title={latestUnreadPrivate ? `رسالة جديدة من ${latestUnreadPrivate.name}` : 'فتح شات الموظفين'}
         className="fixed bottom-24 left-4 z-[80] w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-2xl shadow-indigo-950/40 flex items-center justify-center transition-all active:scale-95"
