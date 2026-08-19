@@ -948,7 +948,7 @@ export default function ProtectedOrders() {
   };
 
   const deleteOrderProfitFromCash = async (order: any) => {
-    if (!canEditDelete()) return false;
+    if (!isAdmin) return false;
     try {
       const entries = await fetchAPI(`cash_ledger?description=like=*${order.order_number}*&type=eq.income&select=id`);
       if (entries && entries.length > 0) {
@@ -963,7 +963,7 @@ export default function ProtectedOrders() {
   };
 
   const addCompanyProfitToCash = async (order: any) => {
-    if (!canEditDelete()) return false;
+    if (!isAdmin) return false;
     const companyShare = order.company_share || 0;
     if (order.profit_added_to_cash) { showToast("ليس لديك صلاحية", "error"); return false; }
     if (companyShare <= 0) { showToast("ليس لديك صلاحية", "error"); return false; }
@@ -1581,7 +1581,7 @@ export default function ProtectedOrders() {
   };
 
   const confirmCompanyTransferReceipt = async (order: any) => {
-    if (!canEditDelete()) return showToast('لا تملك صلاحية تأكيد استلام التحويل', 'error');
+    if (!isAdmin) return showToast('لا تملك صلاحية تأكيد استلام التحويل (للمدير العام فقط)', 'error');
     if (confirmingTransferId === order.id) return;
     const transfer = parseCompanyTransfer(order.technician_note);
     if (transfer?.status !== 'pending') return showToast('لا يوجد تحويل معلّق لهذا الأوردر', 'info');
@@ -1631,7 +1631,7 @@ export default function ProtectedOrders() {
   };
 
   const togglePaidStatus = async (id: number, currentStatus: boolean) => {
-    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
+    if (!isAdmin) return showToast("ليس لديك صلاحية التحصيل (للمدير العام فقط)", "error");
     const order = orders.find(o => o.id === id);
     if (!order) return;
     const newPaidStatus = !currentStatus;
@@ -2670,7 +2670,7 @@ export default function ProtectedOrders() {
                         </div>
                         <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black border flex items-center gap-1.5 ${config.badge}`}><StatusIcon size={13} strokeWidth={2.5} />{config.label}</div>
                       </div>
-                      {transferPending && canEditDelete() && (
+                      {transferPending && isAdmin && (
                         <div className="mb-4 relative z-10 rounded-2xl border border-amber-300/70 bg-gradient-to-l from-amber-500/20 via-yellow-500/10 to-transparent p-3 shadow-lg shadow-amber-500/20">
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex min-w-0 items-center gap-2 text-amber-100">
@@ -2793,11 +2793,17 @@ export default function ProtectedOrders() {
                            <option value="pending">تغيير الحالة</option><option value="in-progress">قيد التنفيذ</option><option value="inspected">تم الكشف</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option><option value="deferred">مؤجل</option>
                          </select>
                          {transferPending ? (
-                           <button type="button" disabled={confirmingTransferId === order.id} onClick={() => confirmCompanyTransferReceipt(order)} className="flex items-center justify-center gap-1 rounded-lg border border-amber-300/60 bg-amber-400 px-3 py-1 text-[10px] font-black text-slate-950 shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-300 active:scale-95 disabled:cursor-wait disabled:opacity-60"><Wallet size={12} /> {confirmingTransferId === order.id ? 'جارٍ الاعتماد…' : 'تأكيد الاستلام'}</button>
+                           isAdmin && <button type="button" disabled={confirmingTransferId === order.id} onClick={() => confirmCompanyTransferReceipt(order)} className="flex items-center justify-center gap-1 rounded-lg border border-amber-300/60 bg-amber-400 px-3 py-1 text-[10px] font-black text-slate-950 shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-300 active:scale-95 disabled:cursor-wait disabled:opacity-60"><Wallet size={12} /> {confirmingTransferId === order.id ? 'جارٍ الاعتماد…' : 'تأكيد الاستلام'}</button>
                          ) : (
-                           <button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`px-3 py-1 rounded-lg text-[10px] font-bold ${order.is_paid ? 'bg-green-600/20 text-green-400' : 'bg-red-600/20 text-red-400'}`}>
-                             {order.is_paid ? 'تم التحصيل' : 'تحصيل؟'}
-                           </button>
+                           isAdmin ? (
+                             <button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`px-3 py-1 rounded-lg text-[10px] font-bold ${order.is_paid ? 'bg-green-600/20 text-green-400' : 'bg-red-600/20 text-red-400'}`}>
+                               {order.is_paid ? 'تم التحصيل' : 'تحصيل؟'}
+                             </button>
+                           ) : (
+                             <div className={`px-3 py-1 rounded-lg text-[10px] font-bold ${order.is_paid ? 'bg-emerald-500/10 text-emerald-500/70 border border-emerald-500/20' : 'bg-slate-800 text-slate-500 border border-slate-700'}`}>
+                               {order.is_paid ? 'تم التحصيل ✅' : 'لم يتم التحصيل'}
+                             </div>
+                           )
                          )}
                       </div>}
 
