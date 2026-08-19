@@ -359,6 +359,7 @@ export default function ProtectedOrders() {
   const [cashForm, setCashForm] = useState({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] });
   const [partnerForm, setPartnerForm] = useState({ name: '', share_percentage: 0, phone: '', is_active: true });
   const [searchTerm, setSearchTerm] = useState('');
+  const [archiveSearchTerm, setArchiveSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterTechnician, setFilterTechnician] = useState('');
   const [filterDeviceType, setFilterDeviceType] = useState('');
@@ -2012,12 +2013,18 @@ export default function ProtectedOrders() {
   });
 
   const filteredArchivedOrders = archivedOrders.filter(o => {
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      const matchesName = o.customer_name?.toLowerCase().includes(searchLower);
-      const matchesPhone = o.phone?.includes(searchTerm);
-      const matchesOrderNum = String(o.order_number).includes(searchTerm);
-      if (!matchesName && !matchesPhone && !matchesOrderNum) return false;
+    const query = archiveSearchTerm.trim().toLowerCase();
+    if (query) {
+      const customerName = String(o.customer_name || '').toLowerCase();
+      const technicianName = String(o.technician || '').toLowerCase();
+      const orderNumber = String(o.order_number || '').toLowerCase();
+      const phoneDigits = normalizeArabicDigits(o.phone).replace(/\D/g, '');
+      const queryDigits = normalizeArabicDigits(query).replace(/\D/g, '');
+      const matchesName = customerName.includes(query);
+      const matchesTechnician = technicianName.includes(query);
+      const matchesPhone = queryDigits.length >= 3 && phoneDigits.includes(queryDigits);
+      const matchesOrderNum = orderNumber.includes(query);
+      if (!matchesName && !matchesTechnician && !matchesPhone && !matchesOrderNum) return false;
     }
     if (filterStatus !== 'all' && o.status !== filterStatus) return false;
     if (filterTechnician && o.technician !== filterTechnician) return false;
@@ -2952,6 +2959,27 @@ export default function ProtectedOrders() {
               <div className="bg-indigo-600 text-white px-4 py-1 rounded-full text-xs font-bold">
                 {archivedOrders.length} أوردر
               </div>
+            </div>
+
+            <div className="bg-slate-900/70 border border-indigo-500/20 rounded-2xl p-4 space-y-3">
+              <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+                <div className="relative flex-1">
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-300" size={18} />
+                  <input
+                    type="search"
+                    value={archiveSearchTerm}
+                    onChange={(event) => setArchiveSearchTerm(event.target.value)}
+                    placeholder="ابحث باسم العميل أو الفني أو رقم الهاتف..."
+                    aria-label="البحث في الأرشيف باسم العميل أو الفني أو رقم الهاتف"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800 py-3 pr-10 pl-3 text-sm font-bold text-white outline-none transition focus:border-indigo-400"
+                  />
+                </div>
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-400 whitespace-nowrap">
+                  <span className="rounded-full bg-indigo-500/15 px-3 py-2 text-indigo-300">نتائج البحث: {filteredArchivedOrders.length}</span>
+                  {archiveSearchTerm && <button type="button" onClick={() => setArchiveSearchTerm('')} className="rounded-xl bg-slate-800 px-3 py-2 text-slate-300 transition hover:bg-slate-700">مسح البحث</button>}
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-500">يمكنك كتابة جزء من الاسم أو آخر أرقام الهاتف أو اسم الفني للوصول إلى الأوردر بسرعة.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
