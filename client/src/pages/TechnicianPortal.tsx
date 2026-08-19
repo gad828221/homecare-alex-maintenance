@@ -851,19 +851,26 @@ export default function TechnicianPortal() {
     setCurrentOrder(null);
   };
 
+  const normalizeArabicDigits = (value: unknown) => String(value ?? '')
+    .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
+    .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
+    .replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '')
+    .trim();
+
   const getDaysDifference = (dateStr: string, status: string) => {
     if (status === 'inspected') return 0;
-    if (!dateStr) return 0;
+    const normalizedDate = normalizeArabicDigits(dateStr);
+    if (!normalizedDate) return 0;
     let orderDate: Date;
-    if (dateStr.includes('/')) {
-      const parts = dateStr.split('/');
+    if (normalizedDate.includes('/')) {
+      const parts = normalizedDate.split('/').map((part) => parseInt(part.trim(), 10));
       if (parts.length === 3) {
-        const day = parseInt(parts[0]), month = parseInt(parts[1]) - 1, year = parseInt(parts[2]);
-        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) orderDate = new Date(year, month, day);
+        const [day, month, year] = parts;
+        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) orderDate = new Date(year, month - 1, day);
         else return 0;
       } else return 0;
     } else {
-      orderDate = new Date(dateStr);
+      orderDate = new Date(normalizedDate);
       if (isNaN(orderDate.getTime())) return 0;
     }
     const today = new Date();
@@ -877,7 +884,7 @@ export default function TechnicianPortal() {
     if (order.status === 'completed' || order.status === 'cancelled') return false;
     if (order.status === 'inspected') return false;
     // استخدام حقل date أو created_at
-    return getDaysDifference(order.date || order.created_at, order.status) > 2;
+    return getDaysDifference(order.created_at || order.createdAt || order.date, order.status) > 2;
   };
 
   const isNewOrder = (order: any) => {
@@ -999,7 +1006,7 @@ export default function TechnicianPortal() {
 
   const oldOpenOrders = orders
     .filter((order: any) => ['pending', 'in-progress', 'in_progress', 'deferred'].includes(String(order.status || '').toLowerCase()))
-    .map((order: any) => ({ ...order, ageDays: getDaysDifference(order.date || order.created_at, order.status) }))
+    .map((order: any) => ({ ...order, ageDays: getDaysDifference(order.created_at || order.createdAt || order.date, order.status) }))
     .filter((order: any) => order.ageDays > 2)
     .sort((a: any, b: any) => b.ageDays - a.ageDays);
 

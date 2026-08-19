@@ -778,19 +778,28 @@ export default function ProtectedOrders() {
     return true;
   };
 
+  const normalizeArabicDigits = (value: unknown) => String(value ?? '')
+    .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
+    .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
+    .replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '')
+    .trim();
+
+  const getOrderReferenceDate = (order: any) => order?.created_at || order?.createdAt || order?.date || '';
+
   const getDaysDifference = (dateStr: string, status: string) => {
     if (status === 'inspected') return 0;
-    if (!dateStr) return 0;
+    const normalizedDate = normalizeArabicDigits(dateStr);
+    if (!normalizedDate) return 0;
     let orderDate: Date;
-    if (dateStr.includes('/')) {
-      const parts = dateStr.split('/');
+    if (normalizedDate.includes('/')) {
+      const parts = normalizedDate.split('/').map((part) => parseInt(part.trim(), 10));
       if (parts.length === 3) {
-        const day = parseInt(parts[0]), month = parseInt(parts[1]) - 1, year = parseInt(parts[2]);
-        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) orderDate = new Date(year, month, day);
+        const [day, month, year] = parts;
+        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) orderDate = new Date(year, month - 1, day);
         else return 0;
       } else return 0;
     } else {
-      orderDate = new Date(dateStr);
+      orderDate = new Date(normalizedDate);
       if (isNaN(orderDate.getTime())) return 0;
     }
     const today = new Date();
@@ -803,17 +812,40 @@ export default function ProtectedOrders() {
   const isDelayed = (order: any) => {
     if (order.status === 'completed' || order.status === 'cancelled') return false;
     if (order.status === 'inspected') return false;
-    return getDaysDifference(order.date || order.created_at, order.status) > 2;
+    return getDaysDifference(getOrderReferenceDate(order), order.status) > 2;
   };
 
-  const getOldOpenOrdersForTechnician = (technicianName: string) => {
+  const normalizeTechnicianIdentity = (value: unknown) => String(value ?? '').trim().toLowerCase().replace(/[.\s_-]/g, '');
+
+  const technicianMatchesOrder = (technician: any, order: any) => {
+    const orderIdentity = normalizeTechnicianIdentity(order?.technician);
+    if (!orderIdentity) return false;
+    const technicianIdentities = [technician?.id, technician?.name, technician?.username, technician?.code, technician?.techName]
+      .filter(Boolean)
+      .map(normalizeTechnicianIdentity);
+    if (technicianIdentities.includes(orderIdentity)) return true;
+    const resolvedTechnician = findTechnicianByIdentity(technicians, order?.technician);
+    return Boolean(resolvedTechnician && String(resolvedTechnician.id) === String(technician?.id));
+  };
+
+  const getOpenOrdersForTechnician = (technician: any) => {
     const openStatuses = new Set(['pending', 'in-progress', 'in_progress', 'deferred']);
-    return [...orders, ...archivedOrders]
-      .filter((order: any) => order.technician === technicianName && openStatuses.has(String(order.status || '').toLowerCase()))
-      .map((order: any) => ({ ...order, ageDays: getDaysDifference(order.date || order.created_at, order.status) }))
+    const uniqueOrders = new Map<string, any>();
+    [...orders, ...archivedOrders]
+      .filter((order: any) => technicianMatchesOrder(technician, order) && openStatuses.has(String(order.status || '').toLowerCase()))
+      .forEach((order: any) => {
+        const key = String(order.id ?? order.order_number ?? `${order.technician}-${order.date}`);
+        if (!uniqueOrders.has(key)) {
+          uniqueOrders.set(key, { ...order, ageDays: getDaysDifference(getOrderReferenceDate(order), order.status) });
+        }
+      });
+    return Array.from(uniqueOrders.values());
+  };
+
+  const getOldOpenOrdersForTechnician = (technician: any) =>
+    getOpenOrdersForTechnician(technician)
       .filter((order: any) => order.ageDays > 2)
       .sort((a: any, b: any) => b.ageDays - a.ageDays);
-  };
 
   const isOldAndShouldArchive = (order: any) => {
     // الحالات النهائية/غير النشطة تظهر في الأرشيف فوراً للحفاظ على نظافة لوحة التشغيل.
@@ -821,7 +853,7 @@ export default function ProtectedOrders() {
 
     // الأوردرات غير المكتملة تُنقل بعد مرور 30 يوماً كما هو معمول به سابقاً.
     if (!['pending', 'in-progress'].includes(order.status)) return false;
-    return getDaysDifference(order.date || order.created_at, order.status) > 30;
+    return getDaysDifference(getOrderReferenceDate(order), order.status) > 30;
   };
 
   const isNewOrder = (order: any) => {
@@ -1850,9 +1882,12 @@ export default function ProtectedOrders() {
     }
     if (!tech?.phone) return showToast(`لا يوجد رقم واتساب مسجل للفني ${tech?.name || ''}`, 'error');
 
-    const oldOrders = getOldOpenOrdersForTechnician(tech.name);
+    const openOrders = getOpenOrdersForTechnician(tech);
+    const oldOrders = openOrders.filter((order: any) => order.ageDays > 2).sort((a: any, b: any) => b.ageDays - a.ageDays);
     if (oldOrders.length === 0) {
-      return showToast(`لا توجد أوردرات مفتوحة قديمة للفني ${tech.name}`, 'info');
+      return showToast(openOrders.length > 0
+        ? `لدى ${tech.name} ${openOrders.length} أوردر مفتوح، لكنها لم تتجاوز يومين بعد`
+        : `لا توجد أوردرات مفتوحة مسجلة باسم ${tech.name}`, 'info');
     }
 
     const statusLabels: Record<string, string> = {
