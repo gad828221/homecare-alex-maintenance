@@ -2521,65 +2521,65 @@ export default function ProtectedOrders() {
 		        {activeTab === 'orders' && (
 		          <div className="space-y-4">
               {/* لوحة ملخص اليوم الذكي */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-                <div className="lg:col-span-2 bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-6 border border-slate-700 shadow-2xl relative overflow-hidden">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-4">
+                <div className="lg:col-span-2 bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-3 sm:p-5 border border-slate-700 shadow-2xl relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-2 h-full bg-orange-500"></div>
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+                  <div className="flex flex-row justify-between items-center gap-2 relative z-10">
                     <div>
-                      <h2 className="text-2xl font-black text-white flex items-center gap-3">
-                        <LayoutDashboard className="text-orange-500 w-8 h-8" /> ملخص العمليات اليوم
+                      <h2 className="text-lg sm:text-2xl font-black text-white flex items-center gap-2">
+                        <LayoutDashboard className="text-orange-500 w-6 h-6 sm:w-8 sm:h-8" /> ملخص العمليات اليوم
                       </h2>
-                      <p className="text-sm text-slate-400 mt-2">نظرة عامة على أداء المركز والحالات الحرجة التي تتطلب انتباهك.</p>
+                      <p className="hidden sm:block text-xs text-slate-400 mt-1">نظرة عامة على أداء المركز والحالات الحرجة التي تتطلب انتباهك.</p>
                     </div>
-                    <div className="flex gap-3">
-                      <button onClick={sendDailyReportToWhatsApp} className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-2xl text-sm font-black flex items-center gap-2 transition-all shadow-lg shadow-emerald-900/20 active:scale-95">
-                        <Send size={18} /> تقرير الواتساب
+                    <div className="flex gap-2 shrink-0">
+<button onClick={sendDailyReportToWhatsApp} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all shadow-lg shadow-emerald-900/20 active:scale-95">
+						<Send size={16} /> <span className="hidden sm:inline">تقرير الواتساب</span><span className="sm:hidden">واتساب</span>
                       </button>
-                      <button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 text-white p-2.5 rounded-2xl transition-all active:scale-95">
-                        <RefreshCw size={20} />
+<button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-xl transition-all active:scale-95" aria-label="تحديث البيانات">
+						<RefreshCw size={17} />
                       </button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-                    <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/50 hover:border-blue-500/30 transition-all group">
-                      <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">أوردرات اليوم</div>
-                      <div className="text-2xl font-black text-white group-hover:text-blue-400 transition-colors">{orders.filter(o => (o.created_at || o.date).includes(new Date().toISOString().split('T')[0])).length}</div>
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-3">
+                    <div className="bg-slate-950/40 p-2 sm:p-3 rounded-xl border border-slate-800/50 hover:border-blue-500/30 transition-all group">
+                      <div className="text-[9px] sm:text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">أوردرات اليوم</div>
+                      <div className="text-lg sm:text-2xl font-black text-white group-hover:text-blue-400 transition-colors">{orders.filter(o => (o.created_at || o.date).includes(new Date().toISOString().split('T')[0])).length}</div>
                     </div>
-                    <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/50 hover:border-orange-500/30 transition-all group">
-                      <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">بدون فني</div>
-                      <div className={`text-2xl font-black ${orders.filter(o => !o.technician || o.technician === '-' || o.technician === '').length > 0 ? 'text-orange-500 animate-pulse' : 'text-white'}`}>
+                    <div className="bg-slate-950/40 p-2 sm:p-3 rounded-xl border border-slate-800/50 hover:border-orange-500/30 transition-all group">
+                      <div className="text-[9px] sm:text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">بدون فني</div>
+                      <div className={`text-lg sm:text-2xl font-black ${orders.filter(o => !o.technician || o.technician === '-' || o.technician === '').length > 0 ? 'text-orange-500 animate-pulse' : 'text-white'}`}>
                         {orders.filter(o => !o.technician || o.technician === '-' || o.technician === '').length}
                       </div>
                     </div>
-                    <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/50 hover:border-red-500/30 transition-all group">
-                      <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">متأخرة ⚠️</div>
-                      <div className={`text-2xl font-black ${orders.filter(o => isDelayed(o)).length > 0 ? 'text-red-500' : 'text-white'}`}>
+                    <div className="bg-slate-950/40 p-2 sm:p-3 rounded-xl border border-slate-800/50 hover:border-red-500/30 transition-all group">
+                      <div className="text-[9px] sm:text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">متأخرة ⚠️</div>
+                      <div className={`text-lg sm:text-2xl font-black ${orders.filter(o => isDelayed(o)).length > 0 ? 'text-red-500' : 'text-white'}`}>
                         {orders.filter(o => isDelayed(o)).length}
                       </div>
                     </div>
-	                    <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/50 hover:border-green-500/30 transition-all group">
-	                      <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">قيد التنفيذ</div>
-	                      <div className="text-2xl font-black text-blue-400">{orders.filter(o => o.status === 'in-progress').length}</div>
+	                    <div className="bg-slate-950/40 p-2 sm:p-3 rounded-xl border border-slate-800/50 hover:border-green-500/30 transition-all group">
+	                      <div className="text-[9px] sm:text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">قيد التنفيذ</div>
+	                      <div className="text-lg sm:text-2xl font-black text-blue-400">{orders.filter(o => o.status === 'in-progress').length}</div>
 	                    </div>
-		                    <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/50 hover:border-emerald-500/30 transition-all group cursor-pointer" onClick={() => { clearFilters(); setShowCompletedOrders(true); setFilterWarranty('active'); setFilterStatus('completed'); }}>
-		                      <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">ضمان ساري 🛡️</div>
-		                      <div className="text-2xl font-black text-emerald-400">{[...orders, ...archivedOrders].filter(o => getWarrantyStatus(o).status === 'active').length}</div>
+		                    <div className="bg-slate-950/40 p-2 sm:p-3 rounded-xl border border-slate-800/50 hover:border-emerald-500/30 transition-all group cursor-pointer" onClick={() => { clearFilters(); setShowCompletedOrders(true); setFilterWarranty('active'); setFilterStatus('completed'); }}>
+		                      <div className="text-[9px] sm:text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">ضمان ساري 🛡️</div>
+		                      <div className="text-lg sm:text-2xl font-black text-emerald-400">{[...orders, ...archivedOrders].filter(o => getWarrantyStatus(o).status === 'active').length}</div>
 		                    </div>
 	                  </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-6 border border-slate-700 shadow-2xl flex flex-col justify-between">
+                <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-3 sm:p-5 border border-slate-700 shadow-2xl flex flex-col justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-4">
                       <DollarSign className="text-green-500" />
-                      <h3 className="text-lg font-black text-white">الرصيد الحالي</h3>
+                      <h3 className="text-sm sm:text-lg font-black text-white">الرصيد الحالي</h3>
                     </div>
-                    <div className="text-4xl font-black text-green-400 tabular-nums">{cashBalance.toLocaleString()} <span className="text-sm text-green-600">ج.م</span></div>
+                    <div className="text-2xl sm:text-4xl font-black text-green-400 tabular-nums">{cashBalance.toLocaleString()} <span className="text-sm text-green-600">ج.م</span></div>
                   </div>
-                  <div className="mt-6 flex gap-2">
-                    <button onClick={() => setActiveTab('cash')} className="flex-1 bg-green-600/10 hover:bg-green-600 text-green-500 hover:text-white py-3 rounded-2xl text-xs font-black transition-all">إدارة الخزنة</button>
-                    <button onClick={() => setActiveTab('reports')} className="flex-1 bg-blue-600/10 hover:bg-blue-600 text-blue-500 hover:text-white py-3 rounded-2xl text-xs font-black transition-all">التقارير</button>
+                  <div className="mt-3 flex gap-2">
+                    <button onClick={() => setActiveTab('cash')} className="flex-1 bg-green-600/10 hover:bg-green-600 text-green-500 hover:text-white py-2 rounded-xl text-[10px] sm:text-xs font-black transition-all">إدارة الخزنة</button>
+                    <button onClick={() => setActiveTab('reports')} className="flex-1 bg-blue-600/10 hover:bg-blue-600 text-blue-500 hover:text-white py-2 rounded-xl text-[10px] sm:text-xs font-black transition-all">التقارير</button>
                   </div>
                 </div>
               </div>
