@@ -75,10 +75,12 @@ function buildStats(orders: any[]) {
   const operational = orders.filter((order) => !isExcludedFromOperational(statusOf(order)));
   const active = operational.filter((order) => ['pending', 'in-progress', 'deferred'].includes(statusOf(order)));
   const delayed = active.filter((order) => daysSince(order) > 2);
-  const invoice = orders.reduce((sum, order) => sum + numberValue(order.total_amount), 0);
-  const parts = orders.reduce((sum, order) => sum + numberValue(order.parts_cost), 0);
-  const transport = orders.reduce((sum, order) => sum + numberValue(order.transport_cost), 0);
-  const earnings = completed.reduce((sum, order) => sum + numberValue(order.technician_share), 0);
+  // الحساب المالي يعتمد على الأوردرات المكتملة والمصفاة فقط؛ الملغي والكشف والنشط لا يدخلون في الربح.
+  const financialOrders = completed;
+  const invoice = financialOrders.reduce((sum, order) => sum + numberValue(order.total_amount), 0);
+  const parts = financialOrders.reduce((sum, order) => sum + numberValue(order.parts_cost), 0);
+  const transport = financialOrders.reduce((sum, order) => sum + numberValue(order.transport_cost), 0);
+  const earnings = financialOrders.reduce((sum, order) => sum + numberValue(order.technician_share), 0);
   const companyProfit = invoice - parts - transport - earnings;
   const ratings = orders.map((order) => numberValue(order.rating ?? order.customer_rating ?? order.feedback_rating)).filter((rating) => rating >= 1 && rating <= 5);
   const durations = completed.map((order) => {
@@ -204,6 +206,7 @@ export default function TechnicianPerformanceAdmin({ orders, technicians }: { or
             <h2 className="mt-1 flex items-center gap-2 text-2xl font-black text-white"><Wrench className="text-orange-400" /> أداء كل فني</h2>
             <p className="mt-2 text-xs leading-6 text-slate-400">كل فني في بطاقة مستقلة، مع فصل قائمة العمل عن النتائج التاريخية للملغي والكشف.</p>
             <p className="mt-1 text-[11px] font-bold text-orange-300">الفترة المعروضة: {dateBounds.label} · {periodOrders.length} أوردر</p>
+            <p className="mt-1 text-[10px] text-slate-500">الحساب المالي من الأوردرات المكتملة والمصفاة فقط؛ الملغي والكشف والنشط ضمن النتائج التشغيلية لا الأرباح.</p>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
             <div className="rounded-xl bg-slate-800 px-3 py-2 text-center"><p className="text-[10px] text-slate-500">الفنيون</p><p className="text-lg font-black text-white">{cards.length}</p></div>
@@ -253,7 +256,7 @@ export default function TechnicianPerformanceAdmin({ orders, technicians }: { or
               </div>
 
               <div className="grid grid-cols-2 gap-2 border-t border-slate-800 px-4 py-3 text-xs sm:grid-cols-5">
-                <div><p className="text-slate-500">إجمالي الفواتير</p><p className="mt-1 font-black text-white">{money(stats.invoice)}</p></div>
+                <div><p className="text-slate-500">فواتير المكتمل</p><p className="mt-1 font-black text-white">{money(stats.invoice)}</p></div>
                 <div><p className="text-slate-500">مستحق الفني</p><p className="mt-1 font-black text-orange-300">{money(stats.earnings)}</p></div>
                 <div><p className="text-slate-500">صافي ربح الشركة</p><p className={`mt-1 font-black ${stats.companyProfit >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>{money(stats.companyProfit)}</p></div>
                 <div><p className="text-slate-500">متوسط الإنجاز</p><p className="mt-1 font-black text-emerald-300">{stats.averageDays ? `${stats.averageDays.toFixed(1)} يوم` : '—'}</p></div>
