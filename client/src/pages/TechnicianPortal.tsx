@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   Wrench, LogOut, Clock, CheckCircle2, AlertCircle,
   RefreshCw, Phone, MapPin, ClipboardList,
-  Calendar, X, Trash2, Eye, ClockArrowUp, StickyNote,
+  Calendar, X, Trash2, Eye, EyeOff, ClockArrowUp, StickyNote,
   Play, FileCheck, DollarSign, CalendarX, Ban, MessageSquare, Search,
   Camera, TrendingUp, Award, Wallet, Send, ExternalLink, Bell, Upload, Cpu, UserCircle, ImagePlus
 } from "lucide-react";
@@ -98,6 +98,7 @@ export default function TechnicianPortal() {
   // ✅ إضافة متغيرات الفلتر
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [showCompletedOrders, setShowCompletedOrders] = useState(false);
 
   const [technicianPercentage, setTechnicianPercentage] = useState(50);
     const [oldPartsPhoto, setOldPartsPhoto] = useState("");
@@ -997,7 +998,7 @@ export default function TechnicianPortal() {
 
   const operationalOrders = orders.filter((order) => {
     const status = String(order.status || '').trim().toLowerCase();
-    return !['cancelled', 'canceled', 'inspected'].includes(status);
+    return !['cancelled', 'canceled', 'inspected'].includes(status) && (showCompletedOrders || status !== 'completed');
   });
 
   const searchFilteredOrders = operationalOrders.filter(order => {
@@ -1329,6 +1330,16 @@ export default function TechnicianPortal() {
                 <option value="deferred">مؤجل</option>
               </select>
               <button
+                type="button"
+                onClick={() => setShowCompletedOrders(!showCompletedOrders)}
+                title={showCompletedOrders ? 'إخفاء الأوردرات المكتملة' : 'استدعاء الأوردرات المكتملة'}
+                aria-label={showCompletedOrders ? 'إخفاء الأوردرات المكتملة' : 'استدعاء الأوردرات المكتملة'}
+                className={`px-3 py-2 rounded-lg text-sm font-black transition flex items-center gap-2 ${showCompletedOrders ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/30' : 'bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600'}`}
+              >
+                {showCompletedOrders ? <EyeOff size={17} /> : <Eye size={17} />}
+                {showCompletedOrders ? 'إخفاء المكتمل' : 'استدعاء المكتمل'}
+              </button>
+              <button
                 onClick={() => { setSearchTerm(''); setFilterStatus('all'); }}
                 className="bg-slate-600 hover:bg-slate-500 text-white px-3 py-2 rounded-lg text-sm transition"
               >
@@ -1350,7 +1361,7 @@ export default function TechnicianPortal() {
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => setFilterStatus(tab.id)}
+                    onClick={() => { setFilterStatus(tab.id); if (tab.id === 'completed') setShowCompletedOrders(true); }}
                     className={`flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-2xl whitespace-nowrap transition-all border-2 ${
                       isActive
                       ? `bg-${tab.color}-600 border-${tab.color}-500 text-white shadow-lg shadow-${tab.color}-900/20 scale-105`

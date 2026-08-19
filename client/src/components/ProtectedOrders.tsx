@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Plus, Search, LayoutDashboard, Users,
-  CheckCircle2, AlertCircle,
+  CheckCircle2, AlertCircle, Eye, EyeOff,
   Edit, Trash2, RefreshCw, Phone,
   Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut, Send, Play, LogIn,
   RotateCcw, Clock, MapPin, Star, Cpu, ShieldCheck, Wrench, UserCircle, Wallet
@@ -366,7 +366,7 @@ export default function ProtectedOrders() {
   const [filterDateTo, setFilterDateTo] = useState('');
   const [filterDelay, setFilterDelay] = useState<'all' | 'delayed'>('all');
   const [filterWarranty, setFilterWarranty] = useState<'all' | 'active' | 'expired' | 'expiring'>('all');
-  const [showAllOrders, setShowAllOrders] = useState(false);
+  const [showCompletedOrders, setShowCompletedOrders] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
   const [deletedOrders, setDeletedOrders] = useState<any[]>([]);
   const [customDevice, setCustomDevice] = useState('');
@@ -2006,7 +2006,8 @@ export default function ProtectedOrders() {
       return false;
     }
 
-    if (showAllOrders || filterStatus !== 'all' || filterTechnician || filterDateFrom || searchTerm) return true;
+    if (o.status === 'completed') return showCompletedOrders;
+    if (filterStatus !== 'all' || filterTechnician || filterDateFrom || searchTerm) return true;
     return (o.status === 'in-progress' || o.status === 'pending' || !o.technician || o.technician === '-' || o.technician === '');
   });
 
@@ -2602,8 +2603,8 @@ export default function ProtectedOrders() {
 		              </div>
 		            </div>
 
-		            <div className="flex flex-wrap gap-3 items-center">
-		              <button onClick={() => setShowAllOrders(!showAllOrders)} className={`px-3 py-2 rounded-lg text-sm transition ${showAllOrders ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>{showAllOrders ? '📋 إخفاء المنجز' : '📋 عرض الكل'}</button>
+            <div className="flex flex-wrap gap-3 items-center">
+              {!isViewer && <button type="button" onClick={() => setShowCompletedOrders(!showCompletedOrders)} title={showCompletedOrders ? 'إخفاء الأوردرات المكتملة' : 'استدعاء الأوردرات المكتملة'} aria-label={showCompletedOrders ? 'إخفاء الأوردرات المكتملة' : 'استدعاء الأوردرات المكتملة'} className={`px-3 py-2 rounded-lg text-sm font-black transition flex items-center gap-2 ${showCompletedOrders ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30' : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'}`}>{showCompletedOrders ? <EyeOff size={17} /> : <Eye size={17} />} {showCompletedOrders ? 'إخفاء المكتمل' : 'استدعاء المكتمل'}</button>}
 		              {canEditDelete() && <button onClick={() => { setEditingOrder(null); setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") }); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={18} /> أوردر جديد</button>}
 		              <button onClick={() => setShowDeleted(!showDeleted)} className={`px-3 py-2 rounded-lg text-sm transition ${showDeleted ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}><Trash2 size={16} /> {showDeleted ? 'إخفاء المحذوفة' : `عرض المحذوفة (${deletedOrders.length})`}</button>
 		              			              <div className="flex gap-2 ml-auto">
@@ -2612,7 +2613,7 @@ export default function ProtectedOrders() {
 
 		            </div>
 
-            {!showDeleted && filteredOrders.length === 0 && !showAllOrders && <div className="text-center py-8 text-slate-400">لا توجد أوردرات (قيد الانتظار، قيد التنفيذ، أو بدون فني). اضغط "عرض الكل" لمشاهدة جميع الأوردرات.</div>}
+            {!showDeleted && filteredOrders.length === 0 && !showCompletedOrders && <div className="text-center py-8 text-slate-400">لا توجد أوردرات مفتوحة حالياً. اضغط أيقونة العين لاستدعاء الأوردرات المكتملة عند الحاجة.</div>}
 
 	            {!showDeleted && filteredOrders.length > 0 && (
 	              <div className="space-y-4 mb-6">
