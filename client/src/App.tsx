@@ -113,8 +113,11 @@ function FloatingButtons() {
 function PwaInstallBanner() {
   const { isInstalled, canInstall, install } = usePwaInstall();
   const currentPath = window.location.pathname;
-  const isLoginOrTechGate = currentPath === '/login' || currentPath === '/tech-portal';
-  if (isInstalled || !canInstall || isLoginOrTechGate) return null;
+  
+  // Only show install banner on staff-related pages to avoid bothering visitors
+  const isStaffPath = ['/login', '/orders', '/tech-portal', '/data-entry'].some(path => currentPath.startsWith(path));
+  
+  if (isInstalled || !canInstall || !isStaffPath) return null;
 
   return (
     <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:w-[360px] z-[90] bg-slate-900 border border-orange-500/50 rounded-2xl p-3 shadow-2xl" dir="rtl">
