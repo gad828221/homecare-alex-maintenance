@@ -16,6 +16,7 @@ import { useScreenWakeLock } from '../hooks/useScreenWakeLock';
 import { usePwaInstall } from '../hooks/usePwaInstall';
 import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, getOrderCreatedValue } from '../utils/orderTiming';
 import { createPickupMarker, getPickupTypeLabel } from '../utils/pickupReceipt';
+import { mergeCompanyTransferMarker } from '../utils/companyTransfer';
 import { getTechnicianDisplayName, getTechnicianPhotoUrl, parseTechnicianProfileNotification, profileNotificationPayload } from '../utils/technicianProfile';
 
 
@@ -112,6 +113,7 @@ export default function TechnicianPortal() {
     warranty_period: '6 أشهر',
     parts_used: ''
   });
+  const [companyTransferConfirmed, setCompanyTransferConfirmed] = useState(false);
 
   const [pickupForm, setPickupForm] = useState({
     type: 'full_device',
@@ -713,6 +715,7 @@ export default function TechnicianPortal() {
       warranty_period: '6 أشهر',
       parts_used: ''
     });
+    setCompanyTransferConfirmed(false);
     setShowSettleModal(true);
   };
 
@@ -729,15 +732,33 @@ export default function TechnicianPortal() {
       return;
     }
 
+    if (!companyTransferConfirmed) {
+      addNotification({
+        type: 'critical',
+        title: '💰 يجب تأكيد تحويل نصيب الشركة',
+        message: `بعد تحويل ${Number(settleForm.company_share || 0).toLocaleString('ar-EG')} ج.م نصيب الشركة للمدير، اضغط على مربع الإقرار ثم أرسل التصفية. لن يتم اعتماد التحصيل أو إضافة المبلغ للخزنة قبل مراجعة المدير.`,
+        duration: 0
+      });
+      return;
+    }
+
     const photoNotes = `
 [OLD_PARTS:${oldPartsPhoto}]
 [NEW_PARTS:${newPartsPhoto}]`;
-    const finalNote = (selectedOrder.technician_note || '') + photoNotes;
+    const transferAt = new Date().toISOString();
+    const finalNote = mergeCompanyTransferMarker(`${selectedOrder.technician_note || ''}${photoNotes}`, {
+      status: 'pending',
+      amount: Number(settleForm.company_share) || 0,
+      technician: techName,
+      at: transferAt
+    });
 
     const settlementData = {
       ...settleForm,
       invoice_approved: true,
       invoice_date: new Date().toISOString().split('T')[0],
+      is_paid: false,
+      profit_added_to_cash: false,
       technician_note: finalNote
     };
 
@@ -753,8 +774,8 @@ export default function TechnicianPortal() {
       partsPercent > 40 ? `⚠️ قطع الغيار ${partsPercent.toFixed(1)}% من الإجمالي (الحد 40%)` : '',
       transportPercent > 15 ? `⚠️ المواصلات ${transportPercent.toFixed(1)}% من الإجمالي (الحد 15%)` : ''
     ].filter(Boolean);
-    const settlementTitle = expenseWarnings.length > 0 ? '⚠️ تصفية بمصاريف مرتفعة' : '💰 تصفية فاتورة جديدة';
-    const settlementDetails = `${settlementTitle}\nالفني: ${techName}\nرقم الأوردر: ${selectedOrder.order_number}\nالعميل: ${selectedOrder.customer_name}\nالجهاز: ${selectedOrder.device_type}\nإجمالي الفاتورة: ${settlementTotal} ج.م\nقطع الغيار: ${settleForm.parts_cost} ج.م (${partsPercent.toFixed(1)}%)\nالمواصلات: ${settleForm.transport_cost} ج.م (${transportPercent.toFixed(1)}%)${expenseWarnings.length > 0 ? `\n${expenseWarnings.join('\n')}` : ''}\nالوقت: ${new Date().toLocaleString('ar-EG')}`;
+    const settlementTitle = expenseWarnings.length > 0 ? '⚠️ تصفية بمصاريف مرتفعة — تحويل بانتظار التأكيد' : '💰 الفني أكد تحويل نصيب الشركة';
+    const settlementDetails = `${settlementTitle}\nالفني: ${techName}\nرقم الأوردر: ${selectedOrder.order_number}\nالعميل: ${selectedOrder.customer_name}\nالجهاز: ${selectedOrder.device_type}\nإجمالي الفاتورة: ${settlementTotal} ج.م\nنصيب الشركة المحول: ${Number(settleForm.company_share) || 0} ج.م\nالحالة: بانتظار تأكيد استلام المدير\nقطع الغيار: ${settleForm.parts_cost} ج.م (${partsPercent.toFixed(1)}%)\nالمواصلات: ${settleForm.transport_cost} ج.م (${transportPercent.toFixed(1)}%)${expenseWarnings.length > 0 ? `\n${expenseWarnings.join('\n')}` : ''}\nالوقت: ${new Date().toLocaleString('ar-EG')}`;
     try {
       await fetch(`${supabaseUrl}/rest/v1/notifications`, {
         method: 'POST',
@@ -771,15 +792,17 @@ export default function TechnicianPortal() {
         title: settlementTitle,
         message: settlementDetails,
         targetRoles: ['admin', 'manager'],
-        data: { order_id: selectedOrder.id, order_number: selectedOrder.order_number, total_amount: settlementTotal, parts_percent: partsPercent, transport_percent: transportPercent, high_expense: expenseWarnings.length > 0, technician: techName }
+          data: { order_id: selectedOrder.id, order_number: selectedOrder.order_number, total_amount: settlementTotal, company_share: Number(settleForm.company_share) || 0, parts_percent: partsPercent, transport_percent: transportPercent, high_expense: expenseWarnings.length > 0, transfer_status: 'pending', technician: techName }
       });
     } catch (e) { console.error('Settlement alert error:', e); }
 
     const details = `المبلغ: ${settleForm.total_amount} ج.م | قطع غيار: ${settleForm.parts_cost} ج.م | مواصلات: ${settleForm.transport_cost} ج.م
+💰 نصيب الشركة المحول: ${settleForm.company_share} ج.م
+⏳ الحالة: بانتظار تأكيد استلام المدير
 🛡️ الضمان: ${settleForm.warranty_period}
 🖼️ صورة القديم: ${oldPartsPhoto}
 🖼️ صورة الجديد: ${newPartsPhoto}`;
-    notifyAdmin("✅ تصفية وتسليم ضمان", selectedOrder, details);
+    notifyAdmin("💰 تحويل نصيب الشركة بانتظار التأكيد", selectedOrder, details);
 
     // إرسال رابط الضمان للعميل تلقائياً
     const invoiceLink = `${window.location.origin}/invoice?id=${selectedOrder.id}`;
@@ -800,7 +823,8 @@ export default function TechnicianPortal() {
     setNewPartsPhoto("");
     setOldPartsPreview("");
     setNewPartsPreview("");
-    addNotification({ type: 'success', title: '✅ تم الإكمال', message: 'تم إكمال الأوردر بنجاح، بانتظار موافقة المدير على الفاتورة.', duration: 5000 });
+    setCompanyTransferConfirmed(false);
+    addNotification({ type: 'success', title: '✅ تم إرسال التصفية', message: 'تم تسجيل تحويل نصيب الشركة وإبلاغ المدير. ستتم إضافة المبلغ للخزنة بعد تأكيد استلامه من الإدارة.', duration: 7000 });
   };
 
 
@@ -1640,8 +1664,35 @@ export default function TechnicianPortal() {
                 <div className="flex justify-between items-center pt-2 border-t border-slate-800"><span className="text-xs text-slate-400 font-bold">المستحق للشركة:</span><span className="text-lg font-black text-orange-500">{settleForm.company_share} ج.م</span></div>
               </div>
 
-              <button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white py-4 rounded-2xl font-black text-lg shadow-xl shadow-orange-900/20 transition-all active:scale-95">
-                تأكيد وإكمال الأوردر ✅
+              <div className={`rounded-2xl border-2 p-4 transition-all ${companyTransferConfirmed ? 'border-emerald-400/70 bg-emerald-500/10 shadow-lg shadow-emerald-500/10' : 'border-amber-400/80 bg-amber-500/10 shadow-lg shadow-amber-500/10 animate-pulse'}`}>
+                <div className="flex items-start gap-3">
+                  <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${companyTransferConfirmed ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}`}>
+                    <Wallet size={20} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-black text-amber-200">⚠️ إجراء مالي إلزامي قبل إرسال التصفية</p>
+                    <p className="mt-1 text-[11px] leading-5 text-slate-300">
+                      بعد تحويل <strong className="text-white">{Number(settleForm.company_share || 0).toLocaleString('ar-EG')} ج.م</strong> نصيب الشركة إلى المدير، يجب تأكيد ذلك هنا. سيظهر الأوردر للإدارة بانتظار مراجعة الاستلام، ولن يُضاف المبلغ إلى الخزنة إلا بعد اعتماد المدير.
+                    </p>
+                  </div>
+                </div>
+                <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-slate-950/40 p-3 hover:bg-slate-950/70">
+                  <input
+                    type="checkbox"
+                    required
+                    checked={companyTransferConfirmed}
+                    onChange={(event) => setCompanyTransferConfirmed(event.target.checked)}
+                    className="mt-1 h-5 w-5 shrink-0 accent-emerald-500"
+                  />
+                  <span className="text-xs font-black leading-5 text-white">
+                    أقرّ بأنني حوّلت نصيب الشركة الموضح أعلاه للمدير، وأطلب من الإدارة تأكيد الاستلام.
+                  </span>
+                </label>
+                {companyTransferConfirmed && <p className="mt-2 text-center text-[10px] font-black text-emerald-300">✅ تم تسجيل إقرار التحويل — اضغط إرسال التصفية</p>}
+              </div>
+
+              <button type="submit" className={`w-full py-4 rounded-2xl text-white font-black text-lg shadow-xl transition-all active:scale-95 ${companyTransferConfirmed ? 'bg-orange-600 hover:bg-orange-700 shadow-orange-900/20' : 'bg-slate-700 cursor-not-allowed opacity-80'}`}>
+                {companyTransferConfirmed ? 'إرسال التصفية وانتظار اعتماد المدير ✅' : 'أكد تحويل نصيب الشركة أولاً'}
               </button>
             </form>
           </div>

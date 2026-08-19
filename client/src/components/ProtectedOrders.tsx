@@ -4,7 +4,7 @@ import {
   CheckCircle2, AlertCircle,
   Edit, Trash2, RefreshCw, Phone,
   Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut, Send, Play, LogIn,
-  RotateCcw, Clock, MapPin, Star, Cpu, ShieldCheck, Wrench, UserCircle
+  RotateCcw, Clock, MapPin, Star, Cpu, ShieldCheck, Wrench, UserCircle, Wallet
 } from "lucide-react";
 import { createClient } from '@supabase/supabase-js';
 import { Helmet } from 'react-helmet-async';
@@ -12,6 +12,7 @@ import { sendExternalPush } from '../utils/pushNotifications';
 import { useScreenWakeLock } from '../hooks/useScreenWakeLock';
 import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, getOrderCreatedValue } from '../utils/orderTiming';
 import { getPickupTypeLabel, parsePickupReceipt } from '../utils/pickupReceipt';
+import { mergeCompanyTransferMarker, parseCompanyTransfer } from '../utils/companyTransfer';
 import TechnicianPerformanceAdmin from './TechnicianPerformanceAdmin';
 import { findTechnicianByIdentity, getTechnicianDisplayName, getTechnicianPhotoUrl, getTechnicianSpecialty, parseTechnicianProfileNotification } from '../utils/technicianProfile';
 
@@ -337,6 +338,7 @@ export default function ProtectedOrders() {
   const [cashLedger, setCashLedger] = useState<any[]>([]);
   const [cashBalance, setCashBalance] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [confirmingTransferId, setConfirmingTransferId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'orders' | 'archived' | 'technicians' | 'reports' | 'repeatCustomers' | 'invoicesReview' | 'cash' | 'partners' | 'notifications' | 'permissions' | 'performance' | 'analytics' | 'feedback'>('orders');
   const [showOrderModal, setShowOrderModal] = useState(false);
 
@@ -1578,6 +1580,56 @@ export default function ProtectedOrders() {
     } catch (err) { console.error(err); }
   };
 
+  const confirmCompanyTransferReceipt = async (order: any) => {
+    if (!canEditDelete()) return showToast('لا تملك صلاحية تأكيد استلام التحويل', 'error');
+    if (confirmingTransferId === order.id) return;
+    const transfer = parseCompanyTransfer(order.technician_note);
+    if (transfer?.status !== 'pending') return showToast('لا يوجد تحويل معلّق لهذا الأوردر', 'info');
+    if (order.is_paid || order.profit_added_to_cash) return showToast('تم اعتماد هذا التحويل مسبقاً', 'info');
+
+    setConfirmingTransferId(order.id);
+    try {
+      // نسجل التحصيل أولاً، ثم نستخدم المسار المالي الموجود لإضافة نصيب الشركة للخزنة.
+      await fetchAPI(`orders?id=eq.${order.id}`, { method: 'PATCH', body: JSON.stringify({ is_paid: true }) });
+      const addedToTreasury = await addCompanyProfitToCash({ ...order, company_share: Number(order.company_share) || 0, is_paid: true, profit_added_to_cash: false });
+      if (!addedToTreasury) {
+        await fetchAPI(`orders?id=eq.${order.id}`, { method: 'PATCH', body: JSON.stringify({ is_paid: false }) });
+        return;
+      }
+
+      const confirmedNote = mergeCompanyTransferMarker(order.technician_note, {
+        status: 'confirmed',
+        amount: Number(transfer.amount ?? order.company_share) || 0,
+        technician: transfer.technician || order.technician,
+        at: new Date().toISOString()
+      });
+      await fetchAPI(`orders?id=eq.${order.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ technician_note: confirmedNote })
+      });
+      await addNotification('تأكيد استلام تحويل شركة', `✅ تم تأكيد استلام ${Number(transfer.amount ?? order.company_share).toLocaleString('ar-EG')} ج.م من الفني ${order.technician || 'غير محدد'} للأوردر ${order.order_number} وإضافتها إلى الخزنة`);
+
+      const technician = technicians.find((tech: any) => tech.name === order.technician || tech.username === order.technician);
+      if (technician?.id) {
+        void sendExternalPush({
+          event: 'system_alert',
+          title: '✅ تم اعتماد تحويل نصيب الشركة',
+          message: `تم تأكيد استلام ${Number(transfer.amount ?? order.company_share).toLocaleString('ar-EG')} ج.م للأوردر ${order.order_number}.`,
+          targetUserIds: [`tech:${technician.id}`],
+          data: { order_id: order.id, order_number: order.order_number, transfer_status: 'confirmed' }
+        });
+      }
+      await fetchData();
+      await fetchCashLedger();
+      showToast('✅ تم تأكيد الاستلام وإضافة نصيب الشركة للخزنة', 'success');
+    } catch (err) {
+      console.error('فشل تأكيد تحويل الشركة:', err);
+      showToast('تعذر تأكيد التحويل. لم يتم اعتماد العملية بالكامل.', 'error');
+    } finally {
+      setConfirmingTransferId(null);
+    }
+  };
+
   const togglePaidStatus = async (id: number, currentStatus: boolean) => {
     if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
     const order = orders.find(o => o.id === id);
@@ -2592,10 +2644,14 @@ export default function ProtectedOrders() {
                   const orderCreatedValue = getOrderCreatedValue(order);
                   const elapsedTone = getElapsedTone(orderCreatedValue, clockNow);
                   const pickup = parsePickupReceipt(order);
+                  const companyTransfer = parseCompanyTransfer(order.technician_note);
+                  const transferPending = companyTransfer?.status === 'pending' && order.status === 'completed' && !order.is_paid;
                   const elapsedToneClass = elapsedTone === 'urgent' ? 'text-rose-200 bg-rose-500/20 border-rose-400/50 shadow-lg shadow-rose-500/20 animate-pulse' : elapsedTone === 'warning' ? 'text-amber-200 bg-amber-500/20 border-amber-400/40 shadow-lg shadow-amber-500/10' : 'text-slate-200 bg-slate-950/70 border-slate-700';
+                  const cardTone = transferPending ? 'bg-amber-950/40 border-amber-300 shadow-amber-400/30 animate-pulse' : config.card;
 
                   return (
-                    <div key={order.id} className={`group ${config.card} rounded-[1.5rem] border-2 p-5 transition-all hover:shadow-2xl relative overflow-hidden ${config.pulse}`}>
+                    <div key={order.id} className={`group ${cardTone} rounded-[1.5rem] border-2 p-5 transition-all hover:shadow-2xl relative overflow-hidden ${config.pulse}`}>
+                      {transferPending && <div className="absolute inset-0 pointer-events-none rounded-[1.5rem] border-2 border-amber-300/70 shadow-[0_0_28px_rgba(251,191,36,0.35)]"></div>}
                       <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:bg-white/10 transition-all"></div>
 
                       <div className="flex justify-between items-start mb-4 relative z-10">
@@ -2614,6 +2670,21 @@ export default function ProtectedOrders() {
                         </div>
                         <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black border flex items-center gap-1.5 ${config.badge}`}><StatusIcon size={13} strokeWidth={2.5} />{config.label}</div>
                       </div>
+                      {transferPending && canEditDelete() && (
+                        <div className="mb-4 relative z-10 rounded-2xl border border-amber-300/70 bg-gradient-to-l from-amber-500/20 via-yellow-500/10 to-transparent p-3 shadow-lg shadow-amber-500/20">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex min-w-0 items-center gap-2 text-amber-100">
+                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-400/20 text-amber-200"><Wallet size={18} /></div>
+                              <div className="min-w-0">
+                                <p className="text-[11px] font-black">تحويل بانتظار تأكيد الاستلام</p>
+                                <p className="mt-0.5 truncate text-[9px] font-bold text-amber-200/80">نصيب الشركة: {Number(companyTransfer.amount ?? order.company_share ?? 0).toLocaleString('ar-EG')} ج.م</p>
+                              </div>
+                            </div>
+                            <button type="button" disabled={confirmingTransferId === order.id} onClick={() => confirmCompanyTransferReceipt(order)} className="shrink-0 rounded-xl bg-amber-400 px-3 py-2 text-[10px] font-black text-slate-950 shadow-lg shadow-amber-500/30 transition-all hover:bg-amber-300 active:scale-95 disabled:cursor-wait disabled:opacity-60">{confirmingTransferId === order.id ? 'جارٍ الاعتماد…' : 'تأكيد الاستلام'}</button>
+                          </div>
+                          <p className="mt-2 text-[9px] font-bold leading-4 text-amber-100/80">بعد التأكيد سيُضاف المبلغ تلقائياً إلى الخزنة مرة واحدة.</p>
+                        </div>
+                      )}
                       {pickup && pickup.status === 'active' && (
                         <div className="mb-4 relative z-10 flex items-center justify-between gap-2 rounded-xl border border-purple-400/40 bg-purple-500/15 px-3 py-2 text-purple-200">
                           <span className="flex items-center gap-2 text-[10px] font-black"><ClipboardList size={14} /> {getPickupTypeLabel(pickup.type)}</span>
@@ -2721,9 +2792,13 @@ export default function ProtectedOrders() {
                          <select value={order.status} onChange={e => updateOrderStatus(order.id, e.target.value)} className="text-[10px] bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-white flex-1">
                            <option value="pending">تغيير الحالة</option><option value="in-progress">قيد التنفيذ</option><option value="inspected">تم الكشف</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option><option value="deferred">مؤجل</option>
                          </select>
-                         <button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`px-3 py-1 rounded-lg text-[10px] font-bold ${order.is_paid ? 'bg-green-600/20 text-green-400' : 'bg-red-600/20 text-red-400'}`}>
-                           {order.is_paid ? 'تم التحصيل' : 'تحصيل؟'}
-                         </button>
+                         {transferPending ? (
+                           <button type="button" disabled={confirmingTransferId === order.id} onClick={() => confirmCompanyTransferReceipt(order)} className="flex items-center justify-center gap-1 rounded-lg border border-amber-300/60 bg-amber-400 px-3 py-1 text-[10px] font-black text-slate-950 shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-300 active:scale-95 disabled:cursor-wait disabled:opacity-60"><Wallet size={12} /> {confirmingTransferId === order.id ? 'جارٍ الاعتماد…' : 'تأكيد الاستلام'}</button>
+                         ) : (
+                           <button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`px-3 py-1 rounded-lg text-[10px] font-bold ${order.is_paid ? 'bg-green-600/20 text-green-400' : 'bg-red-600/20 text-red-400'}`}>
+                             {order.is_paid ? 'تم التحصيل' : 'تحصيل؟'}
+                           </button>
+                         )}
                       </div>}
 
 
