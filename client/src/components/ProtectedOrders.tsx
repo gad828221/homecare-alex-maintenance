@@ -516,7 +516,7 @@ export default function ProtectedOrders() {
     };
   }, [archivedOrders, monthlyMonth, monthlyPeriod, monthlyYear, orders]);
 
-  const [reportType, setReportType] = useState<'cash' | 'pending_orders' | 'cancelled_orders' | 'tech_performance' | 'profits' | 'expenses' | 'comparison'>('cash');
+  const [reportType, setReportType] = useState<'cash' | 'pending_orders' | 'cancelled_orders' | 'tech_performance' | 'profits' | 'expenses' | 'comparison' | 'company_profit'>('cash');
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() - 7);
@@ -2074,6 +2074,47 @@ export default function ProtectedOrders() {
     } catch (err) { console.error(err); showToast("فشل تنفيذ العملية", "error"); } finally { setReportLoading(false); }
   };
 
+  const fetchCompanyProfitReport = async () => {
+    setReportLoading(true);
+    try {
+      let query = supabase
+        .from('orders')
+        .select('order_number, technician, total_amount, parts_cost, transport_cost, technician_share, status, created_at')
+        .eq('status', 'completed')
+        .gte('created_at', `${startDate}T00:00:00`)
+        .lte('created_at', `${endDate}T23:59:59`)
+        .order('created_at', { ascending: false });
+      if (filterTechnicianReport) query = query.eq('technician', filterTechnicianReport);
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const rows = data || [];
+      const totals = rows.reduce((summary: any, order: any) => {
+        summary.totalInvoice += Number(order.total_amount) || 0;
+        summary.partsCost += Number(order.parts_cost) || 0;
+        summary.transportCost += Number(order.transport_cost) || 0;
+        summary.technicianShare += Number(order.technician_share) || 0;
+        return summary;
+      }, { totalInvoice: 0, partsCost: 0, transportCost: 0, technicianShare: 0 });
+      const companyProfit = totals.totalInvoice - totals.partsCost - totals.transportCost - totals.technicianShare;
+
+      setReportColumns(['عدد الأوردرات', 'إجمالي الفواتير (ج.م)', 'قطع الغيار (ج.م)', 'المواصلات (ج.م)', 'نصيب الفني (ج.م)', 'صافي ربح الشركة (ج.م)']);
+      setReportData([{
+        total_orders: rows.length,
+        total_invoice: totals.totalInvoice,
+        parts_cost: totals.partsCost,
+        transport_cost: totals.transportCost,
+        technician_share: totals.technicianShare,
+        company_profit: companyProfit
+      }]);
+    } catch (err) {
+      console.error(err);
+      showToast("فشل تنفيذ تقرير ربح الشركة", "error");
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
   const fetchComparisonReport = async () => {
     setReportLoading(true);
     try {
@@ -2098,6 +2139,7 @@ export default function ProtectedOrders() {
       case 'profits': fetchProfitsReport(); break;
       case 'expenses': fetchExpensesReport(); break;
       case 'comparison': fetchComparisonReport(); break;
+      case 'company_profit': fetchCompanyProfitReport(); break;
     }
   };
 
@@ -2124,6 +2166,12 @@ export default function ProtectedOrders() {
       else if (col === 'المصروفات (ج.م)') val = row.المصروفات || '';
       else if (col === 'توزيع الأرباح (ج.م)') val = row.توزيع_الأرباح || '';
       else if (col === 'صافي الربح (ج.م)') val = row.صافي_الربح || '';
+                          else if (col === 'عدد الأوردرات') val = row.total_orders || '';
+                          else if (col === 'إجمالي الفواتير (ج.م)') val = row.total_invoice || '';
+                          else if (col === 'قطع الغيار (ج.م)') val = row.parts_cost || '';
+                          else if (col === 'المواصلات (ج.م)') val = row.transport_cost || '';
+                          else if (col === 'نصيب الفني (ج.م)') val = row.technician_share || '';
+                          else if (col === 'صافي ربح الشركة (ج.م)') val = row.company_profit || '';
       else if (col === 'إجمالي الأوردرات') val = row.total_orders || '';
       else if (col === 'مكتمل') val = row.completed || '';
       else if (col === 'ملغي') val = row.cancelled || '';
@@ -2839,7 +2887,7 @@ export default function ProtectedOrders() {
               <div><label className="block text-sm text-slate-400 mb-1">نوع التقرير</label>
                 <select value={reportType} onChange={(e) => setReportType(e.target.value as any)} className="bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
                   <option value="cash">الخزنة</option><option value="pending_orders">أوردرات غير منفذة (متأخرة)</option><option value="cancelled_orders">أوردرات ملغية</option>
-                  <option value="tech_performance">أداء الفنيين</option><option value="profits">💰 أرباح الشركاء</option><option value="expenses">💸 المصروفات</option><option value="comparison">📊 مقارنة (إيرادات / مصروفات / أرباح)</option>
+                  <option value="tech_performance">أداء الفنيين</option><option value="profits">💰 أرباح الشركاء</option><option value="expenses">💸 المصروفات</option><option value="comparison">📊 مقارنة (إيرادات / مصروفات / أرباح)</option><option value="company_profit">🏢 صافي ربح الشركة</option>
                 </select>
               </div>
               <div><label className="block text-sm text-slate-400 mb-1">من تاريخ</label><input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" /></div>
@@ -2950,6 +2998,12 @@ export default function ProtectedOrders() {
                           else if (col === 'المصروفات (ج.م)') val = row.المصروفات || '';
                           else if (col === 'توزيع الأرباح (ج.م)') val = row.توزيع_الأرباح || '';
                           else if (col === 'صافي الربح (ج.م)') val = row.صافي_الربح || '';
+                          else if (col === 'عدد الأوردرات') val = row.total_orders || '';
+                          else if (col === 'إجمالي الفواتير (ج.م)') val = row.total_invoice || '';
+                          else if (col === 'قطع الغيار (ج.م)') val = row.parts_cost || '';
+                          else if (col === 'المواصلات (ج.م)') val = row.transport_cost || '';
+                          else if (col === 'نصيب الفني (ج.م)') val = row.technician_share || '';
+                          else if (col === 'صافي ربح الشركة (ج.م)') val = row.company_profit || '';
                           else if (col === 'إجمالي الأوردرات') val = row.total_orders || '';
                           else if (col === 'مكتمل') val = row.completed || '';
                           else if (col === 'ملغي') val = row.cancelled || '';
