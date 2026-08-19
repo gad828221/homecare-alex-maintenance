@@ -212,8 +212,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
             ...audience,
 	                    headings: { en: title, ar: title },
 	                    contents: { en: message, ar: message },
-                    // `url` is the current OneSignal field; keep `web_url` for legacy compatibility.
-                    url: deepLink,
+                    // Remove 'url' field to avoid conflict with 'web_url' as per OneSignal API rules
                     web_url: deepLink,
                     custom_data: { event, ...safeData, deep_link: deepLink },
                     priority: 10,
