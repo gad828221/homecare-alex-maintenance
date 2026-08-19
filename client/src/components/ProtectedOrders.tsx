@@ -929,8 +929,13 @@ export default function ProtectedOrders() {
     const message = `📊 *ملخص سير العمل اليومي* 📊\n━━━━━━━━━━━━━━━━━━━━━━\n📅 *التاريخ:* ${new Date().toLocaleDateString('ar-EG')}\n\n✅ *إحصائيات الإنجاز:* \n🔹 طلبات جديدة: ${todayOrders.length}\n🔹 طلبات مكتملة: ${completedToday}\n💰 إجمالي التحصيل: ${incomeToday.toLocaleString()} ج.م\n\n⚠️ *حالة الطلبات القائمة:* \n🔸 قيد العمل: ${pendingCount}\n🚨 طلبات متأخرة: ${delayedCount}\n👤 بدون فني: ${noTechCount}\n━━━━━━━━━━━━━━━━━━━━━━\n🚀 *نعمل معاً لتقديم أفضل خدمة عملاء.*`;
 
     await addNotification('تقرير العمليات اليومي', message);
-    void sendExternalPush({ event: 'system_alert', title: '📊 تقرير العمليات اليومي', message, targetRoles: ['admin', 'manager'], data: { focus: 'notifications' } });
-    showToast('✅ تم إرسال التقرير داخل البرنامج وPush فقط', 'success');
+    const pushResult = await sendExternalPush({ event: 'system_alert', title: '📊 تقرير العمليات اليومي', message, targetRoles: ['admin', 'manager'], data: { focus: 'notifications' } });
+    if (pushResult.ok) {
+      showToast('✅ تم إرسال التقرير داخل البرنامج وPush بنجاح', 'success');
+    } else {
+      showToast('✅ تم حفظ التقرير داخلياً. تأكد من تفعيل الإشعارات من زر الجرس أسفل الشاشة.', 'info');
+      console.warn('Push failed:', pushResult.error);
+    }
   };
 
   const fetchNotifications = useCallback(async () => {
