@@ -39,11 +39,10 @@ export default function DataEntryPage() {
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
-    if (user.role !== "data-entry" && user.role !== "admin") {
-      setLocation("/login");
-      return;
+    // App.tsx handles the missing session redirect.
+    if (user.role === "data-entry" || user.role === "admin") {
+      fetchOrderCount();
     }
-    fetchOrderCount();
     // تحديث تلقائي كل دقيقة
     const interval = setInterval(fetchOrderCount, 60000);
     return () => clearInterval(interval);

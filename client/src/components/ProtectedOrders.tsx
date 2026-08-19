@@ -596,9 +596,12 @@ export default function ProtectedOrders() {
   useEffect(() => {
     const storedUser = localStorage.getItem('currentUser');
     const role = localStorage.getItem('userRole');
-    if (!storedUser) { window.location.href = '/login'; return; }
-    setCurrentUser(JSON.parse(storedUser));
-    setUserRole(role || 'user');
+    // We let App.tsx handle the redirect to login if session is truly missing.
+    // This prevents immediate kick-out during slow storage hydration.
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser));
+      setUserRole(role || 'user');
+    }
 
     // ✅ التحقق إذا كان الصوت قد تم تفعيله مسبقاً في هذه الجلسة
     if (sessionStorage.getItem('audio_forced_enabled') === 'true') {

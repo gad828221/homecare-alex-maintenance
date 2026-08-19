@@ -141,9 +141,8 @@ export default function TechnicianPortal() {
     const nameFromUrl = params.get("name");
     if (nameFromUrl) {
       setTechName(decodeURIComponent(nameFromUrl));
-    } else {
-      window.location.href = "/login";
     }
+    // App.tsx handles the missing session redirect.
   }, []);
 
   const isPhoneHidden = (order: any) => {

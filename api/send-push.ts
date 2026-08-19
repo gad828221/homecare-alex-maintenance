@@ -215,11 +215,12 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
                     // Remove 'url' field to avoid conflict with 'web_url' as per OneSignal API rules
                     web_url: deepLink,
                     custom_data: { event, ...safeData, deep_link: deepLink },
-                    priority: 10,
-                    ttl: 86400,
-                    web_push_topic: `${event}-${safeData.order_number || Date.now()}`,
-                    chrome_web_icon: "https://www.maintenanceguide.life/logo.png",
-                    chrome_web_badge: "https://www.maintenanceguide.life/pwa-192.png",
+	                    priority: 10,
+	                    web_push_priority: 10,
+	                    ttl: 86400,
+	                    web_push_topic: `${event}-${safeData.order_number || Date.now()}`,
+	                    chrome_web_icon: "https://www.maintenanceguide.life/logo.png",
+	                    chrome_web_badge: "https://www.maintenanceguide.life/pwa-192.png",
 		          }),
 	        })
 	      ));

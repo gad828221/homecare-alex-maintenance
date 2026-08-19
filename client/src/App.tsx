@@ -167,16 +167,26 @@ function App() {
 
     const checkAuth = () => {
       const { role } = readAuthSession();
+      
+      // If user is logged in and tries to access / or /login, send them to their dashboard
+      if (role && (currentPath === '/' || currentPath === '/login')) {
+        if (role === 'tech') window.location.replace('/tech-portal');
+        else if (role === 'data-entry') window.location.replace('/data-entry');
+        else window.location.replace('/orders');
+        return;
+      }
+
       if (PUBLIC_PATHS.has(currentPath)) return;
 
       // A missing session means this browser has never logged in on this origin.
-      // We do not clear anything automatically; only the explicit logout buttons do that.
       if (!role) {
-        const isPwa = new URLSearchParams(window.location.search).get('source') === 'pwa';
+        const isPwa = new URLSearchParams(window.location.search).get('source') === 'pwa' || 
+                      (window.matchMedia('(display-mode: standalone)').matches);
+        
         window.setTimeout(() => {
           const latest = readAuthSession();
           if (!latest.role) window.location.replace('/login');
-        }, isPwa ? 1800 : 300);
+        }, isPwa ? 2000 : 500);
         return;
       }
 
