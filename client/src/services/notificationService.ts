@@ -33,18 +33,14 @@ export const sendNotification = async (payload: NotificationPayload) => {
  * Send WhatsApp notification to technician
  */
 export const sendTechnicianWhatsApp = async (
-  techPhone: string,
-  orderNumber: string,
-  customerName: string,
-  deviceType: string,
-  address: string
+  _techPhone: string,
+  _orderNumber: string,
+  _customerName: string,
+  _deviceType: string,
+  _address: string
 ) => {
-  const message = `🔧 *أوردر جديد معين لك* 🔧\n\n🔢 *رقم الأوردر:* ${orderNumber}\n👤 *العميل:* ${customerName}\n🔧 *الجهاز:* ${deviceType}\n📍 *العنوان:* ${address}\n\n⏰ يرجى الوصول في أسرع وقت ممكن.`;
-  
-  const phone = formatPhoneForWhatsApp(techPhone);
-  if (!phone) return;
-  
-  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+  // متوقف عمداً: واتساب مخصص للعميل فقط. استخدم sendNotification للفنيين.
+  return undefined;
 };
 
 /**
@@ -192,14 +188,15 @@ export const notifyTechnicianAssignment = async (
   techPhone: string,
   order: any
 ) => {
-  await sendTechnicianWhatsApp(
-    techPhone,
-    order.order_number,
-    order.customer_name,
-    order.device_type,
-    order.address
-  );
-  
+  await sendNotification({
+    title: '🔧 تم تعيين أوردر لك!',
+    message: `${order.customer_name} - ${order.device_type}`,
+    role: 'tech',
+    orderNumber: order.order_number,
+    priority: 'high',
+    sound: 'urgent'
+  });
+
   playLocalNotification({
     title: '🔧 تم تعيين أوردر لك!',
     message: `${order.customer_name} - ${order.device_type}`,

@@ -19,6 +19,7 @@ type PushBody = {
   targetUserIds?: unknown;
   targetTags?: unknown;
   data?: unknown;
+  url?: unknown;
 };
 
 type Audience =
@@ -72,6 +73,41 @@ const buildTagFilters = (tags: Array<{ key: string; value: string }>): Array<Rec
     filters.push({ field: 'tag', key: tag.key, relation: '=', value: tag.value });
   });
   return filters;
+};
+
+const buildDeepLink = (requestedUrl: unknown, event: string, data: Record<string, string>, targetUserIds: string[], targetTags: Array<{ key: string; value: string }>) => {
+  const base = 'https://www.maintenanceguide.life';
+  if (typeof requestedUrl === 'string' && requestedUrl.trim()) {
+    try {
+      const parsed = new URL(requestedUrl.trim(), base);
+      if (parsed.origin === base && ['/orders', '/tech-portal', '/data-entry'].includes(parsed.pathname)) return parsed.toString();
+    } catch { /* استخدم المسار الآمن الافتراضي */ }
+  }
+
+  const focus = data.focus || '';
+  const orderNumber = data.order_number || '';
+  const targetsTechnician = targetUserIds.some((id) => id.startsWith('tech:')) || targetTags.some((tag) => tag.key === 'tech_name' || tag.key === 'user_id');
+  const portal = targetsTechnician ? '/tech-portal' : '/orders';
+  const params = new URLSearchParams();
+
+  if (focus === 'chat') return `${base}/orders?focus=chat`;
+  if (focus === 'delayed') return `${base}/orders?focus=delayed`;
+  if (focus === 'old_orders') return `${base}/tech-portal?focus=old_orders`;
+  if (focus === 'feedback') {
+    params.set('focus', 'feedback');
+    if (orderNumber) params.set('order', orderNumber);
+    return `${base}/orders?${params.toString()}`;
+  }
+  if (focus === 'performance') return `${base}/orders?focus=performance`;
+  if (focus === 'notifications') return `${base}/orders?focus=notifications`;
+  if (orderNumber || event === 'order_status_changed' || event === 'technician_assigned') {
+    params.set('focus', 'order');
+    if (orderNumber) params.set('order', orderNumber);
+    return `${base}${portal}?${params.toString()}`;
+  }
+  if (event === 'new_order') return `${base}/orders?focus=new`;
+  if (targetsTechnician) return `${base}/tech-portal?focus=alerts`;
+  return `${base}/orders?focus=notifications`;
 };
 
 export default async function handler(req: RequestLike, res: ResponseLike) {
@@ -140,6 +176,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       )
     : {};
 
+  const deepLink = buildDeepLink(body.url, event, safeData, targetUserIds, targetTags);
   const audiences: any[] = [];
   
   // إذا كان المطلوب الإرسال للكل أو للمديرين (كخيار احتياطي)، نرسل للجميع لضمان الوصول
@@ -173,9 +210,11 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
             app_id: APP_ID,
             ...audience,
 	    headings: { en: title, ar: title },
-	            contents: { en: message, ar: message },
-	            custom_data: { event, ...safeData },
-	            priority: 10,
+                    contents: { en: message, ar: message },
+                    url: deepLink,
+                    web_url: deepLink,
+                    custom_data: { event, ...safeData, deep_link: deepLink },
+                    priority: 10,
 	          }),
 	        })
 	      ));

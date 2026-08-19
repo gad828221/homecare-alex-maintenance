@@ -235,13 +235,9 @@ const openWhatsApp = (phone: string, message: string) => {
   }
 };
 
-const notifyAdmin = (message: string) => {
-  openWhatsApp(ADMIN_PHONE, message);
-};
-
-const notifyTechnician = (techPhone: string, techName: string, message: string) => {
-  openWhatsApp(techPhone, message);
-};
+// واتساب مخصص للعميل فقط. تم إيقاف رسائل واتساب الداخلية للإدارة والفنيين.
+const notifyAdmin = (_message: string) => undefined;
+const notifyTechnician = (_techPhone: string, _techName: string, _message: string) => undefined;
 
 const sendWhatsApp = (phoneNumber: string, message: string) => {
   openWhatsApp(phoneNumber, message);
@@ -921,7 +917,7 @@ export default function ProtectedOrders() {
     return { status: 'active', text: 'ساري', color: 'emerald' };
   };
 
-  const sendDailyReportToWhatsApp = () => {
+  const sendDailyReportToApp = async () => {
     const today = new Date().toISOString().split('T')[0];
     const todayOrders = orders.filter(o => (o.created_at || o.date).includes(today));
     const completedToday = todayOrders.filter(o => o.status === 'completed').length;
@@ -932,7 +928,9 @@ export default function ProtectedOrders() {
 
     const message = `📊 *ملخص سير العمل اليومي* 📊\n━━━━━━━━━━━━━━━━━━━━━━\n📅 *التاريخ:* ${new Date().toLocaleDateString('ar-EG')}\n\n✅ *إحصائيات الإنجاز:* \n🔹 طلبات جديدة: ${todayOrders.length}\n🔹 طلبات مكتملة: ${completedToday}\n💰 إجمالي التحصيل: ${incomeToday.toLocaleString()} ج.م\n\n⚠️ *حالة الطلبات القائمة:* \n🔸 قيد العمل: ${pendingCount}\n🚨 طلبات متأخرة: ${delayedCount}\n👤 بدون فني: ${noTechCount}\n━━━━━━━━━━━━━━━━━━━━━━\n🚀 *نعمل معاً لتقديم أفضل خدمة عملاء.*`;
 
-    notifyAdmin(message);
+    await addNotification('تقرير العمليات اليومي', message);
+    void sendExternalPush({ event: 'system_alert', title: '📊 تقرير العمليات اليومي', message, targetRoles: ['admin', 'manager'], data: { focus: 'notifications' } });
+    showToast('✅ تم إرسال التقرير داخل البرنامج وPush فقط', 'success');
   };
 
   const fetchNotifications = useCallback(async () => {
@@ -1147,22 +1145,9 @@ export default function ProtectedOrders() {
       // 4. بناء نص التقرير
       const reportText = `🏦 *التقرير المالي اليومي - الخزنة* 🏦\n━━━━━━━━━━━━━━━━━━━━━━\n📅 *تاريخ التقرير:* ${targetDate}\n\n💰 *رصيد الافتتاح:* ${openingBalance.toLocaleString()} ج.م\n📈 *إجمالي الإيرادات:* ${totalIncome.toLocaleString()} ج.م\n📉 *إجمالي المصروفات:* ${totalExpense.toLocaleString()} ج.م\n📤 *الأرباح الموزعة:* ${totalProfitDist.toLocaleString()} ج.م\n━━━━━━━━━━━━━━━━━━━━━━\n✅ *الرصيد الختامي الحالي:* ${closingBalance.toLocaleString()} ج.م\n━━━━━━━━━━━━━━━━━━━━━━\n✨ *HomeCare Financial System* ✨`;
 
-      const activePartners = partners.filter(p => p.is_active && p.phone);
-      if (activePartners.length === 0) {
-        showToast("ليس لديك صلاحية", "error");
-        return;
-      }
-
-      const userChoice = confirm(`📋 التقرير جاهز للإرسال ليوم ${targetDate}.\n\n${reportText}\n\nهل تريد فتح واتساب لإرسال التقرير لكل شريك على حدة؟`);
-      if (!userChoice) return;
-
-      for (const partner of activePartners) {
-        let phone = partner.phone.replace(/\D/g, '');
-        if (phone.startsWith('0')) phone = phone.substring(1);
-        if (!phone.startsWith('20')) phone = '20' + phone;
-        openWhatsApp(partner.phone, reportText);
-      }
-      showToast("فشل تنفيذ العملية", "error");
+      await addNotification('تقرير خزنة للشركاء', reportText);
+      void sendExternalPush({ event: 'system_alert', title: '🏦 تقرير الخزنة للشركاء', message: reportText, targetRoles: ['admin', 'manager'], data: { focus: 'notifications', report_date: targetDate } });
+      showToast('✅ تم حفظ تقرير الخزنة وإرساله داخل البرنامج وPush فقط', 'success');
     } catch (err) {
       console.error(err);
       showToast("ليس لديك صلاحية", "error");
@@ -1586,7 +1571,6 @@ export default function ProtectedOrders() {
         const tech = technicians.find(t => t.name === order.technician);
         if (tech && tech.phone) {
           const techMsg = `🔧 *تنبيه للفني: تحديث طلب* 🔧\n━━━━━━━━━━━━━━━━━━━━━━\n👤 *العميل:* ${order.customer_name}\n🔢 *رقم الطلب:* ${order.order_number}\n🔄 *الحالة المحدثة:* ${statusAr}\n📌 يرجى متابعة الإجراءات اللازمة.`;
-          sendWhatsApp(tech.phone, techMsg);
           void sendExternalPush({
             event: 'order_status_changed',
             title: '🔄 تحديث حالة أوردر',
@@ -1902,8 +1886,6 @@ export default function ProtectedOrders() {
       `${index + 1}. ${order.order_number || `#${order.id}`} — ${statusLabels[order.status] || order.status} — متأخر ${order.ageDays} يوم`
     ).join('\n');
     const message = `🚨 *تنبيه عاجل — إغلاق الأوردرات القديمة* 🚨\n━━━━━━━━━━━━━━━━━━━━━━\n👨‍🔧 *الفني:* ${tech.name}\n📋 *عدد الأوردرات المطلوب متابعتها:* ${oldOrders.length}\n\n${orderLines}\n\n⚠️ يرجى فتح كل أوردر الآن وتحديث حالته بدقة: إكمال وتصفية، أو تسجيل كشف، أو إلغاء بسبب واضح. لا تترك أي أوردر مفتوحاً دون إجراء.\n\n✅ بعد الانتهاء، تأكد من حفظ كل تحديث داخل البرنامج وإبلاغ الإدارة.\n🏢 *Maintenance Guide (MG)*`;
-    openWhatsApp(tech.phone, message);
-
     const pushMessage = `لديك ${oldOrders.length} أوردر قديم مفتوح. يرجى مراجعتها وإغلاقها أو تحديث حالتها فوراً.`;
     void sendExternalPush({
       event: 'system_alert',
@@ -2532,8 +2514,8 @@ export default function ProtectedOrders() {
                       <p className="hidden sm:block text-xs text-slate-400 mt-1">نظرة عامة على أداء المركز والحالات الحرجة التي تتطلب انتباهك.</p>
                     </div>
                     <div className="flex gap-2 shrink-0">
-<button onClick={sendDailyReportToWhatsApp} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all shadow-lg shadow-emerald-900/20 active:scale-95">
-						<Send size={16} /> <span className="hidden sm:inline">تقرير الواتساب</span><span className="sm:hidden">واتساب</span>
+            <button onClick={() => { void sendDailyReportToApp(); }} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all shadow-lg shadow-emerald-900/20 active:scale-95">
+						<Send size={16} /> <span className="hidden sm:inline">تقرير داخل البرنامج</span><span className="sm:hidden">تقرير</span>
                       </button>
 <button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-xl transition-all active:scale-95" aria-label="تحديث البيانات">
 						<RefreshCw size={17} />
@@ -3269,8 +3251,8 @@ export default function ProtectedOrders() {
               <div className="flex flex-wrap items-center gap-3"><input type="date" value={selectedProfitDate} onChange={e=>setSelectedProfitDate(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"/>{canManageCash && <button onClick={handleDistributeSelectedProfit} className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"><DollarSign size={16}/> توزيع أرباح التاريخ المحدد</button>}</div>
             </div>
             <div className="bg-blue-600/10 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 border border-blue-500/30">
-              <div className="flex flex-col gap-1"><p className="text-sm font-semibold text-blue-300">📊 إرسال تقرير الخزنة للشركاء</p><p className="text-xs text-slate-400">اختر التاريخ ثم اضغط زر الإرسال (يفتح واتساب لكل شريك)</p></div>
-              <div className="flex flex-wrap items-center gap-3"><input type="date" value={reportDate} onChange={e=>setReportDate(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"/>{canEditDelete() && <button onClick={handleSendReportForDate} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"><Send size={16}/> إرسال تقرير التاريخ المحدد</button>}</div>
+              <div className="flex flex-col gap-1"><p className="text-sm font-semibold text-blue-300">📊 إرسال تقرير الخزنة للشركاء</p><p className="text-xs text-slate-400">اختر التاريخ ثم اضغط زر الإرسال ليظهر التقرير داخل البرنامج فقط</p></div>
+              <div className="flex flex-wrap items-center gap-3"><input type="date" value={reportDate} onChange={e=>setReportDate(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"/>{canEditDelete() && <button onClick={handleSendReportForDate} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"><Send size={16}/> حفظ التقرير داخل البرنامج</button>}</div>
             </div>
             <div className="bg-slate-900 rounded-xl overflow-x-auto">
               <table className="w-full text-sm"><thead className="bg-slate-800"><tr><th className="p-3">التاريخ</th><th>النوع</th><th>المبلغ</th><th>الوصف</th><th>إجراءات</th></tr></thead>

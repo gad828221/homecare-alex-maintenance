@@ -6,7 +6,6 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { sendExternalPush } from "../utils/pushNotifications";
-import { openWhatsAppDirectly } from "../utils/whatsapp";
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -126,8 +125,7 @@ export default function BookingForm() {
           }]);
         } catch (err) { console.error("Realtime alert error:", err); }
         
-        const msg = `🆕 *طلب صيانة جديد* 🆕\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الطلب:* ${orderNumber}\n👤 *العميل:* ${formData.customer_name}\n📱 *الهاتف:* ${formData.phone}\n🔧 *الجهاز:* ${finalDeviceType} - ${formData.brand}\n📍 *العنوان:* ${formData.address}\n📝 *وصف العطل:* ${formData.problem_description}\n⏰ *التوقيت:* ${new Date().toLocaleString('ar-EG')}\n━━━━━━━━━━━━━━━━━━━━━━\n✨ *HomeCare Maintenance* ✨`;
-        openWhatsAppDirectly('201278885772', msg);
+        // التنبيه الداخلي تم عبر Push وقناة notifications؛ لا تُرسل تفاصيل الإدارة عبر واتساب.
       } else {
         throw insertError;
       }

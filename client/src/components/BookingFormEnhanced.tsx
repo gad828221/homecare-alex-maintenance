@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { sendExternalPush } from "../utils/pushNotifications";
-import { openWhatsAppDirectly } from "../utils/whatsapp";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -91,8 +90,7 @@ export default function BookingFormEnhanced() {
           data: { order_number: orderNumber }
         });
         
-        const msg = `🆕 *طلب صيانة جديد (VIP)* 🆕\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الطلب:* ${orderNumber}\n👤 *العميل:* ${formData.customer_name}\n📱 *الهاتف:* ${formData.phone}\n🔧 *الجهاز:* ${finalDeviceType} - ${formData.brand}\n📍 *العنوان:* ${formData.address}\n📝 *وصف العطل:* ${formData.problem_description}\n⏰ *التوقيت:* ${new Date().toLocaleString('ar-EG')}\n━━━━━━━━━━━━━━━━━━━━━━\n✨ *HomeCare Maintenance* ✨`;
-        openWhatsAppDirectly('201278885772', msg);
+        // التنبيه الإداري يتم عبر Push وقناة الإشعارات الداخلية فقط، دون واتساب.
       } else {
         throw new Error("فشل في إرسال الطلب");
       }
