@@ -16,7 +16,6 @@ import { mergeCompanyTransferMarker, parseCompanyTransfer } from '../utils/compa
 import TechnicianPerformanceAdmin from './TechnicianPerformanceAdmin';
 import { findTechnicianByIdentity, getTechnicianDisplayName, getTechnicianPhotoUrl, getTechnicianSpecialty, parseTechnicianProfileNotification } from '../utils/technicianProfile';
 import { clearAuthSession } from '../utils/authSession';
-import NotificationDiagnosticsButton from './NotificationDiagnosticsButton';
 
 const runWithOneSignal = (callback: (OneSignal: any) => void | Promise<void>) => {
   if (typeof window === 'undefined') return;
@@ -2427,20 +2426,7 @@ export default function ProtectedOrders() {
         </div>
       )}
 
-      {!audioEnabled && (
-        <div className="bg-orange-600 text-white px-4 py-2 text-center flex flex-col md:flex-row items-center justify-center gap-3 animate-pulse">
-          <div className="flex items-center gap-2">
-            <Bell size={16} />
-            <span className="text-xs font-black">تنبيهات الصوت معطلة من المتصفح</span>
-          </div>
-          <button
-            onClick={initAudio}
-            className="bg-white text-orange-600 px-4 py-1 rounded-full text-[10px] font-black hover:bg-slate-100 transition-all shadow-lg active:scale-95"
-          >
-            تفعيل الصوت الآن 🔊
-          </button>
-        </div>
-      )}
+
       <div className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 px-4 py-3">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3"><LayoutDashboard className="w-6 h-6 text-orange-500" /><div><h1 className="text-lg font-bold text-white">لوحة تحكم المدير</h1><p className="text-xs text-slate-400">{currentUser?.name || 'مدير النظام'}</p></div></div>
@@ -2470,7 +2456,7 @@ export default function ProtectedOrders() {
           </div>
 
           <div className="flex items-center gap-2">
-            <NotificationDiagnosticsButton compact />
+
             <button
               type="button"
               onClick={toggleWakeLock}

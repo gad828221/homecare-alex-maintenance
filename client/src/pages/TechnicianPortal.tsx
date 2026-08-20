@@ -19,7 +19,7 @@ import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, get
 import { createPickupMarker, getPickupTypeLabel } from '../utils/pickupReceipt';
 import { mergeCompanyTransferMarker } from '../utils/companyTransfer';
 import { getTechnicianDisplayName, getTechnicianPhotoUrl, parseTechnicianProfileNotification, profileNotificationPayload } from '../utils/technicianProfile';
-import NotificationDiagnosticsButton from '../components/NotificationDiagnosticsButton';
+
 
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -1194,7 +1194,7 @@ export default function TechnicianPortal() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <NotificationDiagnosticsButton compact />
+
             <button
               type="button"
               onClick={toggleWakeLock}
@@ -1216,25 +1216,7 @@ export default function TechnicianPortal() {
       </div>
 
       <main className="max-w-4xl mx-auto p-4 space-y-5">
-        {!audioEnabled && (
-          <div className="bg-orange-600/20 border border-orange-500/50 p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center animate-pulse">
-                <Bell className="text-white w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-white">تنبيهات الصوت معطلة</p>
-                <p className="text-[10px] text-slate-400">اضغط على الزر لتفعيل صوت الإنذار للأوردرات الجديدة</p>
-              </div>
-            </div>
-            <button 
-              onClick={initAudio}
-              className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-xl text-xs font-black transition-all shadow-lg shadow-orange-900/20 active:scale-95"
-            >
-              تفعيل التنبيهات الصوتية 🔊
-            </button>
-          </div>
-        )}
+
 
         {technicianWarnings.length > 0 && (
           <section className="bg-gradient-to-br from-rose-950/70 via-slate-900 to-slate-900 border-2 border-rose-500/60 rounded-[1.5rem] p-4 shadow-xl shadow-rose-950/30 animate-in fade-in slide-in-from-top-3 duration-500" aria-live="assertive">

@@ -7,10 +7,8 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { EnhancedNotificationProvider } from "./components/EnhancedNotificationSystem";
 import { Phone, MessageCircle, Download } from "lucide-react";
 import { usePwaInstall } from './hooks/usePwaInstall';
-import NotificationPermissionButton from "./components/NotificationPermissionButton";
 import PresenceManager from "./components/PresenceManager";
 import EmployeeChat from "./components/EmployeeChat";
-import ManusRealtimeAlerts from "./components/ManusRealtimeAlerts";
 import { readAuthSession } from './utils/authSession';
 
 const CANONICAL_ORIGIN = 'https://www.maintenanceguide.life';
@@ -183,8 +181,7 @@ function AppContent() {
         <Router />
       </Suspense>
       {!hideFloatingButtons && <FloatingButtons />}
-      <NotificationPermissionButton />
-      <ManusRealtimeAlerts />
+
       <PresenceManager />
       <PwaInstallBanner />
       {canShowEmployeeChat && <EmployeeChat />}
