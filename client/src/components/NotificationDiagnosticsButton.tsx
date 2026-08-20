@@ -7,6 +7,7 @@ import {
   getDiagnosticStatusClass,
   getDiagnosticStatusIcon,
   getDiagnosticStatusLabel,
+  hardResetNotifications,
   hasDiagnosticProblems,
   NotificationDiagnostic,
   repairNotifications,
@@ -141,6 +142,23 @@ export default function NotificationDiagnosticsButton({ compact = false }: Props
                     <Bell size={16} /> إصلاح وتفعيل
                   </button>
                 </div>
+
+                {hasProblems && (
+                  <div className="mt-6 border-t border-slate-800 pt-5">
+                    <p className="mb-3 text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">حل أخير للمشاكل المستعصية</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirm('سيقوم هذا الإجراء بمسح كافة إعدادات الإشعارات وإعادة تشغيل البرنامج. هل تود الاستمرار؟')) {
+                          void hardResetNotifications();
+                        }
+                      }}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/5 py-3 text-[11px] font-black text-red-400 hover:bg-red-500/10 transition-colors"
+                    >
+                      ⚠️ مسح شامل وإعادة تشغيل
+                    </button>
+                  </div>
+                )}
               </>
             )}
           </div>

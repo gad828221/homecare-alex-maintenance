@@ -247,13 +247,40 @@ export const repairNotifications = async (): Promise<string> => {
       } else {
         result = '❌ الإشعارات محظورة من إعدادات الهاتف. يجب السماح بها يدوياً من إعدادات الموقع.';
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('OneSignal Repair Error:', err);
-      result = 'حدث خطأ أثناء الإصلاح التلقائي. حاول تحديث الصفحة.';
+      result = `❌ فشل الإصلاح: ${err.message || 'خطأ غير معروف'}. حاول تحديث الصفحة أو استخدام "المسح الشامل".`;
     }
   });
 
   return result;
+};
+
+export const hardResetNotifications = async (): Promise<void> => {
+  // 1. مسح OneSignal من ذاكرة المتصفح
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('onesignal-notification-prompt');
+    localStorage.removeItem('isOptedIn');
+    localStorage.removeItem('isPushNotificationsEnabled');
+    // مسح كافة مفاتيح OneSignal الأخرى
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.toLowerCase().includes('onesignal')) {
+        localStorage.removeItem(key);
+      }
+    }
+  }
+
+  // 2. إلغاء تسجيل كافة الـ Service Workers
+  if ('serviceWorker' in navigator) {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    for (const reg of registrations) {
+      await reg.unregister();
+    }
+  }
+
+  // 3. إعادة تحميل الصفحة لإعادة البناء من الصفر
+  window.location.reload();
 };
 
 export const diagnosticsSummary = (checks: NotificationDiagnostic[]) => {
