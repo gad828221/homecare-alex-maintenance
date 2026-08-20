@@ -47,7 +47,7 @@ const fetchAPI = async (endpoint: string, options?: RequestInit) => {
 export default function TechnicianPortal() {
   const { addNotification } = useNotification();
   const { enabled: wakeLockEnabled, isLocked: wakeLockActive, supported: wakeLockSupported, toggle: toggleWakeLock } = useScreenWakeLock();
-  const { isInstalled, installCompleted, canInstall, isIos, install } = usePwaInstall();
+  const { isInstalled, installCompleted, canInstall, isIos, isFirefox, install } = usePwaInstall();
   const [, setLocation] = useLocation();
   const [orders, setOrders] = useState<any[]>([]);
   const [clockNow, setClockNow] = useState(() => Date.now());
@@ -257,34 +257,40 @@ export default function TechnicianPortal() {
 
   const playDing = (isUrgent = false) => {
     try {
-      const ctx = audioContextRef.current || new (window.AudioContext || (window as any).webkitAudioContext)();
+      const AudioCtor = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtor) return;
+      const ctx = audioContextRef.current || new AudioCtor();
       if (!audioContextRef.current) audioContextRef.current = ctx;
-      
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
+      if (ctx.state === 'suspended') void ctx.resume().catch(() => undefined);
 
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-      oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
-      oscillator.frequency.value = isUrgent ? 1200 : 880;
-      oscillator.type = isUrgent ? 'square' : 'sine';
-      gainNode.gain.setValueAtTime(0, ctx.currentTime);
-      gainNode.gain.linearRampToValueAtTime(isUrgent ? 0.4 : 0.2, ctx.currentTime + 0.05);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + (isUrgent ? 0.8 : 0.5));
-      oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + (isUrgent ? 0.8 : 0.5));
-    } catch (e) { console.warn("Audio error", e); }
+      const tones = isUrgent
+        ? [{ frequency: 1040, offset: 0, duration: 0.28 }, { frequency: 1320, offset: 0.22, duration: 0.28 }, { frequency: 1040, offset: 0.44, duration: 0.28 }]
+        : [{ frequency: 880, offset: 0, duration: 0.5 }];
+      const now = ctx.currentTime;
+      tones.forEach(({ frequency, offset, duration }) => {
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        oscillator.frequency.value = frequency;
+        oscillator.type = isUrgent ? 'square' : 'sine';
+        const start = now + offset;
+        const volume = isUrgent ? 0.48 : 0.2;
+        gainNode.gain.setValueAtTime(0.001, start);
+        gainNode.gain.exponentialRampToValueAtTime(volume, start + 0.025);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, start + duration);
+        oscillator.start(start);
+        oscillator.stop(start + duration + 0.03);
+      });
+      if (isUrgent && 'vibrate' in navigator) navigator.vibrate?.([260, 100, 260, 100, 260]);
+    } catch (e) { console.warn('Audio error', e); }
   };
 
   const startUrgentAlert = () => {
     if (alertInterval.current) return;
     setIsUrgentAlert(true);
     playDing(true);
-    alertInterval.current = setInterval(() => {
-      playDing(true);
-    }, 2000);
+    alertInterval.current = window.setInterval(() => playDing(true), 1500);
   };
 
   const stopUrgentAlert = () => {
@@ -292,6 +298,7 @@ export default function TechnicianPortal() {
       clearInterval(alertInterval.current);
       alertInterval.current = null;
     }
+    navigator.vibrate?.(0);
     setIsUrgentAlert(false);
   };
 
@@ -1086,11 +1093,11 @@ export default function TechnicianPortal() {
                 type="button"
                 onClick={() => {
                   navigator.clipboard.writeText(window.location.origin + '/tech-portal');
-                  alert('✅ تم نسخ الرابط. افتحه الآن في متصفح Chrome لتتمكن من التثبيت.');
+                  alert(`✅ تم نسخ رابط بوابة الموظفين. افتحه في ${isFirefox ? 'Firefox' : 'المتصفح الذي تستخدمه'} ثم اختر إضافة إلى الشاشة الرئيسية.`);
                 }}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-2xl py-4 font-black text-base shadow-xl active:scale-95 transition-transform flex items-center justify-center gap-2"
               >
-                <ExternalLink size={20} /> نسخ الرابط لفتحه في Chrome
+                <ExternalLink size={20} /> نسخ رابط بوابة الموظفين
               </button>
               
               <div className="bg-slate-950/70 border border-slate-700 rounded-2xl p-4 text-right space-y-3">
@@ -1102,7 +1109,7 @@ export default function TechnicianPortal() {
                 ) : (
                   <>
                     <p className="text-sm font-black text-white">طريقة التثبيت على Android 🤖</p>
-                    <p className="text-xs text-slate-300 leading-6">1. افتح الرابط في متصفح **Chrome**.<br/>2. اضغط على زر "تثبيت" أو الثلاث نقاط.<br/>3. اختر **إضافة إلى الشاشة الرئيسية**.</p>
+                    <p className="text-xs text-slate-300 leading-6">1. افتح الرابط في {isFirefox ? <b className="text-orange-300">Firefox</b> : 'المتصفح'}.<br/>2. افتح القائمة واختر "تثبيت" أو "إضافة إلى الشاشة الرئيسية".<br/>3. افتح بوابة الفني من الأيقونة الجديدة.</p>
                   </>
                 )}
               </div>
@@ -1194,24 +1201,6 @@ export default function TechnicianPortal() {
 	            </div>
 	          </div>
 	          <div className="flex items-center gap-2">
-	            <button
-	              onClick={async () => {
-	                const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-	                const res = await sendExternalPush({
-	                  event: 'system_alert',
-	                  title: '🔔 اختبار جرس الفني',
-	                  message: 'جرس الفني يعمل بنجاح؛ ستصلك الأوردرات الجديدة بتفاصيلها هنا.',
-	                  targetUserIds: [currentUser?.id ? `tech:${currentUser.id}` : 'all'],
-	                  data: { focus: 'alerts' }
-	                });
-	                if (res.ok) alert('✅ تم إرسال إشعار تجريبي لهاتفك');
-	                else alert('❌ فشل الإرسال');
-	              }}
-	              className="bg-orange-600/10 hover:bg-orange-600/20 text-orange-500 px-3 py-2 rounded-xl text-[10px] font-black flex items-center gap-1.5 transition-all border border-orange-500/20 active:scale-95"
-	              title="إرسال إشعار تجريبي للتأكد من عمل الجرس"
-	            >
-	              <Bell size={14} className="animate-bounce" /> تجربة الجرس
-	            </button>
 
             <button
               type="button"

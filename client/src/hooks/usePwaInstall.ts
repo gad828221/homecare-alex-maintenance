@@ -37,6 +37,11 @@ const isIosDevice = () => {
   return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 };
 
+const isFirefoxDevice = () => {
+  if (typeof navigator === 'undefined') return false;
+  return /firefox|focus/i.test(navigator.userAgent) && !/seamonkey/i.test(navigator.userAgent);
+};
+
 export function usePwaInstall() {
   const [canInstall, setCanInstall] = useState(Boolean(deferredInstallPrompt));
   const [isInstalled, setIsInstalled] = useState(isStandaloneMode);
@@ -83,6 +88,7 @@ export function usePwaInstall() {
     installCompleted,
     canInstall,
     isIos: isIosDevice(),
+    isFirefox: isFirefoxDevice(),
     install
   };
 }

@@ -11,7 +11,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { isInstalled, canInstall, isIos, install, installCompleted } = usePwaInstall();
+  const { isInstalled, canInstall, isIos, isFirefox, install, installCompleted } = usePwaInstall();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,7 +164,7 @@ export default function Login() {
                 ) : isIos ? (
                   <p className="mt-2 text-[11px] text-slate-300 leading-6">من Safari اضغط <b className="text-orange-300">مشاركة</b> ثم <b className="text-orange-300">إضافة إلى الشاشة الرئيسية</b>، وبعدها افتح التطبيق من الأيقونة.</p>
                 ) : (
-                  <p className="mt-2 text-[11px] text-slate-300 leading-6">من قائمة Chrome أو Edge اختر <b className="text-orange-300">تثبيت التطبيق</b> أو <b className="text-orange-300">إضافة إلى الشاشة الرئيسية</b>.</p>
+                  <p className="mt-2 text-[11px] text-slate-300 leading-6">{isFirefox ? <>في Firefox افتح القائمة ثم اختر <b className="text-orange-300">إضافة إلى الشاشة الرئيسية</b> أو <b className="text-orange-300">تثبيت</b> إذا ظهر الخيار.</> : <>من قائمة المتصفح اختر <b className="text-orange-300">تثبيت التطبيق</b> أو <b className="text-orange-300">إضافة إلى الشاشة الرئيسية</b>.</>}</p>
                 )}
                 {installCompleted && <p className="mt-2 text-[11px] text-emerald-300 font-bold">تم قبول التثبيت. افتح التطبيق من الأيقونة الجديدة.</p>}
               </div>

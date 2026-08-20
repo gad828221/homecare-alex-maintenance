@@ -552,37 +552,40 @@ export default function ProtectedOrders() {
 
   const playDing = (isUrgent = false) => {
     try {
-      const ctx = audioContextRef.current || new (window.AudioContext || (window as any).webkitAudioContext)();
+      const AudioCtor = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtor) return;
+      const ctx = audioContextRef.current || new AudioCtor();
       if (!audioContextRef.current) audioContextRef.current = ctx;
+      if (ctx.state === 'suspended') void ctx.resume().catch(() => undefined);
 
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
-
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-      oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
-
-      oscillator.frequency.value = isUrgent ? 1200 : 880;
-      oscillator.type = isUrgent ? 'square' : 'sine';
-
-      gainNode.gain.setValueAtTime(0, ctx.currentTime);
-      gainNode.gain.linearRampToValueAtTime(isUrgent ? 0.4 : 0.2, ctx.currentTime + 0.05);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + (isUrgent ? 0.8 : 0.5));
-
-      oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + (isUrgent ? 0.8 : 0.5));
-    } catch (e) { console.warn("Audio error", e); }
+      const tones = isUrgent
+        ? [{ frequency: 1040, offset: 0, duration: 0.28 }, { frequency: 1320, offset: 0.22, duration: 0.28 }, { frequency: 1040, offset: 0.44, duration: 0.28 }]
+        : [{ frequency: 880, offset: 0, duration: 0.5 }];
+      const now = ctx.currentTime;
+      tones.forEach(({ frequency, offset, duration }) => {
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        oscillator.frequency.value = frequency;
+        oscillator.type = isUrgent ? 'square' : 'sine';
+        const start = now + offset;
+        const volume = isUrgent ? 0.48 : 0.2;
+        gainNode.gain.setValueAtTime(0.001, start);
+        gainNode.gain.exponentialRampToValueAtTime(volume, start + 0.025);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, start + duration);
+        oscillator.start(start);
+        oscillator.stop(start + duration + 0.03);
+      });
+      if (isUrgent && 'vibrate' in navigator) navigator.vibrate?.([260, 100, 260, 100, 260]);
+    } catch (e) { console.warn('Audio error', e); }
   };
 
   const startUrgentAlert = () => {
     if (alertInterval.current) return;
     setIsUrgentAlert(true);
     playDing(true);
-    alertInterval.current = setInterval(() => {
-      playDing(true);
-    }, 2000);
+    alertInterval.current = window.setInterval(() => playDing(true), 1500);
   };
 
   const stopUrgentAlert = () => {
@@ -590,6 +593,7 @@ export default function ProtectedOrders() {
       clearInterval(alertInterval.current);
       alertInterval.current = null;
     }
+    navigator.vibrate?.(0);
     setIsUrgentAlert(false);
   };
 
@@ -747,19 +751,6 @@ export default function ProtectedOrders() {
 	    clearAuthSession();
 	    window.location.replace('/login');
 	  };
-	
-  const sendTestPush = async () => {
-    // نرسل لكل من له دور 'admin' أو 'manager' كخيار احتياطي لضمان الوصول الفوري
-    const res = await sendExternalPush({
-      event: 'system_alert',
-      title: '🔔 اختبار الإشعارات بنجاح',
-      message: 'إذا رأيت هذه الرسالة بتفاصيلها، فمحرك الإشعارات يعمل لديك الآن بشكل مثالي.',
-      targetRoles: ['admin', 'manager'],
-      data: { focus: 'notifications' }
-    });
-    if (res.ok) showToast('✅ تم إرسال إشعار تجريبي لهاتفك الآن', 'success');
-    else showToast(`❌ فشل الإرسال: ${res.error}`, 'error');
-  };
 
   const sendWhatsAppToCustomerOnCreate = (order: any) => {
     if (isViewer) return;
@@ -2470,14 +2461,6 @@ export default function ProtectedOrders() {
 
 	          <div className="flex items-center gap-2">
 	            <button
-	              onClick={sendTestPush}
-	              className="bg-orange-600/10 hover:bg-orange-600/20 text-orange-500 px-3 py-2 rounded-xl text-[10px] font-black flex items-center gap-1.5 transition-all border border-orange-500/20 active:scale-95"
-	              title="إرسال إشعار تجريبي للتأكد من عمل الجرس"
-	            >
-	              <Bell size={14} className="animate-bounce" /> تجربة الإشعار
-	            </button>
-	
-	            <button
 	              type="button"
 	              onClick={toggleWakeLock}
               disabled={!wakeLockSupported}
@@ -2871,7 +2854,7 @@ export default function ProtectedOrders() {
                           <UserCircle size={14} /> <span className="text-[9px] font-black">بيانات الفني</span>
                         </button>}
                         {canEditDelete() && <div className="flex gap-1.5">
-                          <button onClick={() => { setEditingOrder(order); setFormData(order); setShowOrderModal(true); }} className="w-10 h-10 bg-slate-800 text-blue-400 hover:bg-blue-600 hover:text-white rounded-xl flex items-center justify-center transition-all active:scale-95"><Edit size={16} /></button>
+                          <button onClick={() => { stopUrgentAlert(); setEditingOrder(order); setFormData(order); setShowOrderModal(true); }} className="w-10 h-10 bg-slate-800 text-blue-400 hover:bg-blue-600 hover:text-white rounded-xl flex items-center justify-center transition-all active:scale-95"><Edit size={16} /></button>
                           <button onClick={() => deleteOrder(order.id)} className="w-10 h-10 bg-slate-800 text-rose-400 hover:bg-rose-600 hover:text-white rounded-xl flex items-center justify-center transition-all active:scale-95"><Trash2 size={16} /></button>
                         </div>}
                       </div>}
@@ -3025,7 +3008,7 @@ export default function ProtectedOrders() {
                       {!isViewer && <a href={`tel:${order.phone}`} className="flex-1 bg-slate-800 text-white py-2 rounded-xl text-center text-[10px] font-bold">اتصال</a>}
                       {canEditDelete() && (
                         <button
-                          onClick={() => { setEditingOrder(order); setFormData(order); setShowOrderModal(true); }}
+                          onClick={() => { stopUrgentAlert(); setEditingOrder(order); setFormData(order); setShowOrderModal(true); }}
                           className="px-3 bg-slate-800 text-blue-400 rounded-xl"
                         >
                           <Edit size={14} />
