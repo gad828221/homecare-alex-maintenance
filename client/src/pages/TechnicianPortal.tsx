@@ -10,6 +10,7 @@ import { useLocation } from "wouter";
 import { useNotification } from "../components/EnhancedNotificationSystem";
 import TechnicianPerformance from "../components/TechnicianPerformance";
 import NotificationStatus from "../components/NotificationStatus";
+import TelegramLink from "../components/TelegramLink";
 import { clearAuthSession } from "../utils/authSession";
 import { createClient } from '@supabase/supabase-js';
 import { openWhatsAppDirectly } from '../utils/whatsapp';
@@ -1163,8 +1164,9 @@ export default function TechnicianPortal() {
             >
               <Play fill="currentColor" size={20} /> بدء العمل واستقبال الأوردرات
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold mb-4">Maintenance Guide OS v3.0.3</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold mb-4">Maintenance Guide OS v3.1.0-telegram</p>
             <NotificationStatus />
+            <TelegramLink role="tech" userName={techName || 'فني'} />
           </div>
         </div>
       )}

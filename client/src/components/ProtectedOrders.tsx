@@ -15,6 +15,7 @@ import { getPickupTypeLabel, parsePickupReceipt } from '../utils/pickupReceipt';
 import { mergeCompanyTransferMarker, parseCompanyTransfer } from '../utils/companyTransfer';
 import TechnicianPerformanceAdmin from './TechnicianPerformanceAdmin';
 import NotificationStatus from "./NotificationStatus";
+import TelegramLink from "./TelegramLink";
 import { findTechnicianByIdentity, getTechnicianDisplayName, getTechnicianPhotoUrl, getTechnicianSpecialty, parseTechnicianProfileNotification } from '../utils/technicianProfile';
 import { clearAuthSession } from '../utils/authSession';
 
@@ -3515,10 +3516,11 @@ export default function ProtectedOrders() {
         )}
         <div className="mt-8 flex flex-col items-center gap-2">
           <NotificationStatus />
+          <TelegramLink role="admin" userName="المدير العام" />
           <div className="text-[10px] text-slate-500 opacity-20 mt-4">
             Maintenance Guide © 2026 - All Rights Reserved
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.0.3-nuclear-reset</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.1.0-telegram</div>
         </div>
       </div>
 
