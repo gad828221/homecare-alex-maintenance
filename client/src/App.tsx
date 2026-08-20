@@ -8,7 +8,7 @@ import { EnhancedNotificationProvider } from "./components/EnhancedNotificationS
 import { Phone, MessageCircle, Download } from "lucide-react";
 import { usePwaInstall } from './hooks/usePwaInstall';
 import PresenceManager from "./components/PresenceManager";
-import EmployeeChat from "./components/EmployeeChat";
+// EmployeeChat removed as per user request (v3.2.8)
 import { readAuthSession } from './utils/authSession';
 
 const PUBLIC_PATHS = new Set([
@@ -154,8 +154,7 @@ function AppContent() {
     "/orders", "/tech-portal", "/data-entry", "/login"
   ].includes(currentPath);
   const currentRole = localStorage.getItem('userRole');
-  const staffChatPaths = ['/orders', '/tech-portal', '/data-entry'];
-  const canShowEmployeeChat = staffChatPaths.includes(currentPath) && ['admin', 'manager', 'tech', 'data-entry'].includes(currentRole || '');
+  // EmployeeChat paths and logic removed (v3.2.8)
 
   // تنبيه صوتي داخلي بسيط للأوردرات الجديدة (يعمل والبرنامج مفتوح)
   useEffect(() => {
@@ -193,7 +192,7 @@ function AppContent() {
 
       <PresenceManager />
       {/* PwaInstallBanner removed */}
-      {canShowEmployeeChat && <EmployeeChat />}
+      {/* EmployeeChat removed */}
     </>
   );
 }
