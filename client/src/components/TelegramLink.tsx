@@ -54,12 +54,12 @@ export default function TelegramLink({ role, userName }: { role: string; userNam
           </p>
           
           <a 
-            href="https://t.me/MaintenanceGuideBot" 
+            href="https://t.me/userinfobot" 
             target="_blank" 
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-4 rounded-xl text-xs font-black shadow-lg transition-all"
           >
-            <Send size={14} /> افتح بوت تليجرام واضغط Start <ExternalLink size={12} />
+            <Send size={14} /> 1. اضغط هنا واكتب Start <ExternalLink size={12} />
           </a>
 
           <div className="flex gap-2 mt-2">
@@ -78,7 +78,7 @@ export default function TelegramLink({ role, userName }: { role: string; userNam
             </button>
           </div>
           <p className="text-[9px] text-slate-500 text-center">
-            (إذا لم تعرف رقمك، راسل البوت /id وسيخبرك به فوراً)
+            (البوت سيعطيك رقماً بجانب كلمة Id، انسخه وضعه في المربع أعلاه)
           </p>
         </div>
       )}
