@@ -76,7 +76,7 @@ const buildTagFilters = (tags: Array<{ key: string; value: string }>): Array<Rec
 };
 
 const buildDeepLink = (requestedUrl: unknown, event: string, data: Record<string, string>, targetUserIds: string[], targetTags: Array<{ key: string; value: string }>) => {
-  const base = 'https://maintenanceguide.life';
+  const base = 'https://www.maintenanceguide.life';
   if (typeof requestedUrl === 'string' && requestedUrl.trim()) {
     try {
       const parsed = new URL(requestedUrl.trim(), base);
@@ -114,12 +114,12 @@ const buildDeepLink = (requestedUrl: unknown, event: string, data: Record<string
 export default async function handler(req: RequestLike, res: ResponseLike) {
   const origin = req.headers?.origin;
   const allowedOrigins = new Set([
-    'https://maintenanceguide.life',
     'https://www.maintenanceguide.life',
+    'https://maintenanceguide.life',
   ]);
 
   if (res.setHeader) {
-    res.setHeader('Access-Control-Allow-Origin', origin && allowedOrigins.has(origin) ? origin : 'https://maintenanceguide.life');
+    res.setHeader('Access-Control-Allow-Origin', origin && allowedOrigins.has(origin) ? origin : 'https://www.maintenanceguide.life');
     res.setHeader('Vary', 'Origin');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
