@@ -42,18 +42,19 @@ const withTimeout = async <T>(promise: Promise<T>, timeoutMs = 5000): Promise<T>
   }
 };
 
-const runWithOneSignal = (callback: (OneSignal: any) => void | Promise<void>, timeoutMs = 8000) => {
+const runWithOneSignal = (callback: (OneSignal: any) => void | Promise<void>, timeoutMs = 15000) => {
   if (typeof window === 'undefined') return Promise.resolve();
   const win = window as any;
   win.OneSignalDeferred = win.OneSignalDeferred || [];
   
   return new Promise<void>((resolve, reject) => {
     const timer = setTimeout(() => {
-      reject(new Error('محرك الإشعارات لم يستجب في الوقت المحدد (Timeout)'));
+      reject(new Error('محرك الإشعارات (OneSignal) معلق تماماً في المتصفح (Timeout)'));
     }, timeoutMs);
 
     win.OneSignalDeferred.push(async (OneSignal: any) => {
       try {
+        if (!OneSignal) throw new Error('فشل تحميل كائن OneSignal');
         await callback(OneSignal);
         clearTimeout(timer);
         resolve();
@@ -306,7 +307,9 @@ export const hardResetNotifications = async (): Promise<void> => {
   }
 
   // 4. إعادة تحميل الصفحة من الخادم (بدون كاش)
-  window.location.href = window.location.origin + window.location.pathname + '?reset=' + Date.now();
+  const url = new URL(window.location.href);
+  url.searchParams.set('reset', Date.now().toString());
+  window.location.href = url.toString();
 };
 
 export const diagnosticsSummary = (checks: NotificationDiagnostic[]) => {
