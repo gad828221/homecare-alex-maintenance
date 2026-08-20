@@ -212,19 +212,13 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
             ...audience,
 		                    headings: { en: title, ar: title },
 		                    contents: { en: message, ar: message },
-		                    web_url: deepLink,
-		                    // تبسيط البيانات لأقصى درجة لفك حظر Chrome
-		                    data: { u: deepLink },
-		                    priority: 10,
-		                    web_push_priority: 10,
-		                    ttl: 3600,
-		                    web_push_topic: event,
-		                    renotify: true,
-		                    chrome_web_icon: "https://www.maintenanceguide.life/pwa-192.png",
-		                    chrome_web_badge: "https://www.maintenanceguide.life/pwa-192.png",
-		                    // إزالة الصورة الكبيرة مؤقتاً لأنها قد تسبب حجب المحتوى في بعض إصدارات أندرويد
-		                    android_visibility: 1,
-		                    web_push_require_interaction: false,
+			                    // تبسيط فائق لفك حظر Chrome Android
+			                    priority: 10,
+			                    web_push_priority: 10,
+			                    ttl: 3600,
+			                    renotify: true,
+			                    android_visibility: 1,
+			                    web_push_require_interaction: false,
 		          }),
 	        })
 	      ));
