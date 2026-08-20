@@ -1071,27 +1071,40 @@ export default function TechnicianPortal() {
           <p className="text-sm text-slate-300 leading-7 mb-5">
             لا يمكن فتح بوابة الفني من المتصفح العادي. ثبّت البرنامج على الهاتف أولاً حتى تظل التنبيهات والإشعارات مرتبطة ببوابة العمل.
           </p>
-          {canInstall ? (
+          {canInstall && !/FBAN|FBAV|WhatsApp|Instagram|Line|Messenger/i.test(navigator.userAgent) ? (
             <button
               type="button"
               onClick={() => { void install(); }}
               className="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-2xl py-4 font-black text-base shadow-xl active:scale-95 transition-transform"
             >
-              تثبيت البرنامج الآن
+              تثبيت البرنامج الآن ✅
             </button>
           ) : (
-            <div className="bg-slate-950/70 border border-slate-700 rounded-2xl p-4 text-right space-y-3">
-              {isIos ? (
-                <>
-                  <p className="text-sm font-black text-white">طريقة التثبيت على iPhone</p>
-                  <p className="text-xs text-slate-300 leading-6">اضغط زر المشاركة في Safari ثم اختر <b className="text-orange-300">إضافة إلى الشاشة الرئيسية</b>، وبعدها افتح البرنامج من الأيقونة الجديدة.</p>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm font-black text-white">طريقة التثبيت من Chrome أو Edge</p>
-                  <p className="text-xs text-slate-300 leading-6">افتح قائمة المتصفح ثم اختر <b className="text-orange-300">تثبيت التطبيق</b> أو <b className="text-orange-300">إضافة إلى الشاشة الرئيسية</b>، وبعد التثبيت افتح البرنامج من الأيقونة.</p>
-                </>
-              )}
+            <div className="space-y-4">
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.origin + '/tech-portal');
+                  alert('✅ تم نسخ الرابط. افتحه الآن في متصفح Chrome لتتمكن من التثبيت.');
+                }}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-2xl py-4 font-black text-base shadow-xl active:scale-95 transition-transform flex items-center justify-center gap-2"
+              >
+                <ExternalLink size={20} /> نسخ الرابط لفتحه في Chrome
+              </button>
+              
+              <div className="bg-slate-950/70 border border-slate-700 rounded-2xl p-4 text-right space-y-3">
+                {isIos ? (
+                  <>
+                    <p className="text-sm font-black text-white">طريقة التثبيت على iPhone 🍎</p>
+                    <p className="text-xs text-slate-300 leading-6">1. افتح الرابط في متصفح **Safari**.<br/>2. اضغط زر المشاركة (المربع بسهم).<br/>3. اختر **إضافة إلى الشاشة الرئيسية**.</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-black text-white">طريقة التثبيت على Android 🤖</p>
+                    <p className="text-xs text-slate-300 leading-6">1. افتح الرابط في متصفح **Chrome**.<br/>2. اضغط على زر "تثبيت" أو الثلاث نقاط.<br/>3. اختر **إضافة إلى الشاشة الرئيسية**.</p>
+                  </>
+                )}
+              </div>
             </div>
           )}
           {installCompleted && <p className="mt-4 text-xs text-emerald-300 font-bold">تم قبول التثبيت. افتح البرنامج من الأيقونة المثبتة لإكمال الدخول.</p>}
