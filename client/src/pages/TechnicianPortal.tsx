@@ -1185,15 +1185,33 @@ export default function TechnicianPortal() {
             </div>
             <input id="technician-profile-gallery" type="file" accept="image/*" onChange={handleProfilePhotoUpload} className="sr-only" disabled={isUploadingProfilePhoto} />
             <input id="technician-profile-camera" type="file" accept="image/*" capture="user" onChange={handleProfilePhotoUpload} className="sr-only" disabled={isUploadingProfilePhoto} />
-            <div>
-              <h1 className="text-lg font-bold text-white">بوابة الفنيين</h1>
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                <p className="text-xs text-orange-400">{getTechnicianDisplayName({ name: techName })}</p>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
+	            <div>
+	              <h1 className="text-lg font-bold text-white">بوابة الفنيين</h1>
+	              <div className="flex items-center gap-1.5">
+	                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+	                <p className="text-xs text-orange-400">{getTechnicianDisplayName({ name: techName })}</p>
+	              </div>
+	            </div>
+	          </div>
+	          <div className="flex items-center gap-2">
+	            <button
+	              onClick={async () => {
+	                const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+	                const res = await sendExternalPush({
+	                  event: 'system_alert',
+	                  title: '🔔 اختبار جرس الفني',
+	                  message: 'جرس الفني يعمل بنجاح؛ ستصلك الأوردرات الجديدة بتفاصيلها هنا.',
+	                  targetUserIds: [currentUser?.id ? `tech:${currentUser.id}` : 'all'],
+	                  data: { focus: 'alerts' }
+	                });
+	                if (res.ok) alert('✅ تم إرسال إشعار تجريبي لهاتفك');
+	                else alert('❌ فشل الإرسال');
+	              }}
+	              className="bg-orange-600/10 hover:bg-orange-600/20 text-orange-500 px-3 py-2 rounded-xl text-[10px] font-black flex items-center gap-1.5 transition-all border border-orange-500/20 active:scale-95"
+	              title="إرسال إشعار تجريبي للتأكد من عمل الجرس"
+	            >
+	              <Bell size={14} className="animate-bounce" /> تجربة الجرس
+	            </button>
 
             <button
               type="button"

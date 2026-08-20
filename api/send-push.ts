@@ -213,7 +213,6 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 		                    headings: { en: title, ar: title },
 		                    contents: { en: message, ar: message },
 		                    web_url: deepLink,
-		                    // إضافة البيانات الأساسية في data و app_url لضمان التوافق
 		                    data: { 
 		                      url: deepLink,
 		                      event: event, 
@@ -227,8 +226,11 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 		                    web_push_require_interaction: true,
 		                    chrome_web_icon: "https://www.maintenanceguide.life/pwa-192.png",
 		                    chrome_web_badge: "https://www.maintenanceguide.life/pwa-192.png",
-		                    // محاولة إجبار الصوت (محدود في المتصفحات)
 		                    chrome_web_image: "https://www.maintenanceguide.life/pwa-512.png",
+		                    // Force visibility for Chrome Android
+		                    android_visibility: 1,
+		                    content_available: true,
+		                    mutable_content: true,
 		          }),
 	        })
 	      ));

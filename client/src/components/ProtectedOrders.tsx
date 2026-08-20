@@ -743,10 +743,22 @@ export default function ProtectedOrders() {
     const message = `مرحباً أ/ ${order.customer_name || 'عميلنا العزيز'}،\n\nنرجو مشاركتنا تقييمك لخدمة الصيانة للأوردر رقم ${order.order_number}.\n\n⭐ قيّم الخدمة من هنا:\n${feedbackUrl}\n\nشكراً لثقتك في Maintenance Guide.`;
     sendWhatsApp(order.phone, message);
   };
-  const handleLogout = () => {
-    clearAuthSession();
-    window.location.replace('/login');
-  };
+	  const handleLogout = () => {
+	    clearAuthSession();
+	    window.location.replace('/login');
+	  };
+	
+	  const sendTestPush = async () => {
+	    const res = await sendExternalPush({
+	      event: 'system_alert',
+	      title: '🔔 اختبار الإشعارات بنجاح',
+	      message: 'إذا رأيت هذه الرسالة بتفاصيلها، فمحرك الإشعارات يعمل لديك الآن بشكل مثالي.',
+	      targetUserIds: [currentUser?.id ? `${userRole}:${currentUser.id}` : 'all'],
+	      data: { focus: 'notifications' }
+	    });
+	    if (res.ok) showToast('✅ تم إرسال إشعار تجريبي لهاتفك الآن', 'success');
+	    else showToast(`❌ فشل الإرسال: ${res.error}`, 'error');
+	  };
 
   const sendWhatsAppToCustomerOnCreate = (order: any) => {
     if (isViewer) return;
@@ -2455,11 +2467,18 @@ export default function ProtectedOrders() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-
-            <button
-              type="button"
-              onClick={toggleWakeLock}
+	          <div className="flex items-center gap-2">
+	            <button
+	              onClick={sendTestPush}
+	              className="bg-orange-600/10 hover:bg-orange-600/20 text-orange-500 px-3 py-2 rounded-xl text-[10px] font-black flex items-center gap-1.5 transition-all border border-orange-500/20 active:scale-95"
+	              title="إرسال إشعار تجريبي للتأكد من عمل الجرس"
+	            >
+	              <Bell size={14} className="animate-bounce" /> تجربة الإشعار
+	            </button>
+	
+	            <button
+	              type="button"
+	              onClick={toggleWakeLock}
               disabled={!wakeLockSupported}
               title={wakeLockSupported ? (wakeLockEnabled ? 'إيقاف إبقاء الشاشة مستيقظة' : 'تشغيل إبقاء الشاشة مستيقظة') : 'المتصفح لا يدعم إبقاء الشاشة مستيقظة'}
               className={`px-2.5 py-2 rounded-xl border text-[9px] font-black flex items-center gap-1.5 transition-all ${wakeLockSupported && wakeLockEnabled ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300' : 'bg-slate-800 border-slate-700 text-slate-500'} disabled:opacity-50`}
