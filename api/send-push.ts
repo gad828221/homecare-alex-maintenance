@@ -220,6 +220,9 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
             android_visibility: 1,
             web_push_require_interaction: true,
             web_buttons: [
+              { id: "view_order", text: "✅ عرض التفاصيل", icon: "", url: deepLink }
+            ],
+            buttons: [
               { id: "view_order", text: "✅ عرض التفاصيل", icon: "" }
             ],
             android_group: event,
