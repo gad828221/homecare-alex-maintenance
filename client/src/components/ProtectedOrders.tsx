@@ -1362,10 +1362,15 @@ export default function ProtectedOrders() {
           if (sent) startUrgentAlert();
         }
 
-        // رادار نسب المصروفات في الفواتير المعتمدة، مع تجاهل القديم عند أول فتح
+        // رادار نسب المصروفات في الفواتير المعتمدة، مع تجاهل القديم (أكثر من 3 أيام)
         const highExpenseSettlements = notDeleted.filter((order: any) => {
           const total = Number(order.total_amount) || 0;
           if (order.status !== 'completed' || !order.invoice_approved || total <= 0) return false;
+          
+          // حماية: لا ننبه عن أوردرات قديمة جداً (تجاوزت 3 أيام من تاريخ التسجيل)
+          const orderAge = getDaysDifference(getOrderReferenceDate(order), order.status);
+          if (orderAge > 3) return false;
+
           const partsPercent = ((Number(order.parts_cost) || 0) / total) * 100;
           const transportPercent = ((Number(order.transport_cost) || 0) / total) * 100;
           return partsPercent > 40 || transportPercent > 15;
@@ -2432,7 +2437,7 @@ export default function ProtectedOrders() {
             >
               <Play fill="currentColor" size={20} /> دخول وتفعيل التنبيهات 🔊
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v3.2.8</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v3.2.9</p>
           </div>
         </div>
       )}
@@ -3559,7 +3564,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.2.8-chat-removed</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.2.9-old-alert-fix</div>
         </div>
       </div>
 
