@@ -212,7 +212,12 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
             ...audience,
             headings: { en: title, ar: title },
             contents: { en: message, ar: message },
-            // تفعيل الخصائص التفاعلية لفك حظر Chrome Android (v2.9.3)
+            url: deepLink,
+            chrome_web_icon: "https://www.maintenanceguide.life/pwa-192.png",
+            chrome_web_badge: "https://www.maintenanceguide.life/pwa-192.png",
+            firefox_icon: "https://www.maintenanceguide.life/pwa-192.png",
+            large_icon: "https://www.maintenanceguide.life/pwa-192.png",
+            // تفعيل الخصائص التفاعلية لفك حظر Chrome Android (v2.9.5)
             priority: 10,
             web_push_priority: 10,
             ttl: 3600,
