@@ -246,44 +246,29 @@ function App() {
 
     const checkAuth = () => {
       const { role } = readAuthSession();
-      const isPwaEntry = new URLSearchParams(window.location.search).get('source') === 'pwa' || 
-                         (window.matchMedia('(display-mode: standalone)').matches);
       
-      // تم إلغاء التحويل التلقائي ليبقى الموقع الخاص بالزوار منفصلاً تماماً عن لوحة التحكم
-      if (currentPath === '/') return;
-
-      // v3.1.7: تحويل ذكي من صفحة الدخول عند القدوم من إشعار
-      if (role && currentPath === '/login') {
+      // v3.1.8: تحويل سلس وموحد لمنع "الرعشة"
+      if (role && (currentPath === '/login' || currentPath === '/')) {
         const params = new URLSearchParams(window.location.search);
         const redirectPath = params.get('redirect');
-        if (redirectPath && PUBLIC_PATHS.has(redirectPath) === false) {
-          window.location.replace(`${redirectPath}${window.location.search}`);
-          return;
-        }
         
-        if (role === 'tech') window.location.replace('/tech-portal');
-        else if (role === 'data-entry') window.location.replace('/data-entry');
-        else window.location.replace('/orders');
+        if (redirectPath && !PUBLIC_PATHS.has(redirectPath)) {
+          window.location.replace(`${redirectPath}${window.location.search}`);
+        } else {
+          if (role === 'tech') window.location.replace('/tech-portal');
+          else if (role === 'data-entry') window.location.replace('/data-entry');
+          else window.location.replace('/orders');
+        }
         return;
       }
 
+      // تم إلغاء التحويل التلقائي ليبقى الموقع الخاص بالزوار منفصلاً تماماً عن لوحة التحكم
+      if (currentPath === '/') return;
+
       if (PUBLIC_PATHS.has(currentPath) && !window.location.search.includes('source=pwa')) return;
 
-      // A missing session means this browser has never logged in on this origin.
-      if (!role) {
-        const isPwa = new URLSearchParams(window.location.search).get('source') === 'pwa' || 
-                      (window.matchMedia('(display-mode: standalone)').matches);
-        
-        // v3.1.6: تحويل فوري وقوي إذا كان الدخول من إشعار لضمان فتح التطبيق
-        if (window.location.search.includes('source=pwa') && (currentPath === '/' || PUBLIC_PATHS.has(currentPath))) {
-          window.location.replace(`/login${window.location.search}`);
-          return;
-        }
-
-        window.setTimeout(() => {
-          const latest = readAuthSession();
-          if (!latest.role && !PUBLIC_PATHS.has(currentPath)) window.location.replace('/login');
-        }, isPwa ? 1000 : 500);
+      if (!role && !PUBLIC_PATHS.has(currentPath)) {
+        window.location.replace('/login' + window.location.search);
         return;
       }
 
@@ -314,4 +299,3 @@ function App() {
 }
 
 export default App;
-
