@@ -23,10 +23,27 @@ export default function NotificationStatus() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleEnable = () => {
+  const handleEnable = async () => {
     const win = window as any;
     if (win.OneSignal) {
-      win.OneSignal.Slidedown.promptPush();
+      try {
+        // محاولة التفعيل المباشر (Direct Opt-in)
+        await win.OneSignal.User.PushSubscription.optIn();
+        
+        // إذا لم ينجح التفعيل الصامت، نظهر نافذة الطلب الرسمية
+        const isOptedIn = await win.OneSignal.User.PushSubscription.optedIn;
+        if (!isOptedIn) {
+          await win.OneSignal.Slidedown.promptPush();
+        }
+        
+        // تحديث الحالة فوراً
+        const currentStatus = await win.OneSignal.User.PushSubscription.optedIn;
+        setIsSubscribed(currentStatus);
+      } catch (err) {
+        console.error("OneSignal Enable Error:", err);
+        // محاولة أخيرة عبر النافذة التقليدية
+        win.OneSignal.showNativePrompt?.();
+      }
     }
   };
 
