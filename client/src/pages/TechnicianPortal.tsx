@@ -19,6 +19,7 @@ import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, get
 import { createPickupMarker, getPickupTypeLabel } from '../utils/pickupReceipt';
 import { mergeCompanyTransferMarker } from '../utils/companyTransfer';
 import { getTechnicianDisplayName, getTechnicianPhotoUrl, parseTechnicianProfileNotification, profileNotificationPayload } from '../utils/technicianProfile';
+import NotificationDiagnosticsButton from '../components/NotificationDiagnosticsButton';
 
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -1193,6 +1194,7 @@ export default function TechnicianPortal() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <NotificationDiagnosticsButton compact />
             <button
               type="button"
               onClick={toggleWakeLock}

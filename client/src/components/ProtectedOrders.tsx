@@ -16,6 +16,7 @@ import { mergeCompanyTransferMarker, parseCompanyTransfer } from '../utils/compa
 import TechnicianPerformanceAdmin from './TechnicianPerformanceAdmin';
 import { findTechnicianByIdentity, getTechnicianDisplayName, getTechnicianPhotoUrl, getTechnicianSpecialty, parseTechnicianProfileNotification } from '../utils/technicianProfile';
 import { clearAuthSession } from '../utils/authSession';
+import NotificationDiagnosticsButton from './NotificationDiagnosticsButton';
 
 const runWithOneSignal = (callback: (OneSignal: any) => void | Promise<void>) => {
   if (typeof window === 'undefined') return;
@@ -2469,6 +2470,7 @@ export default function ProtectedOrders() {
           </div>
 
           <div className="flex items-center gap-2">
+            <NotificationDiagnosticsButton compact />
             <button
               type="button"
               onClick={toggleWakeLock}
