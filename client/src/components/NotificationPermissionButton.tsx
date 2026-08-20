@@ -132,38 +132,59 @@ export default function NotificationPermissionButton() {
 
   const handleEnable = () => {
     setPermissionStatus('loading');
+    
+    // استخدام مهلة أمان لمنع تعليق الزر
+    const safetyTimer = setTimeout(() => {
+      setPermissionStatus('default');
+      alert('محرك الإشعارات استغرق وقتاً طويلاً للاستجابة. يرجى استخدام زر "فحص التنبيهات" في أعلى الصفحة أو "المسح الشامل".');
+    }, 10000);
+
     runWithOneSignal(async (OneSignal) => {
       try {
+        clearTimeout(safetyTimer);
         const storedUser = readStoredUser();
         const externalId = getExternalId(storedUser);
-        if (externalId && OneSignal?.login) await OneSignal.login(externalId);
         
-        // OneSignal v16 uses the capitalized Slidedown namespace.
-        if (OneSignal?.Slidedown?.promptPush) {
-          await OneSignal.Slidedown.promptPush();
+        // تسجيل الدخول بالهوية بشكل آمن
+        if (externalId && typeof OneSignal.login === 'function') {
+          await OneSignal.login(externalId).catch(() => undefined);
         }
-
-        const permission = await OneSignal?.Notifications?.requestPermission?.();
-        if (permission) {
-          await OneSignal?.User?.PushSubscription?.optIn?.();
-          setPermissionStatus('granted');
-          setTimeout(() => setIsVisible(false), 2000);
-        } else {
-          const currentPermission = typeof Notification !== 'undefined' ? Notification.permission : 'default';
-          if (currentPermission === 'denied') {
-            setPermissionStatus('denied');
-          } else {
-            setPermissionStatus('default');
+        
+        // طلب الإذن بطريقة OneSignal v16 الرسمية
+        if (OneSignal.Notifications && typeof OneSignal.Notifications.requestPermission === 'function') {
+          const permission = await OneSignal.Notifications.requestPermission();
+          
+          if (permission) {
+            // تحديث الوسوم (Tags)
+            if (storedUser && OneSignal.User && typeof OneSignal.User.addTags === 'function') {
+              const stableId = storedUser.id ?? storedUser.username ?? storedUser.techName;
+              await OneSignal.User.addTags({ 
+                role: storedUser.role || userRole || 'user', 
+                user_id: String(stableId || ''),
+                ...(storedUser.techName ? { tech_name: storedUser.techName } : {})
+              }).catch(() => undefined);
+            }
+            
+            setPermissionStatus('granted');
+            setTimeout(() => setIsVisible(false), 2000);
+            return;
           }
         }
+
+        // إذا فشل الطلب البرمجي، نحاول إظهار نافذة OneSignal الأصلية
+        if (OneSignal.Slidedown && typeof OneSignal.Slidedown.promptPush === 'function') {
+          await OneSignal.Slidedown.promptPush().catch(() => undefined);
+        }
+
+        // تحديث الحالة النهائية
+        const currentPermission = typeof Notification !== 'undefined' ? Notification.permission : 'default';
+        setPermissionStatus(currentPermission === 'denied' ? 'denied' : 'default');
+        
       } catch (error) {
         console.error('OneSignal permission error:', error);
-        // لا نغير الحالة لـ denied إلا إذا كان المتصفح يرفض فعلاً
-        if (typeof Notification !== 'undefined' && Notification.permission === 'denied') {
-          setPermissionStatus('denied');
-        } else {
-          setPermissionStatus('default');
-        }
+        clearTimeout(safetyTimer);
+        const currentPermission = typeof Notification !== 'undefined' ? Notification.permission : 'default';
+        setPermissionStatus(currentPermission === 'denied' ? 'denied' : 'default');
       }
     });
   };
