@@ -104,6 +104,11 @@ export default function Footer() {
         <div className="border-t border-slate-700 pt-12">
           <div className="text-center text-gray-400 text-sm mb-8">
             <p>&copy; 2026 Maintenance Guide - جميع الحقوق محفوظة</p>
+            <div className="mt-4">
+              <a href="/login" className="text-slate-500 hover:text-orange-400 transition-colors text-[10px] font-bold uppercase tracking-widest">
+                🔐 دخول الموظفين
+              </a>
+            </div>
           </div>
 
           {/* Professional Disclaimer */}
