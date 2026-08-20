@@ -182,12 +182,13 @@ function App() {
   useEffect(() => {
     const currentPath = window.location.pathname;
 
-    // OneSignal subscriptions and localStorage are origin-scoped. Keep every staff
-    // session on the same origin used by notification deep links.
+    // تم إلغاء إجبار www للسماح لـ OneSignal بالعمل على النطاقين
+    /*
     if (window.location.origin === 'https://maintenanceguide.life') {
       window.location.replace(`${CANONICAL_ORIGIN}${window.location.pathname}${window.location.search}${window.location.hash}`);
       return;
     }
+    */
 
     const checkAuth = () => {
       const { role } = readAuthSession();

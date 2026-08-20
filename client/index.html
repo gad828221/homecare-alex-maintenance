@@ -35,8 +35,8 @@
     <meta name="apple-mobile-web-app-title" content="Maintenance Guide" />
     <link rel="preload" as="image" href="/images/hero-bg-professional.webp" type="image/webp" fetchpriority="high" />
 
-    <!-- OneSignal Web Push SDK: Fresh Start v2.6.8 -->
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"></script>
+    <!-- OneSignal Web Push SDK: Ultimate Stability v2.6.9 -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" async></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       window.OneSignalDeferred.push(function(OneSignal) {
@@ -45,11 +45,11 @@
           autoResubscribe: true,
           serviceWorkerPath: "OneSignalWorker_Final.js",
           notificationClickHandlerMatch: "origin",
-          notificationClickHandlerAction: "navigate"
-        }).then(() => {
-          window.OneSignalReady = true;
-          console.log('OS Ready');
+          notificationClickHandlerAction: "navigate",
+          allowLocalhostAsSecureOrigin: true,
+          persistNotification: true
         });
+        window.OneSignalReady = true;
       });
     </script>
     
