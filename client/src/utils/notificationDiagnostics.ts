@@ -42,16 +42,24 @@ const withTimeout = async <T>(promise: Promise<T>, timeoutMs = 5000): Promise<T>
   }
 };
 
-const runWithOneSignal = (callback: (OneSignal: any) => void | Promise<void>) => {
+const runWithOneSignal = (callback: (OneSignal: any) => void | Promise<void>, timeoutMs = 8000) => {
   if (typeof window === 'undefined') return Promise.resolve();
   const win = window as any;
   win.OneSignalDeferred = win.OneSignalDeferred || [];
-  return new Promise<void>((resolve) => {
+  
+  return new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error('محرك الإشعارات لم يستجب في الوقت المحدد (Timeout)'));
+    }, timeoutMs);
+
     win.OneSignalDeferred.push(async (OneSignal: any) => {
       try {
         await callback(OneSignal);
-      } finally {
+        clearTimeout(timer);
         resolve();
+      } catch (e) {
+        clearTimeout(timer);
+        reject(e);
       }
     });
   });

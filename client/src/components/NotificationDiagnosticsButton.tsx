@@ -76,8 +76,10 @@ export default function NotificationDiagnosticsButton({ compact = false }: Props
       setChecks(result);
       setHasProblems(hasDiagnosticProblems(result));
     } catch (e: any) {
-      addLog(`❌ فشل الإصلاح: ${e.message}`);
-      setMessage('تعذر الإصلاح التلقائي. راجع تعليمات المشكلة الظاهرة في التقرير.');
+      const errMsg = e.message || 'خطأ غير معروف';
+      addLog(`❌ فشل الإصلاح: ${errMsg}`);
+      setMessage(`تعذر الإصلاح التلقائي: ${errMsg}`);
+      setHasProblems(true); // إظهار خيار المسح الشامل
     } finally {
       setLoading(false);
     }
