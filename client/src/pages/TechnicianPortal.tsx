@@ -15,7 +15,7 @@ import { openWhatsAppDirectly } from '../utils/whatsapp';
 import { sendExternalPush } from '../utils/pushNotifications';
 import { useScreenWakeLock } from '../hooks/useScreenWakeLock';
 import { usePwaInstall } from '../hooks/usePwaInstall';
-import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, getOrderCreatedValue } from '../utils/orderTiming';
+import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, getOrderCreatedValue, parseOrderDate } from '../utils/orderTiming';
 import { createPickupMarker, getPickupTypeLabel } from '../utils/pickupReceipt';
 import { mergeCompanyTransferMarker } from '../utils/companyTransfer';
 import { getTechnicianDisplayName, getTechnicianPhotoUrl, parseTechnicianProfileNotification, profileNotificationPayload } from '../utils/technicianProfile';
@@ -903,10 +903,11 @@ export default function TechnicianPortal() {
 
   const isNewOrder = (order: any) => {
     if (!order.created_at) return false;
-    const created = new Date(order.created_at);
+    const created = parseOrderDate(order.created_at);
+    if (!created) return false;
     const now = new Date();
     const diffHours = (now.getTime() - created.getTime()) / (1000 * 60 * 60);
-    return diffHours < 2; // أوردر جديد خلال آخر ساعتين
+    return diffHours >= 0 && diffHours < 2; // أوردر جديد خلال آخر ساعتين
   };
 
       const handlePhotoUpload = async (orderId: number, e: React.ChangeEvent<HTMLInputElement>, type: 'old' | 'new' | 'general' = 'general') => {

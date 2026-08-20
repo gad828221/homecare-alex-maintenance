@@ -1,5 +1,6 @@
 import React from 'react';
 import { Clock, AlertTriangle, AlertCircle } from 'lucide-react';
+import { parseOrderDate } from '../utils/orderTiming';
 
 interface OrderStatusIndicatorProps {
   createdAt: string;
@@ -7,9 +8,9 @@ interface OrderStatusIndicatorProps {
 }
 
 export function OrderStatusIndicator({ createdAt, status }: OrderStatusIndicatorProps) {
-  const createdDate = new Date(createdAt);
+  const createdDate = parseOrderDate(createdAt);
   const now = new Date();
-  const hoursElapsed = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60);
+  const hoursElapsed = createdDate ? (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60) : 0;
 
   let bgColor = 'bg-green-900';
   let borderColor = 'border-green-500';
@@ -51,9 +52,9 @@ export function OrderStatusIndicator({ createdAt, status }: OrderStatusIndicator
 }
 
 export function getOrderStatusColor(createdAt: string, status: string): string {
-  const createdDate = new Date(createdAt);
+  const createdDate = parseOrderDate(createdAt);
   const now = new Date();
-  const hoursElapsed = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60);
+  const hoursElapsed = createdDate ? (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60) : 0;
 
   if (status === 'completed') return 'bg-blue-600';
   if (hoursElapsed > 48) return 'bg-red-600';

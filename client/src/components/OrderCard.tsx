@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Clock, AlertCircle, Zap, CheckCircle2, User, Phone, MapPin, Wrench, Badge } from "lucide-react";
+import { formatOrderDateTime, parseOrderDate } from '../utils/orderTiming';
 
 interface OrderCardProps {
   order: any;
@@ -10,30 +11,15 @@ interface OrderCardProps {
 export function OrderCard({ order, onSelect, onAssignTech }: OrderCardProps) {
   // Check if order is new (created within last 5 minutes)
   const isNew = () => {
-    const createdTime = new Date(order.created_at).getTime();
-    const now = new Date().getTime();
+    const createdTime = parseOrderDate(order.created_at)?.getTime();
+    if (!createdTime) return false;
+    const now = Date.now();
     const diffMinutes = (now - createdTime) / (1000 * 60);
-    return diffMinutes < 5;
+    return diffMinutes >= 0 && diffMinutes < 5;
   };
 
   // Check if technician is not assigned
   const noTechAssigned = !order.technician || order.technician === '';
-
-  // Format date and time
-  const formatDateTime = (dateStr: string) => {
-    try {
-      const date = new Date(dateStr);
-      return new Intl.DateTimeFormat('ar-EG', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      }).format(date);
-    } catch {
-      return dateStr;
-    }
-  };
 
   // Get status color and icon
   const getStatusStyle = (status: string) => {
@@ -141,7 +127,7 @@ export function OrderCard({ order, onSelect, onAssignTech }: OrderCardProps) {
           <Clock className="w-5 h-5 text-slate-600 flex-shrink-0" />
           <div>
             <p className="text-xs text-slate-500 font-bold">تاريخ الطلب</p>
-            <p className="text-sm font-black text-slate-900">{formatDateTime(order.created_at)}</p>
+            <p className="text-sm font-black text-slate-900">{formatOrderDateTime(order.created_at)}</p>
           </div>
         </div>
 

@@ -10,7 +10,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Helmet } from 'react-helmet-async';
 import { sendExternalPush } from '../utils/pushNotifications';
 import { useScreenWakeLock } from '../hooks/useScreenWakeLock';
-import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, getOrderCreatedValue } from '../utils/orderTiming';
+import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, getOrderCreatedValue, parseOrderDate } from '../utils/orderTiming';
 import { getPickupTypeLabel, parsePickupReceipt } from '../utils/pickupReceipt';
 import { mergeCompanyTransferMarker, parseCompanyTransfer } from '../utils/companyTransfer';
 import TechnicianPerformanceAdmin from './TechnicianPerformanceAdmin';
@@ -313,7 +313,7 @@ export default function ProtectedOrders() {
       .filter((customer) => customer.orders.length > 1)
       .map((customer) => ({
         ...customer,
-        orders: [...customer.orders].sort((a, b) => new Date(b.created_at || b.date || 0).getTime() - new Date(a.created_at || a.date || 0).getTime()),
+        orders: [...customer.orders].sort((a, b) => (parseOrderDate(b.created_at || b.date)?.getTime() || 0) - (parseOrderDate(a.created_at || a.date)?.getTime() || 0)),
       }))
       .sort((a, b) => b.orders.length - a.orders.length);
   }, [archivedOrders, orders]);
@@ -799,20 +799,11 @@ export default function ProtectedOrders() {
     if (status === 'inspected') return 0;
     const normalizedDate = normalizeArabicDigits(dateStr);
     if (!normalizedDate) return 0;
-    let orderDate: Date;
-    if (normalizedDate.includes('/')) {
-      const parts = normalizedDate.split('/').map((part) => parseInt(part.trim(), 10));
-      if (parts.length === 3) {
-        const [day, month, year] = parts;
-        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) orderDate = new Date(year, month - 1, day);
-        else return 0;
-      } else return 0;
-    } else {
-      orderDate = new Date(normalizedDate);
-      if (isNaN(orderDate.getTime())) return 0;
-    }
+    const orderDate = parseOrderDate(normalizedDate);
+    if (!orderDate) return 0;
     const today = new Date();
-    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayDate = parseOrderDate(`${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`);
+    if (!todayDate) return 0;
     const diffTime = todayDate.getTime() - orderDate.getTime();
     const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     return days > 0 ? days : 0;
@@ -867,7 +858,8 @@ export default function ProtectedOrders() {
 
   const isNewOrder = (order: any) => {
     if (!order.created_at) return false;
-    const created = new Date(order.created_at);
+    const created = parseOrderDate(order.created_at);
+    if (!created) return false;
     const now = new Date();
     const diffHours = (now.getTime() - created.getTime()) / (1000 * 60 * 60);
     return diffHours < 1; // أوردر جديد خلال آخر ساعة
@@ -875,15 +867,12 @@ export default function ProtectedOrders() {
 
   const getOrderCreatedAt = (order: any) => {
     if (order.created_at) {
-      const date = new Date(order.created_at);
-      if (!isNaN(date.getTime())) return date;
+      const date = parseOrderDate(order.created_at);
+      if (date) return date;
     }
     if (order.date && typeof order.date === 'string') {
-      const parts = order.date.split('/');
-      if (parts.length === 3) {
-        const date = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
-        if (!isNaN(date.getTime())) return date;
-      }
+      const date = parseOrderDate(order.date);
+      if (date) return date;
     }
     return null;
   };
@@ -897,8 +886,8 @@ export default function ProtectedOrders() {
     const dateSource = order.invoice_date || order.completed_at || order.created_at || order.date;
     if (!dateSource) return { status: 'none', text: 'لا يوجد ضمان', color: 'slate' };
 
-    const orderDate = new Date(dateSource);
-    if (isNaN(orderDate.getTime())) return { status: 'none', text: 'تاريخ غير صالح', color: 'slate' };
+    const orderDate = parseOrderDate(dateSource);
+    if (!orderDate) return { status: 'none', text: 'تاريخ غير صالح', color: 'slate' };
 
     let months = 6;
     if (order.warranty_period?.includes('سنة')) {
@@ -2090,24 +2079,25 @@ export default function ProtectedOrders() {
         );
       });
 
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59);
+      const start = parseOrderDate(startDate);
+      const end = parseOrderDate(`${endDate}T23:59:59`);
+      if (!start || !end) throw new Error('نطاق التاريخ غير صالح');
 
       const dateFiltered = filteredData.filter(order => {
-        const orderDate = new Date(order.created_at);
-        return orderDate >= start && orderDate <= end;
+        const orderDate = parseOrderDate(order.created_at);
+        return Boolean(orderDate && orderDate >= start && orderDate <= end);
       });
 
       const finalData = dateFiltered.filter(order => {
-        const diffDays = Math.floor((new Date().getTime() - new Date(order.created_at).getTime()) / (1000 * 60 * 60 * 24));
+        const orderDate = parseOrderDate(order.created_at);
+        const diffDays = orderDate ? Math.floor((Date.now() - orderDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
         return diffDays > 3;
       });
 
       setReportColumns(isViewer
         ? ['رقم الأوردر', 'العميل', 'الجهاز', 'الماركة', 'الفني', 'الحالة', 'التاريخ']
         : ['رقم الأوردر', 'العميل', 'الهاتف', 'الجهاز', 'الماركة', 'الفني', 'الحالة', 'التاريخ']);
-      setReportData(finalData.map(order => ({ ...order, date: order.created_at.split('T')[0] })));
+      setReportData(finalData.map(order => ({ ...order, date: formatOrderDateTime(order.created_at) })));
     } catch (err) {
       console.error(err);
       showToast("فشل تنفيذ العملية", "error");
@@ -2133,19 +2123,19 @@ export default function ProtectedOrders() {
       const { data, error } = await query;
       if (error) throw error;
 
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59);
+      const start = parseOrderDate(startDate);
+      const end = parseOrderDate(`${endDate}T23:59:59`);
+      if (!start || !end) throw new Error('نطاق التاريخ غير صالح');
 
       const filtered = (data || []).filter(order => {
-        const orderDate = new Date(order.created_at);
-        return orderDate >= start && orderDate <= end;
+        const orderDate = parseOrderDate(order.created_at);
+        return Boolean(orderDate && orderDate >= start && orderDate <= end);
       });
 
       setReportColumns(isViewer
         ? ['رقم الأوردر', 'العميل', 'الجهاز', 'الماركة', 'الفني', 'سبب الإلغاء', 'التاريخ']
         : ['رقم الأوردر', 'العميل', 'الهاتف', 'الجهاز', 'الماركة', 'الفني', 'سبب الإلغاء', 'التاريخ']);
-      setReportData(filtered.map(order => ({ ...order, date: order.created_at.split('T')[0] })));
+      setReportData(filtered.map(order => ({ ...order, date: formatOrderDateTime(order.created_at) })));
     } catch (err) { console.error(err); showToast("فشل تنفيذ العملية", "error"); } finally { setReportLoading(false); }
   };
 
