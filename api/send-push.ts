@@ -221,16 +221,14 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 		                    priority: 10,
 		                    web_push_priority: 10,
 		                    ttl: 86400,
-		                    web_push_topic: event,
-		                    renotify: true,
-		                    web_push_require_interaction: true,
-		                    chrome_web_icon: "https://www.maintenanceguide.life/pwa-192.png",
-		                    chrome_web_badge: "https://www.maintenanceguide.life/pwa-192.png",
-		                    chrome_web_image: "https://www.maintenanceguide.life/pwa-512.png",
-		                    // Force visibility for Chrome Android
-		                    android_visibility: 1,
-		                    content_available: true,
-		                    mutable_content: true,
+			                    web_push_topic: event,
+			                    renotify: true,
+			                    chrome_web_icon: "https://www.maintenanceguide.life/pwa-192.png",
+			                    chrome_web_badge: "https://www.maintenanceguide.life/pwa-192.png",
+			                    chrome_web_image: "https://www.maintenanceguide.life/pwa-512.png",
+			                    // Force visibility for Chrome Android
+			                    android_visibility: 1,
+			                    web_push_require_interaction: false,
 		          }),
 	        })
 	      ));
