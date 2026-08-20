@@ -70,24 +70,47 @@ self.addEventListener('fetch', (event) => {
 });
 
 
-// Handle Manus Direct Notification clicks
+// Backup Push Handler for Chrome "Privacy" fallback fix
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+  
+  try {
+    const data = event.data.json();
+    // If it's a OneSignal push, we usually let the SDK handle it.
+    // But if Chrome is showing "Enter to view content", we can force show it here.
+    if (data.custom && data.custom.a) {
+      const payload = data.custom.a;
+      const title = data.title || payload.title || "تنبيه جديد - Maintenance Guide";
+      const body = data.alert || data.body || payload.message || "لديك تحديث جديد في النظام";
+      
+      event.waitUntil(
+        self.registration.showNotification(title, {
+          body: body,
+          icon: '/pwa-192.png',
+          badge: '/pwa-192.png',
+          data: { url: payload.url || '/orders?source=pwa' },
+          tag: data.custom.i || 'maintenance-alert',
+          renotify: true
+        })
+      );
+    }
+  } catch (e) {
+    console.warn("Push data parse failed, letting SDK handle it");
+  }
+});
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  
-  const targetUrl = event.notification.data?.url || '/orders?source=pwa';
+  const urlToOpen = event.notification.data?.url || '/orders?source=pwa';
   
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // If a window is already open, focus it and navigate
       for (const client of clientList) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
-          return client.focus();
+          return client.focus().then(c => c.navigate(urlToOpen));
         }
       }
-      // Otherwise open a new window
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(targetUrl);
-      }
+      if (self.clients.openWindow) return self.clients.openWindow(urlToOpen);
     })
   );
 });

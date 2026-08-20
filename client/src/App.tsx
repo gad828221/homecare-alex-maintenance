@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";
@@ -174,6 +174,33 @@ function AppContent() {
   const currentRole = localStorage.getItem('userRole');
   const staffChatPaths = ['/orders', '/tech-portal', '/data-entry'];
   const canShowEmployeeChat = staffChatPaths.includes(currentPath) && ['admin', 'manager', 'tech', 'data-entry'].includes(currentRole || '');
+
+  // تنبيه صوتي داخلي بسيط للأوردرات الجديدة (يعمل والبرنامج مفتوح)
+  useEffect(() => {
+    if (!['admin', 'manager', 'tech'].includes(currentRole || '')) return;
+    
+    const audio = new Audio('https://www.soundjay.com/buttons/beep-01a.mp3');
+    const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
+    
+    let lastOrderCount = -1;
+    const checkNewOrders = async () => {
+      try {
+        const res = await fetch(`${supabaseUrl}/rest/v1/orders?select=id&status=eq.pending`, {
+          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
+        });
+        const data = await res.json();
+        if (lastOrderCount !== -1 && data.length > lastOrderCount) {
+          audio.play().catch(() => {});
+        }
+        lastOrderCount = data.length;
+      } catch (e) {}
+    };
+
+    const interval = setInterval(checkNewOrders, 30000);
+    checkNewOrders();
+    return () => clearInterval(interval);
+  }, [currentRole]);
 
   return (
     <>

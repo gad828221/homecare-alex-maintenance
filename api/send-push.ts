@@ -210,21 +210,25 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
           body: JSON.stringify({
             app_id: APP_ID,
             ...audience,
-	                    headings: { en: title, ar: title },
-	                    contents: { en: message, ar: message },
-                    // Remove 'url' field to avoid conflict with 'web_url' as per OneSignal API rules
-	                    web_url: deepLink,
-	                    // Reduce data size to avoid Chrome "sensitive content" hiding
-	                    data: { e: event, o: safeData.order_number }, 
-	                    priority: 10,
-	                    web_push_priority: 10,
-	                    android_visibility: 1,
-	                    ttl: 3600, // Reduced TTL for freshness
-	                    web_push_topic: event,
-	                    renotify: true,
-	                    web_push_require_interaction: true,
-	                    chrome_web_icon: "https://www.maintenanceguide.life/pwa-192.png",
-	                    chrome_web_badge: "https://www.maintenanceguide.life/pwa-192.png",
+		                    headings: { en: title, ar: title },
+		                    contents: { en: message, ar: message },
+		                    web_url: deepLink,
+		                    // إضافة البيانات الأساسية في data و app_url لضمان التوافق
+		                    data: { 
+		                      url: deepLink,
+		                      event: event, 
+		                      order: safeData.order_number 
+		                    },
+		                    priority: 10,
+		                    web_push_priority: 10,
+		                    ttl: 86400,
+		                    web_push_topic: event,
+		                    renotify: true,
+		                    web_push_require_interaction: true,
+		                    chrome_web_icon: "https://www.maintenanceguide.life/pwa-192.png",
+		                    chrome_web_badge: "https://www.maintenanceguide.life/pwa-192.png",
+		                    // محاولة إجبار الصوت (محدود في المتصفحات)
+		                    chrome_web_image: "https://www.maintenanceguide.life/pwa-512.png",
 		          }),
 	        })
 	      ));
