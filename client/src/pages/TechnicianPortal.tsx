@@ -529,11 +529,35 @@ export default function TechnicianPortal() {
         if (newStatus === 'cancelled') statusAr = "ملغي ❌";
         if (newStatus === 'inspected') statusAr = "تم الكشف 💰";
         if (newStatus === 'deferred') statusAr = "مؤجل ⏰";
-        notifyAdmin(`تغيير حالة الأوردر إلى: ${statusAr}`, oldOrder);
-
-
+        if (newStatus === 'in-progress') statusAr = "بدء العمل 🚀";
+        
+        const actionTitle = `تغيير حالة الأوردر إلى: ${statusAr}`;
+        notifyAdmin(actionTitle, oldOrder);
+        
+        // إرسال Push للمديرين ومدير العمليات
+        void sendExternalPush({
+          event: 'system_alert',
+          title: `🛠️ تحديث أوردر: ${statusAr}`,
+          message: `الفني ${techName} قام بتغيير حالة الأوردر #${oldOrder.order_number} للعميل ${oldOrder.customer_name} إلى ${statusAr}.`,
+          targetRoles: ['admin', 'manager'],
+          data: { order_id: id, status: newStatus, technician: techName }
+        });
       }
     } catch (err) { console.error(err); }
+  };
+
+  const notifyCustomerContact = async (order: any, method: 'phone' | 'whatsapp') => {
+    const methodAr = method === 'phone' ? 'اتصال هاتفي' : 'واتساب';
+    const actionTitle = `📞 محاولة تواصل مع العميل (${methodAr})`;
+    notifyAdmin(actionTitle, order);
+    
+    void sendExternalPush({
+      event: 'system_alert',
+      title: actionTitle,
+      message: `الفني ${techName} يقوم الآن بالاتصال بالعميل ${order.customer_name} عبر ${methodAr} للأوردر #${order.order_number}.`,
+      targetRoles: ['admin', 'manager'],
+      data: { order_id: order.id, method, technician: techName }
+    });
   };
 
   const handleInspection = (order: any, amount: number) => {
@@ -852,6 +876,15 @@ export default function TechnicianPortal() {
 🖼️ صورة القديم: ${oldPartsPhoto}
 🖼️ صورة الجديد: ${newPartsPhoto}`;
     notifyAdmin("💰 تحويل نصيب الشركة بانتظار التأكيد", selectedOrder, details);
+
+    // إرسال Push للمديرين ومدير العمليات عند التصفية
+    void sendExternalPush({
+      event: 'system_alert',
+      title: '💰 تصفية أوردر جديدة',
+      message: `الفني ${techName} قام بتصفية الأوردر #${selectedOrder.order_number} بمبلغ ${settleForm.total_amount} ج.م. نصيب الشركة: ${settleForm.company_share} ج.م.`,
+      targetRoles: ['admin', 'manager'],
+      data: { order_id: selectedOrder.id, amount: settleForm.total_amount, technician: techName }
+    });
 
     // إرسال رابط الضمان للعميل تلقائياً
     const invoiceLink = `${window.location.origin}/invoice?id=${selectedOrder.id}`;
@@ -1197,7 +1230,7 @@ export default function TechnicianPortal() {
             >
               <Play fill="currentColor" size={20} /> بدء العمل واستقبال الأوردرات
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold mb-4">Maintenance Guide OS v3.2.8-chat-removed</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold mb-4">Maintenance Guide OS v3.3.0-operations-alert</p>
             <NotificationStatus />
 
           </div>
@@ -1501,7 +1534,11 @@ export default function TechnicianPortal() {
                               <Ban size={14} /> <span className="text-[10px] font-black italic tracking-tighter">الرقم مخفي بعد الإتمام</span>
                             </div>
                           ) : (
-                            <a href={`tel:${order.phone}`} className="flex-1 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95">
+                            <a 
+                              href={`tel:${order.phone}`} 
+                              onClick={() => notifyCustomerContact(order, 'phone')}
+                              className="flex-1 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95"
+                            >
                               <Phone size={14} /> <span className="text-[10px] font-black">اتصال بالعميل</span>
                             </a>
                           )}
