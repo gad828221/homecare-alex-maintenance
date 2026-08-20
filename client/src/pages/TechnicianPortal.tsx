@@ -1230,7 +1230,7 @@ export default function TechnicianPortal() {
             >
               <Play fill="currentColor" size={20} /> بدء العمل واستقبال الأوردرات
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold mb-4">Maintenance Guide OS v3.3.0-operations-alert</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold mb-4">Maintenance Guide OS v3.3.1-invoice-rating-link</p>
             <NotificationStatus />
 
           </div>

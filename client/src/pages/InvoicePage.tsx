@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import jsPDF from "jspdf";
 import { openWhatsAppDirectly } from '../utils/whatsapp';
-import { Download, Printer, Send, Copy, Check, Link, ShieldCheck, MessageCircle, Clock } from "lucide-react";
+import { Download, Printer, Send, Copy, Check, Link, ShieldCheck, MessageCircle, Clock, Star } from "lucide-react";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -328,10 +328,17 @@ export default function InvoicePageNew() {
                 </div>
               </div>
               
-              <div className={`mt-4 p-6 rounded-2xl text-center shadow-inner relative overflow-hidden ${
-                getWarrantyRemaining().status === 'expired' ? 'bg-red-600 text-white' : 
-                getWarrantyRemaining().status === 'expiring' ? 'bg-orange-500 text-white' : 'bg-blue-600 text-white'
-              }`}>
+	              <div className={`mt-4 p-6 rounded-2xl text-center shadow-inner relative overflow-hidden ${
+	                getWarrantyRemaining().status === 'expired' ? 'bg-red-600 text-white' : 
+	                getWarrantyRemaining().status === 'expiring' ? 'bg-orange-500 text-white' : 'bg-blue-600 text-white'
+	              }`}>
+                {/* عرض التقييم إذا وجد */}
+                {invoice?.rating > 0 && (
+                  <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-md px-2 py-1 rounded-lg flex items-center gap-1 border border-white/30 animate-in fade-in zoom-in duration-500">
+                    <Star size={14} className="text-yellow-300 fill-yellow-300" />
+                    <span className="text-xs font-black">{invoice.rating}/5</span>
+                  </div>
+                )}
                 <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
                   <div className="absolute top-2 left-2 rotate-12"><ShieldCheck className="w-12 h-12" /></div>
                   <div className="absolute bottom-2 right-2 -rotate-12"><Clock className="w-12 h-12" /></div>
@@ -358,15 +365,26 @@ export default function InvoicePageNew() {
                 </p>
               </div>
 
-              {getWarrantyRemaining().status !== 'expired' && (
-                <button 
-                  onClick={requestWarrantySupport}
-                  className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95"
-                >
-                  <MessageCircle className="w-6 h-6" />
-                  طلب صيانة تحت الضمان
-                </button>
-              )}
+	              {getWarrantyRemaining().status !== 'expired' && (
+	                <div className="space-y-3 mt-4">
+                    <button 
+                      onClick={requestWarrantySupport}
+                      className="w-full bg-green-500 hover:bg-green-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95"
+                    >
+                      <MessageCircle className="w-6 h-6" />
+                      طلب صيانة تحت الضمان
+                    </button>
+
+                    {/* زر التقييم الذكي */}
+                    <a 
+                      href={`${window.location.origin}/feedback?order=${encodeURIComponent(invoice.order_number)}`}
+                      className="w-full bg-white text-blue-600 border-2 border-blue-600 hover:bg-blue-50 py-4 rounded-xl font-black flex items-center justify-center gap-2 shadow-md transition-all active:scale-95"
+                    >
+                      <Star className="w-6 h-6 fill-blue-600" />
+                      {invoice?.rating > 0 ? 'تحديث تقييم الخدمة' : 'قيّم الخدمة الآن ⭐'}
+                    </a>
+                  </div>
+	              )}
             </div>
             
             <div className="bg-gradient-to-l from-purple-50 to-white p-4 rounded-lg border-r-4 border-purple-500">
