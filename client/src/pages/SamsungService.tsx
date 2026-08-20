@@ -25,7 +25,7 @@ export default function SamsungService() {
       "provider": {
         "@type": "LocalBusiness",
         "name": "Maintenance Guide",
-        "telephone": "+201278885772",
+        "telephone": "+201558625259",
         "address": {
           "@type": "PostalAddress",
           "addressLocality": "Alexandria",
@@ -174,7 +174,7 @@ export default function SamsungService() {
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-4xl md:text-5xl font-black mb-8">تواصل معنا الآن</h2>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
-            <a href="tel:01278885772" className="flex items-center justify-center gap-3 bg-white text-blue-600 font-black px-10 py-6 rounded-2xl hover:bg-slate-100 transition-all text-xl">
+            <a href="tel:01558625259" className="flex items-center justify-center gap-3 bg-white text-blue-600 font-black px-10 py-6 rounded-2xl hover:bg-slate-100 transition-all text-xl">
               <Phone className="w-6 h-6" /> اتصل الآن
             </a>
             <a href="https://wa.me/201558625259" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-3 bg-green-500 text-white font-black px-10 py-6 rounded-2xl hover:bg-green-600 transition-all text-xl">

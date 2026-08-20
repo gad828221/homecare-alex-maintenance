@@ -18,7 +18,7 @@ const SEO: React.FC<SEOProps> = ({ title, description, keywords, brand }) => {
     "name": fullTitle,
     "description": description,
     "url": "https://maintenanceguide.life",
-    "telephone": "01278885772",
+    "telephone": "01558625259",
     "address": {
       "@type": "PostalAddress",
       "addressLocality": "Alexandria",

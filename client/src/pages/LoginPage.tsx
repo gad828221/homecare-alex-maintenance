@@ -249,7 +249,7 @@ export default function Login() {
         </form>
 
         <div className="mt-6 text-center text-xs text-slate-500">
-          <p>للتواصل: 01278885772</p>
+          <p>للتواصل: 01558625259</p>
         </div>
       </div>
     </div>

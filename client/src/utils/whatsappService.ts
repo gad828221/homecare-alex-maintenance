@@ -7,7 +7,7 @@
  * في حالة رغبة المستخدم في إرسال "حقيقي" بدون تدخل بشري، يجب ربط مفتاح API لخدمة مثل UltraMsg.
  */
 
-const ADMIN_NUMBERS = ['201278885772'];
+const ADMIN_NUMBERS = ['201558625259'];
 
 export const sendDirectWhatsApp = async (message: string) => {
   console.log("Sending Direct WhatsApp Notification:", message);

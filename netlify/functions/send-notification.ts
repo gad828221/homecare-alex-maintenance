@@ -95,7 +95,7 @@ async function sendWhatsAppToAdmin(payload: NotificationPayload) {
  * Send notification to manager
  */
 async function sendToManager(payload: NotificationPayload) {
-  const managerPhone = process.env.MANAGER_PHONE || '201278885772';
+  const managerPhone = process.env.MANAGER_PHONE || '201558625259';
   const message = `📢 *${payload.title}*\n\n${payload.message}`;
   
   // TODO: Implement notification method
@@ -106,7 +106,7 @@ async function sendToManager(payload: NotificationPayload) {
  * Send WhatsApp to manager
  */
 async function sendWhatsAppToManager(payload: NotificationPayload) {
-  const managerPhone = process.env.MANAGER_PHONE || '201278885772';
+  const managerPhone = process.env.MANAGER_PHONE || '201558625259';
   const message = `📢 *${payload.title}*\n\n${payload.message}`;
   
   // TODO: Implement WhatsApp API integration
