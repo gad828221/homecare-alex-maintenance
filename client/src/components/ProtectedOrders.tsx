@@ -2394,7 +2394,7 @@ export default function ProtectedOrders() {
             >
               <Play fill="currentColor" size={20} /> دخول وتفعيل التنبيهات 🔊
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v1.6.0</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v2.9.5</p>
           </div>
         </div>
       )}
@@ -3516,7 +3516,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-slate-500 opacity-20">
             Maintenance Guide © 2026 - All Rights Reserved
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v1.7.5-preserve-feedback</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v2.9.5-final-fix</div>
         </div>
       </div>
 

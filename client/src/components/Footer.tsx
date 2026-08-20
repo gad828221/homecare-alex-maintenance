@@ -45,7 +45,7 @@ export default function Footer() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-400">WhatsApp</p>
-                  <span className="font-medium">01278885772</span>
+                  <span className="font-medium">01558625259</span>
                 </div>
               </a>
               <div className="space-y-4">
