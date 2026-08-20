@@ -43,8 +43,8 @@
         await OneSignal.init({
           appId: "9abc8506-3935-44a8-b044-3117e77d26dc",
           autoResubscribe: true,
-          // Revert to default worker to avoid QE undefined errors in v16
-          serviceWorkerPath: "OneSignalSDKWorker.js",
+          // Use unified worker to prevent scope conflicts in Chrome
+          serviceWorkerPath: "sw.js",
           serviceWorkerParam: { scope: "/" },
           notificationClickHandlerMatch: "origin",
           notificationClickHandlerAction: "navigate"

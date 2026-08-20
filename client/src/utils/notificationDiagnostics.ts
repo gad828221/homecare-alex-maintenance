@@ -119,13 +119,15 @@ export const diagnoseNotifications = async (): Promise<NotificationDiagnostic[]>
   let registration: ServiceWorkerRegistration | null = null;
   if (hasServiceWorker) {
     try {
-      registration = await withTimeout(navigator.serviceWorker.ready);
-      const active = Boolean(registration.active);
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      const unifiedWorker = registrations.find(r => r.active?.scriptURL.includes('sw.js'));
+      const active = Boolean(unifiedWorker && unifiedWorker.active);
+      
       checks.push({
         key: 'service-worker',
         label: 'محرك التطبيق في الخلفية',
         status: active ? 'ok' : 'warning',
-        detail: active ? 'Service Worker يعمل.' : 'المحرك مسجل لكنه لم يصبح نشطاً بعد. أعد فتح الصفحة.'
+        detail: active ? 'يعمل بشكل سليم (sw.js).' : 'المحرك الموحد غير نشط حالياً. اضغط "إصلاح وتفعيل".'
       });
 
       const subscription = await withTimeout(registration.pushManager.getSubscription());
@@ -193,18 +195,18 @@ export const repairNotifications = async (): Promise<string> => {
   const externalId = getExternalId(user);
   let result = 'تم البدء في الإصلاح القسري...';
 
-  // 1. تنظيف Service Workers المتعارضة
+  // 1. تنظيف شامل وإعادة تسجيل المحرك الموحد
   if ('serviceWorker' in navigator) {
     try {
       const registrations = await navigator.serviceWorker.getRegistrations();
       for (const reg of registrations) {
-        // حذف أي ملف قديم لا يحمل اسم sw.js الموحد
-        if (!reg.active?.scriptURL.includes('sw.js')) {
-          await reg.unregister();
-        }
+        await reg.unregister();
       }
+      // تسجيل المحرك الموحد sw.js
       const newReg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
       await newReg.update();
+      // انتظار بسيط لتفعيل المحرك
+      await new Promise(r => setTimeout(r, 1000));
     } catch (e) {
       console.error('SW Repair Error:', e);
     }
