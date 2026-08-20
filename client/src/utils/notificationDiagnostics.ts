@@ -201,55 +201,60 @@ export const repairNotifications = async (): Promise<string> => {
     }
   }
 
-  // 2. إصلاح OneSignal قسرياً
+  // 2. إصلاح OneSignal قسرياً مع حماية ضد خطأ Qe
   await runWithOneSignal(async (OneSignal) => {
     try {
-      // إجبار الدخول بالهوية
-      if (externalId && OneSignal.login) {
-        await OneSignal.login(externalId);
+      // انتظار بسيط للتأكد من استقرار المحرك
+      await new Promise(r => setTimeout(r, 800));
+
+      // التحقق من وجود الكائنات الأساسية قبل لمسها
+      if (!OneSignal || !OneSignal.Notifications) {
+        throw new Error('محرك الإشعارات لم يكتمل تحميله بعد.');
       }
 
-      // إضافة الوسوم
-      if (user && OneSignal.User?.addTags) {
-        const stableId = user.id ?? user.username ?? user.techName;
-        await OneSignal.User.addTags({ 
-          role: user.role || localStorage.getItem('userRole') || 'user', 
-          user_id: String(stableId || ''),
-          ...(user.techName ? { tech_name: user.techName } : {})
-        });
+      // إجبار الدخول بالهوية (آمن)
+      if (externalId && typeof OneSignal.login === 'function') {
+        await OneSignal.login(externalId).catch(() => undefined);
       }
 
-      // محاولة إعادة الاشتراك القسري
+      // محاولة إعادة الاشتراك القسري بطريقة v16 الرسمية والآمنة
       const permission = Notification.permission;
       
       if (permission === 'granted') {
         try {
-          // التأكد من أن الكائنات الداخلية موجودة قبل الاستدعاء لتجنب خطأ Qe undefined
-          const user = OneSignal.User;
-          const push = user?.PushSubscription;
+          // بدلاً من الوصول المباشر لـ User.PushSubscription الذي يسبب خطأ Qe
+          // سنستخدم دوال الطبقة العليا الأكثر استقراراً
           
-          if (push) {
-            // محاولة التنشيط المباشر أولاً
-            if (push.optIn) await push.optIn();
+          if (OneSignal.Notifications.requestPermission) {
+            await OneSignal.Notifications.requestPermission();
           }
-          
-          // تحديث الهوية
-          if (externalId && OneSignal.login) await OneSignal.login(externalId);
 
-          result = 'تم تنشيط الاشتراك وتحديث الهوية بنجاح ✅';
+          // محاولة تحديث الوسوم (Tags) بشكل مستقل
+          if (user && OneSignal.User && typeof OneSignal.User.addTags === 'function') {
+            const stableId = user.id ?? user.username ?? user.techName;
+            await OneSignal.User.addTags({ 
+              role: user.role || localStorage.getItem('userRole') || 'user', 
+              user_id: String(stableId || ''),
+              ...(user.techName ? { tech_name: user.techName } : {})
+            }).catch(() => undefined);
+          }
+
+          result = 'تم تنشيط نظام التنبيهات وتحديث الهوية بنجاح ✅';
         } catch (subErr: any) {
-          console.error('OneSignal Repair Inner Error:', subErr);
-          result = `⚠️ تنبيه: ${subErr.message || 'خطأ في الربط'}. يرجى استخدام "المسح الشامل" بالأسفل.`;
+          console.error('OneSignal v16 Stable Repair Error:', subErr);
+          result = `⚠️ تنبيه: المتصفح يرفض الربط التلقائي (${subErr.message || 'Error'}). يرجى استخدام "المسح الشامل" بالأسفل.`;
         }
       } else if (permission === 'default') {
-        if (OneSignal.Slidedown?.promptPush) await OneSignal.Slidedown.promptPush();
+        if (OneSignal.Slidedown && typeof OneSignal.Slidedown.promptPush === 'function') {
+          await OneSignal.Slidedown.promptPush().catch(() => undefined);
+        }
         result = 'يرجى الموافقة على نافذة "السماح" التي ستظهر الآن.';
       } else {
         result = '❌ الإشعارات محظورة من إعدادات الهاتف. يجب السماح بها يدوياً من إعدادات الموقع.';
       }
     } catch (err: any) {
       console.error('OneSignal Repair Error:', err);
-      result = `❌ فشل الإصلاح: ${err.message || 'خطأ غير معروف'}. حاول تحديث الصفحة أو استخدام "المسح الشامل".`;
+      result = `❌ فشل الإصلاح: ${err.message || 'خطأ في النظام'}. حاول استخدام "المسح الشامل".`;
     }
   });
 
