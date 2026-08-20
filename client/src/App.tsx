@@ -267,9 +267,9 @@ function App() {
         const isPwa = new URLSearchParams(window.location.search).get('source') === 'pwa' || 
                       (window.matchMedia('(display-mode: standalone)').matches);
         
-        // v3.1.5: تحويل فوري إذا كان الدخول من إشعار
-        if (isPwa && currentPath === '/') {
-          window.location.replace('/login?source=pwa');
+        // v3.1.6: تحويل فوري وقوي إذا كان الدخول من إشعار لضمان فتح التطبيق
+        if (window.location.search.includes('source=pwa') && (currentPath === '/' || PUBLIC_PATHS.has(currentPath))) {
+          window.location.replace(`/login${window.location.search}`);
           return;
         }
 
