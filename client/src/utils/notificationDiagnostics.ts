@@ -125,21 +125,11 @@ export const diagnoseNotifications = async (): Promise<NotificationDiagnostic[]>
       const unifiedWorker = registrations.find(r => r.active?.scriptURL.includes('sw.js'));
       const active = Boolean(unifiedWorker && unifiedWorker.active);
       
-      const osWorker = registrations.find(r => r.active?.scriptURL.includes('OneSignalWorker_Final.js'));
-      const osActive = Boolean(osWorker && osWorker.active);
-      
       checks.push({
         key: 'service-worker',
-        label: 'محرك التطبيق في الخلفية',
+        label: 'محرك التشغيل الموحد (PWA + Push)',
         status: active ? 'ok' : 'warning',
-        detail: active ? 'محرك PWA يعمل بشكل سليم.' : 'محرك PWA غير نشط حالياً.'
-      });
-
-      checks.push({
-        key: 'os-worker',
-        label: 'محرك الإشعارات (OneSignal)',
-        status: osActive ? 'ok' : 'warning',
-        detail: osActive ? 'محرك الإشعارات يعمل بشكل سليم.' : 'محرك الإشعارات غير نشط. اضغط "إصلاح وتفعيل".'
+        detail: active ? 'المحرك الموحد يعمل بنجاح ✅' : 'المحرك غير نشط. اضغط "إصلاح وتفعيل".'
       });
 
       if (active && unifiedWorker) {
@@ -237,7 +227,7 @@ export const repairNotifications = async (): Promise<string> => {
   const externalId = getExternalId(user);
   let result = 'تم البدء في الإصلاح القسري...';
 
-  // 1. تنظيف شامل وإعادة تسجيل المحرك الموحد
+  // 1. تنظيف شامل وإعادة تسجيل المحرك الموحد v2.7.0
   if ('serviceWorker' in navigator) {
     try {
       const registrations = await navigator.serviceWorker.getRegistrations();
@@ -249,13 +239,12 @@ export const repairNotifications = async (): Promise<string> => {
         const names = await caches.keys();
         await Promise.all(names.map(n => caches.delete(n)));
       }
-      // تسجيل المحرك الموحد sw.js بنسخة جديدة قسرياً
-      const newReg = await navigator.serviceWorker.register(`/sw.js?v=${Date.now()}`, { scope: '/' });
+      // تسجيل المحرك الموحد sw.js الموحد
+      const newReg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
       await newReg.update();
-      // انتظار بسيط لتفعيل المحرك
-      await new Promise(r => setTimeout(r, 1500));
-    } catch (e) {
-      console.error('SW Repair Error:', e);
+      result = 'تم تنشيط المحرك الموحد v2.7.0 بنجاح ✅';
+    } catch (e: any) {
+      result = `خطأ في تنشيط المحرك: ${e.message}`;
     }
   }
 
@@ -320,12 +309,12 @@ export const repairNotifications = async (): Promise<string> => {
 };
 
 export const hardResetNotifications = async (): Promise<void> => {
-  // 1. مسح كافة بيانات التخزين المرتبطة بـ OneSignal و Push
+  // 1. مسح كافة بيانات التخزين المرتبطة بـ OneSignal و PWA
   if (typeof window !== 'undefined') {
     const keysToRemove = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key?.toLowerCase().includes('onesignal') || key?.toLowerCase().includes('push')) {
+      if (key?.toLowerCase().includes('onesignal') || key?.toLowerCase().includes('push') || key?.toLowerCase().includes('pwa')) {
         keysToRemove.push(key);
       }
     }
@@ -335,6 +324,8 @@ export const hardResetNotifications = async (): Promise<void> => {
     try {
       if (window.indexedDB.deleteDatabase) {
         window.indexedDB.deleteDatabase('OneSignalSDK');
+        window.indexedDB.deleteDatabase('onesignal-sdk');
+        window.indexedDB.deleteDatabase('workbox-precache-v2');
       }
     } catch (e) { console.error('DB Clear Error:', e); }
   }
