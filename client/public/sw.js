@@ -1,7 +1,7 @@
 // OneSignal + PWA Unified Worker v2.7.0
 importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
 
-const CACHE_NAME = 'maintenance-guide-v2.7.0-final';
+const CACHE_NAME = 'maintenance-guide-v2.7.3-force-update';
 const APP_SHELL = [
   '/manifest.webmanifest',
   '/pwa-192.png',

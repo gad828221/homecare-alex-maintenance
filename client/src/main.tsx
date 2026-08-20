@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
+// Force Update v2.7.3
 createRoot(document.getElementById("root")!).render(<App />);
 
 if ('serviceWorker' in navigator) {
