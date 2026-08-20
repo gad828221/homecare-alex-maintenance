@@ -260,17 +260,23 @@ function App() {
         return;
       }
 
-      if (PUBLIC_PATHS.has(currentPath)) return;
+      if (PUBLIC_PATHS.has(currentPath) && !window.location.search.includes('source=pwa')) return;
 
       // A missing session means this browser has never logged in on this origin.
       if (!role) {
         const isPwa = new URLSearchParams(window.location.search).get('source') === 'pwa' || 
                       (window.matchMedia('(display-mode: standalone)').matches);
         
+        // v3.1.5: تحويل فوري إذا كان الدخول من إشعار
+        if (isPwa && currentPath === '/') {
+          window.location.replace('/login?source=pwa');
+          return;
+        }
+
         window.setTimeout(() => {
           const latest = readAuthSession();
-          if (!latest.role) window.location.replace('/login');
-        }, isPwa ? 2000 : 500);
+          if (!latest.role && !PUBLIC_PATHS.has(currentPath)) window.location.replace('/login');
+        }, isPwa ? 1000 : 500);
         return;
       }
 
