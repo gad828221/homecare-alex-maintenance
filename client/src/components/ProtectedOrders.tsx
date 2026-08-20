@@ -540,29 +540,56 @@ export default function ProtectedOrders() {
 
   const initAudio = () => {
     try {
+      const AudioCtor = window.AudioContext || (window as any).webkitAudioContext;
       if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        audioContextRef.current = new AudioCtor();
       }
-      if (audioContextRef.current.state === 'suspended') {
-        audioContextRef.current.resume();
+      
+      const ctx = audioContextRef.current;
+      
+      // v3.2.7: iOS Audio Unlock Sequence
+      if (ctx.state === 'suspended') {
+        ctx.resume();
       }
+
+      // Create and play a silent buffer to "warm up" iOS audio
+      const buffer = ctx.createBuffer(1, 1, 22050);
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(ctx.destination);
+      source.start(0);
+
       setAudioEnabled(true);
       sessionStorage.setItem('audio_forced_enabled', 'true');
-      playDing(false);
-    } catch (e) { console.error("Audio init error", e); }
+      
+      // Play a confirmation sound
+      setTimeout(() => playDing(false), 100);
+    } catch (e) { 
+      console.error("Audio init error", e);
+      // Fallback for extreme cases
+      setAudioEnabled(true);
+    }
   };
 
   const playDing = (isUrgent = false) => {
     try {
       const AudioCtor = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioCtor) return;
-      const ctx = audioContextRef.current || new AudioCtor();
-      if (!audioContextRef.current) audioContextRef.current = ctx;
-      if (ctx.state === 'suspended') void ctx.resume().catch(() => undefined);
+      
+      // Always ensure we have a context and it's resumed (crucial for iOS)
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioCtor();
+      }
+      const ctx = audioContextRef.current;
+      
+      if (ctx.state === 'suspended') {
+        void ctx.resume().catch(() => undefined);
+      }
 
       const tones = isUrgent
         ? [{ frequency: 1040, offset: 0, duration: 0.28 }, { frequency: 1320, offset: 0.22, duration: 0.28 }, { frequency: 1040, offset: 0.44, duration: 0.28 }]
         : [{ frequency: 880, offset: 0, duration: 0.5 }];
+      
       const now = ctx.currentTime;
       tones.forEach(({ frequency, offset, duration }) => {
         const oscillator = ctx.createOscillator();
@@ -571,16 +598,25 @@ export default function ProtectedOrders() {
         gainNode.connect(ctx.destination);
         oscillator.frequency.value = frequency;
         oscillator.type = isUrgent ? 'square' : 'sine';
+        
+        // iOS requires very specific timing for gain nodes
         const start = now + offset;
         const volume = isUrgent ? 0.48 : 0.2;
-        gainNode.gain.setValueAtTime(0.001, start);
-        gainNode.gain.exponentialRampToValueAtTime(volume, start + 0.025);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, start + duration);
+        
+        gainNode.gain.setValueAtTime(0.0001, start);
+        gainNode.gain.exponentialRampToValueAtTime(volume, start + 0.02);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+        
         oscillator.start(start);
-        oscillator.stop(start + duration + 0.03);
+        oscillator.stop(start + duration + 0.05);
       });
-      if (isUrgent && 'vibrate' in navigator) navigator.vibrate?.([260, 100, 260, 100, 260]);
-    } catch (e) { console.warn('Audio error', e); }
+      
+      if (isUrgent && 'vibrate' in navigator) {
+        navigator.vibrate?.([260, 100, 260, 100, 260]);
+      }
+    } catch (e) { 
+      console.warn('Audio playback error', e); 
+    }
   };
 
   const startUrgentAlert = () => {
@@ -2396,7 +2432,7 @@ export default function ProtectedOrders() {
             >
               <Play fill="currentColor" size={20} /> دخول وتفعيل التنبيهات 🔊
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v2.9.5</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v3.2.7</p>
           </div>
         </div>
       )}
@@ -3523,7 +3559,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.2.6-clean-ui</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.2.7-ios-audio-fix</div>
         </div>
       </div>
 
