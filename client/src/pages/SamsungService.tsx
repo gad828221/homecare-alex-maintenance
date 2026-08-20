@@ -13,7 +13,7 @@ export default function SamsungService() {
     // Update SEO Meta Tags
     updateSEO({
       ...brandSEOData.samsung,
-      canonicalUrl: "https://www.maintenanceguide.life/samsung-service"
+      canonicalUrl: "https://maintenanceguide.life/samsung-service"
     });
 
     // Schema Markup for Google Ads Quality Score

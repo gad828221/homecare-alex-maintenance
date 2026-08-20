@@ -11,7 +11,6 @@ import PresenceManager from "./components/PresenceManager";
 import EmployeeChat from "./components/EmployeeChat";
 import { readAuthSession } from './utils/authSession';
 
-const CANONICAL_ORIGIN = 'https://www.maintenanceguide.life';
 const PUBLIC_PATHS = new Set([
   '/', '/login', '/invoice', '/pickup-receipt', '/feedback',
   '/samsung-service', '/lg-service', '/sharp-service',
@@ -116,8 +115,7 @@ function PwaInstallBanner() {
   // Only show install banner on staff-related pages to avoid bothering visitors
   const isStaffPath = ['/login', '/orders', '/tech-portal', '/data-entry'].some(path => currentPath.startsWith(path));
   
-  // If we can't install automatically (e.g. inside Facebook/WhatsApp browser), 
-  // we show a manual copy link button to open in Chrome
+  // If the browser does not expose an automatic install prompt, provide a manual staff link.
   const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
   const isRestrictedBrowser = /FBAN|FBAV|WhatsApp|Instagram|Line|Messenger/i.test(ua);
 
@@ -126,7 +124,7 @@ function PwaInstallBanner() {
   const copyToChrome = () => {
     const staffInstallUrl = `${window.location.origin}/login?source=pwa&portal=staff`;
     navigator.clipboard.writeText(staffInstallUrl);
-    alert('تم نسخ رابط بوابة الموظفين. افتحه في Chrome ثم ثبّت البرنامج من صفحة تسجيل الدخول.');
+    alert('تم نسخ رابط بوابة الموظفين. افتحه في Firefox أو المتصفح الأساسي ثم ثبّت البرنامج من صفحة تسجيل الدخول.');
   };
 
   return (
@@ -146,7 +144,7 @@ function PwaInstallBanner() {
         </div>
         {!canInstall && isRestrictedBrowser && (
           <p className="text-[9px] text-orange-200 bg-orange-950/30 p-2 rounded-lg border border-orange-500/20">
-            ⚠️ أنت تتصفح من داخل تطبيق (واتساب/فيسبوك). انسخ رابط بوابة الموظفين وافتحه في Chrome ثم ثبّت البرنامج.
+            ⚠️ أنت تتصفح من داخل تطبيق (واتساب/فيسبوك). انسخ رابط بوابة الموظفين وافتحه في Firefox أو المتصفح الأساسي ثم ثبّت البرنامج.
           </p>
         )}
       </div>
@@ -245,14 +243,6 @@ function AppContent() {
 function App() {
   useEffect(() => {
     const currentPath = window.location.pathname;
-
-    // تم إلغاء إجبار www للسماح لـ OneSignal بالعمل على النطاقين
-    /*
-    if (window.location.origin === 'https://maintenanceguide.life') {
-      window.location.replace(`${CANONICAL_ORIGIN}${window.location.pathname}${window.location.search}${window.location.hash}`);
-      return;
-    }
-    */
 
     const checkAuth = () => {
       const { role } = readAuthSession();

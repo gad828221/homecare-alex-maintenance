@@ -4,19 +4,19 @@
 
 ## Website
 
-- [Home](https://www.maintenanceguide.life/): Main landing page, booking flow, service areas, branches, and frequently asked questions.
-- [Samsung Appliance Repair](https://www.maintenanceguide.life/samsung-service): Samsung appliance maintenance services.
-- [LG Appliance Repair](https://www.maintenanceguide.life/lg-service): LG appliance maintenance services.
-- [Sharp Appliance Repair](https://www.maintenanceguide.life/sharp-service): Sharp appliance maintenance services.
-- [Toshiba Appliance Repair](https://www.maintenanceguide.life/toshiba-service): Toshiba appliance maintenance services.
-- [Zanussi Appliance Repair](https://www.maintenanceguide.life/zanussi-service): Zanussi appliance maintenance services.
-- [Unionaire Appliance Repair](https://www.maintenanceguide.life/unionaire-service): Unionaire appliance maintenance services.
-- [Fresh Appliance Repair](https://www.maintenanceguide.life/fresh-service): Fresh appliance maintenance services.
-- [White Whale Appliance Repair](https://www.maintenanceguide.life/white-whale-service): White Whale appliance maintenance services.
-- [Ariston Appliance Repair](https://www.maintenanceguide.life/ariston-service): Ariston appliance maintenance services.
-- [Beko Appliance Repair](https://www.maintenanceguide.life/beko-service): Beko appliance maintenance services.
-- [Hoover Appliance Repair](https://www.maintenanceguide.life/hoover-service): Hoover appliance maintenance services.
-- [Indesit Appliance Repair](https://www.maintenanceguide.life/indesit-service): Indesit appliance maintenance services.
+- [Home](https://maintenanceguide.life/): Main landing page, booking flow, service areas, branches, and frequently asked questions.
+- [Samsung Appliance Repair](https://maintenanceguide.life/samsung-service): Samsung appliance maintenance services.
+- [LG Appliance Repair](https://maintenanceguide.life/lg-service): LG appliance maintenance services.
+- [Sharp Appliance Repair](https://maintenanceguide.life/sharp-service): Sharp appliance maintenance services.
+- [Toshiba Appliance Repair](https://maintenanceguide.life/toshiba-service): Toshiba appliance maintenance services.
+- [Zanussi Appliance Repair](https://maintenanceguide.life/zanussi-service): Zanussi appliance maintenance services.
+- [Unionaire Appliance Repair](https://maintenanceguide.life/unionaire-service): Unionaire appliance maintenance services.
+- [Fresh Appliance Repair](https://maintenanceguide.life/fresh-service): Fresh appliance maintenance services.
+- [White Whale Appliance Repair](https://maintenanceguide.life/white-whale-service): White Whale appliance maintenance services.
+- [Ariston Appliance Repair](https://maintenanceguide.life/ariston-service): Ariston appliance maintenance services.
+- [Beko Appliance Repair](https://maintenanceguide.life/beko-service): Beko appliance maintenance services.
+- [Hoover Appliance Repair](https://maintenanceguide.life/hoover-service): Hoover appliance maintenance services.
+- [Indesit Appliance Repair](https://maintenanceguide.life/indesit-service): Indesit appliance maintenance services.
 
 ## Services
 
