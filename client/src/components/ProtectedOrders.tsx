@@ -214,7 +214,7 @@ const invoiceService = {
 };
 
 // ==================== دوال الواتساب المحلية ====================
-const ADMIN_PHONE = '201558625259';
+const ADMIN_PHONE = '201278885772';
 const formatPhoneForWhatsApp = (phone: string) => {
   if (!phone) return '';
   let cleaned = phone.toString().replace(/[^\d]/g, '');

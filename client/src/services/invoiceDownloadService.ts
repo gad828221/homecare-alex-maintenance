@@ -68,7 +68,7 @@ export const invoiceDownloadService = {
 
       // التذييل
       doc.setFontSize(8);
-      doc.text("للاستفسار: 01558625259 | 01558625259", pageWidth / 2, y, { align: "center" });
+      doc.text("للاستفسار: 01278885772 | 01278885772", pageWidth / 2, y, { align: "center" });
 
       doc.save(`فاتورة_${orderNumber}_${new Date().toLocaleDateString('ar-EG')}.pdf`);
       return true;
@@ -131,7 +131,7 @@ export const invoiceDownloadService = {
     let finalPhone = formattedPhone;
     if (finalPhone.startsWith('0')) finalPhone = finalPhone.substring(1);
     if (finalPhone.length === 10) finalPhone = '20' + finalPhone;
-    const message = `📄 *فاتورة الصيانة والضمان* 📄\n\n👤 العميل: ${customerName}\n🔢 رقم الفاتورة: ${orderNumber}\n\n📎 رابط الفاتورة:\n${invoiceLink}\n\n📞 للاستفسار: 01558625259`;
+    const message = `📄 *فاتورة الصيانة والضمان* 📄\n\n👤 العميل: ${customerName}\n🔢 رقم الفاتورة: ${orderNumber}\n\n📎 رابط الفاتورة:\n${invoiceLink}\n\n📞 للاستفسار: 01278885772`;
     window.open(`https://wa.me/${finalPhone}?text=${encodeURIComponent(message)}`, '_blank');
   }
 };

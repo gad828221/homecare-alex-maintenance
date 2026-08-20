@@ -131,7 +131,7 @@ export default function PickupReceiptPage() {
       pdf.setFontSize(12);
       pdf.text("إيصال سحب جهاز للصيانة", pageWidth / 2, 22, { align: "center" });
       pdf.setFontSize(10);
-      pdf.text("خدمة صيانة 24 ساعة بالمنزل | 01558625259 | 01558625259", pageWidth / 2, 30, { align: "center" });
+      pdf.text("خدمة صيانة 24 ساعة بالمنزل | 01278885772 | 01278885772", pageWidth / 2, 30, { align: "center" });
       yPosition = 40;
 
       pdf.setTextColor(0, 0, 0);
@@ -442,8 +442,8 @@ export default function PickupReceiptPage() {
             <div className="text-center pt-6 border-t border-slate-100">
               <p className="text-slate-400 text-xs font-bold mb-2">Maintenance Guide - خدمة صيانة 24 ساعة بالمنزل</p>
               <div className="flex justify-center gap-6 text-slate-900 font-black">
-                <span>📞 01558625259</span>
-                <span>📲 01558625259</span>
+                <span>📞 01278885772</span>
+                <span>📲 01278885772</span>
               </div>
             </div>
           </div>

@@ -90,7 +90,7 @@ function FloatingButtons() {
   return (
     <div className="fixed bottom-6 left-0 right-0 flex justify-between px-4 pointer-events-none z-50">
       <a 
-        href="tel:01558625259" 
+        href="tel:01278885772" 
         className="pointer-events-auto bg-blue-600 hover:bg-blue-700 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 ml-auto" 
         style={{ marginRight: '10px' }} 
         aria-label="اتصال"

@@ -10,7 +10,7 @@ import { Star, CheckCircle, Zap, ShieldCheck, Clock, Award, Phone, MessageCircle
 export default function ZanussiService() {
   useEffect(() => {
     // Dynamic SEO Update - Policy Compliant
-    document.title = "صيانة زانوسي الإسكندرية | مركز خدمة Zanussi المتخصص 01558625259";
+    document.title = "صيانة زانوسي الإسكندرية | مركز خدمة Zanussi المتخصص 01278885772";
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) metaDesc.setAttribute("content", "خدمة صيانة زانوسي بالإسكندرية. نحن مركز خدمة متخصص لصيانة كافة أجهزة Zanussi (ثلاجات، غسالات، تكييفات) بالمنزل بقطع غيار أصلية وضمان سنة.");
 
@@ -23,7 +23,7 @@ export default function ZanussiService() {
       "provider": {
         "@type": "LocalBusiness",
         "name": "Maintenance Guide",
-        "telephone": "+201558625259",
+        "telephone": "+201278885772",
         "address": {
           "@type": "PostalAddress",
           "addressLocality": "Alexandria",
@@ -90,11 +90,11 @@ export default function ZanussiService() {
                 اطلب فني زانوسي
               </Button>
               <a
-                href="tel:+201558625259"
+                href="tel:+201278885772"
                 className="flex items-center justify-center gap-3 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 text-white text-xl font-black px-10 py-4 rounded-2xl transition-all"
               >
                 <Phone className="w-6 h-6" />
-                01558625259
+                01278885772
               </a>
             </div>
 
@@ -171,7 +171,7 @@ export default function ZanussiService() {
                     <MessageCircle className="w-6 h-6" />
                     واتساب
                   </a>
-                  <a href="tel:+201558625259" className="inline-flex items-center gap-2 bg-yellow-800 text-white px-8 py-4 rounded-2xl font-black transition-transform hover:scale-105 border border-yellow-400/30">
+                  <a href="tel:+201278885772" className="inline-flex items-center gap-2 bg-yellow-800 text-white px-8 py-4 rounded-2xl font-black transition-transform hover:scale-105 border border-yellow-400/30">
                     <Phone className="w-6 h-6" />
                     اتصال فوري
                   </a>
