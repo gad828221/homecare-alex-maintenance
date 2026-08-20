@@ -219,7 +219,6 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 	                    priority: 10,
 	                    web_push_priority: 10,
 	                    android_visibility: 1,
-	                    android_channel_id: "default",
 	                    ttl: 3600, // Reduced TTL for freshness
 	                    web_push_topic: event,
 	                    renotify: true,
