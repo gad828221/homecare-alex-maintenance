@@ -1164,7 +1164,7 @@ export default function TechnicianPortal() {
             >
               <Play fill="currentColor" size={20} /> بدء العمل واستقبال الأوردرات
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold mb-4">Maintenance Guide OS v3.1.8-smooth-nav</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold mb-4">Maintenance Guide OS v3.2.0-warranty-fix</p>
             <NotificationStatus />
 
           </div>
@@ -1692,11 +1692,25 @@ export default function TechnicianPortal() {
                           className="w-full bg-slate-800 rounded-xl px-3 py-2 text-white border border-slate-700 outline-none text-sm"
                         >
                           <option value="بدون ضمان">بدون ضمان</option>
+                          <option value="1 شهر">1 شهر</option>
+                          <option value="شهرين">شهرين</option>
                           <option value="3 أشهر">3 أشهر</option>
+                          <option value="4 أشهر">4 أشهر</option>
                           <option value="6 أشهر">6 أشهر</option>
                           <option value="1 سنة">1 سنة</option>
                           <option value="2 سنة">2 سنة</option>
+                          <option value="custom">مخصص (يدوي)...</option>
                         </select>
+                        {settleForm.warranty_period === 'custom' && (
+                          <div className="mt-2">
+                            <input 
+                              type="text" 
+                              placeholder="اكتب مدة الضمان هنا..." 
+                              className="w-full bg-slate-800 border border-orange-500/50 rounded-xl px-3 py-2 text-white text-xs"
+                              onChange={(e) => handleSettleChange('warranty_period', e.target.value)}
+                            />
+                          </div>
+                        )}
                       </div>
                       <div>
                         <label className="text-[10px] text-slate-500 block mb-1">قطع الغيار (تظهر في الفاتورة)</label>
