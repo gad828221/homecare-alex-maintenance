@@ -223,23 +223,23 @@ export const repairNotifications = async (): Promise<string> => {
       const permission = Notification.permission;
       
       if (permission === 'granted') {
-        // إذا كان الإذن ممنوحاً ولكن لا يوجد اشتراك، نحاول إلغاء الاشتراك ثم الاشتراك مجدداً
         try {
-          if (OneSignal.User?.PushSubscription?.optOut) await OneSignal.User.PushSubscription.optOut();
-          if (OneSignal.User?.PushSubscription?.optIn) await OneSignal.User.PushSubscription.optIn();
+          // التأكد من أن الكائنات الداخلية موجودة قبل الاستدعاء لتجنب خطأ Qe undefined
+          const user = OneSignal.User;
+          const push = user?.PushSubscription;
           
-          // إجبار طلب الإذن مجدداً لتنشيط OneSignal v16
-          if (OneSignal.Notifications?.requestPermission) {
-            await OneSignal.Notifications.requestPermission();
+          if (push) {
+            // محاولة التنشيط المباشر أولاً
+            if (push.optIn) await push.optIn();
           }
-          result = 'تم إعادة بناء الاشتراك وتنشيط هوية الموظف بنجاح ✅';
+          
+          // تحديث الهوية
+          if (externalId && OneSignal.login) await OneSignal.login(externalId);
+
+          result = 'تم تنشيط الاشتراك وتحديث الهوية بنجاح ✅';
         } catch (subErr: any) {
-          console.error('Subscription Opt-In Error:', subErr);
-          // محاولة أخيرة: إعادة تهيئة OneSignal يدوياً إذا أمكن
-          if (OneSignal.init) {
-            await OneSignal.init({ appId: "9abc8506-3935-44a8-b044-3117e77d26dc", serviceWorkerPath: "sw.js" });
-          }
-          result = `⚠️ فشل تنشيط الاشتراك تلقائياً (${subErr.message || 'خطأ غير معروف'}). حاول مسح بيانات الموقع من إعدادات المتصفح.`;
+          console.error('OneSignal Repair Inner Error:', subErr);
+          result = `⚠️ تنبيه: ${subErr.message || 'خطأ في الربط'}. يرجى استخدام "المسح الشامل" بالأسفل.`;
         }
       } else if (permission === 'default') {
         if (OneSignal.Slidedown?.promptPush) await OneSignal.Slidedown.promptPush();
@@ -257,30 +257,43 @@ export const repairNotifications = async (): Promise<string> => {
 };
 
 export const hardResetNotifications = async (): Promise<void> => {
-  // 1. مسح OneSignal من ذاكرة المتصفح
+  // 1. مسح كافة بيانات التخزين المرتبطة بـ OneSignal و Push
   if (typeof window !== 'undefined') {
-    localStorage.removeItem('onesignal-notification-prompt');
-    localStorage.removeItem('isOptedIn');
-    localStorage.removeItem('isPushNotificationsEnabled');
-    // مسح كافة مفاتيح OneSignal الأخرى
+    const keysToRemove = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key?.toLowerCase().includes('onesignal')) {
-        localStorage.removeItem(key);
+      if (key?.toLowerCase().includes('onesignal') || key?.toLowerCase().includes('push')) {
+        keysToRemove.push(key);
       }
     }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+    
+    // مسح الـ IndexedDB (مهم جداً لـ OneSignal v16)
+    try {
+      if (window.indexedDB.deleteDatabase) {
+        window.indexedDB.deleteDatabase('OneSignalSDK');
+      }
+    } catch (e) { console.error('DB Clear Error:', e); }
   }
 
-  // 2. إلغاء تسجيل كافة الـ Service Workers
+  // 2. إلغاء تسجيل كافة الـ Service Workers فوراً
   if ('serviceWorker' in navigator) {
-    const registrations = await navigator.serviceWorker.getRegistrations();
-    for (const reg of registrations) {
-      await reg.unregister();
-    }
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map(reg => reg.unregister()));
+    } catch (e) { console.error('SW Unregister Error:', e); }
   }
 
-  // 3. إعادة تحميل الصفحة لإعادة البناء من الصفر
-  window.location.reload();
+  // 3. مسح الكاش بالكامل
+  if ('caches' in window) {
+    try {
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map(name => caches.delete(name)));
+    } catch (e) { console.error('Cache Clear Error:', e); }
+  }
+
+  // 4. إعادة تحميل الصفحة من الخادم (بدون كاش)
+  window.location.href = window.location.origin + window.location.pathname + '?reset=' + Date.now();
 };
 
 export const diagnosticsSummary = (checks: NotificationDiagnostic[]) => {
