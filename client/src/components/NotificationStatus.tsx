@@ -33,31 +33,37 @@ export default function NotificationStatus() {
     }
 
     setLoading(true);
+    
+    // مؤقت أمان لإيقاف حالة التحميل إذا علق المتصفح
+    const timeoutId = setTimeout(() => {
+      setLoading(false);
+      if (Notification.permission === 'denied') {
+        alert("الإشعارات محظورة في إعدادات متصفحك. يرجى الضغط على علامة القفل بجانب رابط الموقع وتفعيل الإشعارات.");
+      }
+    }, 6000);
+
     try {
-      // 1. محاولة طلب الصلاحية الأصلية للمتصفح أولاً (أكثر موثوقية في Chrome Android)
-      if ('Notification' in window && Notification.permission === 'default') {
+      // 1. محاولة طلب الصلاحية الأصلية للمتصفح
+      if ('Notification' in window && Notification.permission !== 'granted') {
         await Notification.requestPermission();
       }
 
       // 2. تفعيل OneSignal
       await win.OneSignal.User.PushSubscription.optIn();
       
-      // 3. إظهار نافذة OneSignal إذا لم يتم الاشتراك بعد
-      const currentStatus = await win.OneSignal.User.PushSubscription.optedIn;
-      if (!currentStatus) {
-        await win.OneSignal.Slidedown.promptPush();
+      // 3. محاولة إظهار النافذة بكل الطرق الممكنة
+      await win.OneSignal.Slidedown.promptPush();
+      
+      if (win.OneSignal.showNativePrompt) {
+        await win.OneSignal.showNativePrompt();
       }
 
       // تحديث الحالة
       await checkStatus();
-      
-      // إذا ظل غير مشترك، نحاول الطريقة التقليدية
-      if (!currentStatus && win.OneSignal.showNativePrompt) {
-        win.OneSignal.showNativePrompt();
-      }
     } catch (err) {
       console.error("OneSignal Enable Error:", err);
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
     }
   };
