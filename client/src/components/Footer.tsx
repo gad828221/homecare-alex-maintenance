@@ -20,7 +20,7 @@ export default function Footer() {
               <a href="https://wa.me/201558625259" target="_blank" rel="noopener noreferrer" aria-label="التواصل عبر واتساب" className="w-10 h-10 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center transition-all transform hover:scale-110">
                 <MessageCircle className="w-5 h-5" />
               </a>
-              <a href="tel:+201278885772" aria-label="الاتصال بمركز الصيانة" className="w-10 h-10 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center transition-all transform hover:scale-110">
+              <a href="tel:+201558625259" aria-label="الاتصال بمركز الصيانة" className="w-10 h-10 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center transition-all transform hover:scale-110">
                 <Phone className="w-5 h-5" />
               </a>
             </div>
@@ -30,13 +30,13 @@ export default function Footer() {
           <div>
             <h4 className="font-bold text-lg mb-6 text-orange-400">تواصل معنا</h4>
             <div className="space-y-4">
-              <a href="tel:+201278885772" className="flex items-center gap-3 hover:text-orange-400 transition-colors group">
+              <a href="tel:+201558625259" className="flex items-center gap-3 hover:text-orange-400 transition-colors group">
                 <div className="w-10 h-10 bg-slate-800 group-hover:bg-orange-500 rounded-lg flex items-center justify-center transition-all">
                   <Phone className="w-5 h-5" />
                 </div>
                 <div>
                   <p className="text-xs text-gray-400">الهاتف</p>
-                  <span className="font-medium">01278885772</span>
+                  <span className="font-medium">01558625259</span>
                 </div>
               </a>
               <a href="https://wa.me/201558625259" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 hover:text-green-400 transition-colors group">

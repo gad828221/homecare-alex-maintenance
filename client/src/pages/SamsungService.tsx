@@ -25,7 +25,7 @@ export default function SamsungService() {
       "provider": {
         "@type": "LocalBusiness",
         "name": "Maintenance Guide",
-        "telephone": "+201278885772",
+        "telephone": "+201558625259",
         "address": {
           "@type": "PostalAddress",
           "addressLocality": "Alexandria",

@@ -11,6 +11,7 @@ import {
   hasDiagnosticProblems,
   NotificationDiagnostic,
   repairNotifications,
+  testDirectNotification,
 } from '../utils/notificationDiagnostics';
 
 type Props = {
@@ -85,6 +86,21 @@ export default function NotificationDiagnosticsButton({ compact = false }: Props
     }
   };
 
+  const handleDirectTest = async () => {
+    setLoading(true);
+    addLog('بدء اختبار التنبيه المباشر...');
+    try {
+      const res = await testDirectNotification();
+      addLog(`نتيجة الاختبار: ${res}`);
+      setMessage(res);
+    } catch (e: any) {
+      addLog(`❌ فشل الاختبار: ${e.message}`);
+      setMessage(`فشل الاختبار المباشر: ${e.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <button
@@ -148,12 +164,17 @@ export default function NotificationDiagnosticsButton({ compact = false }: Props
 
                 {message && <div className="mt-4 rounded-2xl border border-blue-400/30 bg-blue-500/10 p-3 text-xs font-bold leading-6 text-blue-100">{message}</div>}
 
-                <div className="mt-5 grid grid-cols-2 gap-2">
-                  <button type="button" onClick={() => void runCheck()} disabled={loading} className="flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-3 py-3 text-xs font-black hover:bg-slate-700 disabled:opacity-50">
-                    <RefreshCw size={16} className={loading ? 'animate-spin' : ''} /> إعادة الفحص
-                  </button>
-                  <button type="button" onClick={() => void handleRepair()} disabled={loading} className="flex items-center justify-center gap-2 rounded-xl bg-orange-600 px-3 py-3 text-xs font-black text-white hover:bg-orange-700 disabled:opacity-50">
-                    <Bell size={16} /> إصلاح وتفعيل
+                <div className="mt-5 grid grid-cols-1 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button type="button" onClick={() => void runCheck()} disabled={loading} className="flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-3 py-3 text-xs font-black hover:bg-slate-700 disabled:opacity-50">
+                      <RefreshCw size={16} className={loading ? 'animate-spin' : ''} /> إعادة الفحص
+                    </button>
+                    <button type="button" onClick={() => void handleRepair()} disabled={loading} className="flex items-center justify-center gap-2 rounded-xl bg-orange-600 px-3 py-3 text-xs font-black text-white hover:bg-orange-700 disabled:opacity-50">
+                      <Bell size={16} /> إصلاح وتفعيل
+                    </button>
+                  </div>
+                  <button type="button" onClick={() => void handleDirectTest()} disabled={loading} className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 py-3 text-xs font-black text-white hover:bg-emerald-700 disabled:opacity-50 transition-all active:scale-95">
+                    <Bell size={16} /> 🔔 اختبار تنبيه المتصفح المباشر
                   </button>
                 </div>
 

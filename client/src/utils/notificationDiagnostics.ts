@@ -199,6 +199,36 @@ export const diagnoseNotifications = async (): Promise<NotificationDiagnostic[]>
   return checks;
 };
 
+export const testDirectNotification = async (): Promise<string> => {
+  if (!('Notification' in window)) return 'المتصفح لا يدعم الإشعارات تماماً.';
+  
+  let permission = Notification.permission;
+  if (permission === 'default') {
+    permission = await Notification.requestPermission();
+  }
+  
+  if (permission === 'granted') {
+    const registration = await navigator.serviceWorker.getRegistration();
+    if (registration) {
+      await registration.showNotification('تنبيه تجريبي مباشر', {
+        body: 'إذا رأيت هذا الإشعار، فهاتفك يدعم التنبيهات بنجاح ✅',
+        icon: '/logo.png',
+        badge: '/logo.png',
+        tag: 'test-notification',
+        renotify: true
+      });
+      return 'تم إرسال تنبيه مباشر لهاتفك الآن ✅';
+    } else {
+      new Notification('تنبيه تجريبي مباشر', {
+        body: 'إذا رأيت هذا الإشعار، فهاتفك يدعم التنبيهات بنجاح ✅',
+        icon: '/logo.png'
+      });
+      return 'تم إرسال تنبيه (بدون محرك خلفية) ✅';
+    }
+  }
+  return 'فشل الإرسال: الإذن محظور أو مرفوض.';
+};
+
 export const repairNotifications = async (): Promise<string> => {
   const user = getStoredUser();
   const externalId = getExternalId(user);

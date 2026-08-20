@@ -104,7 +104,7 @@ export default function InvoicePageNew() {
 
   const requestWarrantySupport = () => {
     const message = `🚨 *طلب دعم فني - عميل تحت الضمان* 🚨\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الطلب:* ${invoice.order_number}\n👤 *العميل:* ${invoice.customer_name}\n🔧 *الجهاز:* ${invoice.device_type} - ${invoice.brand}\n📅 *تاريخ الفاتورة:* ${new Date(invoice.created_at).toLocaleDateString('ar-EG')}\n🛡️ *حالة الضمان:* ${getWarrantyRemaining().text}\n\n📝 *الاستفسار:* أواجه مشكلة في الجهاز وأحتاج للمساعدة.\n━━━━━━━━━━━━━━━━━━━━━━`;
-    openWhatsAppDirectly('201278885772', message);
+    openWhatsAppDirectly('201558625259', message);
   };
 
   const downloadPDF = async () => {
@@ -122,7 +122,7 @@ export default function InvoicePageNew() {
       pdf.setFontSize(12);
       pdf.text("فاتورة صيانة وضمان الأجهزة المنزلية", pageWidth / 2, 22, { align: "center" });
       pdf.setFontSize(10);
-      pdf.text("خدمة صيانة 24 ساعة بالمنزل | 01278885772 | 01278885772", pageWidth / 2, 30, { align: "center" });
+      pdf.text("خدمة صيانة 24 ساعة بالمنزل | 01558625259 | 01558625259", pageWidth / 2, 30, { align: "center" });
       yPosition = 40;
 
       pdf.setTextColor(0, 0, 0);
@@ -192,7 +192,7 @@ export default function InvoicePageNew() {
       pdf.text("✨ شكراً لثقتك بنا ✨", pageWidth / 2, yPosition, { align: "center" });
       yPosition += 7;
       pdf.setFont(undefined, "normal");
-      pdf.text("للاستفسار والدعم الفني: 01278885772", pageWidth / 2, yPosition, { align: "center" });
+      pdf.text("للاستفسار والدعم الفني: 01558625259", pageWidth / 2, yPosition, { align: "center" });
       yPosition += 5;
       pdf.text("خدمة صيانة 24 ساعة بالمنزل - Maintenance Guide", pageWidth / 2, yPosition, { align: "center" });
 
@@ -253,8 +253,8 @@ export default function InvoicePageNew() {
               <p className="text-orange-100 text-lg mb-1">فاتورة صيانة وضمان الأجهزة المنزلية</p>
               <p className="text-orange-100 text-sm mb-4">خدمة صيانة 24 ساعة بالمنزل</p>
               <div className="flex justify-center gap-8 mt-4 text-sm border-t border-orange-400 pt-4">
-                <span className="flex items-center gap-1">📞 01278885772</span>
-                <span className="flex items-center gap-1">📲 01278885772</span>
+                <span className="flex items-center gap-1">📞 01558625259</span>
+                <span className="flex items-center gap-1">📲 01558625259</span>
                 <span className="flex items-center gap-1">📍 الإسكندرية</span>
               </div>
             </div>
@@ -381,7 +381,7 @@ export default function InvoicePageNew() {
             
             <div className="text-center pt-6 text-gray-600 text-sm border-t-2 border-gray-200">
               <p className="font-bold mb-2">✨ شكراً لثقتك بنا ✨</p>
-              <p>للاستفسار والدعم الفني: 01278885772</p>
+              <p>للاستفسار والدعم الفني: 01558625259</p>
               <p className="text-xs text-gray-500 mt-2">خدمة صيانة 24 ساعة بالمنزل - Maintenance Guide</p>
             </div>
           </div>
