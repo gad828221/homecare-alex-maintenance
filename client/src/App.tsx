@@ -108,49 +108,7 @@ function FloatingButtons() {
   );
 }
 
-function PwaInstallBanner() {
-  const { isInstalled, canInstall, install } = usePwaInstall();
-  const currentPath = window.location.pathname;
-  
-  // Only show install banner on staff-related pages to avoid bothering visitors
-  const isStaffPath = ['/login', '/orders', '/tech-portal', '/data-entry'].some(path => currentPath.startsWith(path));
-  
-  // If the browser does not expose an automatic install prompt, provide a manual staff link.
-  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-  const isRestrictedBrowser = /FBAN|FBAV|WhatsApp|Instagram|Line|Messenger/i.test(ua);
-
-  if (isInstalled || !isStaffPath) return null;
-
-  const copyToChrome = () => {
-    const staffInstallUrl = `${window.location.origin}/login?source=pwa&portal=staff`;
-    navigator.clipboard.writeText(staffInstallUrl);
-    alert('تم نسخ رابط بوابة الموظفين. افتحه في Firefox أو المتصفح الأساسي ثم ثبّت البرنامج من صفحة تسجيل الدخول.');
-  };
-
-  return (
-    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:w-[360px] z-[90] bg-slate-900 border border-orange-500/50 rounded-2xl p-3 shadow-2xl animate-in slide-in-from-bottom-8" dir="rtl">
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 shrink-0 rounded-xl bg-orange-600 flex items-center justify-center"><Download className="text-white" size={19} /></div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-black text-white">ثبّت بوابة الموظفين للتنبيهات 🔔</p>
-            <p className="text-[10px] text-slate-400 mt-0.5">سيبدأ التطبيق من بوابة الموظفين، وليس من صفحة الزوار</p>
-          </div>
-          {canInstall && !isRestrictedBrowser ? (
-            <button type="button" onClick={() => { void install(); }} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl text-xs font-black whitespace-nowrap active:scale-95 transition-all shadow-lg shadow-orange-900/20">تثبيت الآن</button>
-          ) : (
-            <button type="button" onClick={copyToChrome} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-black whitespace-nowrap active:scale-95 transition-all">نسخ الرابط 🔗</button>
-          )}
-        </div>
-        {!canInstall && isRestrictedBrowser && (
-          <p className="text-[9px] text-orange-200 bg-orange-950/30 p-2 rounded-lg border border-orange-500/20">
-            ⚠️ أنت تتصفح من داخل تطبيق (واتساب/فيسبوك). انسخ رابط بوابة الموظفين وافتحه في Firefox أو المتصفح الأساسي ثم ثبّت البرنامج.
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
+// PwaInstallBanner removed as per user request (v3.2.6)
 
 function AppContent() {
   const currentPath = window.location.pathname;
@@ -234,7 +192,7 @@ function AppContent() {
       {!hideFloatingButtons && <FloatingButtons />}
 
       <PresenceManager />
-      <PwaInstallBanner />
+      {/* PwaInstallBanner removed */}
       {canShowEmployeeChat && <EmployeeChat />}
     </>
   );
