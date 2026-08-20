@@ -116,7 +116,6 @@ export const diagnoseNotifications = async (): Promise<NotificationDiagnostic[]>
         : 'الإشعارات محظورة من إعدادات المتصفح أو الهاتف.'
   });
 
-  let registration: ServiceWorkerRegistration | null = null;
   if (hasServiceWorker) {
     try {
       const registrations = await navigator.serviceWorker.getRegistrations();
@@ -130,20 +129,17 @@ export const diagnoseNotifications = async (): Promise<NotificationDiagnostic[]>
         detail: active ? 'يعمل بشكل سليم (sw.js).' : 'المحرك الموحد غير نشط حالياً. اضغط "إصلاح وتفعيل".'
       });
 
-      const subscription = await withTimeout(registration.pushManager.getSubscription());
-      checks.push({
-        key: 'push-subscription',
-        label: 'اشتراك الجهاز',
-        status: subscription ? 'ok' : 'warning',
-        detail: subscription ? 'الجهاز مشترك في Push.' : 'لا يوجد اشتراك Push لهذا المتصفح.'
-      });
-    } catch {
-      checks.push({
-        key: 'service-worker',
-        label: 'محرك التطبيق في الخلفية',
-        status: 'error',
-        detail: 'لم يتم العثور على Service Worker نشط. افتح الموقع من Chrome أو Firefox ثم حدّث الصفحة.'
-      });
+      if (active && unifiedWorker) {
+        const subscription = await withTimeout(unifiedWorker.pushManager.getSubscription()).catch(() => null);
+        checks.push({
+          key: 'push-subscription',
+          label: 'اشتراك الجهاز',
+          status: subscription ? 'ok' : 'warning',
+          detail: subscription ? 'الجهاز مشترك في Push.' : 'لا يوجد اشتراك Push لهذا المتصفح.'
+        });
+      }
+    } catch (err) {
+      console.error('Diagnostic SW Error:', err);
     }
   }
 
@@ -202,11 +198,16 @@ export const repairNotifications = async (): Promise<string> => {
       for (const reg of registrations) {
         await reg.unregister();
       }
-      // تسجيل المحرك الموحد sw.js
-      const newReg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+      // مسح كافة الكاشات المرتبطة بالمحرك
+      if ('caches' in window) {
+        const names = await caches.keys();
+        await Promise.all(names.map(n => caches.delete(n)));
+      }
+      // تسجيل المحرك الموحد sw.js بنسخة جديدة قسرياً
+      const newReg = await navigator.serviceWorker.register(`/sw.js?v=${Date.now()}`, { scope: '/' });
       await newReg.update();
       // انتظار بسيط لتفعيل المحرك
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise(r => setTimeout(r, 1500));
     } catch (e) {
       console.error('SW Repair Error:', e);
     }
