@@ -748,17 +748,18 @@ export default function ProtectedOrders() {
 	    window.location.replace('/login');
 	  };
 	
-	  const sendTestPush = async () => {
-	    const res = await sendExternalPush({
-	      event: 'system_alert',
-	      title: '🔔 اختبار الإشعارات بنجاح',
-	      message: 'إذا رأيت هذه الرسالة بتفاصيلها، فمحرك الإشعارات يعمل لديك الآن بشكل مثالي.',
-	      targetUserIds: [currentUser?.id ? `${userRole}:${currentUser.id}` : 'all'],
-	      data: { focus: 'notifications' }
-	    });
-	    if (res.ok) showToast('✅ تم إرسال إشعار تجريبي لهاتفك الآن', 'success');
-	    else showToast(`❌ فشل الإرسال: ${res.error}`, 'error');
-	  };
+  const sendTestPush = async () => {
+    // نرسل لكل من له دور 'admin' أو 'manager' كخيار احتياطي لضمان الوصول الفوري
+    const res = await sendExternalPush({
+      event: 'system_alert',
+      title: '🔔 اختبار الإشعارات بنجاح',
+      message: 'إذا رأيت هذه الرسالة بتفاصيلها، فمحرك الإشعارات يعمل لديك الآن بشكل مثالي.',
+      targetRoles: ['admin', 'manager'],
+      data: { focus: 'notifications' }
+    });
+    if (res.ok) showToast('✅ تم إرسال إشعار تجريبي لهاتفك الآن', 'success');
+    else showToast(`❌ فشل الإرسال: ${res.error}`, 'error');
+  };
 
   const sendWhatsAppToCustomerOnCreate = (order: any) => {
     if (isViewer) return;

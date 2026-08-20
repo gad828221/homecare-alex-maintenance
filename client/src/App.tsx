@@ -165,6 +165,32 @@ function AppContent() {
     if (manifestLink && manifestLink.getAttribute('href') !== manifestHref) {
       manifestLink.setAttribute('href', manifestHref);
     }
+
+    // الربط الصامت مع OneSignal للموظفين والمديرين
+    if (isStaffPath) {
+      const storedUser = localStorage.getItem('currentUser');
+      if (storedUser) {
+        try {
+          const user = JSON.parse(storedUser);
+          const role = user.role || localStorage.getItem('userRole') || 'user';
+          const stableId = user.id ?? user.username ?? user.techName;
+          const externalId = stableId !== undefined && stableId !== null ? `${role}:${stableId}` : null;
+          
+          const win = window as any;
+          win.OneSignalDeferred = win.OneSignalDeferred || [];
+          win.OneSignalDeferred.push(async (OneSignal: any) => {
+            if (externalId) {
+              await OneSignal.login(externalId).catch(() => {});
+              await OneSignal.User.addTags({
+                role: role,
+                user_id: String(stableId),
+                ...(user.techName ? { tech_name: user.techName } : {})
+              }).catch(() => {});
+            }
+          });
+        } catch (e) {}
+      }
+    }
   }, [currentPath]);
 
   // إخفاء أزرار الاتصال في صفحات الإدارة والعمل
