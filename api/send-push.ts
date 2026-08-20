@@ -89,11 +89,12 @@ const buildDeepLink = (requestedUrl: unknown, event: string, data: Record<string
   const targetsTechnician = targetUserIds.some((id) => id.startsWith('tech:')) || targetTags.some((tag) => tag.key === 'tech_name' || tag.key === 'user_id');
   const portal = targetsTechnician ? '/tech-portal' : '/orders';
   
-  // v3.1.3: توحيد الرابط لضمان فتح التطبيق المثبت (PWA)
+  // v3.1.7: إجبار الدخول عبر /login لتخطي صفحة الزوار في Firefox
   const buildUrl = (path: string, query: Record<string, string> = {}) => {
     const p = new URLSearchParams(query);
     p.set('source', 'pwa');
-    return `${base}${path}?${p.toString()}`;
+    p.set('redirect', path); // حفظ المسار المطلوب للتحويل بعد الدخول
+    return `${base}/login?${p.toString()}`;
   };
 
   if (focus === 'chat') return buildUrl('/orders', { focus: 'chat' });

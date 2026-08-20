@@ -252,8 +252,15 @@ function App() {
       // تم إلغاء التحويل التلقائي ليبقى الموقع الخاص بالزوار منفصلاً تماماً عن لوحة التحكم
       if (currentPath === '/') return;
 
-      // If accessing /login directly while logged in, always redirect to dashboard
+      // v3.1.7: تحويل ذكي من صفحة الدخول عند القدوم من إشعار
       if (role && currentPath === '/login') {
+        const params = new URLSearchParams(window.location.search);
+        const redirectPath = params.get('redirect');
+        if (redirectPath && PUBLIC_PATHS.has(redirectPath) === false) {
+          window.location.replace(`${redirectPath}${window.location.search}`);
+          return;
+        }
+        
         if (role === 'tech') window.location.replace('/tech-portal');
         else if (role === 'data-entry') window.location.replace('/data-entry');
         else window.location.replace('/orders');
