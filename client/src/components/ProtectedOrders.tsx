@@ -3518,7 +3518,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-slate-500 opacity-20 mt-4">
             Maintenance Guide © 2026 - All Rights Reserved
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v2.9.7-button-fix</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v2.9.8-final-fix</div>
         </div>
       </div>
 

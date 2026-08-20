@@ -1,49 +1,64 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, BellOff, Info, ChevronDown, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { Bell, BellOff, Info, ChevronDown, CheckCircle2, ShieldAlert, RefreshCw } from 'lucide-react';
 
 export default function NotificationStatus() {
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const checkStatus = async () => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setPermission(Notification.permission);
+    }
+    
+    const win = window as any;
+    if (win.OneSignal && win.OneSignal.User && win.OneSignal.User.PushSubscription) {
+      const status = await win.OneSignal.User.PushSubscription.optedIn;
+      setIsSubscribed(!!status);
+    }
+  };
 
   useEffect(() => {
-    const checkStatus = async () => {
-      if (typeof window !== 'undefined' && 'Notification' in window) {
-        setPermission(Notification.permission);
-      }
-      
-      const win = window as any;
-      if (win.OneSignal) {
-        setIsSubscribed(await win.OneSignal.User.PushSubscription.optedIn);
-      }
-    };
-
     checkStatus();
-    const interval = setInterval(checkStatus, 5000);
+    const interval = setInterval(checkStatus, 3000);
     return () => clearInterval(interval);
   }, []);
 
   const handleEnable = async () => {
     const win = window as any;
-    if (win.OneSignal) {
-      try {
-        // محاولة التفعيل المباشر (Direct Opt-in)
-        await win.OneSignal.User.PushSubscription.optIn();
-        
-        // إذا لم ينجح التفعيل الصامت، نظهر نافذة الطلب الرسمية
-        const isOptedIn = await win.OneSignal.User.PushSubscription.optedIn;
-        if (!isOptedIn) {
-          await win.OneSignal.Slidedown.promptPush();
-        }
-        
-        // تحديث الحالة فوراً
-        const currentStatus = await win.OneSignal.User.PushSubscription.optedIn;
-        setIsSubscribed(currentStatus);
-      } catch (err) {
-        console.error("OneSignal Enable Error:", err);
-        // محاولة أخيرة عبر النافذة التقليدية
-        win.OneSignal.showNativePrompt?.();
+    if (!win.OneSignal) {
+      alert("محرك الإشعارات لم يكتمل تحميله بعد، يرجى الانتظار ثوانٍ وإعادة المحاولة.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // 1. محاولة طلب الصلاحية الأصلية للمتصفح أولاً (أكثر موثوقية في Chrome Android)
+      if ('Notification' in window && Notification.permission === 'default') {
+        await Notification.requestPermission();
       }
+
+      // 2. تفعيل OneSignal
+      await win.OneSignal.User.PushSubscription.optIn();
+      
+      // 3. إظهار نافذة OneSignal إذا لم يتم الاشتراك بعد
+      const currentStatus = await win.OneSignal.User.PushSubscription.optedIn;
+      if (!currentStatus) {
+        await win.OneSignal.Slidedown.promptPush();
+      }
+
+      // تحديث الحالة
+      await checkStatus();
+      
+      // إذا ظل غير مشترك، نحاول الطريقة التقليدية
+      if (!currentStatus && win.OneSignal.showNativePrompt) {
+        win.OneSignal.showNativePrompt();
+      }
+    } catch (err) {
+      console.error("OneSignal Enable Error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -58,10 +73,15 @@ export default function NotificationStatus() {
         ) : (
           <button 
             onClick={handleEnable}
-            className="flex items-center gap-1.5 text-orange-500 bg-orange-500/10 px-3 py-1 rounded-full border border-orange-500/20 animate-pulse hover:bg-orange-500/20 transition-all"
+            disabled={loading}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all ${
+              loading 
+                ? "text-slate-400 bg-slate-800 border-slate-700 cursor-wait" 
+                : "text-orange-500 bg-orange-500/10 border-orange-500/20 animate-pulse hover:bg-orange-500/20"
+            }`}
           >
-            <BellOff size={12} />
-            <span>تفعيل جرس التنبيهات الآن</span>
+            {loading ? <RefreshCw size={12} className="animate-spin" /> : <BellOff size={12} />}
+            <span>{loading ? "جاري التفعيل..." : "تفعيل جرس التنبيهات الآن"}</span>
           </button>
         )}
       </div>
