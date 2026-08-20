@@ -3518,7 +3518,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-slate-500 opacity-20 mt-4">
             Maintenance Guide © 2026 - All Rights Reserved
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.0.2-sw-reset</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.0.3-nuclear-reset</div>
         </div>
       </div>
 

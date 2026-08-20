@@ -19,7 +19,6 @@ export default function NotificationStatus() {
         optedIn = await win.OneSignal.User.PushSubscription.optedIn;
       }
       
-      // إذا كان المتصفح يعطي سماح ولكن OneSignal لا يرى الاشتراك
       setIsBlocked(currentPerm === 'denied');
       setIsSubscribed(optedIn);
     }
@@ -32,52 +31,48 @@ export default function NotificationStatus() {
   }, []);
 
   const handleReset = async () => {
+    if (!confirm("سيتم الآن مسح بيانات الإشعارات وإعادة تشغيل الموقع لحل التعليق. هل تريد الاستمرار؟")) return;
+    
     setLoading(true);
     try {
-      // 1. مسح كافة الـ Service Workers المسجلة (حل جذري للتعليق)
+      // 1. مسح الـ Service Workers
       if ('serviceWorker' in navigator) {
         const registrations = await navigator.serviceWorker.getRegistrations();
         for (let registration of registrations) {
           await registration.unregister();
         }
-        console.log("Service Workers Unregistered");
       }
 
-      const win = window as any;
-      if (win.OneSignal) {
-        // 2. إعادة تهيئة OneSignal
-        await win.OneSignal.User.PushSubscription.optOut();
-        setTimeout(async () => {
-          await win.OneSignal.User.PushSubscription.optIn();
-          await checkStatus();
-          setLoading(false);
-          alert("تمت إعادة ضبط المحرك بنجاح. يرجى محاولة التفعيل الآن.");
-        }, 1500);
-      } else {
-        setLoading(false);
-        window.location.reload();
-      }
+      // 2. مسح بيانات OneSignal من LocalStorage
+      Object.keys(localStorage).forEach(key => {
+        if (key.includes('onesignal') || key.includes('OneSignal')) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      // 3. إعادة تشغيل الموقع إجبارياً
+      alert("تم مسح البيانات. سيتم إعادة تشغيل الموقع الآن، يرجى الضغط على 'تفعيل' بمجرد فتح الصفحة.");
+      window.location.reload();
     } catch (err) {
       console.error(err);
       setLoading(false);
-      alert("حدث خطأ أثناء إعادة الضبط. يرجى تحديث الصفحة يدوياً.");
+      window.location.reload();
     }
   };
 
   const handleEnable = async () => {
     const win = window as any;
     if (!win.OneSignal) {
-      alert("محرك الإشعارات لم يكتمل تحميله بعد.");
+      alert("محرك الإشعارات لم يكتمل تحميله بعد. يرجى الانتظار 3 ثوانٍ.");
       return;
     }
 
     setLoading(true);
     
-    // مؤقت أمان لمنع التعليق اللانهائي
     const timeoutId = setTimeout(() => {
       setLoading(false);
-      alert("استغرق الطلب وقتاً طويلاً. يرجى الضغط على 'إعادة ضبط المحرك' ثم المحاولة مرة أخرى.");
-    }, 8000);
+      alert("يبدو أن المتصفح لا يستجيب. يرجى استخدام زر 'إعادة ضبط المحرك' أو تجربة متصفح Firefox.");
+    }, 6000);
 
     try {
       if ('Notification' in window && Notification.permission !== 'granted') {
@@ -86,7 +81,6 @@ export default function NotificationStatus() {
       
       await win.OneSignal.User.PushSubscription.optIn();
       
-      // محاولة إظهار النافذة إذا لم يتم التفعيل صامتاً
       const status = await win.OneSignal.User.PushSubscription.optedIn;
       if (!status) {
         await win.OneSignal.Slidedown.promptPush();
@@ -124,7 +118,7 @@ export default function NotificationStatus() {
               }`}
             >
               {loading ? <RefreshCw size={12} className="animate-spin" /> : <BellOff size={12} />}
-              <span>{loading ? "جاري المعالجة..." : "تفعيل جرس التنبيهات"}</span>
+              <span>{loading ? "جاري التفعيل..." : "تفعيل جرس التنبيهات"}</span>
             </button>
 
             <button 
@@ -133,7 +127,7 @@ export default function NotificationStatus() {
               className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-400 hover:text-white transition-all text-[10px]"
             >
               <RotateCcw size={12} />
-              <span>إعادة ضبط المحرك (حل التعليق)</span>
+              <span>إعادة ضبط المحرك (Nuclear Reset)</span>
             </button>
           </div>
         )}
@@ -142,7 +136,7 @@ export default function NotificationStatus() {
       {isBlocked && (
         <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-[10px] text-red-400 text-center w-full mx-4">
           <ShieldAlert size={12} className="inline mb-1 mr-1" />
-          الإشعارات محظورة في إعدادات Chrome. اضغط على علامة القفل 🔒 بالأعلى لتفعيلها.
+          الإشعارات محظورة. اضغط على علامة القفل 🔒 بالأعلى لتفعيلها يدوياً.
         </div>
       )}
 
@@ -157,11 +151,11 @@ export default function NotificationStatus() {
 
       {showHelp && (
         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 text-[11px] text-right leading-relaxed animate-in slide-in-from-top-2 duration-200 w-full">
-          <p className="font-bold text-orange-400 mb-2">💡 ملاحظة هامة لإعدادات هاتفك:</p>
+          <p className="font-bold text-orange-400 mb-2">💡 الحل الأخير إذا لم يعمل الزر:</p>
           <ul className="space-y-2 text-slate-300">
-            <li>1. تأكد من تفعيل خيار <b>"شعار" (Banner)</b> في إعدادات إشعارات Chrome لتظهر التنبيهات بوضوح.</li>
-            <li>2. إذا ظل الزر يعلق، اضغط على <b>إعادة ضبط المحرك</b> ثم انتظر رسالة النجاح.</li>
-            <li>3. تأكد أنك لا تستخدم "وضع التصفح الخفي".</li>
+            <li>1. استخدم متصفح <b>Firefox</b> فهو الأقوى في الإشعارات.</li>
+            <li>2. تأكد من تفعيل خيار <b>"شعار" (Banner)</b> في إعدادات هاتفك.</li>
+            <li>3. يمكننا تفعيل <b>بوت تليجرام</b> كبديل مضمون 100%.</li>
           </ul>
         </div>
       )}
