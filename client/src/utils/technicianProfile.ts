@@ -6,6 +6,8 @@ export const TECHNICIAN_NAME_BY_CODE: Record<string, string> = {
   ES: 'اسلام',
   EG: 'اسلام الجمال',
   BEBO: 'بهاء',
+  ADMIN: 'مصطفى جاد',
+  'مدير النظام': 'مصطفى جاد'
 };
 
 export type TechnicianProfile = {
