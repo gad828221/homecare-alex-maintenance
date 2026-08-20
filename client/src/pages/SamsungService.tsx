@@ -177,7 +177,7 @@ export default function SamsungService() {
             <a href="tel:01278885772" className="flex items-center justify-center gap-3 bg-white text-blue-600 font-black px-10 py-6 rounded-2xl hover:bg-slate-100 transition-all text-xl">
               <Phone className="w-6 h-6" /> اتصل الآن
             </a>
-            <a href="https://wa.me/201278885772" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-3 bg-green-500 text-white font-black px-10 py-6 rounded-2xl hover:bg-green-600 transition-all text-xl">
+            <a href="https://wa.me/201558625259" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-3 bg-green-500 text-white font-black px-10 py-6 rounded-2xl hover:bg-green-600 transition-all text-xl">
               <MessageCircle className="w-6 h-6" /> واتساب
             </a>
           </div>

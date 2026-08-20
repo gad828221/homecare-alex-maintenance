@@ -167,7 +167,7 @@ export default function WhiteWhaleService() {
                 <h4 className="text-3xl font-black mb-4">تواصل مباشر مع الفني</h4>
                 <p className="font-bold opacity-90 mb-8 text-lg">تحدث مع مهندس الصيانة الآن واعرف تكلفة الإصلاح التقريبية مجاناً.</p>
                 <div className="flex flex-wrap gap-4">
-                  <a href="https://wa.me/201278885772" className="inline-flex items-center gap-2 bg-white text-slate-600 px-8 py-4 rounded-2xl font-black transition-transform hover:scale-105">
+                  <a href="https://wa.me/201558625259" className="inline-flex items-center gap-2 bg-white text-slate-600 px-8 py-4 rounded-2xl font-black transition-transform hover:scale-105">
                     <MessageCircle className="w-6 h-6" />
                     واتساب
                   </a>

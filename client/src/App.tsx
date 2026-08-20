@@ -98,7 +98,7 @@ function FloatingButtons() {
         <Phone className="w-6 h-6" />
       </a>
       <a 
-        href="https://wa.me/201278885772"
+        href="https://wa.me/201558625259"
         target="_blank" 
         rel="noopener noreferrer" 
         className="pointer-events-auto bg-green-600 hover:bg-green-700 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110" 
