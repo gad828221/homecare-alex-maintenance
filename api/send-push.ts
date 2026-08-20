@@ -210,15 +210,19 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
           body: JSON.stringify({
             app_id: APP_ID,
             ...audience,
-		                    headings: { en: title, ar: title },
-		                    contents: { en: message, ar: message },
-			                    // تبسيط فائق لفك حظر Chrome Android
-			                    priority: 10,
-			                    web_push_priority: 10,
-			                    ttl: 3600,
-			                    renotify: true,
-			                    android_visibility: 1,
-			                    web_push_require_interaction: false,
+            headings: { en: title, ar: title },
+            contents: { en: message, ar: message },
+            // تفعيل الخصائص التفاعلية لفك حظر Chrome Android (v2.9.3)
+            priority: 10,
+            web_push_priority: 10,
+            ttl: 3600,
+            renotify: true,
+            android_visibility: 1,
+            web_push_require_interaction: true,
+            web_buttons: [
+              { id: "view_order", text: "✅ عرض التفاصيل", icon: "" }
+            ],
+            android_group: event,
 		          }),
 	        })
 	      ));

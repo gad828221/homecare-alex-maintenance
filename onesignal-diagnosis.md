@@ -24,3 +24,9 @@
 - توجيه index.html إلى OneSignalSDKWorker.js مع defer وorigin click navigation.
 - قصر تهيئة OneSignal على مسارات الموظفين، وإزالة التسجيل اليدوي المتنافس في main.tsx.
 - توحيد deep links وCORS إلى `https://maintenanceguide.life` مع إبقاء www مسموحاً للتوافق القديم.
+
+## التحقق النهائي بعد النشر
+- رؤوس HTTP على `https://maintenanceguide.life/OneSignalSDKWorker.js` تعيد 307 إلى `https://www.maintenanceguide.life/OneSignalSDKWorker.js` ثم 200.
+- النطاق www يعيد `Content-Type: application/javascript; charset=utf-8` و`Service-Worker-Allowed: /`، والجسم هو importScripts الرسمي v16، وليس HTML.
+- ملف Updater منشور كذلك بنفس محتوى OneSignal الرسمي.
+- الموقع يعمل على Vercel فعلياً، وليس Netlify؛ لذلك كان فحص Netlify مضللاً. النشر الحالي من Vercel أصبح يحتوي الملفين الصحيحين.
