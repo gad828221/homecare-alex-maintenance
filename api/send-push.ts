@@ -213,16 +213,18 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 	                    headings: { en: title, ar: title },
 	                    contents: { en: message, ar: message },
                     // Remove 'url' field to avoid conflict with 'web_url' as per OneSignal API rules
-                    web_url: deepLink,
-                    custom_data: { event, ...safeData, deep_link: deepLink },
+	                    web_url: deepLink,
+	                    // Reduce data size to avoid Chrome "sensitive content" hiding
+	                    data: { e: event, o: safeData.order_number }, 
 	                    priority: 10,
 	                    web_push_priority: 10,
 	                    android_visibility: 1,
-	                    ttl: 86400,
-	                    web_push_topic: `${event}-${safeData.order_number || Date.now()}`,
-	                    renotify: true, // Web Push: Trigger sound/vibrate even if same tag
-	                    web_push_require_interaction: true, // Stay until user interacts
-	                    chrome_web_icon: "https://www.maintenanceguide.life/logo.png",
+	                    android_channel_id: "default",
+	                    ttl: 3600, // Reduced TTL for freshness
+	                    web_push_topic: event,
+	                    renotify: true,
+	                    web_push_require_interaction: true,
+	                    chrome_web_icon: "https://www.maintenanceguide.life/pwa-192.png",
 	                    chrome_web_badge: "https://www.maintenanceguide.life/pwa-192.png",
 		          }),
 	        })
