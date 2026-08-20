@@ -96,15 +96,20 @@ export default function NotificationPermissionButton() {
         const externalId = getExternalId(storedUser);
         
         if (externalId && OneSignal?.login) {
+          // Force login to ensure External ID is synced
           await OneSignal.login(externalId).catch((e: any) => console.warn('OS Login failed:', e));
         }
 
         const stableId = storedUser?.id ?? storedUser?.username ?? storedUser?.techName;
         if (stableId !== undefined && stableId !== null && OneSignal?.User?.addTags) {
-          await OneSignal.User.addTags({
-            role: storedUser?.role || userRole,
+          // Add both specific user_id and technician name for flexible targeting
+          const tags: Record<string, string> = {
+            role: storedUser?.role || userRole || 'user',
             user_id: String(stableId)
-          }).catch((e: any) => console.warn('OS Tags failed:', e));
+          };
+          if (storedUser?.techName) tags.tech_name = storedUser.techName;
+          
+          await OneSignal.User.addTags(tags).catch((e: any) => console.warn('OS Tags failed:', e));
         }
 
         if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
