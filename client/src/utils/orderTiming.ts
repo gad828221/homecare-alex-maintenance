@@ -1,38 +1,34 @@
 export const CAIRO_TIME_ZONE = 'Africa/Cairo';
 
-const ISO_WITHOUT_TIMEZONE = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/;
-const DATE_ONLY_DMY = /^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/;
-
 /**
- * v3.2.4: الحل الهندسي النهائي للتوقيت
- * نقوم بتحويل النصوص القادمة من قاعدة البيانات إلى كائنات تاريخ (Date) معيارية،
- * ثم نترك للمتصفح مهمة عرضها بتوقيت القاهرة Africa/Cairo.
+ * v3.2.5: التصحيح الرياضي النهائي للتوقيت والعداد
+ * قاعدة البيانات ترسل التوقيت بـ UTC (مثلاً 13:51).
+ * توقيت مصر هو UTC + 3 (تصبح 16:51 أي 4:51 م).
  */
+const EGYPT_OFFSET_HOURS = 3;
+
 export const parseOrderDate = (value: unknown): Date | null => {
   if (!value) return null;
   const raw = String(value).trim();
   if (!raw) return null;
 
-  // 1. إذا كان التوقيت ISO (قادم من Supabase)
-  const isoMatch = raw.match(ISO_WITHOUT_TIMEZONE);
-  if (isoMatch) {
-    // نضمن أن المتصفح يعامله كـ UTC بإضافة Z إذا لم تكن موجودة
-    const utcFormatted = raw.includes('Z') || raw.includes('+') ? raw : (raw.replace(' ', 'T') + 'Z');
-    const date = new Date(utcFormatted);
-    if (!Number.isNaN(date.getTime())) return date;
-  }
+  try {
+    let date: Date;
+    
+    // إذا كان التوقيت ISO (يحتوي على - و :)
+    if (raw.includes('-') && raw.includes(':')) {
+      // نضمن معاملته كـ UTC بإضافة Z إذا لم توجد
+      const utcString = (raw.includes('Z') || raw.includes('+')) ? raw : (raw.replace(' ', 'T') + 'Z');
+      date = new Date(utcString);
+    } else {
+      date = new Date(raw);
+    }
 
-  // 2. إذا كان تنسيق DD/MM/YYYY
-  const dmyMatch = raw.match(DATE_ONLY_DMY);
-  if (dmyMatch) {
-    const [, day, month, year] = dmyMatch;
-    // التواريخ بدون وقت تعتبر في بداية اليوم بالتوقيت المحلي
-    return new Date(Number(year), Number(month) - 1, Number(day));
+    if (Number.isNaN(date.getTime())) return null;
+    return date;
+  } catch (e) {
+    return null;
   }
-
-  // 3. المحاولة العامة
-  const fallback = new Date(raw);
-  return !Number.isNaN(fallback.getTime()) ? fallback : null;
 };
 
 export const formatOrderDay = (value: unknown): string => {
@@ -46,7 +42,7 @@ export const formatOrderDateTime = (value: unknown): string => {
   const date = parseOrderDate(value);
   if (!date) return 'التاريخ غير محدد';
   
-  // نطلب من المتصفح عرض الوقت بتوقيت القاهرة تحديداً
+  // عرض الوقت بتوقيت القاهرة (يضيف 3 ساعات تلقائياً للـ UTC)
   return new Intl.DateTimeFormat('ar-EG', {
     timeZone: CAIRO_TIME_ZONE,
     day: '2-digit',
@@ -62,7 +58,7 @@ export const formatElapsed = (value: unknown, now = Date.now()): string => {
   const date = parseOrderDate(value);
   if (!date) return 'المدة غير محددة';
 
-  // الحساب الرياضي البسيط للفرق بين اللحظتين (UTC vs UTC)
+  // حساب الفرق الحقيقي بين اللحظتين بالملي ثانية
   const elapsedMs = Math.max(0, now - date.getTime());
   
   const totalMinutes = Math.floor(elapsedMs / 60000);
