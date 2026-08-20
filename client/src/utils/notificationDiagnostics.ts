@@ -165,22 +165,25 @@ export const diagnoseNotifications = async (): Promise<NotificationDiagnostic[]>
     detail: externalId ? `تم التعرف على الحساب: ${externalId}` : 'لم يتم العثور على حساب موظف محفوظ في هذا المتصفح.'
   });
 
-  let oneSignalInitialized = false;
+  let oneSignalInitialized = Boolean((window as any).OneSignalReady);
   let oneSignalOptedIn = false;
   let oneSignalSubscriptionId = '';
-  await runWithOneSignal(async (OneSignal) => {
-    oneSignalInitialized = Boolean(OneSignal);
-    oneSignalOptedIn = Boolean(OneSignal?.User?.PushSubscription?.optedIn || OneSignal?.Notifications?.permission === true);
-    oneSignalSubscriptionId = String(OneSignal?.User?.PushSubscription?.id || '');
-    if (externalId && OneSignal?.login) {
-      await OneSignal.login(externalId).catch(() => undefined);
-    }
-  });
-
   let oneSignalUserId = '';
-  await runWithOneSignal((OneSignal) => {
-    oneSignalUserId = OneSignal?.User?.onesignalId || '';
-  });
+
+  try {
+    await runWithOneSignal(async (OneSignal) => {
+      oneSignalInitialized = true;
+      oneSignalOptedIn = Boolean(OneSignal?.User?.PushSubscription?.optedIn || OneSignal?.Notifications?.permission === true);
+      oneSignalSubscriptionId = String(OneSignal?.User?.PushSubscription?.id || '');
+      oneSignalUserId = OneSignal?.User?.onesignalId || '';
+      
+      if (externalId && OneSignal?.login) {
+        await OneSignal.login(externalId).catch(() => undefined);
+      }
+    }, 5000); // تقليل وقت الانتظار للفحص السريع
+  } catch {
+    // إذا حدث Timeout، نعتمد على الحالة الابتدائية
+  }
 
   checks.push({
     key: 'onesignal',
