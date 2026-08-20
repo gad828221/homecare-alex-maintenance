@@ -98,11 +98,11 @@ export default function Home() {
                 </Button>
 
                 <a
-                  href="tel:+201558625259"
+                  href="tel:01278885772"
                   className="flex items-center justify-center gap-4 bg-white/10 hover:bg-white/20 backdrop-blur-xl border-2 border-white/20 text-white text-2xl font-black px-12 py-6 rounded-3xl transition-all"
                 >
                   <Phone className="w-7 h-7 animate-bounce" />
-                  01558625259
+                  01278885772
                 </a>
               </div>
 

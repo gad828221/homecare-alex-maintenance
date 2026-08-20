@@ -77,11 +77,11 @@ export default function Header() {
           {/* CTA Buttons - Optimized for Google Ads */}
           <div className="flex items-center gap-2">
             <a
-              href="tel:+201558625259"
+              href="tel:01278885772"
               className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2.5 rounded-full font-black text-sm transition-all transform hover:scale-105 shadow-lg shadow-orange-900/20"
             >
               <Phone className="w-4 h-4" />
-              <span className="hidden sm:inline">01558625259</span>
+              <span className="hidden sm:inline">01278885772</span>
               <span className="sm:hidden">اتصل</span>
             </a>
             
@@ -145,7 +145,7 @@ export default function Header() {
               <button onClick={scrollToContact} className="w-full text-right text-white font-bold p-3 hover:bg-slate-700 rounded-xl">اتصل بنا</button>
               
               <div className="grid grid-cols-2 gap-2 pt-4">
-                <a href="tel:+201558625259" className="flex items-center justify-center gap-2 bg-orange-600 text-white p-3 rounded-xl font-bold text-sm">
+                <a href="tel:01278885772" className="flex items-center justify-center gap-2 bg-orange-600 text-white p-3 rounded-xl font-bold text-sm">
                   <Phone className="w-4 h-4" /> اتصل الآن
                 </a>
                 <a href="https://wa.me/201558625259" className="flex items-center justify-center gap-2 bg-green-600 text-white p-3 rounded-xl font-bold text-sm">
