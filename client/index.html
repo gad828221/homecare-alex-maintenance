@@ -43,8 +43,8 @@
         await OneSignal.init({
           appId: "9abc8506-3935-44a8-b044-3117e77d26dc",
           autoResubscribe: true,
-          // Use the same root worker as the PWA; two workers cannot own the same scope in Chrome.
-          serviceWorkerPath: "sw.js",
+          // Revert to default worker to avoid QE undefined errors in v16
+          serviceWorkerPath: "OneSignalSDKWorker.js",
           serviceWorkerParam: { scope: "/" },
           notificationClickHandlerMatch: "origin",
           notificationClickHandlerAction: "navigate"

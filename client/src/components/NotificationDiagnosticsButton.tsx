@@ -23,16 +23,25 @@ export default function NotificationDiagnosticsButton({ compact = false }: Props
   const [checks, setChecks] = useState<NotificationDiagnostic[]>([]);
   const [message, setMessage] = useState('');
   const [hasProblems, setHasProblems] = useState(false);
+  const [logs, setLogs] = useState<string[]>([]);
+
+  const addLog = (msg: string) => {
+    setLogs(prev => [...prev.slice(-19), `${new Date().toLocaleTimeString()} - ${msg}`]);
+  };
 
   const runCheck = async () => {
+    addLog('بدء الفحص...');
     setLoading(true);
     setMessage('');
     try {
       const result = await diagnoseNotifications();
       setChecks(result);
       setHasProblems(hasDiagnosticProblems(result));
-    } catch {
-      setMessage('تعذر إكمال الفحص. افتح الموقع من Chrome أو Firefox ثم حاول مرة أخرى.');
+      addLog('تم تحديث تقرير الحالة.');
+    } catch (e: any) {
+      const errMsg = e.message || 'خطأ غير معروف';
+      addLog(`❌ خطأ في الفحص: ${errMsg}`);
+      setMessage(`تعذر إكمال الفحص: ${errMsg}`);
     } finally {
       setLoading(false);
     }
@@ -57,14 +66,17 @@ export default function NotificationDiagnosticsButton({ compact = false }: Props
 
   const handleRepair = async () => {
     setLoading(true);
+    addLog('بدء عملية الإصلاح...');
     setMessage('جاري تحديث الاشتراك وطلب الإذن...');
     try {
       const repairMessage = await repairNotifications();
+      addLog(`إجابة الإصلاح: ${repairMessage}`);
       setMessage(repairMessage);
       const result = await diagnoseNotifications();
       setChecks(result);
       setHasProblems(hasDiagnosticProblems(result));
-    } catch {
+    } catch (e: any) {
+      addLog(`❌ فشل الإصلاح: ${e.message}`);
       setMessage('تعذر الإصلاح التلقائي. راجع تعليمات المشكلة الظاهرة في التقرير.');
     } finally {
       setLoading(false);
@@ -143,6 +155,13 @@ export default function NotificationDiagnosticsButton({ compact = false }: Props
                   </button>
                 </div>
 
+                <details className="mt-4 border-t border-slate-800 pt-4">
+                  <summary className="cursor-pointer text-[10px] font-bold text-slate-500 uppercase tracking-widest hover:text-slate-300">سجل الأحداث التقني (للأهمية)</summary>
+                  <div className="mt-2 rounded-lg bg-black p-3 font-mono text-[9px] leading-5 text-emerald-400">
+                    {logs.length === 0 ? 'لا يوجد أحداث حالياً.' : logs.map((log, i) => <div key={i}>{log}</div>)}
+                  </div>
+                </details>
+
                 {hasProblems && (
                   <div className="mt-6 border-t border-slate-800 pt-5">
                     <p className="mb-3 text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">حل أخير للمشاكل المستعصية</p>
@@ -150,6 +169,7 @@ export default function NotificationDiagnosticsButton({ compact = false }: Props
                       type="button"
                       onClick={() => {
                         if (confirm('سيقوم هذا الإجراء بمسح كافة إعدادات الإشعارات وإعادة تشغيل البرنامج. هل تود الاستمرار؟')) {
+                          addLog('بدء المسح الشامل...');
                           void hardResetNotifications();
                         }
                       }}
