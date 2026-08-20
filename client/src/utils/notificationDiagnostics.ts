@@ -125,7 +125,7 @@ export const diagnoseNotifications = async (): Promise<NotificationDiagnostic[]>
       const unifiedWorker = registrations.find(r => r.active?.scriptURL.includes('sw.js'));
       const active = Boolean(unifiedWorker && unifiedWorker.active);
       
-      const osWorker = registrations.find(r => r.active?.scriptURL.includes('OneSignalSDKWorker.js'));
+      const osWorker = registrations.find(r => r.active?.scriptURL.includes('OneSignalWorker_Final.js'));
       const osActive = Boolean(osWorker && osWorker.active);
       
       checks.push({

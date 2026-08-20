@@ -35,7 +35,7 @@
     <meta name="apple-mobile-web-app-title" content="Maintenance Guide" />
     <link rel="preload" as="image" href="/images/hero-bg-professional.webp" type="image/webp" fetchpriority="high" />
 
-    <!-- OneSignal Web Push SDK: High Priority Loading -->
+    <!-- OneSignal Web Push SDK: Fresh Start v2.6.8 -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -43,13 +43,13 @@
         OneSignal.init({
           appId: "9abc8506-3935-44a8-b044-3117e77d26dc",
           autoResubscribe: true,
-          serviceWorkerPath: "OneSignalSDKWorker.js",
+          serviceWorkerPath: "OneSignalWorker_Final.js",
           notificationClickHandlerMatch: "origin",
           notificationClickHandlerAction: "navigate"
         }).then(() => {
-          console.log('OneSignal Ready');
           window.OneSignalReady = true;
-        }).catch(err => console.error('OS Init Error:', err));
+          console.log('OS Ready');
+        });
       });
     </script>
     
