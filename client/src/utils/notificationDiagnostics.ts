@@ -157,6 +157,11 @@ export const diagnoseNotifications = async (): Promise<NotificationDiagnostic[]>
     }
   });
 
+  let oneSignalUserId = '';
+  await runWithOneSignal((OneSignal) => {
+    oneSignalUserId = OneSignal?.User?.onesignalId || '';
+  });
+
   checks.push({
     key: 'onesignal',
     label: 'ربط OneSignal',
@@ -164,8 +169,11 @@ export const diagnoseNotifications = async (): Promise<NotificationDiagnostic[]>
     detail: !oneSignalInitialized
       ? 'لم يتم تحميل محرك الإشعارات بعد. حدّث الصفحة بعد ثوانٍ.'
       : oneSignalOptedIn
-        ? `الاشتراك فعال${oneSignalSubscriptionId ? ` (${oneSignalSubscriptionId.slice(0, 12)}…)` : ''}.`
-        : 'OneSignal يعمل لكن الجهاز غير مشترك حالياً.'
+        ? `الاشتراك فعال.
+           - OneSignal ID: ${oneSignalUserId || 'غير متوفر'}
+           - Subscription ID: ${oneSignalSubscriptionId || 'غير متوفر'}`
+        : `OneSignal يعمل لكن الجهاز غير مشترك حالياً.
+           - OneSignal ID: ${oneSignalUserId || 'غير متوفر'}`
   });
 
   return checks;
@@ -216,15 +224,23 @@ export const repairNotifications = async (): Promise<string> => {
       
       if (permission === 'granted') {
         // إذا كان الإذن ممنوحاً ولكن لا يوجد اشتراك، نحاول إلغاء الاشتراك ثم الاشتراك مجدداً
-        if (OneSignal.User?.PushSubscription?.optOut) await OneSignal.User.PushSubscription.optOut();
-        if (OneSignal.User?.PushSubscription?.optIn) await OneSignal.User.PushSubscription.optIn();
-        
-        // إجبار طلب الإذن مجدداً لتنشيط OneSignal v16
-        if (OneSignal.Notifications?.requestPermission) {
-          await OneSignal.Notifications.requestPermission();
+        try {
+          if (OneSignal.User?.PushSubscription?.optOut) await OneSignal.User.PushSubscription.optOut();
+          if (OneSignal.User?.PushSubscription?.optIn) await OneSignal.User.PushSubscription.optIn();
+          
+          // إجبار طلب الإذن مجدداً لتنشيط OneSignal v16
+          if (OneSignal.Notifications?.requestPermission) {
+            await OneSignal.Notifications.requestPermission();
+          }
+          result = 'تم إعادة بناء الاشتراك وتنشيط هوية الموظف بنجاح ✅';
+        } catch (subErr: any) {
+          console.error('Subscription Opt-In Error:', subErr);
+          // محاولة أخيرة: إعادة تهيئة OneSignal يدوياً إذا أمكن
+          if (OneSignal.init) {
+            await OneSignal.init({ appId: "9abc8506-3935-44a8-b044-3117e77d26dc", serviceWorkerPath: "sw.js" });
+          }
+          result = `⚠️ فشل تنشيط الاشتراك تلقائياً (${subErr.message || 'خطأ غير معروف'}). حاول مسح بيانات الموقع من إعدادات المتصفح.`;
         }
-        
-        result = 'تم إعادة بناء الاشتراك وتنشيط هوية الموظف بنجاح ✅';
       } else if (permission === 'default') {
         if (OneSignal.Slidedown?.promptPush) await OneSignal.Slidedown.promptPush();
         result = 'يرجى الموافقة على نافذة "السماح" التي ستظهر الآن.';

@@ -1,7 +1,7 @@
 // OneSignal must share the PWA worker because Chrome allows only one active worker per scope.
 importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
 
-const CACHE_NAME = 'maintenance-guide-static-v1-8-7';
+const CACHE_NAME = 'maintenance-guide-v2.5.4';
 const APP_SHELL = [
   '/manifest.webmanifest',
   '/pwa-192.png',
