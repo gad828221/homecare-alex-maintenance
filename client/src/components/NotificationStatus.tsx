@@ -12,13 +12,15 @@ export default function NotificationStatus() {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       const currentPerm = Notification.permission;
       setPermission(currentPerm);
-      // لا نعتبره محظوراً إلا إذا كان المتصفح صريحاً في ذلك وكان OneSignal غير مفعل
+      
       const win = window as any;
       let optedIn = false;
       if (win.OneSignal?.User?.PushSubscription) {
         optedIn = await win.OneSignal.User.PushSubscription.optedIn;
       }
-      setIsBlocked(currentPerm === 'denied' && !optedIn);
+      
+      // إذا كان المتصفح يعطي سماح ولكن OneSignal لا يرى الاشتراك
+      setIsBlocked(currentPerm === 'denied');
       setIsSubscribed(optedIn);
     }
   };
@@ -32,39 +34,72 @@ export default function NotificationStatus() {
   const handleReset = async () => {
     setLoading(true);
     try {
+      // 1. مسح كافة الـ Service Workers المسجلة (حل جذري للتعليق)
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (let registration of registrations) {
+          await registration.unregister();
+        }
+        console.log("Service Workers Unregistered");
+      }
+
       const win = window as any;
       if (win.OneSignal) {
-        // محاولة إعادة تعيين الهوية والاشتراك
+        // 2. إعادة تهيئة OneSignal
         await win.OneSignal.User.PushSubscription.optOut();
         setTimeout(async () => {
           await win.OneSignal.User.PushSubscription.optIn();
           await checkStatus();
           setLoading(false);
-        }, 1000);
+          alert("تمت إعادة ضبط المحرك بنجاح. يرجى محاولة التفعيل الآن.");
+        }, 1500);
       } else {
         setLoading(false);
+        window.location.reload();
       }
     } catch (err) {
       console.error(err);
       setLoading(false);
+      alert("حدث خطأ أثناء إعادة الضبط. يرجى تحديث الصفحة يدوياً.");
     }
   };
 
   const handleEnable = async () => {
     const win = window as any;
-    if (!win.OneSignal) return;
+    if (!win.OneSignal) {
+      alert("محرك الإشعارات لم يكتمل تحميله بعد.");
+      return;
+    }
 
     setLoading(true);
+    
+    // مؤقت أمان لمنع التعليق اللانهائي
+    const timeoutId = setTimeout(() => {
+      setLoading(false);
+      alert("استغرق الطلب وقتاً طويلاً. يرجى الضغط على 'إعادة ضبط المحرك' ثم المحاولة مرة أخرى.");
+    }, 8000);
+
     try {
       if ('Notification' in window && Notification.permission !== 'granted') {
         await Notification.requestPermission();
       }
+      
       await win.OneSignal.User.PushSubscription.optIn();
-      await win.OneSignal.Slidedown.promptPush();
+      
+      // محاولة إظهار النافذة إذا لم يتم التفعيل صامتاً
+      const status = await win.OneSignal.User.PushSubscription.optedIn;
+      if (!status) {
+        await win.OneSignal.Slidedown.promptPush();
+        if (win.OneSignal.showNativePrompt) {
+          await win.OneSignal.showNativePrompt();
+        }
+      }
+      
       await checkStatus();
     } catch (err) {
       console.error(err);
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
     }
   };
@@ -85,7 +120,7 @@ export default function NotificationStatus() {
               className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl border transition-all ${
                 loading 
                   ? "text-slate-400 bg-slate-800 border-slate-700 cursor-wait" 
-                  : "text-orange-500 bg-orange-500/10 border-orange-500/20 hover:bg-orange-500/20"
+                  : "text-orange-500 bg-orange-500/10 border-orange-500/20 hover:bg-orange-500/20 animate-pulse"
               }`}
             >
               {loading ? <RefreshCw size={12} className="animate-spin" /> : <BellOff size={12} />}
@@ -98,7 +133,7 @@ export default function NotificationStatus() {
               className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-400 hover:text-white transition-all text-[10px]"
             >
               <RotateCcw size={12} />
-              <span>إعادة ضبط المحرك (حل المشاكل)</span>
+              <span>إعادة ضبط المحرك (حل التعليق)</span>
             </button>
           </div>
         )}
@@ -107,7 +142,7 @@ export default function NotificationStatus() {
       {isBlocked && (
         <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-[10px] text-red-400 text-center w-full mx-4">
           <ShieldAlert size={12} className="inline mb-1 mr-1" />
-          يبدو أن الإشعارات معطلة. إذا كانت "سماح" في الإعدادات، اضغط على "إعادة ضبط المحرك" أعلاه.
+          الإشعارات محظورة في إعدادات Chrome. اضغط على علامة القفل 🔒 بالأعلى لتفعيلها.
         </div>
       )}
 
@@ -116,17 +151,17 @@ export default function NotificationStatus() {
         className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-orange-400 transition-colors"
       >
         <Info size={10} />
-        <span>دليل حل مشاكل Chrome</span>
+        <span>دليل حل مشاكل Chrome Android</span>
         <ChevronDown size={10} className={`transition-transform ${showHelp ? 'rotate-180' : ''}`} />
       </button>
 
       {showHelp && (
         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 text-[11px] text-right leading-relaxed animate-in slide-in-from-top-2 duration-200 w-full">
-          <p className="font-bold text-orange-400 mb-2">💡 إذا كانت الإشعارات "سماح" ولا تعمل:</p>
+          <p className="font-bold text-orange-400 mb-2">💡 ملاحظة هامة لإعدادات هاتفك:</p>
           <ul className="space-y-2 text-slate-300">
-            <li>1. اضغط على زر <b>إعادة ضبط المحرك</b> بالأعلى.</li>
-            <li>2. انتظر ثانية ثم اضغط <b>تفعيل جرس التنبيهات</b>.</li>
-            <li>3. تأكد من إغلاق "وضع توفير الطاقة" في هاتفك.</li>
+            <li>1. تأكد من تفعيل خيار <b>"شعار" (Banner)</b> في إعدادات إشعارات Chrome لتظهر التنبيهات بوضوح.</li>
+            <li>2. إذا ظل الزر يعلق، اضغط على <b>إعادة ضبط المحرك</b> ثم انتظر رسالة النجاح.</li>
+            <li>3. تأكد أنك لا تستخدم "وضع التصفح الخفي".</li>
           </ul>
         </div>
       )}
