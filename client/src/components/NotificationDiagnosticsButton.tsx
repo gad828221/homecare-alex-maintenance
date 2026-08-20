@@ -148,6 +148,16 @@ export default function NotificationDiagnosticsButton({ compact = false }: Props
                 </div>
 
                 <div className="space-y-2">
+                  <div className="mb-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">🛡️</span>
+                      <div className="flex-1">
+                        <p className="text-xs font-black text-emerald-200">تنبيهات مانوس المباشرة (Manus Realtime)</p>
+                        <p className="text-[10px] text-emerald-300/80">هذا النظام يعمل كبديل مضمون لـ OneSignal ويصلك التنبيه فوراً.</p>
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-400">نشط ✅</span>
+                    </div>
+                  </div>
                   {checks.map((check) => (
                     <details key={check.key} className={`rounded-2xl border p-3 ${getDiagnosticStatusClass(check.status)}`}>
                       <summary className="flex cursor-pointer list-none items-center gap-2">
