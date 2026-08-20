@@ -126,8 +126,9 @@ function PwaInstallBanner() {
   if (isInstalled || !isStaffPath) return null;
 
   const copyToChrome = () => {
-    navigator.clipboard.writeText(window.location.href);
-    alert('تم نسخ الرابط. افتحه في متصفح Chrome لتتمكن من تثبيت البرنامج.');
+    const staffInstallUrl = `${window.location.origin}/login?source=pwa&portal=staff`;
+    navigator.clipboard.writeText(staffInstallUrl);
+    alert('تم نسخ رابط بوابة الموظفين. افتحه في Chrome ثم ثبّت البرنامج من صفحة تسجيل الدخول.');
   };
 
   return (
@@ -136,8 +137,8 @@ function PwaInstallBanner() {
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 shrink-0 rounded-xl bg-orange-600 flex items-center justify-center"><Download className="text-white" size={19} /></div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-black text-white">ثبّت البرنامج للتنبيهات 🔔</p>
-            <p className="text-[10px] text-slate-400 mt-0.5">وصول أسرع وتشغيل كتطبيق مستقل وبدون تسجيل دخول متكرر</p>
+            <p className="text-sm font-black text-white">ثبّت بوابة الموظفين للتنبيهات 🔔</p>
+            <p className="text-[10px] text-slate-400 mt-0.5">سيبدأ التطبيق من بوابة الموظفين، وليس من صفحة الزوار</p>
           </div>
           {canInstall && !isRestrictedBrowser ? (
             <button type="button" onClick={() => { void install(); }} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl text-xs font-black whitespace-nowrap active:scale-95 transition-all shadow-lg shadow-orange-900/20">تثبيت الآن</button>
@@ -147,7 +148,7 @@ function PwaInstallBanner() {
         </div>
         {!canInstall && isRestrictedBrowser && (
           <p className="text-[9px] text-orange-200 bg-orange-950/30 p-2 rounded-lg border border-orange-500/20">
-            ⚠️ أنت تتصفح من داخل تطبيق (واتساب/فيسبوك). يرجى نسخ الرابط وفتحه في متصفح Chrome لتتمكن من تثبيت البرنامج.
+            ⚠️ أنت تتصفح من داخل تطبيق (واتساب/فيسبوك). انسخ رابط بوابة الموظفين وافتحه في Chrome ثم ثبّت البرنامج.
           </p>
         )}
       </div>
@@ -157,6 +158,17 @@ function PwaInstallBanner() {
 
 function AppContent() {
   const currentPath = window.location.pathname;
+
+  // كل مسار له هوية تثبيت مستقلة: الزوار لا يرثون تطبيق الموظفين والعكس صحيح.
+  useEffect(() => {
+    const isStaffPath = ['/login', '/orders', '/tech-portal', '/data-entry'].some((path) => currentPath.startsWith(path));
+    const manifestHref = isStaffPath ? '/staff-manifest.webmanifest' : '/manifest.webmanifest';
+    const manifestLink = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    if (manifestLink && manifestLink.getAttribute('href') !== manifestHref) {
+      manifestLink.setAttribute('href', manifestHref);
+    }
+  }, [currentPath]);
+
   // إخفاء أزرار الاتصال في صفحات الإدارة والعمل
   const hideFloatingButtons = [
     "/orders", "/tech-portal", "/data-entry", "/login"

@@ -27,7 +27,14 @@
 
     <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="apple-touch-icon" href="/pwa-192.png" />
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- يتم اختيار هوية التثبيت حسب المسار قبل بدء التطبيق -->
+    <link rel="manifest" id="app-manifest" />
+    <script>
+      (function () {
+        var staffPath = /^\/(login|orders|tech-portal|data-entry)(?:\/|$)/.test(window.location.pathname);
+        document.getElementById('app-manifest').setAttribute('href', staffPath ? '/staff-manifest.webmanifest' : '/manifest.webmanifest');
+      })();
+    </script>
     <meta name="theme-color" content="#f97316" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -105,7 +112,7 @@
       "image": "https://maintenanceguide.life/logo.png",
       "@id": "https://maintenanceguide.life/",
       "url": "https://maintenanceguide.life/",
-      "telephone": "+201558625259",
+      "telephone": "+201278885772",
       "priceRange": "$$",
       "address": {
         "@type": "PostalAddress",

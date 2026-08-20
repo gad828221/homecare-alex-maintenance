@@ -1,11 +1,11 @@
 {
-  "id": "/public-site",
-  "name": "Maintenance Guide - الموقع العام",
-  "short_name": "Maintenance Guide",
-  "description": "موقع Maintenance Guide لخدمات صيانة الأجهزة المنزلية",
+  "id": "/staff-portal",
+  "name": "Maintenance Guide - بوابة الفنيين والمديرين",
+  "short_name": "MG Staff",
+  "description": "بوابة إدارة أوردرات الصيانة والتنبيهات للفنيين والمديرين",
   "lang": "ar",
   "dir": "rtl",
-  "start_url": "/",
+  "start_url": "/login?source=pwa&portal=staff",
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone"],
@@ -29,3 +29,4 @@
     }
   ]
 }
+

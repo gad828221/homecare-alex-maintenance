@@ -6,10 +6,6 @@ const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
 
 export default function Login() {
-  // Ensure we are on the canonical www domain for consistent localStorage
-  if (typeof window !== 'undefined' && window.location.origin === 'https://maintenanceguide.life') {
-    window.location.replace('https://www.maintenanceguide.life' + window.location.pathname + window.location.search);
-  }
   const [role, setRole] = useState<'admin' | 'tech'>('admin');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
