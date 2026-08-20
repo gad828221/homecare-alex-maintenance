@@ -95,13 +95,16 @@ export const diagnoseNotifications = async (): Promise<NotificationDiagnostic[]>
         : `${browserLabel()} يعمل من اتصال آمن.`
   });
 
+  const scriptLoaded = Boolean((window as any).OneSignalDeferred || (window as any).OneSignal);
   checks.push({
     key: 'support',
-    label: 'دعم إشعارات Push',
-    status: hasNotification && hasServiceWorker && hasPush ? 'ok' : 'error',
-    detail: hasNotification && hasServiceWorker && hasPush
-      ? 'المتصفح يدعم الإشعارات والعمل في الخلفية.'
-      : 'هذا المتصفح لا يدعم كل مكونات الإشعارات المطلوبة.'
+    label: 'دعم وتحميل محرك Push',
+    status: hasNotification && hasServiceWorker && hasPush && scriptLoaded ? 'ok' : 'error',
+    detail: !scriptLoaded 
+      ? 'محرك الإشعارات لم يتم تحميله من الإنترنت. تأكد من عدم وجود AdBlocker أو حظر للسكريبت.'
+      : hasNotification && hasServiceWorker && hasPush
+        ? 'المتصفح يدعم الإشعارات والعمل في الخلفية.'
+        : 'هذا المتصفح لا يدعم كل مكونات الإشعارات المطلوبة.'
   });
 
   const permission = hasNotification ? Notification.permission : 'unsupported';
@@ -122,11 +125,21 @@ export const diagnoseNotifications = async (): Promise<NotificationDiagnostic[]>
       const unifiedWorker = registrations.find(r => r.active?.scriptURL.includes('sw.js'));
       const active = Boolean(unifiedWorker && unifiedWorker.active);
       
+      const osWorker = registrations.find(r => r.active?.scriptURL.includes('OneSignalSDKWorker.js'));
+      const osActive = Boolean(osWorker && osWorker.active);
+      
       checks.push({
         key: 'service-worker',
         label: 'محرك التطبيق في الخلفية',
         status: active ? 'ok' : 'warning',
-        detail: active ? 'يعمل بشكل سليم (sw.js).' : 'المحرك الموحد غير نشط حالياً. اضغط "إصلاح وتفعيل".'
+        detail: active ? 'محرك PWA يعمل بشكل سليم.' : 'محرك PWA غير نشط حالياً.'
+      });
+
+      checks.push({
+        key: 'os-worker',
+        label: 'محرك الإشعارات (OneSignal)',
+        status: osActive ? 'ok' : 'warning',
+        detail: osActive ? 'محرك الإشعارات يعمل بشكل سليم.' : 'محرك الإشعارات غير نشط. اضغط "إصلاح وتفعيل".'
       });
 
       if (active && unifiedWorker) {
