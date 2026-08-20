@@ -88,27 +88,28 @@ const buildDeepLink = (requestedUrl: unknown, event: string, data: Record<string
   const orderNumber = data.order_number || '';
   const targetsTechnician = targetUserIds.some((id) => id.startsWith('tech:')) || targetTags.some((tag) => tag.key === 'tech_name' || tag.key === 'user_id');
   const portal = targetsTechnician ? '/tech-portal' : '/orders';
-  const params = new URLSearchParams();
-  params.set('source', 'pwa'); // إشارة للمتصفح لفتح التطبيق المثبت
+  
+  // v3.1.3: توحيد الرابط لضمان فتح التطبيق المثبت (PWA)
+  const buildUrl = (path: string, query: Record<string, string> = {}) => {
+    const p = new URLSearchParams(query);
+    p.set('source', 'pwa');
+    return `${base}${path}?${p.toString()}`;
+  };
 
-  if (focus === 'chat') return `${base}/orders?focus=chat&source=pwa`;
-  if (focus === 'delayed') return `${base}/orders?focus=delayed&source=pwa`;
-  if (focus === 'old_orders') return `${base}/tech-portal?focus=old_orders&source=pwa`;
-  if (focus === 'feedback') {
-    params.set('focus', 'feedback');
-    if (orderNumber) params.set('order', orderNumber);
-    return `${base}/orders?${params.toString()}`;
-  }
-  if (focus === 'performance') return `${base}/orders?focus=performance&source=pwa`;
-  if (focus === 'notifications') return `${base}/orders?focus=notifications&source=pwa`;
+  if (focus === 'chat') return buildUrl('/orders', { focus: 'chat' });
+  if (focus === 'delayed') return buildUrl('/orders', { focus: 'delayed' });
+  if (focus === 'old_orders') return buildUrl('/tech-portal', { focus: 'old_orders' });
+  if (focus === 'feedback') return buildUrl('/orders', { focus: 'feedback', ...(orderNumber ? { order: orderNumber } : {}) });
+  if (focus === 'performance') return buildUrl('/orders', { focus: 'performance' });
+  if (focus === 'notifications') return buildUrl('/orders', { focus: 'notifications' });
+  
   if (orderNumber || event === 'order_status_changed' || event === 'technician_assigned') {
-    params.set('focus', 'order');
-    if (orderNumber) params.set('order', orderNumber);
-    return `${base}${portal}?${params.toString()}`;
+    return buildUrl(portal, { focus: 'order', ...(orderNumber ? { order: orderNumber } : {}) });
   }
-  if (event === 'new_order') return `${base}/orders?focus=new&source=pwa`;
-  if (targetsTechnician) return `${base}/tech-portal?focus=alerts&source=pwa`;
-  return `${base}/orders?focus=notifications&source=pwa`;
+  
+  if (event === 'new_order') return buildUrl('/orders', { focus: 'new' });
+  if (targetsTechnician) return buildUrl('/tech-portal', { focus: 'alerts' });
+  return buildUrl('/orders', { focus: 'notifications' });
 };
 
 export default async function handler(req: RequestLike, res: ResponseLike) {
