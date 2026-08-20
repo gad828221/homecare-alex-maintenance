@@ -1,9 +1,10 @@
-// OneSignal + PWA Unified Worker v2.7.0
+// OneSignal SDK Service Worker
 importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
 
-const CACHE_NAME = 'maintenance-guide-v2.7.9-staff-launch';
+// PWA Caching Logic
+const CACHE_NAME = 'maintenance-guide-v2.8.4';
 const APP_SHELL = [
-  '/manifest.webmanifest',
+  '/staff-manifest.webmanifest',
   '/pwa-192.png',
   '/pwa-512.png',
   '/logo.png'
@@ -17,73 +18,28 @@ self.addEventListener('install', (event) => {
   );
 });
 
-self.addEventListener('message', (event) => {
-  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
-});
-
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(
-        keys
-          .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      ))
-      .then(() => self.clients.claim())
+    caches.keys().then((keys) => Promise.all(
+      keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+    )).then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', (event) => {
-  const request = event.request;
-  const url = new URL(request.url);
+  const url = new URL(event.request.url);
+  if (event.request.method !== 'GET' || url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/rest/')) return;
 
-  if (request.method !== 'GET' || url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith('/rest/') || url.pathname.startsWith('/functions/') || url.pathname.startsWith('/api/')) return;
-
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
+  event.respondWith(
+    caches.match(event.request).then((cached) => {
+      return cached || fetch(event.request).then((response) => {
+        if (response.ok && url.pathname.startsWith('/assets/')) {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put('/', copy));
-          return response;
-        })
-        .catch(() => caches.match('/') || caches.match('/index.html'))
-    );
-    return;
-  }
-
-  if (url.pathname.startsWith('/assets/') || APP_SHELL.includes(url.pathname)) {
-    event.respondWith(
-      caches.match(request).then((cached) => {
-        const fresh = fetch(request).then((response) => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-          }
-          return response;
-        });
-        return cached || fresh;
-      })
-    );
-  }
-});
-
-
-// OneSignal SDK will handle push and notificationclick events.
-// We only keep basic PWA caching logic here.
-self.addEventListener('notificationclick', (event) => {
-  if (event.notification.data?.url) {
-    event.notification.close();
-    event.waitUntil(
-      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-        for (const client of clientList) {
-          if (client.url.includes(self.location.origin) && 'focus' in client) {
-            return client.focus().then(c => c.navigate(event.notification.data.url));
-          }
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
         }
-        if (self.clients.openWindow) return self.clients.openWindow(event.notification.data.url);
-      })
-    );
-  }
+        return response;
+      });
+    })
+  );
 });
