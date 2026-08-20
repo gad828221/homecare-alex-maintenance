@@ -14,6 +14,7 @@ import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, get
 import { getPickupTypeLabel, parsePickupReceipt } from '../utils/pickupReceipt';
 import { mergeCompanyTransferMarker, parseCompanyTransfer } from '../utils/companyTransfer';
 import TechnicianPerformanceAdmin from './TechnicianPerformanceAdmin';
+import NotificationStatus from "./NotificationStatus";
 import { findTechnicianByIdentity, getTechnicianDisplayName, getTechnicianPhotoUrl, getTechnicianSpecialty, parseTechnicianProfileNotification } from '../utils/technicianProfile';
 import { clearAuthSession } from '../utils/authSession';
 
@@ -3513,10 +3514,11 @@ export default function ProtectedOrders() {
           />
         )}
         <div className="mt-8 flex flex-col items-center gap-2">
-          <div className="text-[10px] text-slate-500 opacity-20">
+          <NotificationStatus />
+          <div className="text-[10px] text-slate-500 opacity-20 mt-4">
             Maintenance Guide © 2026 - All Rights Reserved
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v2.9.5-final-fix</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v2.9.6-notif-helper</div>
         </div>
       </div>
 
