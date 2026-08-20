@@ -15,16 +15,6 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function Home() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
-  const [isLoggedIn, setIsInstalled] = useState(false);
-  const [userRole, setUserRole] = useState<string | null>(null);
-
-  useEffect(() => {
-    const role = localStorage.getItem('userRole');
-    if (role) {
-      setIsInstalled(true);
-      setUserRole(role);
-    }
-  }, []);
 
   const services = [
     { icon: Zap, title: "صيانة الثلاجات", description: "إصلاح فوري لجميع أنواع الثلاجات والديب فريزر بقطع غيار أصلية وضمان معتمد." },
@@ -60,24 +50,6 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col bg-white overflow-x-hidden font-sans" dir="rtl">
       <Header />
-      
-      {isLoggedIn && (
-        <div className="bg-orange-600 py-3 text-white">
-          <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-base">🔐</span>
-              <p className="text-sm font-black">أهلاً بك مجدداً، أنت مسجل دخولك الآن.</p>
-            </div>
-            <a 
-              href={userRole === 'tech' ? '/tech-portal' : userRole === 'data-entry' ? '/data-entry' : '/orders'}
-              className="bg-white text-orange-600 px-6 py-2 rounded-xl text-sm font-black shadow-lg hover:bg-orange-50 transition-all active:scale-95 flex items-center gap-2"
-            >
-              🚀 الدخول للوحة التحكم
-              <ArrowRight className="w-4 h-4" />
-            </a>
-          </div>
-        </div>
-      )}
 
       {/* HERO SECTION - RE-DESIGNED */}
       <section className="relative min-h-[95vh] flex items-center overflow-hidden bg-slate-900 pt-20">

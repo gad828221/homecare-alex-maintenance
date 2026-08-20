@@ -197,13 +197,8 @@ function App() {
       const isPwaEntry = new URLSearchParams(window.location.search).get('source') === 'pwa' || 
                          (window.matchMedia('(display-mode: standalone)').matches);
       
-      // Auto-redirect if logged in (Better experience for staff)
-      if (role && (currentPath === '/' || currentPath === '/login')) {
-        if (role === 'tech') window.location.replace('/tech-portal' + window.location.search);
-        else if (role === 'data-entry') window.location.replace('/data-entry' + window.location.search);
-        else window.location.replace('/orders' + window.location.search);
-        return;
-      }
+      // تم إلغاء التحويل التلقائي ليبقى الموقع الخاص بالزوار منفصلاً تماماً عن لوحة التحكم
+      if (currentPath === '/') return;
 
       // If accessing /login directly while logged in, always redirect to dashboard
       if (role && currentPath === '/login') {
