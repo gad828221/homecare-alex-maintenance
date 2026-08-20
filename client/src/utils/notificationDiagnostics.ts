@@ -174,38 +174,66 @@ export const diagnoseNotifications = async (): Promise<NotificationDiagnostic[]>
 export const repairNotifications = async (): Promise<string> => {
   const user = getStoredUser();
   const externalId = getExternalId(user);
-  let result = 'تم تحديث الفحص.';
+  let result = 'تم البدء في الإصلاح القسري...';
 
+  // 1. تنظيف Service Workers المتعارضة
   if ('serviceWorker' in navigator) {
     try {
-      const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' });
-      await registration.update();
-    } catch {
-      // The diagnostics view will explain the remaining problem.
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const reg of registrations) {
+        // حذف أي ملف قديم لا يحمل اسم sw.js الموحد
+        if (!reg.active?.scriptURL.includes('sw.js')) {
+          await reg.unregister();
+        }
+      }
+      const newReg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+      await newReg.update();
+    } catch (e) {
+      console.error('SW Repair Error:', e);
     }
   }
 
+  // 2. إصلاح OneSignal قسرياً
   await runWithOneSignal(async (OneSignal) => {
-    if (externalId && OneSignal?.login) await OneSignal.login(externalId).catch(() => undefined);
-    if (user && OneSignal?.User?.addTags) {
-      const stableId = user.id ?? user.username ?? user.techName;
-      if (stableId !== undefined && stableId !== null) {
-        await OneSignal.User.addTags({ role: user.role || localStorage.getItem('userRole') || 'user', user_id: String(stableId), ...(user.techName ? { tech_name: user.techName } : {}) }).catch(() => undefined);
+    try {
+      // إجبار الدخول بالهوية
+      if (externalId && OneSignal.login) {
+        await OneSignal.login(externalId);
       }
-    }
 
-    const permission = typeof Notification !== 'undefined' ? Notification.permission : 'denied';
-    if (permission === 'default') {
-      if (OneSignal?.Slidedown?.promptPush) await OneSignal.Slidedown.promptPush().catch(() => undefined);
-      await OneSignal?.Notifications?.requestPermission?.().catch(() => undefined);
-    }
-    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      await OneSignal?.User?.PushSubscription?.optIn?.().catch(() => undefined);
-      result = 'تم تفعيل الإشعارات وتحديث هوية الموظف.';
-    } else if (typeof Notification !== 'undefined' && Notification.permission === 'denied') {
-      result = 'الإشعارات محظورة من إعدادات الهاتف أو المتصفح. يجب السماح بها يدوياً ثم إعادة الفحص.';
-    } else {
-      result = 'افتح نافذة السماح واختر السماح، ثم أعد الفحص.';
+      // إضافة الوسوم
+      if (user && OneSignal.User?.addTags) {
+        const stableId = user.id ?? user.username ?? user.techName;
+        await OneSignal.User.addTags({ 
+          role: user.role || localStorage.getItem('userRole') || 'user', 
+          user_id: String(stableId || ''),
+          ...(user.techName ? { tech_name: user.techName } : {})
+        });
+      }
+
+      // محاولة إعادة الاشتراك القسري
+      const permission = Notification.permission;
+      
+      if (permission === 'granted') {
+        // إذا كان الإذن ممنوحاً ولكن لا يوجد اشتراك، نحاول إلغاء الاشتراك ثم الاشتراك مجدداً
+        if (OneSignal.User?.PushSubscription?.optOut) await OneSignal.User.PushSubscription.optOut();
+        if (OneSignal.User?.PushSubscription?.optIn) await OneSignal.User.PushSubscription.optIn();
+        
+        // إجبار طلب الإذن مجدداً لتنشيط OneSignal v16
+        if (OneSignal.Notifications?.requestPermission) {
+          await OneSignal.Notifications.requestPermission();
+        }
+        
+        result = 'تم إعادة بناء الاشتراك وتنشيط هوية الموظف بنجاح ✅';
+      } else if (permission === 'default') {
+        if (OneSignal.Slidedown?.promptPush) await OneSignal.Slidedown.promptPush();
+        result = 'يرجى الموافقة على نافذة "السماح" التي ستظهر الآن.';
+      } else {
+        result = '❌ الإشعارات محظورة من إعدادات الهاتف. يجب السماح بها يدوياً من إعدادات الموقع.';
+      }
+    } catch (err) {
+      console.error('OneSignal Repair Error:', err);
+      result = 'حدث خطأ أثناء الإصلاح التلقائي. حاول تحديث الصفحة.';
     }
   });
 
