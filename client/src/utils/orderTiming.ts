@@ -51,8 +51,8 @@ const parseCairoLocal = (
 
 /**
  * Parses Supabase timestamps consistently.
- * Explicit UTC/offset timestamps are kept as instants. Timestamps without an
- * offset are interpreted as local Cairo time instead of the device timezone.
+ * Timestamps without timezone offset from Supabase are in UTC, so we append 'Z' 
+ * to correctly convert them to Cairo local time (GMT+3).
  */
 export const parseOrderDate = (value: unknown): Date | null => {
   if (!value) return null;
@@ -64,18 +64,13 @@ export const parseOrderDate = (value: unknown): Date | null => {
     return Number.isNaN(explicit.getTime()) ? null : explicit;
   }
 
+  // If it's an ISO timestamp without timezone (e.g. 2026-08-20T13:51:00), treat as UTC
   const isoMatch = raw.match(ISO_WITHOUT_TIMEZONE);
   if (isoMatch) {
-    const [, year, month, day, hour = '0', minute = '0', second = '0', fraction = '0'] = isoMatch;
-    return parseCairoLocal(
-      Number(year),
-      Number(month),
-      Number(day),
-      Number(hour),
-      Number(minute),
-      Number(second),
-      Number(fraction.padEnd(3, '0'))
-    );
+    const hasTime = raw.includes('T') || raw.includes(' ');
+    const utcFormatted = hasTime ? (raw.includes('Z') ? raw : raw.replace(' ', 'T') + 'Z') : raw;
+    const explicit = new Date(utcFormatted);
+    if (!Number.isNaN(explicit.getTime())) return explicit;
   }
 
   const dmyMatch = raw.match(DATE_ONLY_DMY);
