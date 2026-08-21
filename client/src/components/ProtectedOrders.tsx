@@ -2606,132 +2606,209 @@ export default function ProtectedOrders() {
 	      <div className="p-4">
 		        {/* تبويب الأوردرات */}
 		        {activeTab === 'orders' && (
-		          <div className="space-y-4">
-              {/* لوحة ملخص اليوم الذكي */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-4">
-                <div className="lg:col-span-2 bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-3 sm:p-5 border border-slate-700 shadow-2xl relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-2 h-full bg-orange-500"></div>
-                  <div className="flex flex-row justify-between items-center gap-2 relative z-10">
-                    <div>
-                      <h2 className="text-lg sm:text-2xl font-black text-white flex items-center gap-2">
-                        <LayoutDashboard className="text-orange-500 w-6 h-6 sm:w-8 sm:h-8" /> ملخص العمليات اليوم
-                      </h2>
-                      <p className="hidden sm:block text-xs text-slate-400 mt-1">نظرة عامة على أداء المركز والحالات الحرجة التي تتطلب انتباهك.</p>
-                    </div>
-                    <div className="flex gap-2 shrink-0">
-            <button onClick={() => { void sendDailyReportToApp(); }} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all shadow-lg shadow-emerald-900/20 active:scale-95">
-						<Send size={16} /> <span className="hidden sm:inline">تقرير داخل البرنامج</span><span className="sm:hidden">تقرير</span>
-                      </button>
-<button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-xl transition-all active:scale-95" aria-label="تحديث البيانات">
-						<RefreshCw size={17} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-3">
-                    <div className="bg-slate-950/40 p-2 sm:p-3 rounded-xl border border-slate-800/50 hover:border-blue-500/30 transition-all group">
-                      <div className="text-[9px] sm:text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">أوردرات اليوم</div>
-                      <div className="text-lg sm:text-2xl font-black text-white group-hover:text-blue-400 transition-colors">{orders.filter(o => (o.created_at || o.date).includes(new Date().toISOString().split('T')[0])).length}</div>
-                    </div>
-                    <div className="bg-slate-950/40 p-2 sm:p-3 rounded-xl border border-slate-800/50 hover:border-orange-500/30 transition-all group">
-                      <div className="text-[9px] sm:text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">بدون فني</div>
-                      <div className={`text-lg sm:text-2xl font-black ${orders.filter(o => !o.technician || o.technician === '-' || o.technician === '').length > 0 ? 'text-orange-500 animate-pulse' : 'text-white'}`}>
-                        {orders.filter(o => !o.technician || o.technician === '-' || o.technician === '').length}
-                      </div>
-                    </div>
-                    <div className="bg-slate-950/40 p-2 sm:p-3 rounded-xl border border-slate-800/50 hover:border-red-500/30 transition-all group">
-                      <div className="text-[9px] sm:text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">متأخرة ⚠️</div>
-                      <div className={`text-lg sm:text-2xl font-black ${orders.filter(o => isDelayed(o)).length > 0 ? 'text-red-500' : 'text-white'}`}>
-                        {orders.filter(o => isDelayed(o)).length}
-                      </div>
-                    </div>
-	                    <div className="bg-slate-950/40 p-2 sm:p-3 rounded-xl border border-slate-800/50 hover:border-green-500/30 transition-all group">
-	                      <div className="text-[9px] sm:text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">قيد التنفيذ</div>
-	                      <div className="text-lg sm:text-2xl font-black text-blue-400">{orders.filter(o => o.status === 'in-progress').length}</div>
+		          			          <div className="space-y-6">
+	              {/* Operations Center Header */}
+	              <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-[2.5rem] p-6 sm:p-8 border border-slate-700 shadow-2xl relative overflow-hidden">
+	                <div className="absolute top-0 left-0 w-3 h-full bg-orange-600"></div>
+	                <div className="absolute -top-24 -right-24 w-64 h-64 bg-orange-600/10 rounded-full blur-3xl"></div>
+	                
+	                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+	                  <div>
+	                    <h2 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-3">
+	                      <LayoutDashboard className="text-orange-500 w-8 h-8 sm:w-10 sm:h-10" /> مركز العمليات
+	                    </h2>
+	                    <div className="flex items-center gap-3 mt-2">
+	                      <div className="text-3xl sm:text-4xl font-black text-emerald-400 tabular-nums">{cashBalance.toLocaleString()} <span className="text-sm text-emerald-600/70">ج.م</span></div>
+	                      <div className="h-6 w-[1px] bg-slate-700 mx-1"></div>
+	                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">الرصيد المتاح</p>
 	                    </div>
-		                    <div className="bg-slate-950/40 p-2 sm:p-3 rounded-xl border border-slate-800/50 hover:border-emerald-500/30 transition-all group cursor-pointer" onClick={() => { clearFilters(); setShowCompletedOrders(true); setFilterWarranty('active'); setFilterStatus('completed'); }}>
-		                      <div className="text-[9px] sm:text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest">ضمان ساري 🛡️</div>
-		                      <div className="text-lg sm:text-2xl font-black text-emerald-400">{[...orders, ...archivedOrders].filter(o => getWarrantyStatus(o).status === 'active').length}</div>
-		                    </div>
 	                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-3 sm:p-5 border border-slate-700 shadow-2xl flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 mb-4">
-                      <DollarSign className="text-green-500" />
-                      <h3 className="text-sm sm:text-lg font-black text-white">الرصيد الحالي</h3>
-                    </div>
-                    <div className="text-2xl sm:text-4xl font-black text-green-400 tabular-nums">{cashBalance.toLocaleString()} <span className="text-sm text-green-600">ج.م</span></div>
-                  </div>
-                  <div className="mt-3 flex gap-2">
-                    <button onClick={() => setActiveTab('cash')} className="flex-1 bg-green-600/10 hover:bg-green-600 text-green-500 hover:text-white py-2 rounded-xl text-[10px] sm:text-xs font-black transition-all">إدارة الخزنة</button>
-                    <button onClick={() => setActiveTab('reports')} className="flex-1 bg-blue-600/10 hover:bg-blue-600 text-blue-500 hover:text-white py-2 rounded-xl text-[10px] sm:text-xs font-black transition-all">التقارير</button>
-                  </div>
-                </div>
-              </div>
-	            <div className="bg-slate-900 rounded-xl p-3 sm:p-4 flex flex-col gap-3">
-		              <div className="flex flex-wrap gap-3 items-center">
-		                <div className="relative flex-1 min-w-[200px]"><Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} /><input type="text" placeholder={isViewer ? "بحث بالاسم أو رقم الأوردر..." : "بحث بالاسم أو الهاتف أو رقم الأوردر..."} className="w-full pr-10 p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
-			                <button type="button" onClick={() => setShowAdvancedFilters(!showAdvancedFilters)} className={`shrink-0 flex items-center justify-center gap-2 rounded-xl border px-4 py-2 text-sm font-black transition ${showAdvancedFilters ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-indigo-500'}`} aria-expanded={showAdvancedFilters} aria-label="تصفية متقدمة"><SlidersHorizontal size={17} /> تصفية متقدمة {showAdvancedFilters ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</button>
-		                <select value={filterStatus} onChange={e => { const nextStatus = e.target.value; setFilterStatus(nextStatus); if (nextStatus === 'completed') setShowCompletedOrders(true); }} className={`p-2 bg-slate-800 border border-slate-700 rounded-lg text-white ${showAdvancedFilters ? '' : 'hidden'}`} aria-hidden={!showAdvancedFilters}>
-		                  <option value="all">جميع الحالات</option><option value="pending">قيد الانتظار</option><option value="in-progress">قيد التنفيذ</option><option value="inspected">تم الكشف</option><option value="completed">مكتمل</option><option value="cancelled">ملغي</option><option value="deferred">مؤجل</option>
-		                </select>
-		                <select value={filterTechnician} onChange={e => setFilterTechnician(e.target.value)} className={`p-2 bg-slate-800 border border-slate-700 rounded-lg text-white ${showAdvancedFilters ? '' : 'hidden'}`} aria-hidden={!showAdvancedFilters}><option value="">جميع الفنيين</option>{technicians.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}</select>
-		                <select value={filterDeviceType} onChange={e => setFilterDeviceType(e.target.value)} className={`p-2 bg-slate-800 border border-slate-700 rounded-lg text-white ${showAdvancedFilters ? '' : 'hidden'}`} aria-hidden={!showAdvancedFilters}><option value="">جميع الأجهزة</option>{DEVICE_TYPES.map(d => <option key={d}>{d}</option>)}</select>
-		              </div>
-
-		              <div className="flex flex-nowrap gap-2 items-center overflow-x-auto no-scrollbar border-t border-slate-800 pt-3 pb-1">
-		                <span className="text-xs text-slate-500 ml-2">فلترة سريعة:</span>
-		                <button onClick={() => { clearFilters(); const today = new Date().toISOString().split('T')[0]; setFilterDateFrom(today); setFilterDateTo(today); }} className="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 px-3 py-1 rounded-full text-xs border border-blue-600/30 transition">📅 أوردرات اليوم</button>
-		                <button onClick={() => { clearFilters(); setFilterStatus('all'); setSearchTerm('');
-		                  setFilterTechnician('__NONE__');
-		                }} className="bg-orange-600/20 hover:bg-orange-600/40 text-orange-400 px-3 py-1 rounded-full text-xs border border-orange-600/30 transition">👨‍🔧 بدون فني</button>
-			                <button onClick={() => { clearFilters(); setFilterStatus('__UNPAID__');
-			                }} className="bg-red-600/20 hover:bg-red-600/40 text-red-400 px-3 py-1 rounded-full text-xs border border-red-600/30 transition">💰 بانتظار التحصيل</button>
-			                <button onClick={() => { clearFilters(); setShowCompletedOrders(true); setFilterWarranty('expiring'); setFilterStatus('completed'); }} className="bg-orange-600/20 hover:bg-orange-600/40 text-orange-400 px-3 py-1 rounded-full text-xs border border-orange-600/30 transition">🛡️ ينتهي قريباً</button>
-			                <div className="h-4 w-[1px] bg-slate-700 mx-1"></div>
-		                <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} className="p-1 bg-slate-800 border border-slate-700 rounded text-xs text-white" />
-		                <span className="text-slate-600 text-xs">إلى</span>
-		                <input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} className="p-1 bg-slate-800 border border-slate-700 rounded text-xs text-white" />
-		                <button onClick={() => setFilterDelay(filterDelay==='delayed'?'all':'delayed')} className={`px-3 py-1 rounded-full text-xs transition ${filterDelay==='delayed'?'bg-red-600 text-white':'bg-slate-800 text-slate-300 border border-slate-700'}`}>⚠️ المتأخرة</button>
-		                <button onClick={clearFilters} className="bg-slate-800 text-slate-300 px-3 py-1 rounded-full text-xs border border-slate-700 hover:bg-slate-700 transition">مسح</button>
-		              </div>
-		            </div>
-
-            <div className="flex flex-wrap gap-3 items-center">
-              {!isViewer && <button type="button" onClick={() => setShowCompletedOrders(!showCompletedOrders)} title={showCompletedOrders ? 'إخفاء الأوردرات المكتملة' : 'استدعاء الأوردرات المكتملة'} aria-label={showCompletedOrders ? 'إخفاء الأوردرات المكتملة' : 'استدعاء الأوردرات المكتملة'} className={`px-3 py-2 rounded-lg text-sm font-black transition flex items-center gap-2 ${showCompletedOrders ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30' : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'}`}>{showCompletedOrders ? <EyeOff size={17} /> : <Eye size={17} />} {showCompletedOrders ? 'إخفاء المكتمل' : 'استدعاء المكتمل'}</button>}
-		              {canEditDelete() && <button onClick={() => { setEditingOrder(null); setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") }); setShowOrderModal(true); }} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={18} /> أوردر جديد</button>}
-		              <button onClick={() => setShowDeleted(!showDeleted)} className={`px-3 py-2 rounded-lg text-sm transition ${showDeleted ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}><Trash2 size={16} /> {showDeleted ? 'إخفاء المحذوفة' : `عرض المحذوفة (${deletedOrders.length})`}</button>
-		              			              <div className="flex gap-2 ml-auto">
-	                        <button onClick={fetchData} className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg" title="تحديث البيانات"><RefreshCw size={18} className={loading ? 'animate-spin' : ''} /></button>
-	                      </div>
-
-		            </div>
-
-            {!showDeleted && filteredOrders.length === 0 && !showCompletedOrders && <div className="text-center py-8 text-slate-400">لا توجد أوردرات مفتوحة حالياً. اضغط أيقونة العين لاستدعاء الأوردرات المكتملة عند الحاجة.</div>}
-
-	            {!showDeleted && filteredOrders.length > 0 && (
-	              <div className="space-y-4 mb-6">
-                  {/* شريط الإحصائيات السريع */}
-	                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-	                  <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4 text-center hover:bg-blue-600/20 transition-all group">
-	                    <div className="text-3xl font-black text-blue-400 group-hover:scale-110 transition-transform">{filteredOrders.filter(o => o.status === 'in-progress').length}</div>
-	                    <div className="text-xs font-bold text-blue-300/70 mt-1 uppercase tracking-wider">🔧 قيد التنفيذ</div>
-	                  </div>
-	                  <div className="bg-red-600/10 border border-red-600/30 rounded-xl p-4 text-center hover:bg-red-600/20 transition-all group">
-	                    <div className="text-3xl font-black text-red-400 group-hover:scale-110 transition-transform">{filteredOrders.filter(o => isDelayed(o)).length}</div>
-	                    <div className="text-xs font-bold text-red-300/70 mt-1 uppercase tracking-wider">⚠️ متأخرة</div>
-	                  </div>
-	                  <div className="bg-green-600/10 border border-green-600/30 rounded-xl p-4 text-center hover:bg-green-600/20 transition-all group">
-	                    <div className="text-3xl font-black text-green-400 group-hover:scale-110 transition-transform">{filteredOrders.filter(o => o.status === 'completed').length}</div>
-	                    <div className="text-xs font-bold text-green-300/70 mt-1 uppercase tracking-wider">✅ مكتملة</div>
-	                  </div>
-	                  <div className="bg-purple-600/10 border border-purple-600/30 rounded-xl p-4 text-center hover:bg-purple-600/20 transition-all group">
-	                    <div className="text-3xl font-black text-purple-400 group-hover:scale-110 transition-transform">{filteredOrders.length}</div>
-	                    <div className="text-xs font-bold text-purple-300/70 mt-1 uppercase tracking-wider">📄 الإجمالي</div>
+	                  
+	                  <div className="flex flex-wrap gap-2 w-full md:w-auto">
+	                    <button onClick={() => { void sendDailyReportToApp(); }} className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl text-xs font-black flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-900/20 active:scale-95">
+	                      <Send size={18} /> تقرير اليوم
+	                    </button>
+	                    <button onClick={() => setActiveTab('cash')} className="flex-1 md:flex-none bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-3 rounded-2xl text-xs font-black transition-all border border-slate-700 flex items-center justify-center gap-2 active:scale-95">
+	                      <Wallet size={18} /> الخزنة
+	                    </button>
+	                    <button onClick={fetchData} className="bg-slate-800 hover:bg-slate-700 text-white p-3 rounded-2xl border border-slate-700 transition-all active:scale-95" aria-label="تحديث">
+	                      <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
+	                    </button>
 	                  </div>
 	                </div>
+
+	                {/* Smart Stats Grid */}
+	                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 mt-8">
+	                  <div className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-blue-500/30 transition-all group cursor-pointer" onClick={() => { clearFilters(); const today = new Date().toISOString().split('T')[0]; setFilterDateFrom(today); setFilterDateTo(today); }}>
+	                    <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest flex items-center gap-1.5"><Clock size={12}/> أوردرات اليوم</div>
+	                    <div className="text-2xl font-black text-white group-hover:text-blue-400 transition-colors">{orders.filter(o => (o.created_at || o.date).includes(new Date().toISOString().split('T')[0])).length}</div>
+	                  </div>
+	                  <div className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-orange-500/30 transition-all group cursor-pointer" onClick={() => { clearFilters(); setFilterTechnician('__NONE__'); }}>
+	                    <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest flex items-center gap-1.5"><UserPlus size={12}/> بدون فني</div>
+	                    <div className={`text-2xl font-black ${orders.filter(o => !o.technician || o.technician === '-' || o.technician === '').length > 0 ? 'text-orange-500 animate-pulse' : 'text-white'}`}>
+	                      {orders.filter(o => !o.technician || o.technician === '-' || o.technician === '').length}
+	                    </div>
+	                  </div>
+	                  <div className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-red-500/30 transition-all group cursor-pointer" onClick={() => { clearFilters(); setFilterDelay('delayed'); }}>
+	                    <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest flex items-center gap-1.5"><AlertCircle size={12}/> متأخرة 🚨</div>
+	                    <div className={`text-2xl font-black ${orders.filter(o => isDelayed(o)).length > 0 ? 'text-red-500' : 'text-white'}`}>
+	                      {orders.filter(o => isDelayed(o)).length}
+	                    </div>
+	                  </div>
+	                  <div className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-emerald-500/30 transition-all group cursor-pointer" onClick={() => { clearFilters(); setFilterStatus('__UNPAID__'); }}>
+	                    <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest flex items-center gap-1.5"><DollarSign size={12}/> تحصيل معلق</div>
+	                    <div className={`text-2xl font-black ${orders.filter(o => o.status === 'completed' && !o.is_paid).length > 0 ? 'text-amber-500' : 'text-white'}`}>
+	                      {orders.filter(o => o.status === 'completed' && !o.is_paid).length}
+	                    </div>
+	                  </div>
+	                  <div className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-indigo-500/30 transition-all group cursor-pointer sm:col-span-2 lg:col-span-1" onClick={() => { clearFilters(); setShowCompletedOrders(true); setFilterWarranty('active'); setFilterStatus('completed'); }}>
+	                    <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest flex items-center gap-1.5"><ShieldCheck size={12}/> ضمان ساري</div>
+	                    <div className="text-2xl font-black text-emerald-400">{[...orders, ...archivedOrders].filter(o => getWarrantyStatus(o).status === 'active').length}</div>
+	                  </div>
+	                </div>
+	              </div>
+
+	              {/* Unified Filter Bar */}
+	              <div className="bg-slate-900 rounded-[2rem] p-4 border border-slate-800 shadow-xl space-y-4">
+	                <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center">
+	                  <div className="relative flex-1">
+	                    <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
+	                    <input 
+	                      type="text" 
+	                      placeholder={isViewer ? "بحث بالاسم أو رقم الأوردر..." : "بحث بالاسم أو الهاتف أو رقم الأوردر..."} 
+	                      className="w-full pr-12 pl-4 py-3 bg-slate-950/50 border border-slate-800 rounded-2xl text-white font-bold focus:border-orange-500 outline-none transition-all" 
+	                      value={searchTerm} 
+	                      onChange={e => setSearchTerm(e.target.value)} 
+	                    />
+	                  </div>
+	                  
+	                  <div className="flex gap-2">
+	                    <button 
+	                      type="button" 
+	                      onClick={() => setShowAdvancedFilters(!showAdvancedFilters)} 
+	                      className={`flex-1 lg:flex-none flex items-center justify-center gap-2 rounded-2xl border px-6 py-3 text-sm font-black transition-all ${showAdvancedFilters ? 'bg-orange-600 border-orange-500 text-white shadow-lg shadow-orange-900/20' : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-orange-500'}`}
+	                    >
+	                      <SlidersHorizontal size={18} /> تصفية {showAdvancedFilters ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+	                    </button>
+	                    
+	                    {canEditDelete() && (
+	                      <button 
+	                        onClick={() => { setEditingOrder(null); setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") }); setShowOrderModal(true); }} 
+	                        className="flex-1 lg:flex-none bg-orange-600 hover:bg-orange-500 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg shadow-orange-900/20 transition-all flex items-center justify-center gap-2 active:scale-95"
+	                      >
+	                        <Plus size={20} /> أوردر جديد
+	                      </button>
+	                    )}
+	                  </div>
+	                </div>
+
+	                {/* Advanced Filters Panel */}
+	                {showAdvancedFilters && (
+	                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-slate-950/30 rounded-3xl border border-white/5 animate-in fade-in slide-in-from-top-2 duration-300">
+	                    <div className="space-y-1.5">
+	                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">الحالة</label>
+	                      <select value={filterStatus} onChange={e => { const nextStatus = e.target.value; setFilterStatus(nextStatus); if (nextStatus === 'completed') setShowCompletedOrders(true); }} className="w-full p-3 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs font-bold outline-none focus:border-orange-500 transition-all">
+	                        <option value="all">جميع الحالات</option>
+	                        <option value="pending">قيد الانتظار</option>
+	                        <option value="in-progress">قيد التنفيذ</option>
+	                        <option value="inspected">تم الكشف</option>
+	                        <option value="completed">مكتمل</option>
+	                        <option value="cancelled">ملغي</option>
+	                        <option value="deferred">مؤجل</option>
+	                      </select>
+	                    </div>
+	                    <div className="space-y-1.5">
+	                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">الفني</label>
+	                      <select value={filterTechnician} onChange={e => setFilterTechnician(e.target.value)} className="w-full p-3 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs font-bold outline-none focus:border-orange-500 transition-all">
+	                        <option value="">جميع الفنيين</option>
+	                        {technicians.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
+	                      </select>
+	                    </div>
+	                    <div className="space-y-1.5">
+	                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">نوع الجهاز</label>
+	                      <select value={filterDeviceType} onChange={e => setFilterDeviceType(e.target.value)} className="w-full p-3 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs font-bold outline-none focus:border-orange-500 transition-all">
+	                        <option value="">جميع الأجهزة</option>
+	                        {DEVICE_TYPES.map(d => <option key={d} value={d}>{d}</option>)}
+	                      </select>
+	                    </div>
+	                    <div className="space-y-1.5">
+	                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">الفترة الزمنية</label>
+	                      <div className="flex gap-2">
+	                        <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} className="flex-1 p-3 bg-slate-900 border border-slate-800 rounded-xl text-white text-[10px] font-bold outline-none focus:border-orange-500 transition-all" />
+	                        <input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} className="flex-1 p-3 bg-slate-900 border border-slate-800 rounded-xl text-white text-[10px] font-bold outline-none focus:border-orange-500 transition-all" />
+	                      </div>
+	                    </div>
+	                  </div>
+	                )}
+
+	                {/* Active Filter Tags */}
+	                <div className="flex flex-wrap gap-2 items-center">
+	                  <div className="flex items-center gap-2">
+	                    {!isViewer && (
+	                      <button 
+	                        onClick={() => setShowCompletedOrders(!showCompletedOrders)} 
+	                        className={`px-4 py-1.5 rounded-full text-[10px] font-black transition-all flex items-center gap-2 border ${showCompletedOrders ? 'bg-blue-600/20 border-blue-500/50 text-blue-400' : 'bg-slate-800/50 border-slate-700 text-slate-500 hover:text-slate-300'}`}
+	                      >
+	                        {showCompletedOrders ? <EyeOff size={12} /> : <Eye size={12} />} {showCompletedOrders ? 'إخفاء المكتمل' : 'استدعاء المكتمل'}
+	                      </button>
+	                    )}
+	                    <button 
+	                      onClick={() => setShowDeleted(!showDeleted)} 
+	                      className={`px-4 py-1.5 rounded-full text-[10px] font-black transition-all flex items-center gap-2 border ${showDeleted ? 'bg-red-600/20 border-red-500/50 text-red-400' : 'bg-slate-800/50 border-slate-700 text-slate-500 hover:text-slate-300'}`}
+	                    >
+	                      <Trash2 size={12} /> {showDeleted ? 'إخفاء المحذوفة' : `المحذوفة (${deletedOrders.length})`}
+	                    </button>
+	                  </div>
+	                  
+	                  <div className="h-4 w-[1px] bg-slate-800 mx-1"></div>
+	                  
+	                  {/* Smart Pills */}
+	                  {(searchTerm || filterStatus !== 'all' || filterTechnician || filterDeviceType || filterDateFrom || filterDateTo || filterDelay === 'delayed') ? (
+	                    <>
+	                      <span className="text-[10px] font-black text-slate-600 uppercase tracking-tighter">النتائج لـ:</span>
+	                      {searchTerm && <span className="bg-orange-500/10 text-orange-400 border border-orange-500/20 px-3 py-1 rounded-full text-[9px] font-black flex items-center gap-1.5">🔍 {searchTerm} <X size={10} className="cursor-pointer" onClick={() => setSearchTerm('')}/></span>}
+	                      {filterStatus !== 'all' && <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1 rounded-full text-[9px] font-black flex items-center gap-1.5">🏷️ {filterStatus} <X size={10} className="cursor-pointer" onClick={() => setFilterStatus('all')}/></span>}
+	                      {filterTechnician && <span className="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-3 py-1 rounded-full text-[9px] font-black flex items-center gap-1.5">👨‍🔧 {filterTechnician === '__NONE__' ? 'بدون فني' : filterTechnician} <X size={10} className="cursor-pointer" onClick={() => setFilterTechnician('')}/></span>}
+	                      {filterDelay === 'delayed' && <span className="bg-red-500/10 text-red-400 border border-red-500/20 px-3 py-1 rounded-full text-[9px] font-black flex items-center gap-1.5">🚨 متأخر <X size={10} className="cursor-pointer" onClick={() => setFilterDelay('all')}/></span>}
+	                      <button onClick={clearFilters} className="text-[10px] font-black text-slate-500 hover:text-white transition-colors underline decoration-slate-700 underline-offset-4">مسح الكل</button>
+	                    </>
+	                  ) : (
+	                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest italic">لا توجد فلاتر نشطة</span>
+	                  )}
+	                </div>
+	              </div>
+
+	            {!showDeleted && filteredOrders.length === 0 && !showCompletedOrders && (
+	              <div className="bg-slate-900/50 rounded-[2rem] border border-slate-800 border-dashed py-16 text-center animate-in fade-in zoom-in duration-500">
+	                <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-600">
+	                  <Search size={40} />
+	                </div>
+	                <h3 className="text-lg font-black text-white">لا توجد أوردرات مفتوحة حالياً</h3>
+	                <p className="text-sm text-slate-500 mt-2 max-w-xs mx-auto">جرب استخدام أيقونة العين لاستدعاء الأوردرات المكتملة أو قم بإضافة أوردر جديد.</p>
+	              </div>
+	            )}
+
+		            {!showDeleted && filteredOrders.length > 0 && (
+		              <div className="space-y-6 mb-10">
+	                  {/* Quick Analysis Grid */}
+		                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+		                  <div className="bg-blue-600/10 border border-blue-600/20 rounded-[2rem] p-5 text-center hover:bg-blue-600/20 transition-all group shadow-lg shadow-blue-900/5">
+		                    <div className="text-4xl font-black text-blue-400 group-hover:scale-110 transition-transform tabular-nums">{filteredOrders.filter(o => o.status === 'in-progress').length}</div>
+		                    <div className="text-[10px] font-black text-blue-300/60 mt-2 uppercase tracking-widest flex items-center justify-center gap-1.5"><Wrench size={12}/> قيد التنفيذ</div>
+		                  </div>
+		                  <div className="bg-red-600/10 border border-red-600/20 rounded-[2rem] p-5 text-center hover:bg-red-600/20 transition-all group shadow-lg shadow-red-900/5">
+		                    <div className="text-4xl font-black text-red-400 group-hover:scale-110 transition-transform tabular-nums">{filteredOrders.filter(o => isDelayed(o)).length}</div>
+		                    <div className="text-[10px] font-black text-red-300/60 mt-2 uppercase tracking-widest flex items-center justify-center gap-1.5"><AlertCircle size={12}/> متأخرة</div>
+		                  </div>
+		                  <div className="bg-emerald-600/10 border border-emerald-600/20 rounded-[2rem] p-5 text-center hover:bg-emerald-600/20 transition-all group shadow-lg shadow-emerald-900/5">
+		                    <div className="text-4xl font-black text-emerald-400 group-hover:scale-110 transition-transform tabular-nums">{filteredOrders.filter(o => o.status === 'completed').length}</div>
+		                    <div className="text-[10px] font-black text-emerald-300/60 mt-2 uppercase tracking-widest flex items-center justify-center gap-1.5"><CheckCircle2 size={12}/> مكتملة</div>
+		                  </div>
+		                  <div className="bg-slate-800/50 border border-slate-700/50 rounded-[2rem] p-5 text-center hover:bg-slate-800 transition-all group shadow-lg">
+		                    <div className="text-4xl font-black text-white group-hover:scale-110 transition-transform tabular-nums">{filteredOrders.length}</div>
+		                    <div className="text-[10px] font-black text-slate-500 mt-2 uppercase tracking-widest flex items-center justify-center gap-1.5"><ClipboardList size={12}/> الإجمالي</div>
+		                  </div>
+		                </div>
 
                   {/* لوحة التقارير البيانية المصغرة */}
                   <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
