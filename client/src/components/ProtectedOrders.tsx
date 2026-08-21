@@ -2844,22 +2844,22 @@ export default function ProtectedOrders() {
 		              <div className="space-y-6 mb-10">
 	                  {/* Quick Analysis Grid */}
 		                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-		                  <div className="bg-blue-600/10 border border-blue-600/20 rounded-[2rem] p-5 text-center hover:bg-blue-600/20 transition-all group shadow-lg shadow-blue-900/5">
-		                    <div className="text-4xl font-black text-blue-400 group-hover:scale-110 transition-transform tabular-nums">{filteredOrders.filter(o => o.status === 'in-progress').length}</div>
-		                    <div className="text-[10px] font-black text-blue-300/60 mt-2 uppercase tracking-widest flex items-center justify-center gap-1.5"><Wrench size={12}/> قيد التنفيذ</div>
-		                  </div>
-		                  <div className="bg-red-600/10 border border-red-600/20 rounded-[2rem] p-5 text-center hover:bg-red-600/20 transition-all group shadow-lg shadow-red-900/5">
-		                    <div className="text-4xl font-black text-red-400 group-hover:scale-110 transition-transform tabular-nums">{filteredOrders.filter(o => isDelayed(o)).length}</div>
-		                    <div className="text-[10px] font-black text-red-300/60 mt-2 uppercase tracking-widest flex items-center justify-center gap-1.5"><AlertCircle size={12}/> متأخرة</div>
-		                  </div>
-		                  <div className="bg-emerald-600/10 border border-emerald-600/20 rounded-[2rem] p-5 text-center hover:bg-emerald-600/20 transition-all group shadow-lg shadow-emerald-900/5">
-		                    <div className="text-4xl font-black text-emerald-400 group-hover:scale-110 transition-transform tabular-nums">{filteredOrders.filter(o => o.status === 'completed').length}</div>
-		                    <div className="text-[10px] font-black text-emerald-300/60 mt-2 uppercase tracking-widest flex items-center justify-center gap-1.5"><CheckCircle2 size={12}/> مكتملة</div>
-		                  </div>
-		                  <div className="bg-slate-800/50 border border-slate-700/50 rounded-[2rem] p-5 text-center hover:bg-slate-800 transition-all group shadow-lg">
-		                    <div className="text-4xl font-black text-white group-hover:scale-110 transition-transform tabular-nums">{filteredOrders.length}</div>
-		                    <div className="text-[10px] font-black text-slate-500 mt-2 uppercase tracking-widest flex items-center justify-center gap-1.5"><ClipboardList size={12}/> الإجمالي</div>
-		                  </div>
+			                  <button type="button" onClick={() => setFilterStatus('in-progress')} className="bg-blue-600/10 border border-blue-600/20 rounded-[2rem] p-5 text-center hover:bg-blue-600/20 transition-all group shadow-lg shadow-blue-900/5 active:scale-95">
+			                    <div className="text-4xl font-black text-blue-400 group-hover:scale-110 transition-transform tabular-nums">{filteredOrders.filter(o => o.status === 'in-progress').length}</div>
+			                    <div className="text-[10px] font-black text-blue-300/60 mt-2 uppercase tracking-widest flex items-center justify-center gap-1.5"><Wrench size={12}/> قيد التنفيذ</div>
+			                  </button>
+			                  <button type="button" onClick={() => setFilterDelay('delayed')} className="bg-red-600/10 border border-red-600/20 rounded-[2rem] p-5 text-center hover:bg-red-600/20 transition-all group shadow-lg shadow-red-900/5 active:scale-95">
+			                    <div className="text-4xl font-black text-red-400 group-hover:scale-110 transition-transform tabular-nums">{filteredOrders.filter(o => isDelayed(o)).length}</div>
+			                    <div className="text-[10px] font-black text-red-300/60 mt-2 uppercase tracking-widest flex items-center justify-center gap-1.5"><AlertCircle size={12}/> متأخرة</div>
+			                  </button>
+			                  <button type="button" onClick={() => { setShowCompletedOrders(true); setFilterStatus('completed'); }} className="bg-emerald-600/10 border border-emerald-600/20 rounded-[2rem] p-5 text-center hover:bg-emerald-600/20 transition-all group shadow-lg shadow-emerald-900/5 active:scale-95">
+			                    <div className="text-4xl font-black text-emerald-400 group-hover:scale-110 transition-transform tabular-nums">{filteredOrders.filter(o => o.status === 'completed').length}</div>
+			                    <div className="text-[10px] font-black text-emerald-300/60 mt-2 uppercase tracking-widest flex items-center justify-center gap-1.5"><CheckCircle2 size={12}/> مكتملة</div>
+			                  </button>
+			                  <button type="button" onClick={clearFilters} className="bg-slate-800/50 border border-slate-700/50 rounded-[2rem] p-5 text-center hover:bg-slate-800 transition-all group shadow-lg active:scale-95">
+			                    <div className="text-4xl font-black text-white group-hover:scale-110 transition-transform tabular-nums">{filteredOrders.length}</div>
+			                    <div className="text-[10px] font-black text-slate-500 mt-2 uppercase tracking-widest flex items-center justify-center gap-1.5"><ClipboardList size={12}/> الإجمالي</div>
+			                  </button>
 		                </div>
 
                   {/* لوحة التقارير البيانية المصغرة */}
@@ -2877,20 +2877,28 @@ export default function ProtectedOrders() {
                         const color = status === 'completed' ? 'bg-green-500' : status === 'in-progress' ? 'bg-blue-500' : status === 'pending' ? 'bg-yellow-500' : 'bg-red-500';
                         const label = status === 'completed' ? 'مكتمل' : status === 'in-progress' ? 'قيد التنفيذ' : status === 'pending' ? 'قيد الانتظار' : 'ملغي';
 
-                        return (
-                          <div key={status} className="space-y-1">
-                            <div className="flex justify-between text-[10px] font-bold">
-                              <span className="text-slate-400">{label}</span>
-                              <span className="text-slate-200">{count} أوردر ({Math.round(percentage)}%)</span>
-                            </div>
-                            <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                              <div
-                                className={`${color} h-full transition-all duration-1000 ease-out`}
-                                style={{ width: `${percentage}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                        );
+	                        return (
+	                          <button 
+                              key={status} 
+                              type="button"
+                              onClick={() => {
+                                if (status === 'completed') setShowCompletedOrders(true);
+                                setFilterStatus(status);
+                              }}
+                              className="w-full text-right space-y-1 group active:scale-[0.98] transition-all"
+                            >
+	                            <div className="flex justify-between text-[10px] font-bold group-hover:text-white transition-colors">
+	                              <span className="text-slate-400 group-hover:text-slate-200">{label}</span>
+	                              <span className="text-slate-200">{count} أوردر ({Math.round(percentage)}%)</span>
+	                            </div>
+	                            <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden border border-white/5">
+	                              <div
+	                                className={`${color} h-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(0,0,0,0.5)]`}
+	                                style={{ width: `${percentage}%` }}
+	                              ></div>
+	                            </div>
+	                          </button>
+	                        );
                       })}
                     </div>
                   </div>
@@ -3829,7 +3837,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.5.9-modern-nav-optimized</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.6.0-universal-shortcuts</div>
         </div>
       </div>
 
