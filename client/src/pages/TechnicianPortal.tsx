@@ -1514,8 +1514,19 @@ export default function TechnicianPortal() {
                 const elapsedTone = getElapsedTone(orderCreatedValue, clockNow);
                 const elapsedToneClass = elapsedTone === 'urgent' ? 'text-rose-200 bg-rose-500/20 border-rose-400/50 shadow-lg shadow-rose-500/20 animate-pulse' : elapsedTone === 'warning' ? 'text-amber-200 bg-amber-500/20 border-amber-400/40 shadow-lg shadow-amber-500/10' : 'text-slate-200 bg-slate-950/70 border-slate-700';
 
+                // تحديد لون التوهج بناءً على الحالة
+                const glowColors: Record<string, string> = {
+                  'pending': 'group-hover:shadow-blue-500/20 border-blue-500/20',
+                  'in-progress': 'group-hover:shadow-orange-500/20 border-orange-500/20',
+                  'completed': 'group-hover:shadow-emerald-500/20 border-emerald-500/20',
+                  'cancelled': 'group-hover:shadow-rose-500/20 border-rose-500/20',
+                  'returned': 'group-hover:shadow-rose-600/30 border-rose-600/30 shadow-rose-900/20',
+                  'inspected': 'group-hover:shadow-cyan-500/20 border-cyan-500/20'
+                };
+                const statusGlow = delayed ? 'shadow-red-900/40 border-red-500/40' : glowColors[order.status] || 'border-slate-700/30';
+
                 return (
-                    <div key={order.id} className={`group ${config.card} rounded-[1.5rem] border-2 p-5 transition-all hover:shadow-2xl relative overflow-hidden ${config.pulse} ${isNew ? "ring-4 ring-blue-500/50" : ""}`}>
+                    <div key={order.id} className={`group ${config.card} ${statusGlow} rounded-[1.5rem] border-2 p-5 transition-all hover:shadow-2xl relative overflow-hidden ${config.pulse} ${isNew ? "ring-4 ring-blue-500/50" : ""}`}>
                       {/* Status Background */}
                       <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:bg-white/10 transition-all"></div>
 

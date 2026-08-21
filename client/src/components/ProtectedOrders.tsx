@@ -2786,9 +2786,24 @@ export default function ProtectedOrders() {
                   const transferPending = companyTransfer?.status === 'pending' && order.status === 'completed' && !order.is_paid;
                   const elapsedToneClass = elapsedTone === 'urgent' ? 'text-rose-200 bg-rose-500/20 border-rose-400/50 shadow-lg shadow-rose-500/20 animate-pulse' : elapsedTone === 'warning' ? 'text-amber-200 bg-amber-500/20 border-amber-400/40 shadow-lg shadow-amber-500/10' : 'text-slate-200 bg-slate-950/70 border-slate-700';
                   const cardTone = transferPending ? 'bg-amber-950/40 border-amber-300 shadow-amber-400/30 animate-pulse' : config.card;
+                  
+                  // تحديد لون التوهج بناءً على الحالة
+                  const glowColors: Record<string, string> = {
+                    'pending': 'group-hover:shadow-blue-500/20 border-blue-500/20',
+                    'in-progress': 'group-hover:shadow-orange-500/20 border-orange-500/20',
+                    'completed': 'group-hover:shadow-emerald-500/20 border-emerald-500/20',
+                    'cancelled': 'group-hover:shadow-rose-500/20 border-rose-500/20',
+                    'returned': 'group-hover:shadow-rose-600/30 border-rose-600/30 shadow-rose-900/20',
+                    'inspected': 'group-hover:shadow-cyan-500/20 border-cyan-500/20'
+                  };
+                  const statusGlow = delayed ? 'shadow-red-900/40 border-red-500/40' : glowColors[order.status] || 'border-slate-700/30';
 
                   return (
-                    <div key={order.id} className={`group ${cardTone} rounded-[1.5rem] border p-4 transition-all hover:shadow-xl relative overflow-hidden ${config.pulse} bg-slate-900/60 backdrop-blur-md`}>
+                    <div 
+                      key={order.id} 
+                      onClick={() => { stopUrgentAlert(); setEditingOrder(order); setFormData(order); setShowOrderModal(true); }}
+                      className={`group ${cardTone} ${statusGlow} rounded-[1.5rem] border p-4 transition-all hover:shadow-2xl active:scale-[0.98] cursor-pointer relative overflow-hidden ${config.pulse} bg-slate-900/60 backdrop-blur-md border-opacity-30 hover:border-opacity-100 shadow-lg shadow-black/20`}
+                    >
 	                      {transferPending && <div className="absolute inset-0 pointer-events-none rounded-[1.5rem] border border-amber-300/50 shadow-[0_0_20px_rgba(251,191,36,0.2)]"></div>}
 	                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:bg-white/10 transition-all"></div>
 
@@ -2900,17 +2915,18 @@ export default function ProtectedOrders() {
 	                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-tighter mt-0.5">الموقع</p>
 	                          </div>
 	                          {order.address && (
-	                            <button
-	                              onClick={() => {
-	                                const addr = order.address || '';
-	                                const query = addr.includes('http') ? addr : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr + (addr.includes('الساحل') || addr.includes('ك ') ? ' Egypt' : ' Alexandria Egypt'))}`;
-	                                window.open(query, '_blank');
-	                              }}
-	                              className="w-7 h-7 bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 rounded-lg flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all active:scale-90 shadow-sm"
-	                              title="GPS"
-	                            >
-	                              <Navigation size={12} />
-	                            </button>
+	                              <button
+	                                onClick={(e) => {
+	                                  e.stopPropagation();
+	                                  const addr = order.address || '';
+	                                  const query = addr.includes('http') ? addr : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr + (addr.includes('الساحل') || addr.includes('ك ') ? ' Egypt' : ' Alexandria Egypt'))}`;
+	                                  window.open(query, '_blank');
+	                                }}
+	                                className="w-7 h-7 bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 rounded-lg flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all active:scale-90 shadow-sm"
+	                                title="GPS"
+	                              >
+	                                <Navigation size={12} />
+	                              </button>
 	                          )}
 	                        </div>
 	                        
@@ -2920,7 +2936,7 @@ export default function ProtectedOrders() {
 	                            <div className="flex items-center justify-between">
 	                              <span className={`font-black truncate max-w-[120px] ${noTechnician ? 'text-orange-500 animate-pulse' : 'text-slate-200'}`}>{order.technician || 'لم يتم التعيين'}</span>
 	                              {!noTechnician && canEditDelete() && (
-	                                <button onClick={() => pingTechnician(order.technician)} className="w-6 h-6 bg-orange-600/20 text-orange-500 rounded-lg border border-orange-500/20 flex items-center justify-center hover:bg-orange-600 hover:text-white transition-all active:scale-90"><Bell size={10} className="animate-pulse" /></button>
+	                                <button onClick={(e) => { e.stopPropagation(); pingTechnician(order.technician); }} className="w-6 h-6 bg-orange-600/20 text-orange-500 rounded-lg border border-orange-500/20 flex items-center justify-center hover:bg-orange-600 hover:text-white transition-all active:scale-90"><Bell size={10} className="animate-pulse" /></button>
 	                              )}
 	                            </div>
 	                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-tighter mt-0.5">الفني</p>
@@ -2945,26 +2961,29 @@ export default function ProtectedOrders() {
 	                          {/* Primary Actions Row */}
 	                          <div className="flex items-center justify-between gap-2">
 	                            <div className="flex gap-2">
-	                              <a href={`tel:${order.phone}`} className="w-9 h-9 bg-blue-600/90 hover:bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-md active:scale-90 transition-all border border-white/10" title="اتصال"><Phone size={16} /></a>
-	                              <button onClick={() => sendWhatsApp(order.phone, `مرحباً أ/ ${order.customer_name}، معك مركز الصيانة بخصوص طلبك رقم ${order.order_number}`)} className="w-9 h-9 bg-emerald-600/90 hover:bg-emerald-600 text-white rounded-xl flex items-center justify-center shadow-md active:scale-90 transition-all border border-white/10" title="واتساب"><Send size={16} /></button>
+	                              <a onClick={(e) => e.stopPropagation()} href={`tel:${order.phone}`} className="w-9 h-9 bg-blue-600/90 hover:bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-md active:scale-90 transition-all border border-white/10" title="اتصال"><Phone size={16} /></a>
+	                              <button onClick={(e) => { e.stopPropagation(); sendWhatsApp(order.phone, `مرحباً أ/ ${order.customer_name}، معك مركز الصيانة بخصوص طلبك رقم ${order.order_number}`); }} className="w-9 h-9 bg-emerald-600/90 hover:bg-emerald-600 text-white rounded-xl flex items-center justify-center shadow-md active:scale-90 transition-all border border-white/10" title="واتساب"><Send size={16} /></button>
 	                              {canEditDelete() && order.technician && (
-	                                <button onClick={() => { if (!order.phone) return showToast('رقم العميل غير مسجل', 'error'); sendTechnicianAssignmentToCustomer(order, order.technician); }} className="w-9 h-9 bg-orange-600/90 hover:bg-orange-600 text-white rounded-xl flex items-center justify-center shadow-md active:scale-90 transition-all border border-white/10" title="بيانات الفني"><UserCircle size={16} /></button>
+	                                <button onClick={(e) => { e.stopPropagation(); if (!order.phone) return showToast('رقم العميل غير مسجل', 'error'); sendTechnicianAssignmentToCustomer(order, order.technician); }} className="w-9 h-9 bg-orange-600/90 hover:bg-orange-600 text-white rounded-xl flex items-center justify-center shadow-md active:scale-90 transition-all border border-white/10" title="بيانات الفني"><UserCircle size={16} /></button>
 	                              )}
 	                            </div>
 	                            
 	                            <div className="flex gap-2">
 	                              {canEditDelete() && (
-	                                <>
-	                                  <button onClick={() => { stopUrgentAlert(); setEditingOrder(order); setFormData(order); setShowOrderModal(true); }} className="w-9 h-9 bg-slate-800 text-blue-400 hover:bg-blue-600 hover:text-white rounded-xl flex items-center justify-center shadow-sm active:scale-90 transition-all border border-white/5"><Edit size={16} /></button>
-	                                  <button onClick={() => deleteOrder(order.id)} className="w-9 h-9 bg-slate-800 text-rose-400 hover:bg-rose-600 hover:text-white rounded-xl flex items-center justify-center shadow-sm active:scale-90 transition-all border border-white/5"><Trash2 size={16} /></button>
-	                                </>
+	                                <button 
+	                                  onClick={(e) => { e.stopPropagation(); deleteOrder(order.id); }} 
+	                                  className="w-9 h-9 bg-slate-800/80 text-rose-400 hover:bg-rose-600 hover:text-white rounded-xl flex items-center justify-center shadow-sm active:scale-90 transition-all border border-white/5" 
+	                                  title="حذف الأوردر"
+	                                >
+	                                  <Trash2 size={16} />
+	                                </button>
 	                              )}
 	                            </div>
 	                          </div>
 
 	                          {/* Secondary Actions Row (Status & Payment) */}
 	                          {canEditDelete() && (
-	                            <div className="flex gap-2 items-center">
+	                            <div className="flex gap-2 items-center" onClick={(e) => e.stopPropagation()}>
 	                               <select value={order.status} onChange={e => updateOrderStatus(order.id, e.target.value)} className="h-9 text-[9px] font-black bg-slate-950/60 border border-slate-800 rounded-lg px-2 text-white flex-1 outline-none shadow-inner">
 	                                 <option value="pending">الحالة...</option>
 	                                 <option value="in-progress">🔧 تنفيذ</option>
@@ -2991,11 +3010,11 @@ export default function ProtectedOrders() {
 	                          )}
 
 	                          {/* Footer Buttons Row */}
-	                          <div className="flex gap-2">
+	                          <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
 	                            {order.status === 'completed' ? (
 	                              <button onClick={() => window.open(`/invoice?id=${order.id}`, '_blank')} className="flex-1 h-9 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white rounded-lg text-[9px] font-black border border-blue-500/20 flex items-center justify-center gap-1.5 transition-all active:scale-95"><FileCheck size={14} /> فاتورة</button>
 	                            ) : (
-	                              <button onClick={() => window.open(`/pickup-receipt?id=${order.id}`, '_blank')} className="flex-1 h-9 bg-purple-600/20 hover:bg-purple-600 text-purple-400 hover:text-white rounded-lg text-[9px] font-black border border-purple-500/20 flex items-center justify-center gap-1.5 transition-all active:scale-95"><ClipboardList size={14} /> إيصال</button>
+	                              <button onClick={() => window.open(`/pickup-receipt?id=${order.id}`, '_blank')} className="flex-1 h-9 bg-purple-600/20 hover:bg-purple-700 text-purple-400 hover:text-white rounded-lg text-[9px] font-black border border-purple-500/20 flex items-center justify-center gap-1.5 transition-all active:scale-95"><ClipboardList size={14} /> إيصال</button>
 	                            )}
 	                            
 	                            {order.status === 'completed' && canEditDelete() && (
@@ -3641,7 +3660,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.4.6-force-ui-update</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.5.2-glow-edit-tap</div>
         </div>
       </div>
 
