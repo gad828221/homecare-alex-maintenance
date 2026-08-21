@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
-  Wrench, LogOut, Clock, CheckCircle2, AlertCircle,
+  Wrench, LogOut, Clock, CheckCircle2, AlertCircle, RotateCcw,
   RefreshCw, Phone, MapPin, ClipboardList,
   Calendar, X, Trash2, Eye, EyeOff, ClockArrowUp, StickyNote,
   Play, FileCheck, DollarSign, CalendarX, Ban, MessageSquare, Search,
@@ -376,7 +376,7 @@ export default function TechnicianPortal() {
       const data = await fetchAPI(`orders?select=*&technician=eq.${encodeURIComponent(techName)}&deleted_at=is.null&order=created_at.desc`);
       const visibleOrders = (Array.isArray(data) ? data : []).filter((o: any) => {
         const status = String(o.status || '').trim().toLowerCase();
-        return !['cancelled', 'canceled', 'inspected'].includes(status);
+        return !['cancelled', 'canceled', 'inspected'].includes(status) || status === 'returned';
       });
       // نحتفظ بالسجل الكامل للأداء والنتائج، بينما تُفلتر قائمة العمل أسفل الصفحة فقط.
       setOrders(Array.isArray(data) ? data : []);
@@ -1480,6 +1480,7 @@ export default function TechnicianPortal() {
                   cancelled: { label: 'ملغي', Icon: AlertCircle, card: 'bg-rose-950/30 border-rose-400/50 hover:border-rose-300 hover:shadow-rose-500/20', badge: 'bg-rose-500/15 text-rose-300 border-rose-400/40', icon: 'bg-rose-500/20 text-rose-300', pulse: '' },
                   deferred: { label: 'مؤجل', Icon: Clock, card: 'bg-purple-950/30 border-purple-400/50 hover:border-purple-300 hover:shadow-purple-500/20', badge: 'bg-purple-500/15 text-purple-300 border-purple-400/40', icon: 'bg-purple-500/20 text-purple-300', pulse: '' },
                   inspected: { label: 'تم الكشف', Icon: Search, card: 'bg-cyan-950/30 border-cyan-400/50 hover:border-cyan-300 hover:shadow-cyan-500/20', badge: 'bg-cyan-500/15 text-cyan-300 border-cyan-400/40', icon: 'bg-cyan-500/20 text-cyan-300', pulse: '' },
+                  returned: { label: 'مرتجع صيانة', Icon: RotateCcw, card: 'bg-rose-950/40 border-rose-500/70 hover:border-rose-300 hover:shadow-rose-500/30', badge: 'bg-rose-600 text-white border-rose-400/50', icon: 'bg-rose-500/20 text-rose-300', pulse: 'animate-pulse' },
                   delayed: { label: 'متأخر', Icon: AlertCircle, card: 'bg-red-950/40 border-red-500/70 hover:border-red-300 hover:shadow-red-500/30', badge: 'bg-red-500/20 text-red-300 border-red-400/50', icon: 'bg-red-500/20 text-red-300', pulse: 'animate-pulse' }
                 };
                 const baseConfig = statusConfig[order.status] || { label: order.status, Icon: AlertCircle, card: 'bg-slate-900 border-slate-700 hover:border-slate-500 hover:shadow-slate-500/10', badge: 'bg-slate-500/15 text-slate-300 border-slate-500/40', icon: 'bg-slate-500/20 text-slate-300', pulse: '' };
@@ -1506,6 +1507,20 @@ export default function TechnicianPortal() {
                         </div>
                         <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black border flex items-center gap-1.5 ${config.badge}`}><StatusIcon size={13} strokeWidth={2.5} />{config.label}</div>
                       </div>
+
+                      {order.status === 'returned' && (
+                        <div className="mb-4 bg-rose-600/20 border-2 border-rose-500/40 rounded-2xl p-3 animate-pulse relative z-10">
+                          <div className="flex items-center gap-2 text-rose-400 mb-1">
+                            <AlertCircle size={16} />
+                            <span className="text-xs font-black">تحذير: أوردر مرتجع</span>
+                          </div>
+                          <p className="text-[11px] text-rose-200 leading-relaxed font-bold">
+                            {order.technician_note?.includes('[⚠️ مرتجع صيانة:') 
+                              ? order.technician_note.split('[⚠️ مرتجع صيانة:').pop()?.split(']')[0] 
+                              : 'يرجى مراجعة العميل فوراً لوجود مشكلة في الصيانة السابقة'}
+                          </p>
+                        </div>
+                      )}
 
                       {/* Info Grid */}
                       <div className="grid grid-cols-2 gap-3 mb-5 relative z-10">
@@ -1565,9 +1580,9 @@ export default function TechnicianPortal() {
                         </div>
 
                         <div className="flex gap-2">
-                          {order.status === 'pending' && (
+                          {(order.status === 'pending' || order.status === 'returned') && (
                             <button onClick={() => updateStatus(order.id, 'in-progress')} className="w-full h-10 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-[10px] font-black transition-all active:scale-95">
-                              🚀 بدء العمل
+                              {order.status === 'returned' ? '🛠️ إعادة الفحص' : '🚀 بدء العمل'}
                             </button>
                           )}
                           {order.status === 'in-progress' && (

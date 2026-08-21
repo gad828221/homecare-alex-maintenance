@@ -436,6 +436,9 @@ export default function ProtectedOrders() {
 
   const [showSettleModal, setShowSettleModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [selectedOrderForReturn, setSelectedOrderForReturn] = useState<any>(null);
+  const [returnReason, setReturnReason] = useState("");
   const [settleForm, setSettleForm] = useState({
     total_amount: 0,
     parts_cost: 0,
@@ -1607,30 +1610,54 @@ export default function ProtectedOrders() {
       fetchData();
 
       showToast(`تم تحديث حالة الأوردر إلى ${newStatus}`, 'info');
+    } catch (e) {
+      console.error(e);
+      showToast('تعذر تحديث الحالة', 'error');
+    }
+  };
 
-      const statusAr = newStatus === 'completed' ? 'تم التنفيذ ✅' :
-                       newStatus === 'cancelled' ? 'ملغي ❌' :
-                       newStatus === 'in-progress' ? 'قيد التنفيذ 🔧' :
-                       newStatus === 'inspected' ? 'تم الكشف 💰' :
-                       newStatus === 'deferred' ? 'مؤجل ⏰' : newStatus;
-      const adminMsg = `🔄 *تحديث حالة طلب* 🔄\n━━━━━━━━━━━━━━━━━━━━━━\n👤 *العميل:* ${order.customer_name}\n🔢 *رقم الطلب:* ${order.order_number}\n📍 *الحالة الجديدة:* ${statusAr}\n⏰ *الوقت:* ${new Date().toLocaleTimeString('ar-EG')}\n━━━━━━━━━━━━━━━━━━━━━━`;
-      notifyAdmin(adminMsg);
+  const handleReturnOrder = async () => {
+    if (!selectedOrderForReturn || !returnReason.trim()) return;
+    
+    setIsSubmitting(true);
+    try {
+      // تم إزالة أي تعامل مع الخزنة بناءً على طلب المستخدم - الرصيد سيبقى كما هو
+      const returnNote = `\n[⚠️ مرتجع صيانة: ${returnReason}]`;
+      const updatedNote = `${selectedOrderForReturn.technician_note || ''}${returnNote}`;
+      
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          status: 'returned', 
+          technician_note: updatedNote,
+          is_paid: false,
+          profit_added_to_cash: false,
+          invoice_approved: false
+        })
+        .eq('id', selectedOrderForReturn.id);
 
-      if (order.technician && (newStatus === 'in-progress' || newStatus === 'completed')) {
-        const tech = technicians.find(t => t.name === order.technician);
-        if (tech && tech.phone) {
-          const techMsg = `🔧 *تنبيه للفني: تحديث طلب* 🔧\n━━━━━━━━━━━━━━━━━━━━━━\n👤 *العميل:* ${order.customer_name}\n🔢 *رقم الطلب:* ${order.order_number}\n🔄 *الحالة المحدثة:* ${statusAr}\n📌 يرجى متابعة الإجراءات اللازمة.`;
-          void sendExternalPush({
-            event: 'order_status_changed',
-            title: '🔄 تحديث حالة أوردر',
-            message: techMsg,
-            targetUserIds: [`tech:${tech.id}`],
-            data: { order_number: order.order_number, status: newStatus }
-          });
-        }
+      if (error) throw error;
+
+      // إرسال إشعار فوري للفني
+      if (selectedOrderForReturn.technician) {
+        void sendExternalPush({
+          event: 'system_alert',
+          title: '⚠️ تنبيه: أوردر مرتجع',
+          message: `الفني ${selectedOrderForReturn.technician}: تم إعادة الأوردر رقم ${selectedOrderForReturn.order_number} كمرتجع. السبب: ${returnReason}`,
+          targetTags: [{ key: 'tech_name', value: selectedOrderForReturn.technician }]
+        });
       }
 
-    } catch (err) { console.error(err); }
+      showToast("تم إعادة الأوردر للفني وتعديل الحسابات بنجاح", "success");
+      setShowReturnModal(false);
+      setReturnReason("");
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      showToast("تعذر إعادة الأوردر", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const pingTechnician = async (techName: string) => {
@@ -2039,9 +2066,9 @@ export default function ProtectedOrders() {
       return false;
     }
 
-    if (o.status === 'completed') return showCompletedOrders;
+    if (o.status === 'completed' && filterStatus !== 'completed') return showCompletedOrders;
     if (filterStatus !== 'all' || filterTechnician || filterDateFrom || searchTerm) return true;
-    return (o.status === 'in-progress' || o.status === 'pending' || !o.technician || o.technician === '-' || o.technician === '');
+    return (o.status === 'in-progress' || o.status === 'pending' || o.status === 'returned' || !o.technician || o.technician === '-' || o.technician === '');
   });
 
   const filteredArchivedOrders = archivedOrders.filter(o => {
@@ -2708,6 +2735,7 @@ export default function ProtectedOrders() {
                     { id: 'in-progress', label: 'قيد التنفيذ', color: 'blue' },
                     { id: 'inspected', label: 'تم الكشف', color: 'cyan' },
                     { id: 'completed', label: 'مكتمل', color: 'emerald' },
+                    { id: 'returned', label: 'المرتجع ⚠️', color: 'rose' },
                     { id: 'cancelled', label: 'ملغي', color: 'rose' },
                     { id: 'deferred', label: 'مؤجل', color: 'purple' }
                   ].map(tab => {
@@ -2744,6 +2772,7 @@ export default function ProtectedOrders() {
                     cancelled: { label: 'ملغي', Icon: AlertCircle, card: 'bg-rose-950/30 border-rose-400/50 hover:border-rose-300 hover:shadow-rose-500/20', badge: 'bg-rose-500/15 text-rose-300 border-rose-400/40', icon: 'bg-rose-500/20 text-rose-300', pulse: '' },
                     deferred: { label: 'مؤجل', Icon: Clock, card: 'bg-purple-950/30 border-purple-400/50 hover:border-purple-300 hover:shadow-purple-500/20', badge: 'bg-purple-500/15 text-purple-300 border-purple-400/40', icon: 'bg-purple-500/20 text-purple-300', pulse: '' },
                     inspected: { label: 'تم الكشف', Icon: Search, card: 'bg-cyan-950/30 border-cyan-400/50 hover:border-cyan-300 hover:shadow-cyan-500/20', badge: 'bg-cyan-500/15 text-cyan-300 border-cyan-400/40', icon: 'bg-cyan-500/20 text-cyan-300', pulse: '' },
+                    returned: { label: 'مرتجع صيانة', Icon: RotateCcw, card: 'bg-rose-950/40 border-rose-500/70 hover:border-rose-300 hover:shadow-rose-500/30', badge: 'bg-rose-600 text-white border-rose-400/50', icon: 'bg-rose-500/20 text-rose-300', pulse: 'animate-pulse' },
                     delayed: { label: 'متأخر', Icon: AlertCircle, card: 'bg-red-950/40 border-red-500/70 hover:border-red-300 hover:shadow-red-500/30', badge: 'bg-red-500/20 text-red-300 border-red-400/50', icon: 'bg-red-500/20 text-red-300', pulse: 'animate-pulse' }
                   };
                   const baseConfig = statusConfig[order.status] || { label: order.status, Icon: AlertCircle, card: 'bg-slate-900 border-slate-700 hover:border-slate-500 hover:shadow-slate-500/10', badge: 'bg-slate-500/15 text-slate-300 border-slate-500/40', icon: 'bg-slate-500/20 text-slate-300', pulse: '' };
@@ -2776,7 +2805,19 @@ export default function ProtectedOrders() {
 	                          </div>
                           <span className="text-[10px] font-bold text-slate-500 tracking-widest uppercase">#{order.order_number}</span>
                         </div>
-                        <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black border flex items-center gap-1.5 ${config.badge}`}><StatusIcon size={13} strokeWidth={2.5} />{config.label}</div>
+                        <div className="flex items-center gap-2">
+                          <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black border flex items-center gap-1.5 ${config.badge}`}><StatusIcon size={13} strokeWidth={2.5} />{config.label}</div>
+                          
+                          {(order.status === 'completed' || order.status === 'returned') && canEditDelete() && (
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); setSelectedOrderForReturn(order); setShowReturnModal(true); }} 
+                              className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-xl text-[10px] font-black flex items-center gap-1 shadow-lg shadow-rose-900/40 animate-pulse border border-white/20"
+                              title="إرجاع للفني"
+                            >
+                              <RotateCcw size={12} /> إرجاع ⚠️
+                            </button>
+                          )}
+                        </div>
                       </div>
                       {transferPending && isAdmin && (
                         <div className="mb-4 relative z-10 rounded-2xl border border-amber-300/70 bg-gradient-to-l from-amber-500/20 via-yellow-500/10 to-transparent p-3 shadow-lg shadow-amber-500/20">
@@ -2932,18 +2973,22 @@ export default function ProtectedOrders() {
                           </div>
                         </div>
                       )}
-                      {!isViewer && <div className="mt-2 flex gap-1 relative z-10">
-                        {order.status === 'completed' ? (
-                          <button onClick={() => window.open(`/invoice?id=${order.id}`, '_blank')} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-1 rounded-lg text-[10px] font-bold">📄 فاتورة</button>
-                        ) : (
-                          <button onClick={() => window.open(`/pickup-receipt?id=${order.id}`, '_blank')} className="w-full bg-purple-600 hover:bg-purple-700 text-white py-1 rounded-lg text-[10px] font-bold">📋 إيصال</button>
-                        )}
-                        {order.status === 'completed' && canEditDelete() && (
-                          <button onClick={() => sendFeedbackRequest(order)} className="w-full bg-yellow-600/20 hover:bg-yellow-600 text-yellow-300 hover:text-white py-1 rounded-lg text-[10px] font-bold">⭐ طلب تقييم</button>
-                        )}
-                        {order.status === 'in-progress' && canEditDelete() && (
-                          <button onClick={() => { setSelectedOrder(order); setSettleForm({ total_amount: order.total_amount || 0, parts_cost: order.parts_cost || 0, transport_cost: order.transport_cost || 0, net_amount: order.net_amount || 0, technician_share: order.technician_share || 0, company_share: order.company_share || 0 }); setShowSettleModal(true); }} className="w-full bg-orange-600 hover:bg-orange-700 text-white py-1 rounded-lg text-[10px] font-bold">💰 تصفية</button>
-                        )}
+                      {!isViewer && <div className="mt-3 space-y-2 relative z-10">
+                        <div className="flex gap-2">
+                          {order.status === 'completed' ? (
+                            <button onClick={() => window.open(`/invoice?id=${order.id}`, '_blank')} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl text-[10px] font-bold shadow-md">📄 فاتورة</button>
+                          ) : (
+                            <button onClick={() => window.open(`/pickup-receipt?id=${order.id}`, '_blank')} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-xl text-[10px] font-bold shadow-md">📋 إيصال</button>
+                          )}
+                          
+                          {order.status === 'completed' && canEditDelete() && (
+                            <button onClick={() => sendFeedbackRequest(order)} className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-xl text-[10px] font-bold shadow-md">⭐ طلب تقييم</button>
+                          )}
+                          
+                          {order.status === 'in-progress' && canEditDelete() && (
+                            <button onClick={() => { setSelectedOrder(order); setSettleForm({ total_amount: order.total_amount || 0, parts_cost: order.parts_cost || 0, transport_cost: order.transport_cost || 0, net_amount: order.net_amount || 0, technician_share: order.technician_share || 0, company_share: order.company_share || 0 }); setShowSettleModal(true); }} className="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 rounded-xl text-[10px] font-bold shadow-md">💰 تصفية الأوردر</button>
+                          )}
+                        </div>
                       </div>}
                     </div>
                   );
@@ -3574,9 +3619,44 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.3.3-technician-live-status</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.4.6-force-ui-update</div>
         </div>
       </div>
+
+      {showReturnModal && selectedOrderForReturn && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
+          <div className="bg-slate-900 border-2 border-rose-500/30 rounded-2xl p-6 w-full max-w-md shadow-2xl shadow-rose-900/20">
+            <div className="flex items-center gap-3 mb-4 text-rose-400">
+              <RotateCcw size={24} />
+              <h3 className="text-xl font-black">إعادة الأوردر كمرتجع</h3>
+            </div>
+            <p className="text-sm text-slate-400 mb-4 leading-relaxed">سيتم إرجاع الأوردر للفني <strong className="text-white">{selectedOrderForReturn.technician}</strong> وتنبيهه بوجود مشكلة صيانة. يرجى كتابة التحذير أو سبب الإرجاع:</p>
+            <textarea
+              rows={4}
+              value={returnReason}
+              onChange={(e) => setReturnReason(e.target.value)}
+              placeholder="مثلاً: الجهاز لا يبرد جيداً، العميل يشتكي من صوت عالي..."
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm outline-none focus:border-rose-500 transition-all mb-4"
+              required
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={handleReturnOrder}
+                disabled={isSubmitting || !returnReason.trim()}
+                className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl transition-all active:scale-95 disabled:opacity-50"
+              >
+                {isSubmitting ? 'جاري الإرسال...' : 'إرسال للفني ⚠️'}
+              </button>
+              <button
+                onClick={() => { setShowReturnModal(false); setReturnReason(""); }}
+                className="flex-1 bg-slate-800 text-slate-300 font-bold py-3 rounded-xl hover:bg-slate-700 transition-all"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showOrderModal && canEditDelete() && (
         <div className="fixed inset-0 bg-black/80 flex items-start justify-center z-50 p-3 sm:p-4 overflow-y-auto">
