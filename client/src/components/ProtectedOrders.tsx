@@ -2613,20 +2613,36 @@ export default function ProtectedOrders() {
         </div>
       </div>
 
-      <div className="flex gap-2 p-4 border-b bg-slate-900 overflow-x-auto">
-        <button onClick={() => setActiveTab('orders')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'orders' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📋 الأوردرات</button>
-        <button onClick={() => setActiveTab('archived')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'archived' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📂 الأرشيف ({archivedOrders.length})</button>
-        {userRole !== 'viewer' && <button onClick={() => setActiveTab('technicians')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'technicians' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>👨‍🔧 الفنيين</button>}
-        {userRole !== 'viewer' && <button onClick={() => setActiveTab('reports')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'reports' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📊 التقارير</button>}
-        {userRole !== 'viewer' && <button onClick={() => setActiveTab('repeatCustomers')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'repeatCustomers' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>👥 العملاء المتكررون ({repeatCustomers.length})</button>}
-        {userRole !== 'viewer' && <button onClick={() => setActiveTab('invoicesReview')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'invoicesReview' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📄 الفواتير</button>}
-        <button onClick={() => setActiveTab('cash')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'cash' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>💰 الخزنة</button>
-        {userRole !== 'viewer' && <button onClick={() => setActiveTab('partners')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'partners' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>🤝 الشركاء</button>}
-        <button onClick={() => setActiveTab('notifications')} className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1 transition ${activeTab === 'notifications' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}><Bell className="w-4 h-4" /> الإشعارات ({notifications.length})</button>
-        {canEditDelete() && <button onClick={() => setActiveTab('feedback')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'feedback' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>⭐ تقييمات العملاء</button>}
-        {userRole === 'admin' && <button onClick={() => setActiveTab('permissions')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'permissions' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>🔐 الصلاحيات</button>}
-        <button onClick={() => setActiveTab('analytics')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'analytics' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📈 الإحصائيات</button>
-        {userRole !== 'viewer' && <button onClick={() => setActiveTab('performance')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === 'performance' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>📊 أداء الفنيين</button>}
+      {/* Modern Slim Navigation Bar */}
+      <div className="sticky top-[60px] z-30 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-2 py-2 overflow-x-auto no-scrollbar flex gap-1.5 shadow-xl">
+        {[
+          { id: 'orders', label: 'الأوردرات', icon: <ClipboardList size={16} />, color: 'orange' },
+          { id: 'archived', label: `الأرشيف (${archivedOrders.length})`, icon: <LayoutDashboard size={16} />, color: 'indigo' },
+          { id: 'technicians', label: 'الفنيين', icon: <Users size={16} />, color: 'orange', hide: userRole === 'viewer' },
+          { id: 'reports', label: 'التقارير', icon: <FileCheck size={16} />, color: 'orange', hide: userRole === 'viewer' },
+          { id: 'repeatCustomers', label: `المتكررون (${repeatCustomers.length})`, icon: <Star size={16} />, color: 'emerald', hide: userRole === 'viewer' },
+          { id: 'invoicesReview', label: 'الفواتير', icon: <Printer size={16} />, color: 'orange', hide: userRole === 'viewer' },
+          { id: 'cash', label: 'الخزنة', icon: <Wallet size={16} />, color: 'emerald' },
+          { id: 'partners', label: 'الشركاء', icon: <Users size={16} />, color: 'orange', hide: userRole === 'viewer' },
+          { id: 'notifications', label: `الإشعارات (${notifications.length})`, icon: <Bell size={16} />, color: 'blue' },
+          { id: 'feedback', label: 'التقييمات', icon: <Star size={16} />, color: 'yellow', hide: !canEditDelete() },
+          { id: 'permissions', label: 'الصلاحيات', icon: <ShieldCheck size={16} />, color: 'orange', hide: userRole !== 'admin' },
+          { id: 'analytics', label: 'الإحصائيات', icon: <LayoutDashboard size={16} />, color: 'orange' },
+          { id: 'performance', label: 'أداء الفنيين', icon: <SlidersHorizontal size={16} />, color: 'orange', hide: userRole === 'viewer' }
+        ].filter(tab => !tab.hide).map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-black transition-all duration-300 active:scale-90 ${
+              activeTab === tab.id 
+                ? `bg-${tab.color}-600 text-white shadow-lg shadow-${tab.color}-900/20` 
+                : 'bg-slate-800/50 text-slate-500 hover:text-slate-300 hover:bg-slate-800 border border-slate-700/50'
+            }`}
+          >
+            {tab.icon}
+            <span className="whitespace-nowrap">{tab.label}</span>
+          </button>
+        ))}
       </div>
 
 	      <div className="p-4">
@@ -3813,7 +3829,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.5.8-batch-paid-fix</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.5.9-modern-nav-optimized</div>
         </div>
       </div>
 
