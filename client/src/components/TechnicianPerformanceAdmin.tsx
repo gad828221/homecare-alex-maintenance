@@ -112,7 +112,7 @@ function buildStats(orders: any[]) {
   };
 }
 
-export default function TechnicianPerformanceAdmin({ orders, technicians }: { orders: any[]; technicians: any[] }) {
+export default function TechnicianPerformanceAdmin({ orders, technicians, onFilter }: { orders: any[]; technicians: any[]; onFilter?: (type: string, value: any) => void }) {
   const [expandedTech, setExpandedTech] = useState<string | null>(null);
   const [periodPreset, setPeriodPreset] = useState<'all' | 'this_month' | 'last_month' | 'custom'>('all');
   const [customStart, setCustomStart] = useState('');
@@ -211,9 +211,9 @@ export default function TechnicianPerformanceAdmin({ orders, technicians }: { or
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
             <div className="rounded-xl bg-slate-800 px-3 py-2 text-center"><p className="text-[10px] text-slate-500">الفنيون</p><p className="text-lg font-black text-white">{cards.length}</p></div>
-            <div className="rounded-xl bg-slate-800 px-3 py-2 text-center"><p className="text-[10px] text-slate-500">الإجمالي</p><p className="text-lg font-black text-blue-300">{totals.total}</p></div>
-            <div className="rounded-xl bg-slate-800 px-3 py-2 text-center"><p className="text-[10px] text-slate-500">مكتمل</p><p className="text-lg font-black text-emerald-300">{totals.completed}</p></div>
-            <div className="rounded-xl bg-slate-800 px-3 py-2 text-center"><p className="text-[10px] text-slate-500">ملغى/كشف</p><p className="text-lg font-black text-yellow-300">{totals.cancelled + totals.inspected}</p></div>
+	            <button type="button" onClick={() => onFilter?.('status', 'all')} className="rounded-xl bg-slate-800 px-3 py-2 text-center hover:bg-slate-700 transition-all active:scale-95"><p className="text-[10px] text-slate-500">الإجمالي</p><p className="text-lg font-black text-blue-300">{totals.total}</p></button>
+	            <button type="button" onClick={() => onFilter?.('status', 'completed')} className="rounded-xl bg-slate-800 px-3 py-2 text-center hover:bg-slate-700 transition-all active:scale-95"><p className="text-[10px] text-slate-500">مكتمل</p><p className="text-lg font-black text-emerald-300">{totals.completed}</p></button>
+	            <button type="button" onClick={() => onFilter?.('status', 'cancelled')} className="rounded-xl bg-slate-800 px-3 py-2 text-center hover:bg-slate-700 transition-all active:scale-95"><p className="text-[10px] text-slate-500">ملغى/كشف</p><p className="text-lg font-black text-yellow-300">{totals.cancelled + totals.inspected}</p></button>
             <div className="rounded-xl bg-slate-800 px-3 py-2 text-center"><p className="text-[10px] text-slate-500">مجموع الدخل</p><p className="text-sm font-black text-cyan-300">{money(totals.totalInvoice)}</p></div>
             <div className="col-span-2 rounded-xl border border-emerald-500/20 bg-emerald-950/20 px-3 py-2 text-center sm:col-span-1"><p className="text-[10px] text-slate-500">صافي الشركة</p><p className="text-sm font-black text-emerald-300">{money(totals.companyProfit)}</p></div>
           </div>
@@ -228,28 +228,28 @@ export default function TechnicianPerformanceAdmin({ orders, technicians }: { or
           const lowSuccess = stats.total > 0 && stats.successRate < 70;
           return (
             <article key={String(card.technician?.id || card.displayName)} className="overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 shadow-xl transition hover:border-orange-500/50">
-              <div className="border-b border-slate-800 bg-gradient-to-l from-slate-800/90 to-slate-900 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-orange-500/30 bg-orange-500/10">
-                      {card.photo ? <img src={card.photo} alt={`صورة ${card.displayName}`} className="h-full w-full object-cover" /> : <Wrench className="text-orange-400" size={25} />}
-                      {card.rank <= 3 && <span className="absolute bottom-0 left-0 rounded-tr-lg bg-orange-500 px-1.5 py-0.5 text-[9px] font-black text-white">#{card.rank}</span>}
-                    </div>
-                    <div className="min-w-0"><h3 className="truncate text-lg font-black text-white">{card.displayName}</h3><p className="mt-1 truncate text-[11px] text-slate-400">{specialtyLabel(card.specialty)} · {stats.total} أوردر</p></div>
-                  </div>
+	              <div className="border-b border-slate-800 bg-gradient-to-l from-slate-800/90 to-slate-900 p-4">
+	                <div className="flex items-start justify-between gap-3">
+	                  <button type="button" onClick={() => onFilter?.('technician', card.displayName)} className="flex min-w-0 items-center gap-3 text-right hover:opacity-80 transition-all active:scale-[0.98]">
+	                    <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-orange-500/30 bg-orange-500/10">
+	                      {card.photo ? <img src={card.photo} alt={`صورة ${card.displayName}`} className="h-full w-full object-cover" /> : <Wrench className="text-orange-400" size={25} />}
+	                      {card.rank <= 3 && <span className="absolute bottom-0 left-0 rounded-tr-lg bg-orange-500 px-1.5 py-0.5 text-[9px] font-black text-white">#{card.rank}</span>}
+	                    </div>
+	                    <div className="min-w-0"><h3 className="truncate text-lg font-black text-white">{card.displayName}</h3><p className="mt-1 truncate text-[11px] text-slate-400">{specialtyLabel(card.specialty)} · {stats.total} أوردر</p></div>
+	                  </button>
                   <div className={`shrink-0 rounded-xl px-2.5 py-1.5 text-center ${lowSuccess ? 'bg-rose-500/15 text-rose-300' : 'bg-emerald-500/15 text-emerald-300'}`}><p className="text-[10px]">نجاح</p><p className="text-lg font-black">{stats.successRate.toFixed(0)}%</p></div>
                 </div>
                 {(expenseWarning || lowSuccess) && <div className="mt-3 flex flex-wrap gap-2">{expenseWarning && <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-1 text-[10px] font-bold text-amber-300"><AlertCircle size={12} /> مراجعة مصروفات</span>}{lowSuccess && <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 px-2 py-1 text-[10px] font-bold text-rose-300"><Target size={12} /> أقل من 70%</span>}</div>}
               </div>
 
-              <div className="grid grid-cols-3 gap-2 p-4 sm:grid-cols-6">
-                <Metric label="مكتمل" value={stats.completed} color="text-emerald-300" icon={<CheckCircle2 size={14} />} />
-                <Metric label="نشط" value={stats.active} color="text-blue-300" icon={<Clock3 size={14} />} />
-                <Metric label="متأخر" value={stats.delayed} color="text-orange-300" icon={<Timer size={14} />} />
-                <Metric label="ملغى" value={stats.cancelled} color="text-rose-300" icon={<Ban size={14} />} />
-                <Metric label="كشف" value={stats.inspected} color="text-yellow-300" icon={<DollarSign size={14} />} />
-                <Metric label="تقييم" value={stats.averageRating ? stats.averageRating.toFixed(1) : '—'} color="text-yellow-300" icon={<Star size={14} />} />
-              </div>
+	              <div className="grid grid-cols-3 gap-2 p-4 sm:grid-cols-6">
+	                <Metric label="مكتمل" value={stats.completed} color="text-emerald-300" icon={<CheckCircle2 size={14} />} onClick={() => onFilter?.('tech-status', { tech: card.displayName, status: 'completed' })} />
+	                <Metric label="نشط" value={stats.active} color="text-blue-300" icon={<Clock3 size={14} />} onClick={() => onFilter?.('tech-status', { tech: card.displayName, status: 'in-progress' })} />
+	                <Metric label="متأخر" value={stats.delayed} color="text-orange-300" icon={<Timer size={14} />} onClick={() => onFilter?.('tech-delay', card.displayName)} />
+	                <Metric label="ملغى" value={stats.cancelled} color="text-rose-300" icon={<Ban size={14} />} onClick={() => onFilter?.('tech-status', { tech: card.displayName, status: 'cancelled' })} />
+	                <Metric label="كشف" value={stats.inspected} color="text-yellow-300" icon={<DollarSign size={14} />} onClick={() => onFilter?.('tech-status', { tech: card.displayName, status: 'inspected' })} />
+	                <Metric label="تقييم" value={stats.averageRating ? stats.averageRating.toFixed(1) : '—'} color="text-yellow-300" icon={<Star size={14} />} onClick={() => { clearFilters(); setSearchTerm(card.displayName); setActiveTab('feedback'); }} />
+	              </div>
 
               <div className="grid gap-3 px-4 pb-4 sm:grid-cols-2">
                 <MiniBar label="قطع الغيار" value={stats.partsPercent} amount={stats.parts} limit={40} color="orange" icon={<Package size={15} />} />
@@ -280,8 +280,20 @@ function specialtyLabel(value: string) {
   return text ? (text.startsWith('متخصص') ? text : `متخصص ${text}`) : 'التخصص غير محدد';
 }
 
-function Metric({ label, value, color, icon }: { label: string; value: number | string; color: string; icon: ReactNode }) {
-  return <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-2 text-center"><div className={`mx-auto flex w-fit items-center gap-1 ${color}`}>{icon}<span className="text-sm font-black">{value}</span></div><p className="mt-1 text-[9px] text-slate-500">{label}</p></div>;
+function Metric({ label, value, color, icon, onClick }: { label: string; value: number | string; color: string; icon: ReactNode; onClick?: () => void }) {
+  return (
+    <button 
+      type="button" 
+      onClick={onClick}
+      className={`rounded-xl border border-slate-800 bg-slate-950/60 p-2 text-center transition-all active:scale-95 ${onClick ? 'hover:border-slate-600 hover:bg-slate-900 cursor-pointer' : ''}`}
+    >
+      <div className={`mx-auto flex w-fit items-center gap-1 ${color}`}>
+        {icon}
+        <span className="text-sm font-black">{value}</span>
+      </div>
+      <p className="mt-1 text-[9px] text-slate-500">{label}</p>
+    </button>
+  );
 }
 
 function MiniBar({ label, value, amount, limit, color, icon }: { label: string; value: number; amount: number; limit: number; color: 'orange' | 'blue'; icon: ReactNode }) {

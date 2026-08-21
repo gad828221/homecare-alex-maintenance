@@ -3716,7 +3716,7 @@ export default function ProtectedOrders() {
                 <div className="space-y-4">
                   <div className="max-h-[780px] overflow-y-auto space-y-4 pr-1">
                   {technicianExpenseStats.map((t) => (
-                      <div key={t.id || t.name} className={`flex flex-col gap-3 bg-slate-950/50 p-4 rounded-2xl border ${t.partsAlert || t.transportAlert || t.successAlert ? 'border-rose-500/50' : 'border-slate-800/50'}`}>
+	                      <button type="button" onClick={() => { clearFilters(); setFilterTechnician(t.name); setActiveTab('orders'); }} key={t.id || t.name} className={`w-full text-right flex flex-col gap-3 bg-slate-950/50 p-4 rounded-2xl border ${t.partsAlert || t.transportAlert || t.successAlert ? 'border-rose-500/50' : 'border-slate-800/50'} hover:border-blue-500/50 transition-all active:scale-[0.98] group`}>
                         <div className="flex justify-between items-center">
                           <div className="flex flex-col">
                             <span className="text-sm font-bold text-white">{t.name}</span>
@@ -3762,10 +3762,10 @@ export default function ProtectedOrders() {
                                 t.successAlert ? `نسبة النجاح ${t.successRate}% (أقل من 70%)` : ''
                               ].filter(Boolean).join('، ')}</span>
                             </div>
-                            {isAdmin && <button onClick={() => sendExpenseWarning(t)} className="shrink-0 bg-rose-600 hover:bg-rose-700 text-white px-2 py-1.5 rounded-lg text-[9px] font-black flex items-center gap-1"><Send size={12} /> إرسال إنذار</button>}
+                            {isAdmin && <button onClick={(e) => { e.stopPropagation(); sendExpenseWarning(t); }} className="shrink-0 bg-rose-600 hover:bg-rose-700 text-white px-2 py-1.5 rounded-lg text-[9px] font-black flex items-center gap-1"><Send size={12} /> إرسال إنذار</button>}
                           </div>
                         )}
-                      </div>
+                      </button>
                     ))}
                   </div>
                   {technicians.length === 0 && <p className="text-center text-slate-500 py-4">لا يوجد فنيون مسجلون</p>}
@@ -3782,15 +3782,15 @@ export default function ProtectedOrders() {
                     const percentage = allValidOrders.length > 0 ? (count / allValidOrders.length) * 100 : 0;
                     if (count === 0) return null;
                     return (
-                      <div key={device} className="space-y-2">
-                        <div className="flex justify-between text-xs font-bold">
-                          <span className="text-slate-400">{device}</span>
-                          <span className="text-slate-200">{count} ({Math.round(percentage)}%)</span>
-                        </div>
-                        <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                          <div className="bg-orange-500 h-full transition-all duration-1000" style={{ width: `${percentage}%` }}></div>
-                        </div>
-                      </div>
+	                      <button type="button" onClick={() => { clearFilters(); setFilterDeviceType(device); setActiveTab('orders'); }} key={device} className="w-full text-right space-y-2 group active:scale-[0.98] transition-all">
+	                        <div className="flex justify-between text-xs font-bold group-hover:text-white transition-colors">
+	                          <span className="text-slate-400 group-hover:text-slate-200">{device}</span>
+	                          <span className="text-slate-200">{count} ({Math.round(percentage)}%)</span>
+	                        </div>
+	                        <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden border border-white/5">
+	                          <div className="bg-orange-500 h-full transition-all duration-1000 shadow-[0_0_8px_rgba(249,115,22,0.4)]" style={{ width: `${percentage}%` }}></div>
+	                        </div>
+	                      </button>
                     );
                   })}
                   {orders.length === 0 && <p className="text-center text-slate-500 py-4">لا توجد بيانات متاحة</p>}
@@ -3804,12 +3804,12 @@ export default function ProtectedOrders() {
                   {['سامسونج', 'LG', 'توشيبا', 'شارب', 'زانوسي', 'فريش', 'وايت ويل', 'أريستون', 'إنديست', 'بيكو', 'يونيون إير', 'هوفر'].map(brand => {
                     const count = [...orders, ...archivedOrders].filter(o => o.brand === brand).length;
                     if (count === 0) return null;
-                    return (
-                      <div key={brand} className="bg-slate-950/50 border border-slate-800 px-4 py-3 rounded-2xl flex flex-col items-center min-w-[80px] flex-1">
-                        <span className="text-[10px] text-slate-500 font-bold">{brand}</span>
-                        <span className="text-lg font-black text-white">{count}</span>
-                      </div>
-                    );
+	                    return (
+	                      <button type="button" onClick={() => { clearFilters(); setSearchTerm(brand); setActiveTab('orders'); }} key={brand} className="bg-slate-950/50 border border-slate-800 hover:border-yellow-500/50 px-4 py-3 rounded-2xl flex flex-col items-center min-w-[80px] flex-1 transition-all active:scale-95 group">
+	                        <span className="text-[10px] text-slate-500 font-bold group-hover:text-yellow-500 transition-colors">{brand}</span>
+	                        <span className="text-lg font-black text-white">{count}</span>
+	                      </button>
+	                    );
                   })}
                 </div>
               </div>
@@ -3817,7 +3817,29 @@ export default function ProtectedOrders() {
           </div>
         )}
 
-        {activeTab === 'performance' && userRole !== 'viewer' && <TechnicianPerformanceAdmin orders={[...orders, ...archivedOrders]} technicians={technicians} />}
+        {activeTab === 'performance' && userRole !== 'viewer' && (
+          <TechnicianPerformanceAdmin 
+            orders={[...orders, ...archivedOrders]} 
+            technicians={technicians} 
+            onFilter={(type, value) => {
+              clearFilters();
+              if (type === 'status') {
+                if (value === 'completed') setShowCompletedOrders(true);
+                setFilterStatus(value);
+              } else if (type === 'technician') {
+                setFilterTechnician(value);
+              } else if (type === 'tech-status') {
+                if (value.status === 'completed') setShowCompletedOrders(true);
+                setFilterTechnician(value.tech);
+                setFilterStatus(value.status);
+              } else if (type === 'tech-delay') {
+                setFilterTechnician(value);
+                setFilterDelay('delayed');
+              }
+              setActiveTab('orders');
+            }}
+          />
+        )}
         {activeTab === 'permissions' && userRole === 'admin' && (
           <AdminPermissions
             users={users}
@@ -3837,7 +3859,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.6.0-universal-shortcuts</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.6.1-interactive-analytics</div>
         </div>
       </div>
 
