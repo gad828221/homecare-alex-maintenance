@@ -11,7 +11,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Helmet } from 'react-helmet-async';
 import { sendExternalPush } from '../utils/pushNotifications';
 import { useScreenWakeLock } from '../hooks/useScreenWakeLock';
-import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, getOrderCreatedValue, parseOrderDate } from '../utils/orderTiming';
+import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, getOrderCreatedValue, parseOrderDate, getEgyptTodayString } from '../utils/orderTiming';
 import { getPickupTypeLabel, parsePickupReceipt } from '../utils/pickupReceipt';
 import { mergeCompanyTransferMarker, parseCompanyTransfer } from '../utils/companyTransfer';
 import TechnicianPerformanceAdmin from './TechnicianPerformanceAdmin';
@@ -2638,34 +2638,34 @@ export default function ProtectedOrders() {
 	                </div>
 
 	                {/* Smart Stats Grid */}
-	                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 mt-8">
-	                  <div className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-blue-500/30 transition-all group cursor-pointer" onClick={() => { clearFilters(); const today = new Date().toISOString().split('T')[0]; setFilterDateFrom(today); setFilterDateTo(today); }}>
-	                    <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest flex items-center gap-1.5"><Clock size={12}/> أوردرات اليوم</div>
-	                    <div className="text-2xl font-black text-white group-hover:text-blue-400 transition-colors">{orders.filter(o => (o.created_at || o.date).includes(new Date().toISOString().split('T')[0])).length}</div>
-	                  </div>
-	                  <div className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-orange-500/30 transition-all group cursor-pointer" onClick={() => { clearFilters(); setFilterTechnician('__NONE__'); }}>
-	                    <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest flex items-center gap-1.5"><UserPlus size={12}/> بدون فني</div>
-	                    <div className={`text-2xl font-black ${orders.filter(o => !o.technician || o.technician === '-' || o.technician === '').length > 0 ? 'text-orange-500 animate-pulse' : 'text-white'}`}>
-	                      {orders.filter(o => !o.technician || o.technician === '-' || o.technician === '').length}
-	                    </div>
-	                  </div>
-	                  <div className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-red-500/30 transition-all group cursor-pointer" onClick={() => { clearFilters(); setFilterDelay('delayed'); }}>
-	                    <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest flex items-center gap-1.5"><AlertCircle size={12}/> متأخرة 🚨</div>
-	                    <div className={`text-2xl font-black ${orders.filter(o => isDelayed(o)).length > 0 ? 'text-red-500' : 'text-white'}`}>
-	                      {orders.filter(o => isDelayed(o)).length}
-	                    </div>
-	                  </div>
-	                  <div className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-emerald-500/30 transition-all group cursor-pointer" onClick={() => { clearFilters(); setFilterStatus('__UNPAID__'); }}>
-	                    <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest flex items-center gap-1.5"><DollarSign size={12}/> تحصيل معلق</div>
-	                    <div className={`text-2xl font-black ${orders.filter(o => o.status === 'completed' && !o.is_paid).length > 0 ? 'text-amber-500' : 'text-white'}`}>
-	                      {orders.filter(o => o.status === 'completed' && !o.is_paid).length}
-	                    </div>
-	                  </div>
-	                  <div className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-indigo-500/30 transition-all group cursor-pointer sm:col-span-2 lg:col-span-1" onClick={() => { clearFilters(); setShowCompletedOrders(true); setFilterWarranty('active'); setFilterStatus('completed'); }}>
-	                    <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest flex items-center gap-1.5"><ShieldCheck size={12}/> ضمان ساري</div>
-	                    <div className="text-2xl font-black text-emerald-400">{[...orders, ...archivedOrders].filter(o => getWarrantyStatus(o).status === 'active').length}</div>
-	                  </div>
-	                </div>
+		                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 mt-8">
+		                  <button type="button" className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-blue-500/30 transition-all group text-right active:scale-95" onClick={() => { clearFilters(); const today = getEgyptTodayString(); setFilterDateFrom(today); setFilterDateTo(today); }}>
+		                    <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest flex items-center gap-1.5"><Clock size={12}/> أوردرات اليوم</div>
+		                    <div className="text-2xl font-black text-white group-hover:text-blue-400 transition-colors">{orders.filter(o => (o.created_at || o.date).includes(getEgyptTodayString())).length}</div>
+		                  </button>
+		                  <button type="button" className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-orange-500/30 transition-all group text-right active:scale-95" onClick={() => { clearFilters(); setFilterTechnician('__NONE__'); }}>
+		                    <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest flex items-center gap-1.5"><UserPlus size={12}/> بدون فني</div>
+		                    <div className={`text-2xl font-black ${orders.filter(o => !o.technician || o.technician === '-' || o.technician === '').length > 0 ? 'text-orange-500 animate-pulse' : 'text-white'}`}>
+		                      {orders.filter(o => !o.technician || o.technician === '-' || o.technician === '').length}
+		                    </div>
+		                  </button>
+		                  <button type="button" className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-red-500/30 transition-all group text-right active:scale-95" onClick={() => { clearFilters(); setFilterDelay('delayed'); }}>
+		                    <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest flex items-center gap-1.5"><AlertCircle size={12}/> متأخرة 🚨</div>
+		                    <div className={`text-2xl font-black ${orders.filter(o => isDelayed(o)).length > 0 ? 'text-red-500' : 'text-white'}`}>
+		                      {orders.filter(o => isDelayed(o)).length}
+		                    </div>
+		                  </button>
+		                  <button type="button" className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-emerald-500/30 transition-all group text-right active:scale-95" onClick={() => { clearFilters(); setFilterStatus('__UNPAID__'); }}>
+		                    <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest flex items-center gap-1.5"><DollarSign size={12}/> تحصيل معلق</div>
+		                    <div className={`text-2xl font-black ${orders.filter(o => o.status === 'completed' && !o.is_paid).length > 0 ? 'text-amber-500' : 'text-white'}`}>
+		                      {orders.filter(o => o.status === 'completed' && !o.is_paid).length}
+		                    </div>
+		                  </button>
+		                  <button type="button" className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-indigo-500/30 transition-all group text-right active:scale-95 sm:col-span-2 lg:col-span-1" onClick={() => { clearFilters(); setShowCompletedOrders(true); setFilterWarranty('active'); setFilterStatus('completed'); }}>
+		                    <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest flex items-center gap-1.5"><ShieldCheck size={12}/> ضمان ساري</div>
+		                    <div className="text-2xl font-black text-emerald-400">{[...orders, ...archivedOrders].filter(o => getWarrantyStatus(o).status === 'active').length}</div>
+		                  </button>
+		                </div>
 	              </div>
 
 	              {/* Unified Filter Bar */}
@@ -3777,7 +3777,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.5.4-wizard-final</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.5.7-shortcuts-egypt-time</div>
         </div>
       </div>
 

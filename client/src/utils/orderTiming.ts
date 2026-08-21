@@ -81,3 +81,12 @@ export const getElapsedTone = (value: unknown, now = Date.now()): 'normal' | 'wa
 };
 
 export const getOrderCreatedValue = (order: any): unknown => order?.created_at || order?.date;
+
+export const getEgyptTodayString = (): string => {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: CAIRO_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(new Date());
+};
