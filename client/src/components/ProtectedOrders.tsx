@@ -1701,6 +1701,32 @@ export default function ProtectedOrders() {
     }
   };
 
+  const handleBatchConfirmPaid = async () => {
+    const unpaidCompleted = filteredOrders.filter(o => o.status === 'completed' && !o.is_paid);
+    if (unpaidCompleted.length === 0) return;
+    
+    if (!window.confirm(`هل أنت متأكد من اعتماد تحصيل عدد ${unpaidCompleted.length} أوردر دفعة واحدة؟ سيتم تصفير عداد التحصيل المعلق.`)) return;
+    
+    setIsSubmitting(true);
+    try {
+      const ids = unpaidCompleted.map(o => o.id);
+      const { error } = await supabase
+        .from('orders')
+        .update({ is_paid: true })
+        .in('id', ids);
+        
+      if (error) throw error;
+      
+      showToast(`تم اعتماد تحصيل ${ids.length} أوردر بنجاح`, "success");
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      showToast("تعذر اعتماد التحصيل الجماعي", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const pingTechnician = async (techName: string) => {
     if (!techName || techName === '-' || techName === '') {
       showToast("يرجى تعيين فني أولاً", "error");
@@ -2770,7 +2796,17 @@ export default function ProtectedOrders() {
 	                      {filterStatus !== 'all' && <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1 rounded-full text-[9px] font-black flex items-center gap-1.5">🏷️ {filterStatus} <X size={10} className="cursor-pointer" onClick={() => setFilterStatus('all')}/></span>}
 	                      {filterTechnician && <span className="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-3 py-1 rounded-full text-[9px] font-black flex items-center gap-1.5">👨‍🔧 {filterTechnician === '__NONE__' ? 'بدون فني' : filterTechnician} <X size={10} className="cursor-pointer" onClick={() => setFilterTechnician('')}/></span>}
 	                      {filterDelay === 'delayed' && <span className="bg-red-500/10 text-red-400 border border-red-500/20 px-3 py-1 rounded-full text-[9px] font-black flex items-center gap-1.5">🚨 متأخر <X size={10} className="cursor-pointer" onClick={() => setFilterDelay('all')}/></span>}
-	                      <button onClick={clearFilters} className="text-[10px] font-black text-slate-500 hover:text-white transition-colors underline decoration-slate-700 underline-offset-4">مسح الكل</button>
+	                      
+                        {filterStatus === '__UNPAID__' && isAdmin && filteredOrders.length > 0 && (
+                          <button 
+                            onClick={handleBatchConfirmPaid}
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-full text-[9px] font-black flex items-center gap-1.5 shadow-lg animate-pulse"
+                          >
+                            <CheckCircle2 size={12} /> اعتماد تحصيل الكل ({filteredOrders.length})
+                          </button>
+                        )}
+
+                        <button onClick={clearFilters} className="text-[10px] font-black text-slate-500 hover:text-white transition-colors underline decoration-slate-700 underline-offset-4">مسح الكل</button>
 	                    </>
 	                  ) : (
 	                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest italic">لا توجد فلاتر نشطة</span>
@@ -3777,7 +3813,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.5.7-shortcuts-egypt-time</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.5.8-batch-paid-fix</div>
         </div>
       </div>
 
