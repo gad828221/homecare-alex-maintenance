@@ -2788,42 +2788,42 @@ export default function ProtectedOrders() {
                   const cardTone = transferPending ? 'bg-amber-950/40 border-amber-300 shadow-amber-400/30 animate-pulse' : config.card;
 
                   return (
-                    <div key={order.id} className={`group ${cardTone} rounded-[2rem] border-2 p-6 transition-all hover:shadow-2xl relative overflow-hidden ${config.pulse} bg-slate-900/40 backdrop-blur-sm`}>
-	                      {transferPending && <div className="absolute inset-0 pointer-events-none rounded-[2rem] border-2 border-amber-300/70 shadow-[0_0_28px_rgba(251,191,36,0.35)]"></div>}
-	                      <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:bg-white/10 transition-all"></div>
+                    <div key={order.id} className={`group ${cardTone} rounded-[1.5rem] border p-4 transition-all hover:shadow-xl relative overflow-hidden ${config.pulse} bg-slate-900/60 backdrop-blur-md`}>
+	                      {transferPending && <div className="absolute inset-0 pointer-events-none rounded-[1.5rem] border border-amber-300/50 shadow-[0_0_20px_rgba(251,191,36,0.2)]"></div>}
+	                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:bg-white/10 transition-all"></div>
 
 	                      {/* Header Section */}
-	                      <div className="flex justify-between items-start mb-5 relative z-10">
-	                        <div className="flex flex-col gap-1.5">
-		                          <div className="flex flex-wrap items-center gap-2">
-	                            <h3 className="text-xl font-black text-white group-hover:text-orange-400 transition-colors leading-tight">{order.customer_name}</h3>
+	                      <div className="flex justify-between items-start mb-3 relative z-10">
+	                        <div className="flex flex-col gap-1">
+		                          <div className="flex flex-wrap items-center gap-1.5">
+	                            <h3 className="text-base font-black text-white group-hover:text-orange-400 transition-colors leading-tight">{order.customer_name}</h3>
 	                            <div className="flex gap-1">
-	                              {previousCustomerPhones.has(normalizeCustomerPhone(order.phone)) && <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-black text-emerald-300">✨ سابق</span>}
-	                              {isNewOrder(order) && <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-ping mt-1"></span>}
+	                              {previousCustomerPhones.has(normalizeCustomerPhone(order.phone)) && <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-1.5 py-0.5 text-[8px] font-black text-emerald-300">✨ سابق</span>}
+	                              {isNewOrder(order) && <span className="flex h-1.5 w-1.5 rounded-full bg-blue-500 animate-ping mt-1"></span>}
 	                            </div>
 		                          </div>
-	                          <div className="flex items-center gap-2">
-	                            <span className="text-[10px] font-black text-slate-500 tracking-widest uppercase bg-slate-800/50 px-2 py-0.5 rounded-md">#{order.order_number}</span>
+	                          <div className="flex items-center gap-1.5">
+	                            <span className="text-[8px] font-black text-slate-500 tracking-tighter uppercase bg-slate-800/80 px-1.5 py-0.5 rounded shadow-inner">#{order.order_number}</span>
 	                            {getWarrantyStatus(order).status !== 'none' && (
-	                              <div className={`px-2 py-0.5 rounded-full text-[8px] font-black bg-${getWarrantyStatus(order).color}-500/20 text-${getWarrantyStatus(order).color}-400 border border-${getWarrantyStatus(order).color}-500/30 flex items-center gap-1`}>
-	                                <ShieldCheck size={9} /> {getWarrantyStatus(order).text}
+	                              <div className={`px-1.5 py-0.5 rounded-full text-[7px] font-black bg-${getWarrantyStatus(order).color}-500/20 text-${getWarrantyStatus(order).color}-400 border border-${getWarrantyStatus(order).color}-500/30 flex items-center gap-1`}>
+	                                <ShieldCheck size={8} /> {getWarrantyStatus(order).text}
 	                              </div>
 	                            )}
 	                          </div>
 	                        </div>
 	                        
-	                        <div className="flex flex-col items-end gap-2">
-	                          <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black border flex items-center gap-1.5 shadow-sm ${config.badge}`}>
-	                            <StatusIcon size={14} strokeWidth={2.5} />
+	                        <div className="flex flex-col items-end gap-1.5">
+	                          <div className={`px-2 py-1 rounded-lg text-[9px] font-black border flex items-center gap-1 shadow-sm ${config.badge}`}>
+	                            <StatusIcon size={12} strokeWidth={3} />
 	                            {config.label}
 	                          </div>
 	                          
 	                          {(order.status === 'completed' || order.status === 'returned') && canEditDelete() && (
 	                            <button 
 	                              onClick={(e) => { e.stopPropagation(); setSelectedOrderForReturn(order); setShowReturnModal(true); }} 
-	                              className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-xl text-[9px] font-black flex items-center gap-1 shadow-lg shadow-rose-900/40 animate-pulse border border-white/20 transition-all active:scale-95"
+	                              className="bg-rose-600/90 hover:bg-rose-600 text-white px-2 py-1 rounded-lg text-[8px] font-black flex items-center gap-1 shadow-md animate-pulse transition-all active:scale-90"
 	                            >
-	                              <RotateCcw size={12} /> إرجاع للفني ⚠️
+	                              <RotateCcw size={10} /> إرجاع ⚠️
 	                            </button>
 	                          )}
 	                        </div>
@@ -2853,222 +2853,157 @@ export default function ProtectedOrders() {
 	                      )}
 
 	                      {/* Main Info Grid */}
-	                      <div className="grid grid-cols-2 gap-4 mb-6 relative z-10">
-	                        <div className="bg-slate-950/40 p-4 rounded-[1.25rem] border border-white/5 flex items-center gap-3 shadow-inner group/info hover:border-orange-500/30 transition-colors">
-	                          <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border border-white/10 ${config.icon} shadow-lg shadow-black/20`}><Cpu size={20} /></div>
+	                      <div className="grid grid-cols-2 gap-2 mb-4 relative z-10">
+	                        <div className="bg-slate-950/60 p-2.5 rounded-2xl border border-white/5 flex items-center gap-2.5 shadow-inner group/info hover:border-orange-500/30 transition-colors">
+	                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center border border-white/5 ${config.icon} shadow-md shadow-black/20`}><Cpu size={16} /></div>
 	                          <div className="min-w-0">
-	                            <p className="text-[9px] font-black text-slate-500 mb-1 uppercase tracking-tighter">الجهاز والماركة</p>
-	                            <p className="text-[13px] font-black text-slate-200 truncate">{order.device_type}</p>
-	                            <p className="text-[10px] font-bold text-slate-400 truncate">{order.brand}</p>
+	                            <p className="text-[8px] font-black text-slate-500 mb-0.5 uppercase tracking-tighter">الجهاز</p>
+	                            <p className="text-[11px] font-black text-slate-200 truncate">{order.device_type}</p>
+	                            <p className="text-[9px] font-bold text-slate-400 truncate">{order.brand}</p>
 	                          </div>
 	                        </div>
-	                        <div className="bg-slate-950/40 p-4 rounded-[1.25rem] border border-white/5 flex items-center gap-3 shadow-inner group/info hover:border-emerald-500/30 transition-colors">
-	                          <div className="w-10 h-10 rounded-2xl flex items-center justify-center border border-white/10 bg-emerald-500/10 text-emerald-400 shadow-lg shadow-black/20"><DollarSign size={20} /></div>
+	                        <div className="bg-slate-950/60 p-2.5 rounded-2xl border border-white/5 flex items-center gap-2.5 shadow-inner group/info hover:border-emerald-500/30 transition-colors">
+	                          <div className="w-8 h-8 rounded-xl flex items-center justify-center border border-white/5 bg-emerald-500/10 text-emerald-400 shadow-md shadow-black/20"><DollarSign size={16} /></div>
 	                          <div className="min-w-0">
-	                            <p className="text-[9px] font-black text-slate-500 mb-1 uppercase tracking-tighter">إجمالي المبلغ</p>
-	                            <p className="text-[14px] font-black text-orange-400 tracking-tight">{Number(order.total_amount).toLocaleString('ar-EG')} <span className="text-[9px]">ج.م</span></p>
+	                            <p className="text-[8px] font-black text-slate-500 mb-0.5 uppercase tracking-tighter">المبلغ</p>
+	                            <p className="text-[12px] font-black text-orange-400 tracking-tight">{Number(order.total_amount).toLocaleString('ar-EG')} <span className="text-[8px]">ج.م</span></p>
 	                          </div>
 	                        </div>
 	                      </div>
 
-	                      {/* Technician Note Photos */}
+	                      {/* Photos Section */}
 	                      {(getPhotoUrl(order.technician_note, 'OLD') || getPhotoUrl(order.technician_note, 'NEW')) && (
-	                        <div className="grid grid-cols-2 gap-3 mb-6 relative z-10">
+	                        <div className="grid grid-cols-2 gap-2 mb-4 relative z-10">
 	                          {getPhotoUrl(order.technician_note, 'OLD') && (
-	                            <div className="group/photo relative">
-	                              <div className="flex items-center gap-1.5 mb-1.5 px-1">
-	                                <Camera size={10} className="text-rose-400" />
-	                                <p className="text-[9px] font-black text-rose-400 uppercase tracking-tighter">القطع القديمة</p>
-	                              </div>
-	                              <div className="relative rounded-2xl overflow-hidden border-2 border-rose-500/20 shadow-lg">
-	                                <img
-	                                  src={getPhotoUrl(order.technician_note, 'OLD')}
-	                                  alt="القطع القديمة"
-	                                  className="w-full h-24 object-cover cursor-pointer hover:scale-110 transition-transform duration-500"
-	                                  onClick={() => window.open(getPhotoUrl(order.technician_note, 'OLD'), '_blank')}
-	                                />
-	                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none opacity-0 group-hover/photo:opacity-100 transition-opacity"></div>
-	                              </div>
+	                            <div className="relative rounded-xl overflow-hidden border border-rose-500/20 h-16 shadow-sm group/photo">
+	                              <img src={getPhotoUrl(order.technician_note, 'OLD')} className="w-full h-full object-cover" />
+	                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity cursor-pointer" onClick={() => window.open(getPhotoUrl(order.technician_note, 'OLD'), '_blank')}><Camera size={14} className="text-white" /></div>
+	                              <div className="absolute bottom-0 left-0 right-0 bg-rose-600/80 text-[7px] font-black text-white text-center py-0.5">قديم</div>
 	                            </div>
 	                          )}
 	                          {getPhotoUrl(order.technician_note, 'NEW') && (
-	                            <div className="group/photo relative">
-	                              <div className="flex items-center gap-1.5 mb-1.5 px-1">
-	                                <Camera size={10} className="text-emerald-400" />
-	                                <p className="text-[9px] font-black text-emerald-400 uppercase tracking-tighter">القطع الجديدة</p>
-	                              </div>
-	                              <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-500/20 shadow-lg">
-	                                <img
-	                                  src={getPhotoUrl(order.technician_note, 'NEW')}
-	                                  alt="القطع الجديدة"
-	                                  className="w-full h-24 object-cover cursor-pointer hover:scale-110 transition-transform duration-500"
-	                                  onClick={() => window.open(getPhotoUrl(order.technician_note, 'NEW'), '_blank')}
-	                                />
-	                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none opacity-0 group-hover/photo:opacity-100 transition-opacity"></div>
-	                              </div>
+	                            <div className="relative rounded-xl overflow-hidden border border-emerald-500/20 h-16 shadow-sm group/photo">
+	                              <img src={getPhotoUrl(order.technician_note, 'NEW')} className="w-full h-full object-cover" />
+	                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity cursor-pointer" onClick={() => window.open(getPhotoUrl(order.technician_note, 'NEW'), '_blank')}><Camera size={14} className="text-white" /></div>
+	                              <div className="absolute bottom-0 left-0 right-0 bg-emerald-600/80 text-[7px] font-black text-white text-center py-0.5">جديد</div>
 	                            </div>
 	                          )}
 	                        </div>
 	                      )}
 
-	                      {/* Location & Meta Info */}
-	                      <div className="space-y-3 mb-6 relative z-10 bg-slate-950/20 p-4 rounded-2xl border border-white/5">
-	                        <div className="flex items-start gap-3 text-[12px] text-slate-300">
-	                          <div className="w-8 h-8 rounded-xl bg-slate-800/80 border border-slate-700/50 flex items-center justify-center text-slate-400 shrink-0 shadow-sm"><MapPin size={16} /></div>
-	                          <div className="min-w-0 flex-1 pt-0.5">
-	                            <p className="text-[9px] font-black text-slate-500 mb-0.5 uppercase tracking-tighter">عنوان العميل</p>
-	                            <span className="line-clamp-2 leading-relaxed font-bold">{order.address || 'لا يوجد عنوان مسجل'}</span>
+	                      {/* Compact Meta Info */}
+	                      <div className="space-y-2 mb-4 relative z-10 bg-slate-950/40 p-3 rounded-2xl border border-white/5 shadow-inner">
+	                        <div className="flex items-start gap-2.5 text-[11px] text-slate-300">
+	                          <div className="w-7 h-7 rounded-lg bg-slate-800/80 border border-slate-700/50 flex items-center justify-center text-slate-400 shrink-0 shadow-sm"><MapPin size={14} /></div>
+	                          <div className="min-w-0 flex-1">
+	                            <span className="line-clamp-1 font-bold leading-tight">{order.address || 'بدون عنوان'}</span>
+	                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-tighter mt-0.5">الموقع</p>
 	                          </div>
 	                          {order.address && (
-	                            <div className="flex gap-1.5 self-center">
-	                              <button
-	                                onClick={() => {
-	                                  const addr = order.address || '';
-	                                  const query = addr.includes('http') ? addr : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr + (addr.includes('الساحل') || addr.includes('ك ') ? ' Egypt' : ' Alexandria Egypt'))}`;
-	                                  window.open(query, '_blank');
-	                                }}
-	                                className="px-2.5 py-1.5 bg-emerald-600/10 text-emerald-400 border border-emerald-500/20 rounded-xl hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-1 shadow-sm active:scale-95"
-	                                title="فتح موقع العميل GPS"
-	                              >
-	                                <Navigation size={13} />
-	                                <span className="text-[9px] font-black">GPS</span>
-	                              </button>
-	                            </div>
+	                            <button
+	                              onClick={() => {
+	                                const addr = order.address || '';
+	                                const query = addr.includes('http') ? addr : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr + (addr.includes('الساحل') || addr.includes('ك ') ? ' Egypt' : ' Alexandria Egypt'))}`;
+	                                window.open(query, '_blank');
+	                              }}
+	                              className="w-7 h-7 bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 rounded-lg flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all active:scale-90 shadow-sm"
+	                              title="GPS"
+	                            >
+	                              <Navigation size={12} />
+	                            </button>
 	                          )}
 	                        </div>
 	                        
-	                        <div className="flex items-start gap-3 text-[12px] text-slate-300">
-	                          <div className="w-8 h-8 rounded-xl bg-slate-800/80 border border-slate-700/50 flex items-center justify-center text-slate-400 shrink-0 shadow-sm"><Users size={16} /></div>
-	                          <div className="flex-1 min-w-0 pt-0.5">
-	                            <p className="text-[9px] font-black text-slate-500 mb-0.5 uppercase tracking-tighter">الفني المسؤول</p>
+	                        <div className="flex items-center gap-2.5 text-[11px] text-slate-300">
+	                          <div className="w-7 h-7 rounded-lg bg-slate-800/80 border border-slate-700/50 flex items-center justify-center text-slate-400 shrink-0 shadow-sm"><Users size={14} /></div>
+	                          <div className="flex-1 min-w-0">
 	                            <div className="flex items-center justify-between">
-	                              <span className={`font-black ${noTechnician ? 'text-orange-500 animate-pulse' : 'text-slate-200'}`}>{order.technician || 'لم يتم التعيين بعد'}</span>
+	                              <span className={`font-black truncate max-w-[120px] ${noTechnician ? 'text-orange-500 animate-pulse' : 'text-slate-200'}`}>{order.technician || 'لم يتم التعيين'}</span>
 	                              {!noTechnician && canEditDelete() && (
-	                                <button
-	                                  onClick={() => pingTechnician(order.technician)}
-	                                  className="px-2 py-1 bg-orange-600/20 text-orange-500 rounded-lg border border-orange-500/20 hover:bg-orange-600 hover:text-white transition-all text-[10px] font-black flex items-center gap-1"
-	                                >
-	                                  <Bell size={12} className="animate-pulse" /> تنبيه
-	                                </button>
+	                                <button onClick={() => pingTechnician(order.technician)} className="w-6 h-6 bg-orange-600/20 text-orange-500 rounded-lg border border-orange-500/20 flex items-center justify-center hover:bg-orange-600 hover:text-white transition-all active:scale-90"><Bell size={10} className="animate-pulse" /></button>
 	                              )}
 	                            </div>
+	                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-tighter mt-0.5">الفني</p>
 	                          </div>
 	                        </div>
 
-	                        <div className="flex items-start gap-3 text-[12px] text-slate-300">
-	                          <div className="w-8 h-8 rounded-xl bg-slate-800/80 border border-slate-700/50 flex items-center justify-center text-slate-400 shrink-0 shadow-sm"><Clock size={16} /></div>
-	                          <div className="flex-1 min-w-0 pt-0.5">
-	                            <p className="text-[9px] font-black text-slate-500 mb-1 uppercase tracking-tighter">توقيت الأوردر</p>
-	                            <div className="flex flex-wrap items-center gap-3">
-	                              <span className="font-bold text-slate-300">{formatOrderDay(orderCreatedValue)} - {formatOrderDateTime(orderCreatedValue)}</span>
-	                              <span className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1 text-[11px] font-black tracking-wide shadow-sm ${elapsedToneClass}`}>
-	                                <Clock size={13} /> منذ {formatElapsed(orderCreatedValue, clockNow)}
-	                              </span>
+	                        <div className="flex items-center gap-2.5 text-[11px] text-slate-300">
+	                          <div className="w-7 h-7 rounded-lg bg-slate-800/80 border border-slate-700/50 flex items-center justify-center text-slate-400 shrink-0 shadow-sm"><Clock size={14} /></div>
+	                          <div className="flex-1 min-w-0">
+	                            <div className="flex items-center justify-between">
+	                              <span className="font-bold text-slate-300 text-[10px]">{formatOrderDateTime(orderCreatedValue)}</span>
+	                              <span className={`inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[9px] font-black tracking-tighter shadow-sm ${elapsedToneClass}`}>منذ {formatElapsed(orderCreatedValue, clockNow)}</span>
 	                            </div>
+	                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-tighter mt-0.5">التوقيت</p>
 	                          </div>
 	                        </div>
 	                      </div>
 
-	                      {/* Actions Section */}
+	                      {/* Modern Icon Actions Section */}
 	                      {!isViewer && (
-	                        <div className="space-y-4 relative z-10 pt-5 border-t border-slate-800/50">
-	                          {/* Communication Row */}
-	                          <div className="flex gap-3">
-	                            <a href={`tel:${order.phone}`} className="flex-1 h-12 bg-slate-800 hover:bg-blue-600 text-white rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 border border-white/5 group/btn">
-	                              <Phone size={18} className="group-hover/btn:animate-bounce" /> <span className="text-[12px] font-black">اتصال</span>
-	                            </a>
-	                            <button onClick={() => sendWhatsApp(order.phone, `مرحباً أ/ ${order.customer_name}، معك مركز الصيانة بخصوص طلبك رقم ${order.order_number}`)} className="flex-1 h-12 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-500 hover:text-white rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 border border-emerald-500/20 group/btn">
-	                              <Send size={18} className="group-hover/btn:translate-x-1 transition-transform" /> <span className="text-[12px] font-black">واتساب</span>
-	                            </button>
+	                        <div className="space-y-3 relative z-10 pt-3 border-t border-white/5">
+	                          {/* Primary Actions Row */}
+	                          <div className="flex items-center justify-between gap-2">
+	                            <div className="flex gap-2">
+	                              <a href={`tel:${order.phone}`} className="w-9 h-9 bg-blue-600/90 hover:bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-md active:scale-90 transition-all border border-white/10" title="اتصال"><Phone size={16} /></a>
+	                              <button onClick={() => sendWhatsApp(order.phone, `مرحباً أ/ ${order.customer_name}، معك مركز الصيانة بخصوص طلبك رقم ${order.order_number}`)} className="w-9 h-9 bg-emerald-600/90 hover:bg-emerald-600 text-white rounded-xl flex items-center justify-center shadow-md active:scale-90 transition-all border border-white/10" title="واتساب"><Send size={16} /></button>
+	                              {canEditDelete() && order.technician && (
+	                                <button onClick={() => { if (!order.phone) return showToast('رقم العميل غير مسجل', 'error'); sendTechnicianAssignmentToCustomer(order, order.technician); }} className="w-9 h-9 bg-orange-600/90 hover:bg-orange-600 text-white rounded-xl flex items-center justify-center shadow-md active:scale-90 transition-all border border-white/10" title="بيانات الفني"><UserCircle size={16} /></button>
+	                              )}
+	                            </div>
+	                            
+	                            <div className="flex gap-2">
+	                              {canEditDelete() && (
+	                                <>
+	                                  <button onClick={() => { stopUrgentAlert(); setEditingOrder(order); setFormData(order); setShowOrderModal(true); }} className="w-9 h-9 bg-slate-800 text-blue-400 hover:bg-blue-600 hover:text-white rounded-xl flex items-center justify-center shadow-sm active:scale-90 transition-all border border-white/5"><Edit size={16} /></button>
+	                                  <button onClick={() => deleteOrder(order.id)} className="w-9 h-9 bg-slate-800 text-rose-400 hover:bg-rose-600 hover:text-white rounded-xl flex items-center justify-center shadow-sm active:scale-90 transition-all border border-white/5"><Trash2 size={16} /></button>
+	                                </>
+	                              )}
+	                            </div>
 	                          </div>
 
-	                          {/* Admin Controls Row */}
-	                          <div className="flex gap-2">
-	                            {canEditDelete() && order.technician && (
-	                              <button
-	                                type="button"
-	                                onClick={() => {
-	                                  if (!order.phone) return showToast('رقم العميل غير مسجل', 'error');
-	                                  const opened = sendTechnicianAssignmentToCustomer(order, order.technician);
-	                                  showToast(opened ? 'تم فتح واتساب مباشرة على محادثة العميل' : 'تعذر تجهيز رسالة بيانات الفني', opened ? 'success' : 'error');
-	                                }}
-	                                className="flex-[2] h-12 bg-orange-600/10 hover:bg-orange-600 text-orange-400 hover:text-white rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 border border-orange-500/20 shadow-sm"
-	                              >
-	                                <UserCircle size={18} /> <span className="text-[11px] font-black tracking-tighter">إرسال بيانات الفني للعميل</span>
-	                              </button>
-	                            )}
-	                            {canEditDelete() && (
-	                              <div className="flex gap-2">
-	                                <button onClick={() => { stopUrgentAlert(); setEditingOrder(order); setFormData(order); setShowOrderModal(true); }} className="w-12 h-12 bg-slate-800 text-blue-400 hover:bg-blue-600 hover:text-white rounded-2xl flex items-center justify-center transition-all active:scale-95 border border-white/5 shadow-sm" title="تعديل"><Edit size={20} /></button>
-	                                <button onClick={() => deleteOrder(order.id)} className="w-12 h-12 bg-slate-800 text-rose-400 hover:bg-rose-600 hover:text-white rounded-2xl flex items-center justify-center transition-all active:scale-95 border border-white/5 shadow-sm" title="حذف"><Trash2 size={20} /></button>
-	                              </div>
-	                            )}
-	                          </div>
-
-	                          {/* Status & Payment Row */}
+	                          {/* Secondary Actions Row (Status & Payment) */}
 	                          {canEditDelete() && (
-	                            <div className="flex gap-3 items-center">
-	                               <select value={order.status} onChange={e => updateOrderStatus(order.id, e.target.value)} className="h-11 text-[11px] font-black bg-slate-800 border border-slate-700 rounded-xl px-3 text-white flex-1 outline-none focus:border-orange-500 transition-colors shadow-inner">
-	                                 <option value="pending">تغيير الحالة...</option>
-	                                 <option value="in-progress">🔧 قيد التنفيذ</option>
-	                                 <option value="inspected">🔍 تم الكشف</option>
+	                            <div className="flex gap-2 items-center">
+	                               <select value={order.status} onChange={e => updateOrderStatus(order.id, e.target.value)} className="h-9 text-[9px] font-black bg-slate-950/60 border border-slate-800 rounded-lg px-2 text-white flex-1 outline-none shadow-inner">
+	                                 <option value="pending">الحالة...</option>
+	                                 <option value="in-progress">🔧 تنفيذ</option>
+	                                 <option value="inspected">🔍 كشف</option>
 	                                 <option value="completed">✅ مكتمل</option>
 	                                 <option value="cancelled">❌ ملغي</option>
 	                                 <option value="deferred">⏰ مؤجل</option>
 	                               </select>
 	                               
 	                               {transferPending ? (
-	                                 isAdmin && <button type="button" disabled={confirmingTransferId === order.id} onClick={() => confirmCompanyTransferReceipt(order)} className="h-11 flex items-center justify-center gap-2 rounded-xl border border-amber-300/60 bg-amber-400 px-4 text-[11px] font-black text-slate-950 shadow-lg shadow-amber-500/30 transition-all hover:bg-amber-300 active:scale-95 disabled:cursor-wait disabled:opacity-60"><Wallet size={16} /> تأكيد الاستلام</button>
+	                                 isAdmin && <button type="button" disabled={confirmingTransferId === order.id} onClick={() => confirmCompanyTransferReceipt(order)} className="h-9 px-3 rounded-lg bg-amber-400 text-[9px] font-black text-slate-950 shadow-md active:scale-90 transition-all flex items-center gap-1"><Wallet size={12} /> تأكيد</button>
 	                               ) : (
 	                                 isAdmin ? (
-	                                   <button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`h-11 px-5 rounded-xl text-[11px] font-black transition-all shadow-md active:scale-95 ${order.is_paid ? 'bg-emerald-600 text-white border border-emerald-500/50 shadow-emerald-900/20' : 'bg-rose-600 text-white border border-rose-500/50 shadow-rose-900/20 animate-pulse'}`}>
-	                                     {order.is_paid ? 'تم التحصيل ✅' : 'تحصيل؟ 💰'}
+	                                   <button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`h-9 px-3 rounded-lg text-[9px] font-black shadow-md active:scale-90 transition-all ${order.is_paid ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white animate-pulse'}`}>
+	                                     {order.is_paid ? 'محصل ✅' : 'تحصيل؟ 💰'}
 	                                   </button>
 	                                 ) : (
-	                                   <div className={`h-11 px-4 rounded-xl text-[11px] font-black flex items-center justify-center border shadow-inner ${order.is_paid ? 'bg-emerald-500/10 text-emerald-500/70 border-emerald-500/20' : 'bg-slate-800 text-slate-500 border-slate-700'}`}>
-	                                     {order.is_paid ? 'تم التحصيل ✅' : 'لم يتم التحصيل'}
+	                                   <div className={`h-9 px-3 rounded-lg text-[9px] font-black flex items-center justify-center border ${order.is_paid ? 'bg-emerald-500/10 text-emerald-500/70 border-emerald-500/20' : 'bg-slate-800 text-slate-500 border-slate-700'}`}>
+	                                     {order.is_paid ? 'تم ✅' : 'لم يتم'}
 	                                   </div>
 	                                 )
 	                               )}
 	                            </div>
 	                          )}
 
-	                          {/* Rating Section */}
-	                          {order.status === 'completed' && canEditDelete() && (
-	                            <div className="bg-slate-950/30 p-4 rounded-2xl border border-white/5 flex flex-col items-center gap-3">
-	                              <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">تقييم أداء الفني</p>
-	                              <div className="flex gap-2">
-	                                {[1, 2, 3, 4, 5].map(star => (
-	                                  <button
-	                                    key={star}
-	                                    onClick={() => updateOrderRating(order.id, star)}
-	                                    className={`transition-all duration-300 ${star <= (order.rating || 0) ? 'text-yellow-500 scale-125 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]' : 'text-slate-700 hover:text-slate-500'}`}
-	                                  >
-	                                    <Star size={24} fill={star <= (order.rating || 0) ? 'currentColor' : 'none'} strokeWidth={1.5} />
-	                                  </button>
-	                                ))}
-	                              </div>
-	                            </div>
-	                          )}
-
-	                          {/* Footer Actions */}
-	                          <div className="space-y-3">
-	                            <div className="flex gap-3">
-	                              {order.status === 'completed' ? (
-	                                <button onClick={() => window.open(`/invoice?id=${order.id}`, '_blank')} className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-[12px] font-black shadow-lg shadow-blue-900/30 flex items-center justify-center gap-2 active:scale-95 transition-all"><FileCheck size={18} /> عرض الفاتورة</button>
-	                              ) : (
-	                                <button onClick={() => window.open(`/pickup-receipt?id=${order.id}`, '_blank')} className="flex-1 h-12 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl text-[12px] font-black shadow-lg shadow-purple-900/30 flex items-center justify-center gap-2 active:scale-95 transition-all"><ClipboardList size={18} /> عرض إيصال السحب</button>
-	                              )}
-	                              
-	                              {order.status === 'completed' && canEditDelete() && (
-	                                <button onClick={() => sendFeedbackRequest(order)} className="flex-1 h-12 bg-amber-500/10 hover:bg-amber-500 text-amber-500 hover:text-white border border-amber-500/20 rounded-2xl text-[12px] font-black flex items-center justify-center gap-2 active:scale-95 transition-all"><Star size={18} /> طلب تقييم</button>
-	                              )}
-	                            </div>
+	                          {/* Footer Buttons Row */}
+	                          <div className="flex gap-2">
+	                            {order.status === 'completed' ? (
+	                              <button onClick={() => window.open(`/invoice?id=${order.id}`, '_blank')} className="flex-1 h-9 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white rounded-lg text-[9px] font-black border border-blue-500/20 flex items-center justify-center gap-1.5 transition-all active:scale-95"><FileCheck size={14} /> فاتورة</button>
+	                            ) : (
+	                              <button onClick={() => window.open(`/pickup-receipt?id=${order.id}`, '_blank')} className="flex-1 h-9 bg-purple-600/20 hover:bg-purple-600 text-purple-400 hover:text-white rounded-lg text-[9px] font-black border border-purple-500/20 flex items-center justify-center gap-1.5 transition-all active:scale-95"><ClipboardList size={14} /> إيصال</button>
+	                            )}
+	                            
+	                            {order.status === 'completed' && canEditDelete() && (
+	                              <button onClick={() => sendFeedbackRequest(order)} className="w-9 h-9 bg-amber-500/20 text-amber-500 rounded-lg border border-amber-500/20 flex items-center justify-center active:scale-90 transition-all"><Star size={16} /></button>
+	                            )}
 
 	                            {order.status === 'in-progress' && canEditDelete() && (
-	                              <button onClick={() => { setSelectedOrder(order); setSettleForm({ total_amount: order.total_amount || 0, parts_cost: order.parts_cost || 0, transport_cost: order.transport_cost || 0, net_amount: order.net_amount || 0, technician_share: order.technician_share || 0, company_share: order.company_share || 0 }); setShowSettleModal(true); }} className="w-full h-14 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white rounded-2xl text-[14px] font-black shadow-xl shadow-orange-900/30 flex items-center justify-center gap-3 active:scale-[0.98] transition-all">
-	                                <DollarSign size={22} /> تصفية الأوردر الآن
-	                              </button>
+	                              <button onClick={() => { setSelectedOrder(order); setSettleForm({ total_amount: order.total_amount || 0, parts_cost: order.parts_cost || 0, transport_cost: order.transport_cost || 0, net_amount: order.net_amount || 0, technician_share: order.technician_share || 0, company_share: order.company_share || 0 }); setShowSettleModal(true); }} className="flex-[2] h-9 bg-orange-600 text-white rounded-lg text-[10px] font-black shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all"><DollarSign size={14} /> تصفية</button>
 	                            )}
 	                          </div>
 	                        </div>
