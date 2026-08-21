@@ -2437,7 +2437,7 @@ export default function ProtectedOrders() {
             >
               <Play fill="currentColor" size={20} /> دخول وتفعيل التنبيهات 🔊
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v3.3.2</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v3.3.3</p>
           </div>
         </div>
       )}
@@ -3075,7 +3075,17 @@ export default function ProtectedOrders() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {filteredTechnicians.map(tech => (
-                <div key={tech.id} className="bg-slate-800 rounded-xl p-4 text-center border border-slate-700">
+                <div key={tech.id} className="bg-slate-800 rounded-xl p-4 text-center border border-slate-700 relative overflow-hidden">
+                  {/* مؤشر حالة الإشعارات الذكي */}
+                  {(() => {
+                    const lastHeartbeat = notifications.find(n => n.user_name === tech.name && n.action === "🔔 جاهز للاستلام");
+                    const isActiveNotif = lastHeartbeat && (new Date().getTime() - new Date(lastHeartbeat.created_at).getTime() < 24 * 60 * 60 * 1000);
+                    return (
+                      <div className={`absolute top-2 right-2 p-1.5 rounded-lg border ${isActiveNotif ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-slate-700/30 border-slate-600/30 text-slate-500'}`} title={isActiveNotif ? 'الإشعارات نشطة ومفعلة' : 'الإشعارات غير مفعلة أو لم يتم استقبال إشارة منذ 24 ساعة'}>
+                        <Bell size={12} className={isActiveNotif ? 'animate-bounce' : ''} />
+                      </div>
+                    );
+                  })()}
                   <div className="w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-3"><Users className="w-8 h-8 text-orange-500" /></div>
                   <h3 className="font-bold text-white">{tech.name}</h3>
                   <p className="text-xs text-slate-400">{tech.specialization}</p>
@@ -3564,7 +3574,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.3.2-notification-audit-log</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.3.3-technician-live-status</div>
         </div>
       </div>
 

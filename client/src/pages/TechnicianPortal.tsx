@@ -190,6 +190,23 @@ export default function TechnicianPortal() {
       if (user.role === "tech" && user.techName) {
         setTechName(user.techName);
         
+        // إرسال إشارة نجاح (Heartbeat) لتأكيد جاهزية الإشعارات للمدير
+        const sendHeartbeat = async () => {
+          try {
+            await fetch(`${supabaseUrl}/rest/v1/notifications`, {
+              method: 'POST',
+              headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: "🔔 جاهز للاستلام",
+                details: `الفني ${user.techName} متصل الآن وجاهز لاستقبال التنبيهات.`,
+                user_name: user.techName,
+                created_at: new Date().toISOString()
+              })
+            });
+          } catch (e) { console.error('Heartbeat error:', e); }
+        };
+        sendHeartbeat();
+        
         // ✅ التحقق إذا كان الصوت قد تم تفعيله مسبقاً في هذه الجلسة
         if (sessionStorage.getItem('audio_forced_enabled') === 'true') {
           setAudioEnabled(true);
@@ -1230,7 +1247,7 @@ export default function TechnicianPortal() {
             >
               <Play fill="currentColor" size={20} /> بدء العمل واستقبال الأوردرات
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold mb-4">Maintenance Guide OS v3.3.2-notification-audit-log</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold mb-4">Maintenance Guide OS v3.3.3-technician-live-status</p>
             <NotificationStatus />
 
           </div>
