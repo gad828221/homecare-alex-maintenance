@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
-  Plus, Search, LayoutDashboard, Users, SlidersHorizontal, ChevronDown, ChevronUp,
+  Plus, Search, LayoutDashboard, Users, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
   CheckCircle2, AlertCircle, Eye, EyeOff,
   Edit, Trash2, RefreshCw, Phone,
   Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut, Send, Play, LogIn,
@@ -341,6 +341,18 @@ export default function ProtectedOrders() {
   const [confirmingTransferId, setConfirmingTransferId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'orders' | 'archived' | 'technicians' | 'reports' | 'repeatCustomers' | 'invoicesReview' | 'cash' | 'partners' | 'notifications' | 'permissions' | 'performance' | 'analytics' | 'feedback'>('orders');
   const [showOrderModal, setShowOrderModal] = useState(false);
+  const [formStep, setFormStep] = useState(1);
+  const DEVICE_ICONS: Record<string, string> = {
+    'غسالة': '🧺',
+    'ثلاجة': '❄️',
+    'بوتاجاز': '🔥',
+    'سخان': '♨️',
+    'تكييف': '🌬️',
+    'شاشة': '📺',
+    'ميكروويف': '⏲️',
+    'مكنسة': '🧹',
+    'أخرى': '⚙️'
+  };
 
   const [showTechModal, setShowTechModal] = useState(false);
   const [showPartnerModal, setShowPartnerModal] = useState(false);
@@ -419,6 +431,34 @@ export default function ProtectedOrders() {
 
   useEffect(() => {
     if (!showOrderModal) return;
+    setFormStep(1);
+    if (!editingOrder) {
+      setFormData({
+        customer_name: '',
+        phone: '',
+        address: '',
+        device_type: '',
+        brand: '',
+        problem_description: '',
+        technician: '',
+        total_amount: 0,
+        parts_cost: 0,
+        transport_cost: 0,
+        net_amount: 0,
+        technician_share: 0,
+        company_share: 0,
+        status: 'pending',
+        is_paid: false,
+        invoice_approved: false,
+        warranty_period: '6 أشهر',
+        invoice_date: new Date().toISOString().split('T')[0],
+        parts_used: ''
+      });
+      setIsOtherDevice(false);
+      setIsOtherBrand(false);
+      setCustomDevice('');
+      setCustomBrand('');
+    }
     requestAnimationFrame(() => orderModalScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' }));
   }, [showOrderModal, editingOrder]);
 
