@@ -3660,7 +3660,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.5.2-glow-edit-tap</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.5.4-wizard-final</div>
         </div>
       </div>
 
@@ -3703,44 +3703,203 @@ export default function ProtectedOrders() {
         <div className="fixed inset-0 bg-black/80 flex items-start justify-center z-50 p-3 sm:p-4 overflow-y-auto">
           <div ref={orderModalScrollRef} id="order-edit-modal-scroll" className="bg-slate-900 rounded-2xl p-4 sm:p-6 w-full max-w-2xl max-h-[calc(100vh-1.5rem)] overflow-y-auto shadow-xl">
             <div className="flex justify-between mb-4 sticky top-0 bg-slate-900/95 backdrop-blur-sm z-10 pb-3 border-b border-slate-800"><h3 className="text-xl font-bold text-white">{editingOrder ? 'تعديل أوردر' : 'أوردر جديد'}</h3><button type="button" onClick={() => setShowOrderModal(false)} className="text-slate-400 hover:text-white" aria-label="إغلاق نافذة الأوردر"><X size={20} /></button></div>
-            <form onSubmit={saveOrder} className="space-y-4 pt-3">
-              <div className="rounded-xl border border-orange-500/30 bg-orange-500/10 px-3 py-2 text-orange-300 text-sm font-black">بيانات العميل</div>
-              <div className="order-edit-fields space-y-4">
-                <div><label className="text-sm text-slate-400">اسم العميل</label><input type="text" value={formData.customer_name || ''} onChange={e => handleFormChange('customer_name', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white" required /></div>
-                <div><label className="text-sm text-slate-400">رقم الهاتف</label><input type="text" value={formData.phone || ''} onChange={e => handleFormChange('phone', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white" required />{customerLookupLoading && <p className="text-xs text-slate-500 mt-1">جاري التحقق من الرقم...</p>}{previousCustomer && <div className="mt-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 space-y-2" role="status"><p className="text-sm font-black text-emerald-300">✨ عميل سابق</p><p className="text-xs text-emerald-200">تم تسجيل الرقم من قبل{previousCustomer.customer_name ? ` باسم ${previousCustomer.customer_name}` : ''}.</p>{(previousCustomer.customer_name || previousCustomer.address) && <button type="button" onClick={() => setFormData((current) => ({ ...current, customer_name: previousCustomer.customer_name || current.customer_name, address: previousCustomer.address || current.address }))} className="text-xs font-black text-emerald-200 underline">استخدام البيانات السابقة</button>}</div>}</div>
-                <div><label className="text-sm text-slate-400">نوع الجهاز</label><select value={formData.device_type} onChange={e => handleFormChange('device_type', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="">اختر</option>{DEVICE_TYPES.map(d => <option key={d}>{d}</option>)}<option value="other">أخرى</option></select>{isOtherDevice && <input type="text" placeholder="جهاز مخصص" value={customDevice} onChange={e => setCustomDevice(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 mt-2 text-white" required />}</div>
-                <div><label className="text-sm text-slate-400">الماركة</label><select value={formData.brand} onChange={e => handleFormChange('brand', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="">اختر</option>{BRANDS.map(b => <option key={b}>{b}</option>)}<option value="other">أخرى</option></select>{isOtherBrand && <input type="text" placeholder="ماركة مخصصة" value={customBrand} onChange={e => setCustomBrand(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 mt-2 text-white" required />}</div>
-                <div className="order-edit-full-field"><label className="text-sm text-slate-400">العنوان</label><input type="text" value={formData.address || ''} onChange={e => handleFormChange('address', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white" /></div>
-                <div className="order-edit-full-field"><label className="text-sm text-slate-400">وصف المشكلة</label><textarea rows={3} value={formData.problem_description || ''} onChange={e => handleFormChange('problem_description', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white" /></div>
-                <div><label className="text-sm text-slate-400">الفني</label><select value={formData.technician} onChange={e => handleFormChange('technician', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="">اختر فني</option>{technicians.map(t => <option key={t.id}>{t.name}</option>)}</select></div>
-                <div><label className="text-sm text-slate-400">إجمالي المبلغ</label><input type="number" value={formData.total_amount} onChange={e => handleFormChange('total_amount', parseFloat(e.target.value))} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" /></div>
-                <div><label className="text-sm text-slate-400">قطع غيار</label><input type="number" value={formData.parts_cost} onChange={e => handleFormChange('parts_cost', parseFloat(e.target.value))} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" /></div>
-                <div><label className="text-sm text-slate-400">مواصلات</label><input type="number" value={formData.transport_cost} onChange={e => handleFormChange('transport_cost', parseFloat(e.target.value))} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" /></div>
-                <div className="order-edit-full-field"><label className="flex items-center gap-2 text-slate-300"><input type="checkbox" checked={formData.is_paid} onChange={e => handleFormChange('is_paid', e.target.checked)} /> تم التحصيل</label></div>
-
-                {editingOrder && (
-                  <>
-                    <div className="col-span-2 border-t border-slate-800 pt-4 mt-2">
-                      <h4 className="text-orange-500 font-bold text-sm mb-3 flex items-center gap-2">🛡️ بيانات الفاتورة والضمان</h4>
+            {/* Step Indicator */}
+            <div className="flex items-center justify-between mb-6 px-2">
+              {[1, 2, 3].map((step) => (
+                <React.Fragment key={step}>
+                  <div className="flex flex-col items-center gap-1.5 relative z-10">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs transition-all ${formStep >= step ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/40' : 'bg-slate-800 text-slate-500 border border-slate-700'}`}>
+                      {formStep > step ? <Check size={14} /> : step}
                     </div>
-                    <div className="order-edit-full-field"><label className="flex items-center gap-2 text-slate-300 mb-2"><input type="checkbox" checked={formData.invoice_approved} onChange={e => handleFormChange('invoice_approved', e.target.checked)} /> اعتماد الفاتورة والضمان</label></div>
-                    <div><label className="text-sm text-slate-400">فترة الضمان</label><select value={formData.warranty_period || '6 أشهر'} onChange={e => handleFormChange('warranty_period', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"><option value="بدون ضمان">بدون ضمان</option><option value="1 شهر">1 شهر</option><option value="شهرين">شهرين</option><option value="3 أشهر">3 أشهر</option><option value="4 أشهر">4 أشهر</option><option value="6 أشهر">6 أشهر</option><option value="1 سنة">1 سنة</option><option value="2 سنة">2 سنة</option><option value="custom">مخصص (يدوي)...</option></select></div>
-                        {formData.warranty_period === 'custom' && (
-                          <div className="mt-2">
-                            <input 
-                              type="text" 
-                              placeholder="اكتب مدة الضمان هنا..." 
-                              className="w-full bg-slate-800 border border-orange-500/50 rounded-lg p-2 text-white text-sm"
-                              onChange={(e) => handleFormChange('warranty_period', e.target.value)}
-                            />
+                    <span className={`text-[9px] font-black uppercase tracking-tighter ${formStep >= step ? 'text-orange-400' : 'text-slate-600'}`}>
+                      {step === 1 ? 'العميل' : step === 2 ? 'الجهاز' : 'التكليف'}
+                    </span>
+                  </div>
+                  {step < 3 && <div className={`flex-1 h-0.5 mx-2 rounded-full transition-all ${formStep > step ? 'bg-orange-600' : 'bg-slate-800'}`}></div>}
+                </React.Fragment>
+              ))}
+            </div>
+
+            <form onSubmit={(e) => { e.preventDefault(); if (formStep === 3) saveOrder(e); }} className="space-y-5">
+              {/* Step 1: Customer Details */}
+              {formStep === 1 && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-300">
+                  <div className="bg-slate-800/40 p-4 rounded-2xl border border-white/5 space-y-4">
+                    <div>
+                      <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">رقم الهاتف</label>
+                      <div className="relative">
+                        <input type="tel" value={formData.phone || ''} onChange={e => handleFormChange('phone', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold focus:border-orange-500 outline-none transition-colors" placeholder="01xxxxxxxxx" required />
+                        {customerLookupLoading && <div className="absolute left-3 top-3"><RefreshCw size={16} className="animate-spin text-orange-500" /></div>}
+                      </div>
+                      {previousCustomer && (
+                        <div className="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 flex items-center justify-between gap-3 animate-in zoom-in-95">
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-black text-emerald-300">✨ عميل سابق: {previousCustomer.customer_name}</p>
+                            <p className="text-[9px] text-emerald-400/80 truncate">{previousCustomer.address}</p>
                           </div>
-                        )}
-                    <div><label className="text-sm text-slate-400">تاريخ الفاتورة</label><input type="date" value={formData.invoice_date || new Date().toISOString().split('T')[0]} onChange={e => handleFormChange('invoice_date', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" /></div>
-                    <div className="order-edit-full-field"><label className="text-sm text-slate-400">قطع الغيار المستخدمة (تظهر في الفاتورة)</label><textarea rows={2} value={formData.parts_used || ''} onChange={e => handleFormChange('parts_used', e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" placeholder="مثلاً: طلمبة طرد، سير موتور..." /></div>
-                  </>
+                          <button type="button" onClick={() => setFormData(c => ({ ...c, customer_name: previousCustomer.customer_name || c.customer_name, address: previousCustomer.address || c.address }))} className="shrink-0 bg-emerald-600 text-white px-2 py-1 rounded-lg text-[9px] font-black">استخدام</button>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">اسم العميل</label>
+                      <input type="text" value={formData.customer_name || ''} onChange={e => handleFormChange('customer_name', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold focus:border-orange-500 outline-none transition-colors" placeholder="الاسم بالكامل" required />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">العنوان</label>
+                      <div className="relative">
+                        <textarea rows={2} value={formData.address || ''} onChange={e => handleFormChange('address', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold focus:border-orange-500 outline-none transition-colors" placeholder="العنوان بالتفصيل" />
+                        <MapPin size={16} className="absolute left-3 top-3 text-slate-600" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2: Device & Problem */}
+              {formStep === 2 && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-300">
+                  <div className="bg-slate-800/40 p-4 rounded-2xl border border-white/5 space-y-4">
+                    <div>
+                      <label className="text-[11px] font-black text-slate-500 uppercase mb-3 block">نوع الجهاز</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {DEVICE_TYPES.map(d => (
+                          <button
+                            key={d}
+                            type="button"
+                            onClick={() => handleFormChange('device_type', d)}
+                            className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${formData.device_type === d ? 'bg-orange-600 border-orange-500 text-white shadow-lg' : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-600'}`}
+                          >
+                            <span className="text-xl">{DEVICE_ICONS[d] || '⚙️'}</span>
+                            <span className="text-[9px] font-black">{d}</span>
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => handleFormChange('device_type', 'other')}
+                          className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${isOtherDevice ? 'bg-orange-600 border-orange-500 text-white shadow-lg' : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-600'}`}
+                        >
+                          <span className="text-xl">✨</span>
+                          <span className="text-[9px] font-black">أخرى</span>
+                        </button>
+                      </div>
+                      {isOtherDevice && <input type="text" placeholder="اكتب نوع الجهاز هنا..." value={customDevice} onChange={e => setCustomDevice(e.target.value)} className="w-full bg-slate-950/50 border border-orange-500/30 rounded-xl p-3 mt-3 text-white font-bold outline-none" required />}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">الماركة</label>
+                        <select value={formData.brand} onChange={e => handleFormChange('brand', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-orange-500 transition-colors">
+                          <option value="">اختر الماركة</option>
+                          {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+                          <option value="other">أخرى</option>
+                        </select>
+                      </div>
+                      {isOtherBrand && <div className="self-end"><input type="text" placeholder="ماركة مخصصة" value={customBrand} onChange={e => setCustomBrand(e.target.value)} className="w-full bg-slate-950/50 border border-orange-500/30 rounded-xl p-3 text-white font-bold outline-none" required /></div>}
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">وصف المشكلة</label>
+                      <textarea rows={3} value={formData.problem_description || ''} onChange={e => handleFormChange('problem_description', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold focus:border-orange-500 outline-none transition-colors" placeholder="ما هي مشكلة الجهاز؟" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Assignment & Financials */}
+              {formStep === 3 && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-300">
+                  <div className="bg-slate-800/40 p-4 rounded-2xl border border-white/5 space-y-4">
+                    <div>
+                      <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">الفني المسؤول</label>
+                      <div className="relative">
+                        <select value={formData.technician} onChange={e => handleFormChange('technician', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-orange-500 transition-colors appearance-none">
+                          <option value="">لم يتم التعيين بعد</option>
+                          {technicians.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
+                        </select>
+                        <Users size={16} className="absolute left-3 top-3.5 text-slate-600 pointer-events-none" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">إجمالي المبلغ</label>
+                        <div className="relative">
+                          <input type="number" value={formData.total_amount} onChange={e => handleFormChange('total_amount', parseFloat(e.target.value))} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-emerald-500 transition-colors" />
+                          <span className="absolute left-3 top-3 text-[10px] font-black text-slate-600">ج.م</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">الحالة</label>
+                        <select value={formData.status} onChange={e => handleFormChange('status', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-orange-500 transition-colors">
+                          <option value="pending">معلق</option>
+                          <option value="in-progress">قيد التنفيذ</option>
+                          <option value="inspected">تم الكشف</option>
+                          <option value="completed">مكتمل</option>
+                          <option value="cancelled">ملغي</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {editingOrder && (
+                      <div className="pt-4 border-t border-white/5 space-y-4">
+                        <div className="flex items-center gap-4">
+                          <label className="flex items-center gap-2 text-xs font-black text-slate-300 cursor-pointer"><input type="checkbox" checked={formData.is_paid} onChange={e => handleFormChange('is_paid', e.target.checked)} className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-emerald-600" /> تم التحصيل</label>
+                          <label className="flex items-center gap-2 text-xs font-black text-slate-300 cursor-pointer"><input type="checkbox" checked={formData.invoice_approved} onChange={e => handleFormChange('invoice_approved', e.target.checked)} className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-blue-600" /> اعتماد الفاتورة</label>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">فترة الضمان</label>
+                            <select value={formData.warranty_period || '6 أشهر'} onChange={e => handleFormChange('warranty_period', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-[11px] text-white font-bold outline-none">
+                              <option value="بدون ضمان">بدون ضمان</option>
+                              <option value="1 شهر">1 شهر</option>
+                              <option value="3 أشهر">3 أشهر</option>
+                              <option value="6 أشهر">6 أشهر</option>
+                              <option value="1 سنة">1 سنة</option>
+                              <option value="custom">مخصص...</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">تاريخ الفاتورة</label>
+                            <input type="date" value={formData.invoice_date || new Date().toISOString().split('T')[0]} onChange={e => handleFormChange('invoice_date', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-[11px] text-white font-bold outline-none" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">قطع الغيار المستخدمة (للفاتورة)</label>
+                          <textarea rows={2} value={formData.parts_used || ''} onChange={e => handleFormChange('parts_used', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-[11px] text-white font-bold outline-none" placeholder="مثلاً: طلمبة طرد، سير موتور..." />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Navigation Buttons */}
+              <div className="flex gap-3 pt-4 sticky bottom-0 bg-slate-900 py-3 border-t border-slate-800">
+                {formStep > 1 && (
+                  <button type="button" onClick={() => setFormStep(s => s - 1)} className="flex-1 h-12 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-2xl font-black text-xs transition-all flex items-center justify-center gap-2 active:scale-95">
+                    <ChevronRight size={18} /> السابق
+                  </button>
+                )}
+                
+                {formStep < 3 ? (
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      if (formStep === 1 && (!formData.customer_name || !formData.phone)) return showToast("يرجى إكمال بيانات العميل", "error");
+                      setFormStep(s => s + 1);
+                    }} 
+                    className="flex-[2] h-12 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-black text-xs shadow-lg shadow-orange-900/20 transition-all flex items-center justify-center gap-2 active:scale-95"
+                  >
+                    التالي <ChevronLeft size={18} />
+                  </button>
+                ) : (
+                  <button type="submit" disabled={isSubmitting} className="flex-[2] h-12 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black text-xs shadow-lg shadow-emerald-900/20 transition-all flex items-center justify-center gap-2 active:scale-95">
+                    {isSubmitting ? <RefreshCw size={18} className="animate-spin" /> : <Check size={18} />}
+                    {editingOrder ? 'حفظ التعديلات' : 'تأكيد وحفظ الأوردر'}
+                  </button>
                 )}
               </div>
-              <div className="flex gap-3 pt-4"><button type="submit" disabled={isSubmitting} className="flex-1 bg-orange-600 text-white py-2 rounded-lg font-bold">{isSubmitting ? 'جاري الحفظ...' : 'حفظ التعديلات'}</button><button type="button" onClick={() => setShowOrderModal(false)} className="flex-1 bg-slate-800 text-slate-300 py-2 rounded-lg font-bold">إلغاء</button></div>
             </form>
           </div>
         </div>
