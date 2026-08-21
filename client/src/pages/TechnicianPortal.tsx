@@ -4,7 +4,7 @@ import {
   RefreshCw, Phone, MapPin, ClipboardList,
   Calendar, X, Trash2, Eye, EyeOff, ClockArrowUp, StickyNote,
   Play, FileCheck, DollarSign, CalendarX, Ban, MessageSquare, Search,
-  Camera, TrendingUp, Award, Wallet, Send, ExternalLink, Bell, Upload, Cpu, UserCircle, ImagePlus
+  Camera,   TrendingUp, Award, Wallet, Send, ExternalLink, Bell, Upload, Cpu, UserCircle, ImagePlus, Navigation
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useNotification } from "../components/EnhancedNotificationSystem";
@@ -532,10 +532,34 @@ export default function TechnicianPortal() {
     return () => { supabase.removeChannel(pingChannel); };
   }, [techName]);
 
+  const getCurrentLocation = (): Promise<{ lat: number; lng: number } | null> => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) return resolve(null);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => resolve(null),
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
+    });
+  };
+
   const updateStatus = async (id: number, newStatus: string, extraData = {}) => {
     try {
       const oldOrder = orders.find(o => o.id === id);
+      
+      // التقاط الموقع الجغرافي عند بدء العمل أو التصفية
+      let gpsMarker = "";
+      if (newStatus === 'in-progress' || newStatus === 'completed') {
+        const loc = await getCurrentLocation();
+        if (loc) {
+          gpsMarker = `\n[📍 موقع الفني GPS: https://www.google.com/maps?q=${loc.lat},${loc.lng}]`;
+        }
+      }
+
       const updateData: any = { status: newStatus, ...extraData };
+      if (gpsMarker) {
+        updateData.technician_note = `${oldOrder?.technician_note || ''}${gpsMarker}`;
+      }
       if (newStatus === 'completed' && oldOrder?.status !== 'completed') updateData.completed_at = new Date().toISOString();
       await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify(updateData) });
       addNotification({ type: 'success', title: '✅ تم التحديث', message: 'تم حفظ التغييرات وإرسال إشعار للمدير', duration: 3000 });
@@ -1541,13 +1565,23 @@ export default function TechnicianPortal() {
                           <div className="w-6 h-6 rounded-lg bg-slate-800 flex items-center justify-center text-slate-500"><MapPin size={12} /></div>
                           <span className="line-clamp-1 flex-1">{order.address || 'لا يوجد عنوان مسجل'}</span>
                           {order.address && (
-                            <button
-                              onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.address + ' Alexandria Egypt')}`, '_blank')}
-                              className="p-1.5 bg-blue-600/10 text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all"
-                              title="فتح في الخرائط"
-                            >
-                              <MapPin size={14} />
-                            </button>
+                            <div className="flex gap-1.5">
+                              <button
+                                onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address + ' Alexandria Egypt')}&travelmode=driving`, '_blank')}
+                                className="px-2.5 py-1.5 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 rounded-xl hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                                title="بدء الملاحة GPS"
+                              >
+                                <Navigation size={14} className="animate-pulse" />
+                                <span className="text-[9px] font-black">ملاحة GPS</span>
+                              </button>
+                              <button
+                                onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.address + ' Alexandria Egypt')}`, '_blank')}
+                                className="p-2 bg-blue-600/10 text-blue-400 border border-blue-500/20 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-95"
+                                title="فتح الموقع على الخريطة"
+                              >
+                                <MapPin size={15} />
+                              </button>
+                            </div>
                           )}
                         </div>
                         {order.problem_description && (

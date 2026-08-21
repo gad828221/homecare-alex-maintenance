@@ -5,7 +5,7 @@ import {
   Edit, Trash2, RefreshCw, Phone,
   Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut, Send, Play, LogIn,
   RotateCcw, Clock, MapPin, Star, Cpu, ShieldCheck, Wrench, UserCircle, Wallet,
-  ClipboardList, FileCheck, Camera
+  ClipboardList, FileCheck, Camera, Navigation
 } from "lucide-react";
 import { createClient } from '@supabase/supabase-js';
 import { Helmet } from 'react-helmet-async';
@@ -2915,10 +2915,29 @@ export default function ProtectedOrders() {
 	                      <div className="space-y-3 mb-6 relative z-10 bg-slate-950/20 p-4 rounded-2xl border border-white/5">
 	                        <div className="flex items-start gap-3 text-[12px] text-slate-300">
 	                          <div className="w-8 h-8 rounded-xl bg-slate-800/80 border border-slate-700/50 flex items-center justify-center text-slate-400 shrink-0 shadow-sm"><MapPin size={16} /></div>
-	                          <div className="min-w-0 pt-0.5">
+	                          <div className="min-w-0 flex-1 pt-0.5">
 	                            <p className="text-[9px] font-black text-slate-500 mb-0.5 uppercase tracking-tighter">عنوان العميل</p>
 	                            <span className="line-clamp-2 leading-relaxed font-bold">{order.address || 'لا يوجد عنوان مسجل'}</span>
 	                          </div>
+	                          {order.address && (
+	                            <div className="flex gap-1.5 self-center">
+	                              <button
+	                                onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address + ' Alexandria Egypt')}&travelmode=driving`, '_blank')}
+	                                className="px-2 py-1.5 bg-emerald-600/10 text-emerald-400 border border-emerald-500/20 rounded-xl hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-1 shadow-sm active:scale-95"
+	                                title="ملاحة GPS"
+	                              >
+	                                <Navigation size={12} />
+	                                <span className="text-[8px] font-black">GPS</span>
+	                              </button>
+	                              <button
+	                                onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.address + ' Alexandria Egypt')}`, '_blank')}
+	                                className="p-1.5 bg-blue-600/10 text-blue-400 border border-blue-500/20 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-95"
+	                                title="الخريطة"
+	                              >
+	                                <MapPin size={13} />
+	                              </button>
+	                            </div>
+	                          )}
 	                        </div>
 	                        
 	                        <div className="flex items-start gap-3 text-[12px] text-slate-300">
