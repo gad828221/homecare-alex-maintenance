@@ -2922,19 +2922,16 @@ export default function ProtectedOrders() {
 	                          {order.address && (
 	                            <div className="flex gap-1.5 self-center">
 	                              <button
-	                                onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address + ' Alexandria Egypt')}&travelmode=driving`, '_blank')}
-	                                className="px-2 py-1.5 bg-emerald-600/10 text-emerald-400 border border-emerald-500/20 rounded-xl hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-1 shadow-sm active:scale-95"
-	                                title="ملاحة GPS"
+	                                onClick={() => {
+	                                  const addr = order.address || '';
+	                                  const query = addr.includes('http') ? addr : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr + (addr.includes('الساحل') || addr.includes('ك ') ? ' Egypt' : ' Alexandria Egypt'))}`;
+	                                  window.open(query, '_blank');
+	                                }}
+	                                className="px-2.5 py-1.5 bg-emerald-600/10 text-emerald-400 border border-emerald-500/20 rounded-xl hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-1 shadow-sm active:scale-95"
+	                                title="فتح موقع العميل GPS"
 	                              >
-	                                <Navigation size={12} />
-	                                <span className="text-[8px] font-black">GPS</span>
-	                              </button>
-	                              <button
-	                                onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.address + ' Alexandria Egypt')}`, '_blank')}
-	                                className="p-1.5 bg-blue-600/10 text-blue-400 border border-blue-500/20 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-95"
-	                                title="الخريطة"
-	                              >
-	                                <MapPin size={13} />
+	                                <Navigation size={13} />
+	                                <span className="text-[9px] font-black">GPS</span>
 	                              </button>
 	                            </div>
 	                          )}
