@@ -2660,7 +2660,7 @@ export default function ProtectedOrders() {
             >
               <Play fill="currentColor" size={20} /> دخول وتفعيل التنبيهات 🔊
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.1.6</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.1.7</p>
           </div>
         </div>
       )}
@@ -3001,13 +3001,13 @@ export default function ProtectedOrders() {
 			                    <div className="text-[10px] font-black text-red-300/60 mt-2 uppercase tracking-widest flex items-center justify-center gap-1.5"><AlertCircle size={12}/> متأخرة</div>
 			                  </button>
 			                  <button type="button" onClick={() => { setShowCompletedOrders(true); setFilterStatus('completed'); }} className="bg-emerald-600/10 border border-emerald-600/20 rounded-[2rem] p-5 text-center hover:bg-emerald-600/20 transition-all group shadow-lg shadow-emerald-900/5 active:scale-95">
-			                    <div className="text-4xl font-black text-emerald-400 group-hover:scale-110 transition-transform tabular-nums">{filteredOrders.filter(o => o.status === 'completed').length}</div>
-			                    <div className="text-[10px] font-black text-emerald-300/60 mt-2 uppercase tracking-widest flex items-center justify-center gap-1.5"><CheckCircle2 size={12}/> مكتملة</div>
-			                  </button>
-				                  <button type="button" onClick={() => setFilterStatus('all')} className="bg-slate-800/50 border border-slate-700/50 rounded-[2rem] p-5 text-center hover:bg-slate-800 transition-all group shadow-lg active:scale-95">
-				                    <div className="text-4xl font-black text-white group-hover:scale-110 transition-transform tabular-nums">{filterStatus === 'live' ? filteredOrders.length : allFilteredOrders.length}</div>
-				                    <div className="text-[10px] font-black text-slate-500 mt-2 uppercase tracking-widest flex items-center justify-center gap-1.5"><ClipboardList size={12}/> {filterStatus === 'live' ? 'العمل الحالي' : 'الإجمالي'}</div>
+				                    <div className="text-4xl font-black text-emerald-400 group-hover:scale-110 transition-transform tabular-nums">{allFilteredOrders.filter(o => o.status === 'completed').length}</div>
+				                    <div className="text-[10px] font-black text-emerald-300/60 mt-2 uppercase tracking-widest flex items-center justify-center gap-1.5"><CheckCircle2 size={12}/> مكتملة</div>
 				                  </button>
+					                  <button type="button" onClick={() => setFilterStatus('all')} className="bg-slate-800/50 border border-slate-700/50 rounded-[2rem] p-5 text-center hover:bg-slate-800 transition-all group shadow-lg active:scale-95">
+					                    <div className="text-4xl font-black text-white group-hover:scale-110 transition-transform tabular-nums">{allFilteredOrders.length}</div>
+					                    <div className="text-[10px] font-black text-slate-500 mt-2 uppercase tracking-widest flex items-center justify-center gap-1.5"><ClipboardList size={12}/> {filterStatus === 'live' ? 'العمل الحالي' : 'الإجمالي'}</div>
+					                  </button>
 		                </div>
 
                   {/* لوحة التقارير البيانية المصغرة */}
@@ -3019,9 +3019,9 @@ export default function ProtectedOrders() {
                       <span className="text-[10px] text-slate-500">تحديث تلقائي</span>
                     </div>
                     <div className="space-y-3">
-                      {['pending', 'in-progress', 'completed', 'cancelled'].map(status => {
-                        const count = filteredOrders.filter(o => o.status === status).length;
-                        const percentage = filteredOrders.length > 0 ? (count / filteredOrders.length) * 100 : 0;
+	                      {['pending', 'in-progress', 'completed', 'cancelled'].map(status => {
+	                        const count = allFilteredOrders.filter(o => o.status === status).length;
+	                        const percentage = allFilteredOrders.length > 0 ? (count / allFilteredOrders.length) * 100 : 0;
                         const color = status === 'completed' ? 'bg-green-500' : status === 'in-progress' ? 'bg-blue-500' : status === 'pending' ? 'bg-yellow-500' : 'bg-red-500';
                         const label = status === 'completed' ? 'مكتمل' : status === 'in-progress' ? 'قيد التنفيذ' : status === 'pending' ? 'قيد الانتظار' : 'ملغي';
 
@@ -4123,7 +4123,7 @@ export default function ProtectedOrders() {
           </div>
           <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-black tracking-wide text-emerald-300 shadow-[0_0_14px_rgba(52,211,153,0.12)]">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.9)]" />
-            إصدار النظام: v4.1.6
+            إصدار النظام: v4.1.7
           </div>
         </div>
       </div>
