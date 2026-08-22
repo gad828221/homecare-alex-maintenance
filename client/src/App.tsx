@@ -28,6 +28,7 @@ const ProtectedOrders = lazy(() => import("./components/ProtectedOrders"));
 const InvoicePage = lazy(() => import("./pages/InvoicePage"));
 const PickupReceiptPage = lazy(() => import("./pages/PickupReceiptPage"));
 const FeedbackPage = lazy(() => import("./pages/FeedbackPage"));
+const OrderTracking = lazy(() => import("./pages/OrderTracking"));
 
 const SamsungService = lazy(() => import("./pages/SamsungService"));
 const LGService = lazy(() => import("./pages/LGService"));
@@ -77,6 +78,7 @@ function Router() {
         <Route path="/invoice" component={InvoicePage} />
         <Route path="/pickup-receipt" component={PickupReceiptPage} />
         <Route path="/feedback" component={FeedbackPage} />
+        <Route path="/track/:orderNumber" component={OrderTracking} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

@@ -1633,7 +1633,8 @@ export default function ProtectedOrders() {
       case 'cancelled': statusMessage = "❌ تم إلغاء طلب الصيانة. للاستفسار، يرجى الاتصال بنا."; break;
       default: return;
     }
-    const message = `📢 *تحديث هام بخصوص طلب الصيانة* 📢\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الطلب:* ${order.order_number}\n👤 *عزيزنا العميل:* ${order.customer_name}\n\n${statusMessage}\n\n🌟 *شكراً لثقتكم في HomeCare Maintenance. نحن دائماً في خدمتكم.*`;
+    const trackingUrl = `https://www.maintenanceguide.life/track/${order.order_number}`;
+    const message = `📢 *تحديث هام بخصوص طلب الصيانة* 📢\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الطلب:* ${order.order_number}\n👤 *عزيزنا العميل:* ${order.customer_name}\n\n${statusMessage}\n\n📍 *يمكنك تتبع حالة طلبك مباشرة من هنا:*\n${trackingUrl}\n\n🌟 *شكراً لثقتكم في HomeCare Maintenance. نحن دائماً في خدمتكم.*`;
     openWhatsApp(order.phone, message);
   };
 
@@ -3859,7 +3860,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.6.1-interactive-analytics</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.7.0-customer-live-tracking</div>
         </div>
       </div>
 

@@ -3,7 +3,7 @@ import {
   Wrench, LogOut, Clock, CheckCircle2, AlertCircle, RotateCcw,
   RefreshCw, Phone, MapPin, ClipboardList,
   Calendar, X, Trash2, Eye, EyeOff, ClockArrowUp, StickyNote,
-  Play, FileCheck, DollarSign, CalendarX, Ban, MessageSquare, Search,
+  Play, FileCheck, DollarSign, CalendarX, Ban, MessageSquare, Search, MessageCircle,
   Camera,   TrendingUp, Award, Wallet, Send, ExternalLink, Bell, Upload, Cpu, UserCircle, ImagePlus, Navigation
 } from "lucide-react";
 import { useLocation } from "wouter";
@@ -1608,13 +1608,23 @@ export default function TechnicianPortal() {
                               <Ban size={14} /> <span className="text-[10px] font-black italic tracking-tighter">الرقم مخفي بعد الإتمام</span>
                             </div>
                           ) : (
-                            <a 
-                              href={`tel:${order.phone}`} 
-                              onClick={() => notifyCustomerContact(order, 'phone')}
-                              className="flex-1 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95"
-                            >
-                              <Phone size={14} /> <span className="text-[10px] font-black">اتصال بالعميل</span>
-                            </a>
+                            <div className="flex-1 flex gap-2">
+                              <a 
+                                href={`tel:${order.phone}`} 
+                                onClick={() => notifyCustomerContact(order, 'phone')}
+                                className="flex-1 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95"
+                              >
+                                <Phone size={14} /> <span className="text-[10px] font-black">اتصال</span>
+                              </a>
+                              <a 
+                                href={`https://wa.me/20${order.phone?.replace(/^0/, '')}?text=${encodeURIComponent(`📢 *تحديث من مركز الصيانة*\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الطلب:* ${order.order_number}\n👤 *عزيزنا العميل:* ${order.customer_name}\n\n📍 *يمكنك تتبع حالة طلبك مباشرة من هنا:*\nhttps://www.maintenanceguide.life/track/${order.order_number}\n\n🌟 *شكراً لثقتكم في HomeCare Maintenance.*`)}`}
+                                onClick={() => notifyCustomerContact(order, 'whatsapp')}
+                                target="_blank"
+                                className="flex-1 h-10 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95"
+                              >
+                                <MessageCircle size={14} /> <span className="text-[10px] font-black">واتساب</span>
+                              </a>
+                            </div>
                           )}
                           <button onClick={() => { setSelectedOrderForActions(order); setShowActionsModal(true); }} className="h-10 w-10 bg-slate-800 text-slate-300 hover:bg-slate-700 rounded-xl flex items-center justify-center transition-all active:scale-95">
                             <Eye size={16} />
@@ -1911,6 +1921,10 @@ export default function TechnicianPortal() {
           </div>
         </div>
       )}
+      <div className="text-center pb-8">
+        <NotificationStatus />
+        <div className="text-[8px] text-slate-500 opacity-10 mt-4">v3.7.0-customer-live-tracking</div>
+      </div>
     </div>
   );
 }
