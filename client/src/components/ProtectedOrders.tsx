@@ -1881,7 +1881,7 @@ export default function ProtectedOrders() {
     const orderToSave = { ...formData, device_type: finalDevice, brand: finalBrand, order_number: editingOrder ? editingOrder.order_number : `MG-${Date.now()}` };
     try {
       if (editingOrder) {
-        const oldOrder = orders.find(o => o.id === editingOrder.id);
+        const oldOrder = [...orders, ...archivedOrders].find(o => o.id === editingOrder.id);
         if (oldOrder?.status === 'completed' && oldOrder?.is_paid && oldOrder?.profit_added_to_cash) await deleteOrderProfitFromCash(oldOrder);
         await fetchAPI(`orders?id=eq.${editingOrder.id}`, { method: 'PATCH', body: JSON.stringify(orderToSave) });
         await addNotification('تعديل أوردر', `تم تعديل أوردر ${formData.customer_name}`);
@@ -3040,11 +3040,11 @@ export default function ProtectedOrders() {
                   const statusGlow = delayed ? 'shadow-red-900/40 border-red-500/40' : glowColors[order.status] || 'border-slate-700/30';
 
                   return (
-                    <div 
-                      key={order.id} 
-                      onClick={() => { stopUrgentAlert(); setEditingOrder(order); setFormData(order); setShowOrderModal(true); }}
-                      className={`group ${cardTone} ${statusGlow} rounded-[1.5rem] border p-4 transition-all hover:shadow-2xl active:scale-[0.98] cursor-pointer relative overflow-hidden ${config.pulse} bg-slate-900/60 backdrop-blur-md border-opacity-30 hover:border-opacity-100 shadow-lg shadow-black/20`}
-                    >
+	                    <div 
+	                      key={order.id} 
+	                      onClick={() => { stopUrgentAlert(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); }}
+	                      className={`group ${cardTone} ${statusGlow} rounded-[1.5rem] border p-4 transition-all hover:shadow-2xl active:scale-[0.98] cursor-pointer relative overflow-hidden ${config.pulse} bg-slate-900/60 backdrop-blur-md border-opacity-30 hover:border-opacity-100 shadow-lg shadow-black/20`}
+	                    >
 	                      {transferPending && <div className="absolute inset-0 pointer-events-none rounded-[1.5rem] border border-amber-300/50 shadow-[0_0_20px_rgba(251,191,36,0.2)]"></div>}
 	                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:bg-white/10 transition-all"></div>
 
@@ -3441,11 +3441,11 @@ export default function ProtectedOrders() {
                     </div>
                     <div className="mt-4 pt-4 border-t border-slate-800 flex gap-2">
                       {!isViewer && <a href={`tel:${order.phone}`} className="flex-1 bg-slate-800 text-white py-2 rounded-xl text-center text-[10px] font-bold">اتصال</a>}
-                      {canEditDelete() && (
-                        <button
-                          onClick={() => { stopUrgentAlert(); setEditingOrder(order); setFormData(order); setShowOrderModal(true); }}
-                          className="px-3 bg-slate-800 text-blue-400 rounded-xl"
-                        >
+	                      {canEditDelete() && (
+	                        <button
+	                          onClick={() => { stopUrgentAlert(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); }}
+	                          className="px-3 bg-slate-800 text-blue-400 rounded-xl"
+	                        >
                           <Edit size={14} />
                         </button>
                       )}
@@ -3998,7 +3998,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.9.0-integrated-search-results</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.9.1-fixed-financial-fields-and-modal-stability</div>
         </div>
       </div>
 
@@ -4181,6 +4181,22 @@ export default function ProtectedOrders() {
 
                     {editingOrder && (
                       <div className="pt-4 border-t border-white/5 space-y-4">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">ثمن قطع الغيار</label>
+                            <div className="relative">
+                              <input type="number" value={formData.parts_cost} onChange={e => handleFormChange('parts_cost', parseFloat(e.target.value))} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-orange-500 transition-colors" />
+                              <span className="absolute left-3 top-3 text-[10px] font-black text-slate-600">ج.م</span>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">المواصلات</label>
+                            <div className="relative">
+                              <input type="number" value={formData.transport_cost} onChange={e => handleFormChange('transport_cost', parseFloat(e.target.value))} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-orange-500 transition-colors" />
+                              <span className="absolute left-3 top-3 text-[10px] font-black text-slate-600">ج.م</span>
+                            </div>
+                          </div>
+                        </div>
                         <div className="flex items-center gap-4">
                           <label className="flex items-center gap-2 text-xs font-black text-slate-300 cursor-pointer"><input type="checkbox" checked={formData.is_paid} onChange={e => handleFormChange('is_paid', e.target.checked)} className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-emerald-600" /> تم التحصيل</label>
                           <label className="flex items-center gap-2 text-xs font-black text-slate-300 cursor-pointer"><input type="checkbox" checked={formData.invoice_approved} onChange={e => handleFormChange('invoice_approved', e.target.checked)} className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-blue-600" /> اعتماد الفاتورة</label>
