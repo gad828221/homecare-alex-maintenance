@@ -2142,6 +2142,41 @@ export default function ProtectedOrders() {
     fetchData();
   };
 
+  const openNotificationTarget = (notif: any) => {
+    const details = String(notif?.details || '');
+    const explicitOrderNumber = String(
+      notif?.order_number || notif?.orderNumber || notif?.data?.order_number || notif?.metadata?.order_number || ''
+    ).trim();
+    const orderTokens = [
+      explicitOrderNumber,
+      ...(details.match(/MG-\d{3,}|(?:الأوردر|الأوردر رقم|طلب)[:\s-]*\d{3,}/gi) || [])
+    ].filter(Boolean);
+    const targetOrder = [...orders, ...archivedOrders, ...deletedOrders].find((order) => {
+      if (notif?.order_id && String(order.id) === String(notif.order_id)) return true;
+      const orderValue = String(order.order_number || '').toLowerCase();
+      return orderTokens.some((token) => {
+        const normalized = String(token).replace(/.*?(MG-\d{3,}|\d{3,})/i, '$1').toLowerCase();
+        return orderValue === normalized || orderValue.endsWith(normalized) || normalized.endsWith(orderValue.replace(/^mg-/, ''));
+      });
+    });
+    const orderNumber = explicitOrderNumber || orderTokens[0] || '';
+
+    if (!targetOrder) {
+      setActiveTab('orders');
+      if (orderNumber) setSearchTerm(orderNumber);
+      showToast(orderNumber ? `تم فتح قائمة الأوردر للبحث عن ${orderNumber}` : 'هذا الإشعار لا يحتوي على رقم أوردر مرتبط', 'info');
+      return;
+    }
+
+    stopUrgentAlert();
+    setActiveTab('orders');
+    setEditingOrder(targetOrder);
+    setFormData(targetOrder);
+    setFormStep(1);
+    setShowOrderModal(true);
+    showToast(`تم فتح الحدث: ${notif.action || 'نشاط فني'} — ${targetOrder.order_number}`, 'success');
+  };
+
   const deleteNotification = async (id: number) => {
     if (userRole !== 'admin') return showToast("ليس لديك صلاحية", "error");
     const notification = notifications.find((item) => item.id === id);
@@ -2721,7 +2756,7 @@ export default function ProtectedOrders() {
             >
               <Play fill="currentColor" size={20} /> دخول وتفعيل التنبيهات 🔊
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.2.2</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.2.3</p>
           </div>
         </div>
       )}
@@ -3977,7 +4012,7 @@ export default function ProtectedOrders() {
                 const isMoney = notif.action?.includes('خزنة') || notif.action?.includes('أرباح');
 
                 return (
-                  <div key={notif.id} className={`bg-slate-900 rounded-2xl p-4 flex justify-between items-center border-l-4 w-full ${
+                  <div key={notif.id} onClick={() => openNotificationTarget(notif)} role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') openNotificationTarget(notif); }} className={`bg-slate-900 rounded-2xl p-4 flex justify-between items-center border-l-4 w-full cursor-pointer hover:bg-slate-800/90 active:scale-[0.99] transition-all ${
                     isLogin ? 'border-blue-500' : isOrder ? 'border-orange-500' : isMoney ? 'border-emerald-500' : 'border-slate-700'
                   }`}>
                     <div className="flex items-center gap-3 overflow-hidden">
@@ -3999,7 +4034,7 @@ export default function ProtectedOrders() {
                       </div>
                     </div>
                     {userRole === 'admin' && (
-                      <button onClick={()=>deleteNotification(notif.id)} className="w-8 h-8 shrink-0 rounded-lg bg-slate-800 text-slate-500 hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center ml-2">
+                      <button onClick={(event)=>{ event.stopPropagation(); deleteNotification(notif.id); }} className="w-8 h-8 shrink-0 rounded-lg bg-slate-800 text-slate-500 hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center ml-2" title="حذف الإشعار">
                         <Trash2 size={14}/>
                       </button>
                     )}
@@ -4221,7 +4256,7 @@ export default function ProtectedOrders() {
           </div>
           <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-black tracking-wide text-emerald-300 shadow-[0_0_14px_rgba(52,211,153,0.12)]">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.9)]" />
-            إصدار النظام: v4.2.2
+            إصدار النظام: v4.2.3
           </div>
         </div>
         <ScrollButtons />
