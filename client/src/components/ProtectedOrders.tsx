@@ -2103,6 +2103,8 @@ export default function ProtectedOrders() {
   };
   const clearFilters = () => { setSearchTerm(''); setFilterStatus('live'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); setFilterWarranty('all'); };
 
+  // أي أوردر مكتمل ولم يتم تحصيله يحتاج مراجعة المدير، سواء كان له وسم تحويل أم لا.
+  const isCollectionPending = (order: any) => order.status === 'completed' && !order.is_paid;
 
   const dateFilteredOrders = [...orders, ...archivedOrders].filter(o => {
     if (searchTerm) {
@@ -2145,10 +2147,8 @@ export default function ProtectedOrders() {
   const allFilteredOrders = dateFilteredOrders.filter(o => {
     // وضع التركيز المباشر (الافتراضي)
     if (filterStatus === 'live') {
-      const transferForFocus = parseCompanyTransfer(o.technician_note);
-      const needsCollectionConfirmation = o.status === 'completed' && !o.is_paid && transferForFocus?.status === 'pending';
-      // أوردرات التصفية المعلقة تظهر دائماً في وضع التركيز لتصل للمدير أولاً.
-      if (needsCollectionConfirmation) return true;
+      // كل أوردر مكتمل غير محصل يظهر في وضع التركيز ليصل للمدير أولاً.
+      if (isCollectionPending(o)) return true;
       // دائماً أظهر الأوردرات المثبتة
       if (pinnedOrderIds.has(o.id)) return true;
       
@@ -2163,15 +2163,15 @@ export default function ProtectedOrders() {
 
     if (filterStatus === '__UNPAID__') {
       if (o.status !== 'completed' || o.is_paid) return false;
+      return true;
     } else if (filterStatus !== 'all' && o.status !== filterStatus) {
       return false;
     }
 
-    const transferForFilter = parseCompanyTransfer(o.technician_note);
-    const needsCollectionConfirmation = o.status === 'completed' && !o.is_paid && transferForFilter?.status === 'pending';
-    if (needsCollectionConfirmation) return true;
+    // عند «جميع الحالات» أو وضع التركيز نعرض التحصيل المعلق حتى لو كان المكتمل مخفياً افتراضياً.
+    if (isCollectionPending(o) && (filterStatus === 'all' || filterStatus === 'live')) return true;
     if (o.status === 'completed' && filterStatus !== 'completed') return showCompletedOrders;
-    if (filterStatus !== 'all' || filterTechnician || filterDateFrom || searchTerm) return true;
+    if (filterStatus !== 'all' || filterTechnician || filterDeviceType || filterDateFrom || filterDateTo || filterDelay !== 'all' || filterWarranty !== 'all' || searchTerm) return true;
     return (o.status === 'in-progress' || o.status === 'pending' || o.status === 'returned' || !o.technician || o.technician === '-' || o.technician === '');
   });
 
@@ -2196,7 +2196,7 @@ export default function ProtectedOrders() {
 
   const filteredOrders = useMemo(() => {
     // أوردرات انتظار تأكيد التحصيل أولاً، ثم المثبتة، ثم الأحدث تحديثاً.
-    const needsCollectionConfirmation = (order: any) => order.status === 'completed' && !order.is_paid && parseCompanyTransfer(order.technician_note)?.status === 'pending';
+    const needsCollectionConfirmation = isCollectionPending;
     const sortByPriority = (a: any, b: any) => {
       const aNeedsCollection = needsCollectionConfirmation(a);
       const bNeedsCollection = needsCollectionConfirmation(b);
@@ -2221,6 +2221,11 @@ export default function ProtectedOrders() {
     }
     return sorted;
   }, [allFilteredOrders, filterStatus, searchTerm, visibleCompletedCount, visibleOrdersCount, pinnedOrderIds]);
+
+  const pendingCollectionOrders = [...dateFilteredOrders]
+    .filter(isCollectionPending)
+    .sort((a, b) => getOrderActivityTime(b) - getOrderActivityTime(a));
+  const showCollectionBanner = ['live', 'all', 'completed', '__UNPAID__'].includes(filterStatus);
 
   const togglePinOrder = (e: React.MouseEvent, orderId: number) => {
     e.stopPropagation();
@@ -2800,8 +2805,8 @@ export default function ProtectedOrders() {
 		                  </button>
 		                  <button type="button" className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-emerald-500/30 transition-all group text-right active:scale-95" onClick={() => { clearFilters(); setFilterStatus('__UNPAID__'); }}>
 		                    <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest flex items-center gap-1.5"><DollarSign size={12}/> تحصيل معلق</div>
-		                    <div className={`text-2xl font-black ${orders.filter(o => o.status === 'completed' && !o.is_paid).length > 0 ? 'text-amber-500' : 'text-white'}`}>
-		                      {orders.filter(o => o.status === 'completed' && !o.is_paid).length}
+<div className={`text-2xl font-black ${pendingCollectionOrders.length > 0 ? 'text-amber-500' : 'text-white'}`}>
+	                      {pendingCollectionOrders.length}
 		                    </div>
 		                  </button>
 		                  <button type="button" className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-indigo-500/30 transition-all group text-right active:scale-95 sm:col-span-2 lg:col-span-1" onClick={() => { clearFilters(); setShowCompletedOrders(true); setFilterWarranty('active'); setFilterStatus('completed'); }}>
@@ -2810,6 +2815,22 @@ export default function ProtectedOrders() {
 		                  </button>
 		                </div>
 	              </div>
+
+	              {showCollectionBanner && pendingCollectionOrders.length > 0 && (
+	                <div className="relative overflow-hidden rounded-[2rem] border-2 border-amber-300/70 bg-gradient-to-l from-amber-500/25 via-orange-500/10 to-slate-900 p-4 shadow-[0_0_28px_rgba(245,158,11,0.22)] animate-in fade-in slide-in-from-top-2 duration-300">
+	                  <div className="absolute -left-10 -top-10 h-28 w-28 rounded-full bg-amber-300/20 blur-2xl" />
+	                  <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+	                    <div className="flex items-center gap-3">
+	                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-300/25 text-amber-100 border border-amber-200/50 animate-pulse"><Wallet size={22} /></div>
+	                      <div>
+	                        <p className="text-sm font-black text-amber-100">تحصيل يحتاج تأكيدك الآن</p>
+	                        <p className="mt-1 text-[10px] font-bold text-amber-200/70">{pendingCollectionOrders.length} أوردر مكتمل ينتظر اعتماد استلام نصيب الشركة</p>
+	                      </div>
+	                    </div>
+	                    <button type="button" onClick={() => { setShowCompletedOrders(true); setFilterStatus('__UNPAID__'); }} className="w-full sm:w-auto rounded-xl bg-amber-300 px-4 py-2.5 text-xs font-black text-slate-950 shadow-lg shadow-amber-500/30 transition-all hover:bg-amber-200 active:scale-95">فتح قائمة التحصيل</button>
+	                  </div>
+	                </div>
+	              )}
 
 	              {/* Unified Filter Bar */}
 	              <div className="bg-slate-900 rounded-[2rem] p-4 border border-slate-800 shadow-xl space-y-4">
