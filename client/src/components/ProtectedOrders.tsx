@@ -227,15 +227,18 @@ const formatPhoneForWhatsApp = (phone: string) => {
 const openWhatsApp = (phone: string, message: string) => {
   const cleanedPhone = formatPhoneForWhatsApp(phone);
   if (!cleanedPhone) return;
-  const encodedMsg = encodeURIComponent(message);
+  const waUrl = `https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`;
 
-  // محاولة استخدام الرابط العميق لفتح التطبيق مباشرة على الموبايل
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  if (isMobile) {
-    window.location.href = `whatsapp://send?phone=${cleanedPhone}&text=${encodedMsg}`;
-  } else {
-    // على الكمبيوتر نستخدم الرابط العادي
-    window.open(`https://wa.me/${cleanedPhone}?text=${encodedMsg}`, '_blank');
+  // لا نستبدل صفحة التطبيق برابط واتساب؛ افتحه في نافذة/تبويب مستقل حتى تبقى جلسة المدير ثابتة.
+  const popup = window.open(waUrl, '_blank', 'noopener,noreferrer');
+  if (!popup) {
+    const link = document.createElement('a');
+    link.href = waUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   }
 };
 
