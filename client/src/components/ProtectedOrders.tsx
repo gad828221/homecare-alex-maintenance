@@ -3747,13 +3747,32 @@ export default function ProtectedOrders() {
 
         {activeTab === 'invoicesReview' && userRole !== 'viewer' && (
           <div className="space-y-3">
-            {orders.filter(o=>o.status==='completed' && !o.invoice_approved).map(order => (
-              <div key={order.id} className="bg-slate-900 rounded-xl p-4 flex justify-between items-center flex-wrap gap-3 border border-slate-800">
-                <div><p className="font-bold text-white">{order.customer_name}</p><p className="text-sm text-slate-400">{order.device_type} - {order.brand}</p><p className="text-orange-400">المبلغ: {order.total_amount} ج.م</p></div>
-                {canEditDelete() && <button onClick={()=>printAndSendInvoice(order)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2"><Printer size={16}/> طباعة الفاتورة</button>}
+            {[...orders, ...archivedOrders]
+              .filter(o => o.status === 'completed' && !o.invoice_approved)
+              .sort((a, b) => (getOrderActivityTime(b) || 0) - (getOrderActivityTime(a) || 0))
+              .map(order => (
+                <div key={order.id} className="bg-slate-900 rounded-xl p-4 flex justify-between items-center flex-wrap gap-3 border border-slate-800">
+                  <div>
+                    <p className="font-bold text-white">{order.customer_name}</p>
+                    <p className="text-sm text-slate-400">{order.device_type} - {order.brand}</p>
+                    <p className="text-orange-400 font-black">المبلغ: {order.total_amount} ج.م</p>
+                  </div>
+                  {canEditDelete() && (
+                    <button 
+                      onClick={() => printAndSendInvoice(order)} 
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 font-bold shadow-lg"
+                    >
+                      <Printer size={16}/> طباعة الفاتورة
+                    </button>
+                  )}
+                </div>
+              ))}
+            {[...orders, ...archivedOrders].filter(o => o.status === 'completed' && !o.invoice_approved).length === 0 && (
+              <div className="text-center py-12 bg-slate-900/50 rounded-2xl border border-dashed border-slate-800">
+                <Printer size={48} className="mx-auto text-slate-700 mb-4 opacity-20" />
+                <p className="text-slate-400 font-bold">لا توجد فواتير بانتظار المراجعة حالياً</p>
               </div>
-            ))}
-            {orders.filter(o=>o.status==='completed' && !o.invoice_approved).length===0 && <div className="text-center py-8 text-slate-400">لا توجد فواتير بانتظار المراجعة</div>}
+            )}
           </div>
         )}
 
