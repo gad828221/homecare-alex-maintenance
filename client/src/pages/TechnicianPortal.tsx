@@ -1307,6 +1307,11 @@ export default function TechnicianPortal() {
           </button>
         </div>
       )}
+      {/* تنبيه البقاء مسجلاً لضمان الإشعارات */}
+      <div className="bg-amber-500 text-slate-950 px-4 py-1.5 text-center text-[10px] font-black tracking-tight shadow-lg z-[50] relative">
+        ⚠️ تنبيه للفني: لا تقم بتسجيل الخروج من البرنامج لضمان استقبال الأوردرات الجديدة فوراً.
+      </div>
+
       <div className="bg-slate-800/80 border-b border-slate-700 sticky top-0 z-40 px-4 py-3">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -1343,7 +1348,19 @@ export default function TechnicianPortal() {
               <span className={`w-1.5 h-1.5 rounded-full ${wakeLockActive ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`}></span>
               {wakeLockActive ? 'الشاشة يقظة' : wakeLockEnabled ? 'إبقاء الشاشة' : 'الشاشة مغلقة'}
             </button>
-            <button onClick={() => { clearAuthSession(); window.location.replace('/login'); }} title="تسجيل الخروج" aria-label="تسجيل الخروج" className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg"><LogOut className="w-5 h-5" /></button>
+            <button 
+              onClick={() => { 
+                if (confirm('⚠️ تنبيه هام جداً:\n\nعند تسجيل الخروج، لن تتمكن من استقبال إشعارات الأوردرات الجديدة في الوقت الحقيقي.\n\nهل أنت متأكد أنك تريد تسجيل الخروج؟')) {
+                  clearAuthSession(); 
+                  window.location.replace('/login'); 
+                }
+              }} 
+              title="تسجيل الخروج" 
+              aria-label="تسجيل الخروج" 
+              className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </div>
@@ -1953,7 +1970,7 @@ export default function TechnicianPortal() {
       )}
       <div className="text-center pb-8">
         <NotificationStatus />
-        <div className="text-[8px] text-slate-500 opacity-10 mt-4">v4.1.0-radar-notifications-stable</div>
+        <div className="text-[8px] text-slate-500 opacity-10 mt-4">v4.1.2-radar-notifications-stable</div>
       </div>
     </div>
   );
