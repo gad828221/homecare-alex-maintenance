@@ -2167,6 +2167,19 @@ export default function ProtectedOrders() {
   });
 
   const allFilteredOrders = dateFilteredOrders.filter(o => {
+    // ✅ أرشفة تلقائية: إخفاء أي أوردر مر عليه أكثر من 30 يوماً من العرض العام (Live/All)
+    // إلا إذا كان هناك بحث نشط أو فلترة يدوية بالتاريخ أو الفني
+    const isManualFilterActive = searchTerm || filterTechnician || filterDateFrom || filterDateTo || filterDeviceType || filterDelay !== 'all' || filterWarranty !== 'all';
+    
+    if ((filterStatus === 'live' || filterStatus === 'all') && !isManualFilterActive) {
+      const orderDate = new Date(o.created_at || o.createdAt);
+      const today = new Date();
+      const diffDays = Math.ceil(Math.abs(today.getTime() - orderDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // إذا مر أكثر من 30 يوم، يعتبر مؤرشفاً تلقائياً
+      if (diffDays > 30) return false;
+    }
+
     // ✅ إخفاء الملغي تماماً من العرض العام (Live/All) إلا إذا تم اختياره صراحة
     if ((filterStatus === 'live' || filterStatus === 'all') && (o.status === 'cancelled' || o.status === 'canceled')) return false;
 
@@ -2664,7 +2677,7 @@ export default function ProtectedOrders() {
             >
               <Play fill="currentColor" size={20} /> دخول وتفعيل التنبيهات 🔊
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.2.0</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.2.1</p>
           </div>
         </div>
       )}
@@ -4141,7 +4154,7 @@ export default function ProtectedOrders() {
           </div>
           <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-black tracking-wide text-emerald-300 shadow-[0_0_14px_rgba(52,211,153,0.12)]">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.9)]" />
-            إصدار النظام: v4.2.0
+            إصدار النظام: v4.2.1
           </div>
         </div>
         <ScrollButtons />
