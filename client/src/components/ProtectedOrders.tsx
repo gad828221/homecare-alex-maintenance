@@ -436,8 +436,9 @@ export default function ProtectedOrders() {
 
   useEffect(() => {
     if (!showOrderModal) return;
-    setFormStep(1);
+    // v3.8.9: منع إعادة التصفير للخطوة 1 إذا كان الأوردر موجوداً بالفعل (حالة التعديل أو التعيين السريع)
     if (!editingOrder) {
+      setFormStep(1);
       setFormData({
         customer_name: '',
         phone: '',
@@ -3103,15 +3104,21 @@ export default function ProtectedOrders() {
 	                                   order.technician ? `👨‍🔧 الفني: ${order.technician}` : '⏳ بانتظار تعيين فني فوري'}
 	                                </span>
                               </div>
-	                              {/* Quick Action Button for Assignment */}
-	                              {noTechnician && order.status === 'pending' && (
-	                                <button 
-	                                  onClick={(e) => { e.stopPropagation(); setEditingOrder(order); setFormData(order); setShowOrderModal(true); }}
-	                                  className="bg-orange-600 hover:bg-orange-500 text-white px-2 py-1 rounded-lg text-[9px] font-black flex items-center gap-1 shadow-lg shadow-orange-900/20 transition-all active:scale-90"
-	                                >
-	                                  <UserPlus size={10} /> تعيين فني
-	                                </button>
-	                              )}
+		                              {/* Quick Action Button for Assignment */}
+		                              {noTechnician && order.status === 'pending' && (
+		                                <button 
+		                                  onClick={(e) => { 
+		                                    e.stopPropagation(); 
+		                                    setEditingOrder(order); 
+		                                    setFormData(order); 
+		                                    setFormStep(3); // الانتقال مباشرة لخطوة التكليف
+		                                    setShowOrderModal(true); 
+		                                  }}
+		                                  className="bg-orange-600 hover:bg-orange-500 text-white px-2 py-1 rounded-lg text-[9px] font-black flex items-center gap-1 shadow-lg shadow-orange-900/20 transition-all active:scale-90"
+		                                >
+		                                  <UserPlus size={10} /> تعيين فني
+		                                </button>
+		                              )}
 	                              
 	                              {/* Priority Pulse Indicator */}
 	                              {(!order.technician_note || new Date().getTime() - new Date(order.updated_at || order.created_at).getTime() > 4 * 60 * 60 * 1000) && order.status !== 'completed' && !noTechnician && (
@@ -3991,7 +3998,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.8.8-improved-ux-and-quick-assign</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.8.9-fixed-form-steps-and-assign-jump</div>
         </div>
       </div>
 
