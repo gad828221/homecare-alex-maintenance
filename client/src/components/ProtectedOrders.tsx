@@ -937,11 +937,12 @@ export default function ProtectedOrders() {
       .sort((a: any, b: any) => b.ageDays - a.ageDays);
 
   const isOldAndShouldArchive = (order: any) => {
-    // الحالات النهائية/غير النشطة تظهر في الأرشيف فوراً للحفاظ على نظافة لوحة التشغيل.
+    // 1. الحالات النهائية تظهر في الأرشيف فوراً للحفاظ على نظافة لوحة التشغيل
+    // ملاحظة: الأوردر المكتمل يذهب للأرشيف فقط إذا تم تحصيله (is_paid) ليبقى ظاهراً للمدير للمتابعة المالية إذا لم يُحصل بعد.
     if (order.status === 'cancelled' || order.status === 'inspected') return true;
+    if (order.status === 'completed' && order.is_paid) return true;
 
-    // الأوردرات غير المكتملة تُنقل بعد مرور 30 يوماً كما هو معمول به سابقاً.
-    if (!['pending', 'in-progress'].includes(order.status)) return false;
+    // 2. الأوردرات القديمة جداً (أكثر من 30 يوم) تُنقل للأرشيف تلقائياً لتخفيف اللوحة
     return getDaysDifference(getOrderReferenceDate(order), order.status) > 30;
   };
 
@@ -3975,7 +3976,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.8.4-fixed-archive-visibility</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.8.5-strict-separation-archived-active</div>
         </div>
       </div>
 
