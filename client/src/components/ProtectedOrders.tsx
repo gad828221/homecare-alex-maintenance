@@ -1871,6 +1871,50 @@ export default function ProtectedOrders() {
     } catch (err) { console.error(err); }
   };
 
+  const permanentlyDeleteOrder = async (id: number) => {
+    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
+    const order = deletedOrders.find(o => o.id === id);
+    if (!order) return;
+    const confirmation = prompt(
+      `⚠️ حذف نهائي لا يمكن التراجع عنه\n\nالعميل: ${order.customer_name}\nرقم الأوردر: ${order.order_number}\n\nاكتب "حذف نهائي" للتأكيد:`
+    );
+    if (confirmation !== "حذف نهائي") {
+      showToast("تم إلغاء الحذف النهائي", "info");
+      return;
+    }
+    try {
+      await fetchAPI(`orders?id=eq.${id}`, { method: 'DELETE' });
+      await addNotification('حذف نهائي', `تم حذف أوردر ${order.customer_name} (رقم ${order.order_number}) نهائياً`);
+      await fetchData();
+      showToast('تم حذف الأوردر نهائياً', 'error');
+    } catch (err) {
+      console.error(err);
+      showToast('تعذر تنفيذ الحذف النهائي', 'error');
+    }
+  };
+
+  const permanentlyDeleteAllOrders = async () => {
+    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
+    if (deletedOrders.length === 0) return showToast("سلة المحذوفات فارغة", "info");
+    const confirmation = prompt(
+      `⚠️ تحذير شديد: سيتم حذف ${deletedOrders.length} أوردر نهائياً من قاعدة البيانات ولا يمكن استعادتها.\n\nاكتب "حذف الكل نهائياً" للتأكيد:`
+    );
+    if (confirmation !== "حذف الكل نهائياً") {
+      showToast("تم إلغاء مسح سلة المحذوفات", "info");
+      return;
+    }
+    try {
+      await Promise.all(deletedOrders.map(order => fetchAPI(`orders?id=eq.${order.id}`, { method: 'DELETE' })));
+      await addNotification('مسح سلة المحذوفات', `تم حذف ${deletedOrders.length} أوردر نهائياً`);
+      await fetchData();
+      showToast('تم مسح سلة المحذوفات نهائياً', 'error');
+    } catch (err) {
+      console.error(err);
+      showToast('تعذر إكمال مسح سلة المحذوفات بالكامل', 'error');
+      await fetchData();
+    }
+  };
+
   const restoreOrder = async (id: number) => {
     if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
     const order = deletedOrders.find(o => o.id === id);
@@ -2677,7 +2721,7 @@ export default function ProtectedOrders() {
             >
               <Play fill="currentColor" size={20} /> دخول وتفعيل التنبيهات 🔊
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.2.1</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.2.2</p>
           </div>
         </div>
       )}
@@ -3491,17 +3535,40 @@ export default function ProtectedOrders() {
               )}
 	
 	            {showDeleted && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-4">
+                {deletedOrders.length > 0 && canEditDelete() && (
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-2xl border border-rose-500/30 bg-rose-950/20 p-4">
+                    <div>
+                      <h3 className="font-black text-white">سلة المحذوفات</h3>
+                      <p className="text-[11px] text-rose-200/70 mt-1">الاستعادة ممكنة حالياً، أما الحذف النهائي فلا يمكن التراجع عنه.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={permanentlyDeleteAllOrders}
+                      className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-black text-white shadow-lg shadow-rose-900/30 transition hover:bg-rose-700 active:scale-95"
+                      title="حذف جميع الأوردرات المحذوفة نهائياً"
+                    >
+                      <Trash2 size={14} className="inline ml-1" /> مسح الكل ({deletedOrders.length}) — حذف نهائي
+                    </button>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {deletedOrders.length === 0 && <div className="col-span-full text-center py-8 text-slate-400">لا توجد أوردرات محذوفة</div>}
                 {deletedOrders.map(order => (
                   <div key={order.id} className="bg-slate-800/50 rounded-xl border border-slate-700 p-4 opacity-70">
                     <div className="flex justify-between items-start">
                       <div><h3 className="font-bold text-white">{order.customer_name}</h3><p className="text-xs text-slate-400">رقم: {order.order_number}</p><p className="text-xs text-red-400">🗑️ محذوف في {new Date(order.deleted_at).toLocaleDateString('ar-EG')}</p></div>
-                      {canEditDelete() && <button onClick={() => restoreOrder(order.id)} className="p-1 text-green-500 hover:text-green-400" title="استعادة"><RotateCcw size={16} /></button>}
+                      {canEditDelete() && (
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => restoreOrder(order.id)} className="p-1 text-green-500 hover:text-green-400" title="استعادة"><RotateCcw size={16} /></button>
+                          <button onClick={() => permanentlyDeleteOrder(order.id)} className="p-1 text-rose-500 hover:text-rose-400" title="حذف نهائي"><Trash2 size={16} /></button>
+                        </div>
+                      )}
                     </div>
                     <div className="grid grid-cols-2 gap-1 mt-2 text-sm">{!isViewer && <div className="text-slate-300">📞 {order.phone}</div>}<div className="text-slate-300">🔧 {order.device_type} - {order.brand}</div><div className="col-span-2 text-slate-300">📍 {order.address}</div><div className="col-span-2 text-slate-300">📝 {order.problem_description}</div><div className="text-slate-300">💰 {order.total_amount} ج.م</div><div className="text-slate-300">👨‍🔧 {order.technician || '-'}</div></div>
                   </div>
                 ))}
+                </div>
               </div>
             )}
           </div>
@@ -4154,7 +4221,7 @@ export default function ProtectedOrders() {
           </div>
           <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-black tracking-wide text-emerald-300 shadow-[0_0_14px_rgba(52,211,153,0.12)]">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.9)]" />
-            إصدار النظام: v4.2.1
+            إصدار النظام: v4.2.2
           </div>
         </div>
         <ScrollButtons />
