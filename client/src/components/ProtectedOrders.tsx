@@ -395,6 +395,7 @@ export default function ProtectedOrders() {
   const [formData, setFormData] = useState({
     customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '',
     status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false,
+    invoice_approved: false, warranty_period: '6 أشهر', invoice_date: new Date().toISOString().split('T')[0], parts_used: '',
     date: new Date().toLocaleDateString("ar-EG")
   });
   const [previousCustomer, setPreviousCustomer] = useState<any>(null);
@@ -1581,9 +1582,9 @@ export default function ProtectedOrders() {
   }, [isUrgentAlert]);
 
   const calculateAmounts = (data: any) => {
-    const total = parseFloat(data.total_amount) || 0;
-    const parts = parseFloat(data.parts_cost) || 0;
-    const transport = parseFloat(data.transport_cost) || 0;
+    const total = parseFloat(String(data.total_amount || 0)) || 0;
+    const parts = parseFloat(String(data.parts_cost || 0)) || 0;
+    const transport = parseFloat(String(data.transport_cost || 0)) || 0;
     const net = total - parts - transport;
     const selectedTech = technicians.find(t => t.name === data.technician);
     const technicianPercent = selectedTech?.profit_percentage ?? 50;
@@ -3998,7 +3999,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.9.1-fixed-financial-fields-and-modal-stability</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.9.2-final-modal-fix-and-universal-financials</div>
         </div>
       </div>
 
@@ -4058,149 +4059,152 @@ export default function ProtectedOrders() {
               ))}
             </div>
 
-            <form onSubmit={(e) => { e.preventDefault(); if (formStep === 3) saveOrder(e); }} className="space-y-5">
-              {/* Step 1: Customer Details */}
-              {formStep === 1 && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-300">
-                  <div className="bg-slate-800/40 p-4 rounded-2xl border border-white/5 space-y-4">
-                    <div>
-                      <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">رقم الهاتف</label>
-                      <div className="relative">
-                        <input type="tel" value={formData.phone || ''} onChange={e => handleFormChange('phone', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold focus:border-orange-500 outline-none transition-colors" placeholder="01xxxxxxxxx" required />
-                        {customerLookupLoading && <div className="absolute left-3 top-3"><RefreshCw size={16} className="animate-spin text-orange-500" /></div>}
-                      </div>
-                      {previousCustomer && (
-                        <div className="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 flex items-center justify-between gap-3 animate-in zoom-in-95">
-                          <div className="min-w-0">
-                            <p className="text-[10px] font-black text-emerald-300">✨ عميل سابق: {previousCustomer.customer_name}</p>
-                            <p className="text-[9px] text-emerald-400/80 truncate">{previousCustomer.address}</p>
-                          </div>
-                          <button type="button" onClick={() => setFormData(c => ({ ...c, customer_name: previousCustomer.customer_name || c.customer_name, address: previousCustomer.address || c.address }))} className="shrink-0 bg-emerald-600 text-white px-2 py-1 rounded-lg text-[9px] font-black">استخدام</button>
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">اسم العميل</label>
-                      <input type="text" value={formData.customer_name || ''} onChange={e => handleFormChange('customer_name', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold focus:border-orange-500 outline-none transition-colors" placeholder="الاسم بالكامل" required />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">العنوان</label>
-                      <div className="relative">
-                        <textarea rows={2} value={formData.address || ''} onChange={e => handleFormChange('address', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold focus:border-orange-500 outline-none transition-colors" placeholder="العنوان بالتفصيل" />
-                        <MapPin size={16} className="absolute left-3 top-3 text-slate-600" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 2: Device & Problem */}
-              {formStep === 2 && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-300">
-                  <div className="bg-slate-800/40 p-4 rounded-2xl border border-white/5 space-y-4">
-                    <div>
-                      <label className="text-[11px] font-black text-slate-500 uppercase mb-3 block">نوع الجهاز</label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {DEVICE_TYPES.map(d => (
-                          <button
-                            key={d}
-                            type="button"
-                            onClick={() => handleFormChange('device_type', d)}
-                            className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${formData.device_type === d ? 'bg-orange-600 border-orange-500 text-white shadow-lg' : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-600'}`}
-                          >
-                            <span className="text-xl">{DEVICE_ICONS[d] || '⚙️'}</span>
-                            <span className="text-[9px] font-black">{d}</span>
-                          </button>
-                        ))}
-                        <button
-                          type="button"
-                          onClick={() => handleFormChange('device_type', 'other')}
-                          className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${isOtherDevice ? 'bg-orange-600 border-orange-500 text-white shadow-lg' : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-600'}`}
-                        >
-                          <span className="text-xl">✨</span>
-                          <span className="text-[9px] font-black">أخرى</span>
-                        </button>
-                      </div>
-                      {isOtherDevice && <input type="text" placeholder="اكتب نوع الجهاز هنا..." value={customDevice} onChange={e => setCustomDevice(e.target.value)} className="w-full bg-slate-950/50 border border-orange-500/30 rounded-xl p-3 mt-3 text-white font-bold outline-none" required />}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-5">
+              <form id="order-main-form" onSubmit={(e) => { e.preventDefault(); if (formStep === 3) saveOrder(e); }} className="space-y-5">
+                {/* Step 1: Customer Details */}
+                {formStep === 1 && (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-300">
+                    <div className="bg-slate-800/40 p-4 rounded-2xl border border-white/5 space-y-4">
                       <div>
-                        <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">الماركة</label>
-                        <select value={formData.brand} onChange={e => handleFormChange('brand', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-orange-500 transition-colors">
-                          <option value="">اختر الماركة</option>
-                          {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
-                          <option value="other">أخرى</option>
-                        </select>
-                      </div>
-                      {isOtherBrand && <div className="self-end"><input type="text" placeholder="ماركة مخصصة" value={customBrand} onChange={e => setCustomBrand(e.target.value)} className="w-full bg-slate-950/50 border border-orange-500/30 rounded-xl p-3 text-white font-bold outline-none" required /></div>}
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">وصف المشكلة</label>
-                      <textarea rows={3} value={formData.problem_description || ''} onChange={e => handleFormChange('problem_description', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold focus:border-orange-500 outline-none transition-colors" placeholder="ما هي مشكلة الجهاز؟" />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 3: Assignment & Financials */}
-              {formStep === 3 && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-300">
-                  <div className="bg-slate-800/40 p-4 rounded-2xl border border-white/5 space-y-4">
-                    <div>
-                      <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">الفني المسؤول</label>
-                      <div className="relative">
-                        <select value={formData.technician} onChange={e => handleFormChange('technician', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-orange-500 transition-colors appearance-none">
-                          <option value="">لم يتم التعيين بعد</option>
-                          {technicians.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
-                        </select>
-                        <Users size={16} className="absolute left-3 top-3.5 text-slate-600 pointer-events-none" />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">إجمالي المبلغ</label>
+                        <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">رقم الهاتف</label>
                         <div className="relative">
-                          <input type="number" value={formData.total_amount} onChange={e => handleFormChange('total_amount', parseFloat(e.target.value))} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-emerald-500 transition-colors" />
-                          <span className="absolute left-3 top-3 text-[10px] font-black text-slate-600">ج.م</span>
+                          <input type="tel" value={formData.phone || ''} onChange={e => handleFormChange('phone', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold focus:border-orange-500 outline-none transition-colors" placeholder="01xxxxxxxxx" required />
+                          {customerLookupLoading && <div className="absolute left-3 top-3"><RefreshCw size={16} className="animate-spin text-orange-500" /></div>}
                         </div>
+                        {previousCustomer && (
+                          <div className="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 flex items-center justify-between gap-3 animate-in zoom-in-95">
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-black text-emerald-300">✨ عميل سابق: {previousCustomer.customer_name}</p>
+                              <p className="text-[9px] text-emerald-400/80 truncate">{previousCustomer.address}</p>
+                            </div>
+                            <button type="button" onClick={() => setFormData(c => ({ ...c, customer_name: previousCustomer.customer_name || c.customer_name, address: previousCustomer.address || c.address }))} className="shrink-0 bg-emerald-600 text-white px-2 py-1 rounded-lg text-[9px] font-black">استخدام</button>
+                          </div>
+                        )}
                       </div>
                       <div>
-                        <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">الحالة</label>
-                        <select value={formData.status} onChange={e => handleFormChange('status', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-orange-500 transition-colors">
-                          <option value="pending">معلق</option>
-                          <option value="in-progress">قيد التنفيذ</option>
-                          <option value="inspected">تم الكشف</option>
-                          <option value="completed">مكتمل</option>
-                          <option value="cancelled">ملغي</option>
-                        </select>
+                        <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">اسم العميل</label>
+                        <input type="text" value={formData.customer_name || ''} onChange={e => handleFormChange('customer_name', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold focus:border-orange-500 outline-none transition-colors" placeholder="الاسم بالكامل" required />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">العنوان</label>
+                        <div className="relative">
+                          <textarea rows={2} value={formData.address || ''} onChange={e => handleFormChange('address', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold focus:border-orange-500 outline-none transition-colors" placeholder="العنوان بالتفصيل" />
+                          <MapPin size={16} className="absolute left-3 top-3 text-slate-600" />
+                        </div>
                       </div>
                     </div>
+                  </div>
+                )}
 
-                    {editingOrder && (
+                {/* Step 2: Device & Problem */}
+                {formStep === 2 && (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-300">
+                    <div className="bg-slate-800/40 p-4 rounded-2xl border border-white/5 space-y-4">
+                      <div>
+                        <label className="text-[11px] font-black text-slate-500 uppercase mb-3 block">نوع الجهاز</label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {DEVICE_TYPES.map(d => (
+                            <button
+                              key={d}
+                              type="button"
+                              onClick={() => handleFormChange('device_type', d)}
+                              className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${formData.device_type === d ? 'bg-orange-600 border-orange-500 text-white shadow-lg' : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-600'}`}
+                            >
+                              <span className="text-xl">{DEVICE_ICONS[d] || '⚙️'}</span>
+                              <span className="text-[9px] font-black">{d}</span>
+                            </button>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => handleFormChange('device_type', 'other')}
+                            className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${isOtherDevice ? 'bg-orange-600 border-orange-500 text-white shadow-lg' : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-600'}`}
+                          >
+                            <span className="text-xl">✨</span>
+                            <span className="text-[9px] font-black">أخرى</span>
+                          </button>
+                        </div>
+                        {isOtherDevice && <input type="text" placeholder="اكتب نوع الجهاز هنا..." value={customDevice} onChange={e => setCustomDevice(e.target.value)} className="w-full bg-slate-950/50 border border-orange-500/30 rounded-xl p-3 mt-3 text-white font-bold outline-none" required />}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">الماركة</label>
+                          <select value={formData.brand} onChange={e => handleFormChange('brand', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-orange-500 transition-colors">
+                            <option value="">اختر الماركة</option>
+                            {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+                            <option value="other">أخرى</option>
+                          </select>
+                        </div>
+                        {isOtherBrand && <div className="self-end"><input type="text" placeholder="ماركة مخصصة" value={customBrand} onChange={e => setCustomBrand(e.target.value)} className="w-full bg-slate-950/50 border border-orange-500/30 rounded-xl p-3 text-white font-bold outline-none" required /></div>}
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">وصف المشكلة</label>
+                        <textarea rows={3} value={formData.problem_description || ''} onChange={e => handleFormChange('problem_description', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold focus:border-orange-500 outline-none transition-colors" placeholder="ما هي مشكلة الجهاز؟" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 3: Assignment & Financials */}
+                {formStep === 3 && (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-300">
+                    <div className="bg-slate-800/40 p-4 rounded-2xl border border-white/5 space-y-4">
+                      <div>
+                        <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">الفني المسؤول</label>
+                        <div className="relative">
+                          <select value={formData.technician} onChange={e => handleFormChange('technician', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-orange-500 transition-colors appearance-none">
+                            <option value="">لم يتم التعيين بعد</option>
+                            {technicians.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
+                          </select>
+                          <Users size={16} className="absolute left-3 top-3.5 text-slate-600 pointer-events-none" />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">إجمالي المبلغ</label>
+                          <div className="relative">
+                            <input type="number" value={formData.total_amount || 0} onChange={e => handleFormChange('total_amount', parseFloat(e.target.value) || 0)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-emerald-500 transition-colors" />
+                            <span className="absolute left-3 top-3 text-[10px] font-black text-slate-600">ج.م</span>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">الحالة</label>
+                          <select value={formData.status} onChange={e => handleFormChange('status', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-orange-500 transition-colors">
+                            <option value="pending">معلق</option>
+                            <option value="in-progress">قيد التنفيذ</option>
+                            <option value="inspected">تم الكشف</option>
+                            <option value="completed">مكتمل</option>
+                            <option value="cancelled">ملغي</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* v3.9.2: Financial fields now universal for all orders */}
                       <div className="pt-4 border-t border-white/5 space-y-4">
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">ثمن قطع الغيار</label>
                             <div className="relative">
-                              <input type="number" value={formData.parts_cost} onChange={e => handleFormChange('parts_cost', parseFloat(e.target.value))} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-orange-500 transition-colors" />
+                              <input type="number" value={formData.parts_cost || 0} onChange={e => handleFormChange('parts_cost', parseFloat(e.target.value) || 0)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-orange-500 transition-colors" />
                               <span className="absolute left-3 top-3 text-[10px] font-black text-slate-600">ج.م</span>
                             </div>
                           </div>
                           <div>
                             <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">المواصلات</label>
                             <div className="relative">
-                              <input type="number" value={formData.transport_cost} onChange={e => handleFormChange('transport_cost', parseFloat(e.target.value))} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-orange-500 transition-colors" />
+                              <input type="number" value={formData.transport_cost || 0} onChange={e => handleFormChange('transport_cost', parseFloat(e.target.value) || 0)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-orange-500 transition-colors" />
                               <span className="absolute left-3 top-3 text-[10px] font-black text-slate-600">ج.م</span>
                             </div>
                           </div>
                         </div>
+
                         <div className="flex items-center gap-4">
                           <label className="flex items-center gap-2 text-xs font-black text-slate-300 cursor-pointer"><input type="checkbox" checked={formData.is_paid} onChange={e => handleFormChange('is_paid', e.target.checked)} className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-emerald-600" /> تم التحصيل</label>
                           <label className="flex items-center gap-2 text-xs font-black text-slate-300 cursor-pointer"><input type="checkbox" checked={formData.invoice_approved} onChange={e => handleFormChange('invoice_approved', e.target.checked)} className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-blue-600" /> اعتماد الفاتورة</label>
                         </div>
+
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">فترة الضمان</label>
@@ -4223,12 +4227,12 @@ export default function ProtectedOrders() {
                           <textarea rows={2} value={formData.parts_used || ''} onChange={e => handleFormChange('parts_used', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-[11px] text-white font-bold outline-none" placeholder="مثلاً: طلمبة طرد، سير موتور..." />
                         </div>
                       </div>
-                    )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </form>
 
-              {/* Navigation Buttons */}
+              {/* Navigation Buttons (v3.9.2: Moved outside form to prevent accidental submission) */}
               <div className="flex gap-3 pt-4 sticky bottom-0 bg-slate-900 py-3 border-t border-slate-800">
                 {formStep > 1 && (
                   <button type="button" onClick={() => setFormStep(s => s - 1)} className="flex-1 h-12 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-2xl font-black text-xs transition-all flex items-center justify-center gap-2 active:scale-95">
@@ -4248,13 +4252,21 @@ export default function ProtectedOrders() {
                     التالي <ChevronLeft size={18} />
                   </button>
                 ) : (
-                  <button type="submit" disabled={isSubmitting} className="flex-[2] h-12 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black text-xs shadow-lg shadow-emerald-900/20 transition-all flex items-center justify-center gap-2 active:scale-95">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      const form = document.getElementById('order-main-form') as HTMLFormElement;
+                      if (form) form.requestSubmit();
+                    }}
+                    disabled={isSubmitting} 
+                    className="flex-[2] h-12 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black text-xs shadow-lg shadow-emerald-900/20 transition-all flex items-center justify-center gap-2 active:scale-95"
+                  >
                     {isSubmitting ? <RefreshCw size={18} className="animate-spin" /> : <Check size={18} />}
                     {editingOrder ? 'حفظ التعديلات' : 'تأكيد وحفظ الأوردر'}
                   </button>
                 )}
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
