@@ -886,15 +886,17 @@ export default function ProtectedOrders() {
 
   const getDaysDifference = (dateStr: string, status: string) => {
     if (status === 'inspected') return 0;
-    const normalizedDate = normalizeArabicDigits(dateStr);
-    if (!normalizedDate) return 0;
-    const orderDate = parseOrderDate(normalizedDate);
+    const orderDate = parseOrderDate(dateStr);
     if (!orderDate) return 0;
-    const today = new Date();
-    const todayDate = parseOrderDate(`${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`);
-    if (!todayDate) return 0;
-    const diffTime = todayDate.getTime() - orderDate.getTime();
-    const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    // v3.8.6: حساب الفرق الدقيق بالأيام بناءً على توقيت القاهرة
+    // نستخدم التوقيت الحالي ونطرح منه توقيت الأوردر
+    const now = new Date();
+    const diffMs = now.getTime() - orderDate.getTime();
+    
+    // تحويل الملي ثانية إلى أيام (24 ساعة = يوم)
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
     return days > 0 ? days : 0;
   };
 
@@ -3976,7 +3978,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.8.5-strict-separation-archived-active</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.8.6-fixed-cairo-date-logic</div>
         </div>
       </div>
 
