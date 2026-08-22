@@ -15,6 +15,7 @@ import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, get
 import { getPickupTypeLabel, parsePickupReceipt } from '../utils/pickupReceipt';
 import { mergeCompanyTransferMarker, parseCompanyTransfer } from '../utils/companyTransfer';
 import TechnicianPerformanceAdmin from './TechnicianPerformanceAdmin';
+import ScrollButtons from './ScrollButtons';
 
 import { findTechnicianByIdentity, getTechnicianDisplayName, getTechnicianPhotoUrl, getTechnicianSpecialty, parseTechnicianProfileNotification } from '../utils/technicianProfile';
 import { clearAuthSession } from '../utils/authSession';
@@ -2663,7 +2664,7 @@ export default function ProtectedOrders() {
             >
               <Play fill="currentColor" size={20} /> دخول وتفعيل التنبيهات 🔊
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.1.9</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.2.0</p>
           </div>
         </div>
       )}
@@ -4140,9 +4141,10 @@ export default function ProtectedOrders() {
           </div>
           <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-black tracking-wide text-emerald-300 shadow-[0_0_14px_rgba(52,211,153,0.12)]">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.9)]" />
-            إصدار النظام: v4.1.9
+            إصدار النظام: v4.2.0
           </div>
         </div>
+        <ScrollButtons />
       </div>
 
       {showReturnModal && selectedOrderForReturn && (

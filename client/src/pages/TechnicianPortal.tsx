@@ -10,6 +10,7 @@ import { useLocation } from "wouter";
 import { useNotification } from "../components/EnhancedNotificationSystem";
 import TechnicianPerformance from "../components/TechnicianPerformance";
 import NotificationStatus from "../components/NotificationStatus";
+import ScrollButtons from "../components/ScrollButtons";
 
 import { clearAuthSession } from "../utils/authSession";
 import { createClient } from '@supabase/supabase-js';
@@ -1937,8 +1938,9 @@ export default function TechnicianPortal() {
       )}
       <div className="text-center pb-8">
         <NotificationStatus />
-        <div className="text-[11px] text-white font-black opacity-90 mt-4 tracking-widest bg-slate-800/50 px-3 py-1 rounded-full inline-block border border-white/10">v4.1.9-radar-notifications-stable</div>
+        <div className="text-[11px] text-white font-black opacity-90 mt-4 tracking-widest bg-slate-800/50 px-3 py-1 rounded-full inline-block border border-white/10">v4.2.0-radar-notifications-stable</div>
       </div>
+      <ScrollButtons />
     </div>
   );
 }
