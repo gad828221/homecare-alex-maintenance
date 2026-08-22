@@ -2155,15 +2155,8 @@ export default function ProtectedOrders() {
       // أظهر فقط الأوردرات النشطة (انتظار، تنفيذ، مرتجع، بدون فني)
       const isLive = (o.status === 'in-progress' || o.status === 'in_progress' || o.status === 'pending' || o.status === 'returned' || !o.technician || o.technician === '-' || o.technician === '');
 
-      // بعد تصفية الفني للأوردر قد يصبح مكتملًا أو مؤرشفًا؛ أبقه ظاهراً مؤقتاً ليصل للمدير أولاً.
-      const recentActivityValue = o.updated_at || o.updatedAt || o.last_action_at || o.completed_at;
-      const recentActivityTime = recentActivityValue ? new Date(recentActivityValue).getTime() : 0;
-      const recentlySettled = Number.isFinite(recentActivityTime) && recentActivityTime > 0 &&
-        clockNow - recentActivityTime >= -5 * 60 * 1000 && clockNow - recentActivityTime <= 30 * 60 * 1000;
-      if (recentlySettled) return true;
-      
-      // إذا كان هناك بحث أو فلتر فني، تجاوز قيد "النشط"
-      if (searchTerm || filterTechnician || filterDateFrom) return true;
+      // أي فلتر إضافي يستدعي فقط النتائج المطابقة بعد تطبيق البحث والفترة والفني والجهاز.
+      if (searchTerm || filterTechnician || filterDateFrom || filterDateTo || filterDeviceType || filterDelay !== 'all' || filterWarranty !== 'all') return true;
       
       return isLive;
     }
@@ -2864,6 +2857,7 @@ export default function ProtectedOrders() {
 	                        <option value="in-progress">🔧 قيد التنفيذ</option>
 	                        <option value="inspected">🔍 تم الكشف</option>
 	                        <option value="completed">✅ مكتمل</option>
+	                        <option value="__UNPAID__">💰 يحتاج تأكيد التحصيل</option>
 	                        <option value="cancelled">❌ ملغي</option>
 	                        <option value="deferred">⏰ مؤجل</option>
                             <option value="returned">⚠️ المرتجعات</option>
@@ -2919,7 +2913,7 @@ export default function ProtectedOrders() {
 	                    <>
 	                      <span className="text-[10px] font-black text-slate-600 uppercase tracking-tighter">النتائج لـ:</span>
 	                      {searchTerm && <span className="bg-orange-500/10 text-orange-400 border border-orange-500/20 px-3 py-1 rounded-full text-[9px] font-black flex items-center gap-1.5">🔍 {searchTerm} <X size={10} className="cursor-pointer" onClick={() => setSearchTerm('')}/></span>}
-	                      {filterStatus !== 'live' && <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1 rounded-full text-[9px] font-black flex items-center gap-1.5">🏷️ {filterStatus === 'all' ? 'الكل' : filterStatus} <X size={10} className="cursor-pointer" onClick={() => setFilterStatus('live')}/></span>}
+	                      {filterStatus !== 'live' && <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1 rounded-full text-[9px] font-black flex items-center gap-1.5">🏷️ {filterStatus === 'all' ? 'الكل' : filterStatus === '__UNPAID__' ? 'يحتاج تأكيد التحصيل' : filterStatus} <X size={10} className="cursor-pointer" onClick={() => setFilterStatus('live')}/></span>}
 	                      {filterTechnician && <span className="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-3 py-1 rounded-full text-[9px] font-black flex items-center gap-1.5">👨‍🔧 {filterTechnician === '__NONE__' ? 'بدون فني' : filterTechnician} <X size={10} className="cursor-pointer" onClick={() => setFilterTechnician('')}/></span>}
 	                      {filterDelay === 'delayed' && <span className="bg-red-500/10 text-red-400 border border-red-500/20 px-3 py-1 rounded-full text-[9px] font-black flex items-center gap-1.5">🚨 متأخر <X size={10} className="cursor-pointer" onClick={() => setFilterDelay('all')}/></span>}
 	                      
