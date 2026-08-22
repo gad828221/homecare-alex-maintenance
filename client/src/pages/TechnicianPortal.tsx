@@ -1923,7 +1923,7 @@ export default function TechnicianPortal() {
       )}
       <div className="text-center pb-8">
         <NotificationStatus />
-        <div className="text-[8px] text-slate-500 opacity-10 mt-4">v3.7.0-customer-live-tracking</div>
+        <div className="text-[8px] text-slate-500 opacity-10 mt-4">v3.7.1-tracking-access-fix</div>
       </div>
     </div>
   );

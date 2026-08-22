@@ -12,7 +12,7 @@ import PresenceManager from "./components/PresenceManager";
 import { readAuthSession } from './utils/authSession';
 
 const PUBLIC_PATHS = new Set([
-  '/', '/login', '/invoice', '/pickup-receipt', '/feedback',
+  '/', '/login', '/invoice', '/pickup-receipt', '/feedback', '/track',
   '/samsung-service', '/lg-service', '/sharp-service',
   '/toshiba-service', '/zanussi-service', '/unionaire-service',
   '/fresh-service', '/white-whale-service', '/ariston-service',
@@ -224,7 +224,7 @@ function App() {
       // تم إلغاء التحويل التلقائي ليبقى الموقع الخاص بالزوار منفصلاً تماماً عن لوحة التحكم
       if (currentPath === '/') return;
 
-      if (PUBLIC_PATHS.has(currentPath) && !window.location.search.includes('source=pwa')) return;
+      if ((PUBLIC_PATHS.has(currentPath) || currentPath.startsWith('/track/')) && !window.location.search.includes('source=pwa')) return;
 
       if (!role && !PUBLIC_PATHS.has(currentPath)) {
         window.location.replace('/login' + window.location.search);
