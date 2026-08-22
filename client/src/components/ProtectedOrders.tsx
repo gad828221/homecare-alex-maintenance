@@ -2145,6 +2145,10 @@ export default function ProtectedOrders() {
   const allFilteredOrders = dateFilteredOrders.filter(o => {
     // وضع التركيز المباشر (الافتراضي)
     if (filterStatus === 'live') {
+      const transferForFocus = parseCompanyTransfer(o.technician_note);
+      const needsCollectionConfirmation = o.status === 'completed' && !o.is_paid && transferForFocus?.status === 'pending';
+      // أوردرات التصفية المعلقة تظهر دائماً في وضع التركيز لتصل للمدير أولاً.
+      if (needsCollectionConfirmation) return true;
       // دائماً أظهر الأوردرات المثبتة
       if (pinnedOrderIds.has(o.id)) return true;
       
@@ -2170,6 +2174,9 @@ export default function ProtectedOrders() {
       return false;
     }
 
+    const transferForFilter = parseCompanyTransfer(o.technician_note);
+    const needsCollectionConfirmation = o.status === 'completed' && !o.is_paid && transferForFilter?.status === 'pending';
+    if (needsCollectionConfirmation) return true;
     if (o.status === 'completed' && filterStatus !== 'completed') return showCompletedOrders;
     if (filterStatus !== 'all' || filterTechnician || filterDateFrom || searchTerm) return true;
     return (o.status === 'in-progress' || o.status === 'pending' || o.status === 'returned' || !o.technician || o.technician === '-' || o.technician === '');
@@ -2195,20 +2202,23 @@ export default function ProtectedOrders() {
   };
 
   const filteredOrders = useMemo(() => {
-    // الأوردر المثبت يظل في المقدمة، وداخل كل مجموعة يظهر آخر أوردر تم تحديثه أولاً.
-    const sortByLatestActivity = (a: any, b: any) => {
+    // أوردرات انتظار تأكيد التحصيل أولاً، ثم المثبتة، ثم الأحدث تحديثاً.
+    const needsCollectionConfirmation = (order: any) => order.status === 'completed' && !order.is_paid && parseCompanyTransfer(order.technician_note)?.status === 'pending';
+    const sortByPriority = (a: any, b: any) => {
+      const aNeedsCollection = needsCollectionConfirmation(a);
+      const bNeedsCollection = needsCollectionConfirmation(b);
+      if (aNeedsCollection !== bNeedsCollection) return aNeedsCollection ? -1 : 1;
+
+      const aPinned = pinnedOrderIds.has(a.id);
+      const bPinned = pinnedOrderIds.has(b.id);
+      if (aPinned !== bPinned) return aPinned ? -1 : 1;
+
       const activityDiff = getOrderActivityTime(b) - getOrderActivityTime(a);
       if (activityDiff !== 0) return activityDiff;
       return Number(b.id || 0) - Number(a.id || 0);
     };
 
-    const pinned = allFilteredOrders
-      .filter(o => pinnedOrderIds.has(o.id))
-      .sort(sortByLatestActivity);
-    const unpinned = allFilteredOrders
-      .filter(o => !pinnedOrderIds.has(o.id))
-      .sort(sortByLatestActivity);
-    const sorted = [...pinned, ...unpinned];
+    const sorted = [...allFilteredOrders].sort(sortByPriority);
 
     if (!searchTerm) {
       if (filterStatus === 'completed') {
@@ -3117,7 +3127,8 @@ export default function ProtectedOrders() {
 	                        
 	                        <div className="flex flex-col items-end gap-1.5">
                           <div className="flex items-center gap-1.5">
-                            {recentlyUpdated && <span className="px-2 py-1 rounded-lg text-[8px] font-black border border-emerald-300/50 bg-emerald-400/20 text-emerald-200 shadow-sm animate-pulse">تم التحديث الآن</span>}
+                            {transferPending && <span className="px-2 py-1 rounded-lg text-[8px] font-black border border-amber-200/80 bg-amber-300/30 text-amber-100 shadow-sm animate-pulse">تحتاج تأكيد التحصيل</span>}
+                            {!transferPending && recentlyUpdated && <span className="px-2 py-1 rounded-lg text-[8px] font-black border border-emerald-300/50 bg-emerald-400/20 text-emerald-200 shadow-sm animate-pulse">تم التحديث الآن</span>}
                             <div className={`px-2 py-1 rounded-lg text-[9px] font-black border flex items-center gap-1 shadow-sm ${config.badge}`}>
                               <StatusIcon size={12} strokeWidth={3} />
                               {config.label}

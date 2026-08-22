@@ -907,7 +907,7 @@ export default function TechnicianPortal() {
         title: settlementTitle,
         message: settlementDetails,
         targetRoles: ['admin', 'manager'],
-          data: { order_id: selectedOrder.id, order_number: selectedOrder.order_number, total_amount: settlementTotal, company_share: Number(settleForm.company_share) || 0, parts_percent: partsPercent, transport_percent: transportPercent, high_expense: expenseWarnings.length > 0, transfer_status: 'pending', technician: techName }
+          data: { focus: 'order', order_id: selectedOrder.id, order_number: selectedOrder.order_number, total_amount: settlementTotal, company_share: Number(settleForm.company_share) || 0, parts_percent: partsPercent, transport_percent: transportPercent, high_expense: expenseWarnings.length > 0, transfer_status: 'pending', technician: techName }
       });
     } catch (e) { console.error('Settlement alert error:', e); }
 
@@ -919,14 +919,7 @@ export default function TechnicianPortal() {
 🖼️ صورة الجديد: ${newPartsPhoto}`;
     notifyAdmin("💰 تحويل نصيب الشركة بانتظار التأكيد", selectedOrder, details);
 
-    // إرسال Push للمديرين ومدير العمليات عند التصفية
-    void sendExternalPush({
-      event: 'system_alert',
-      title: '💰 تصفية أوردر جديدة',
-      message: `الفني ${techName} قام بتصفية الأوردر #${selectedOrder.order_number} بمبلغ ${settleForm.total_amount} ج.م. نصيب الشركة: ${settleForm.company_share} ج.م.`,
-      targetRoles: ['admin', 'manager'],
-      data: { order_id: selectedOrder.id, amount: settleForm.total_amount, technician: techName }
-    });
+    // تم دمج إشعار التصفية في إشعار واحد مفصل لمنع وصول إشعارين متطابقين للمدير.
 
     // إرسال رابط الضمان للعميل تلقائياً
     const invoiceLink = `${window.location.origin}/invoice?id=${selectedOrder.id}`;

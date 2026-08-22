@@ -182,11 +182,11 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   const deepLink = buildDeepLink(body.url, event, safeData, targetUserIds, targetTags);
   const audiences: any[] = [];
   
-  // إذا كان المطلوب الإرسال للكل أو للمديرين (كخيار احتياطي)، نرسل للجميع لضمان الوصول
-  if (targetRoles.includes('all') || targetRoles.includes('admin') || targetRoles.includes('manager')) {
+  // الإرسال للكل يجب أن يكون صريحاً فقط؛ admin/manager يُستهدفون بوسم الدور حتى لا تصل إشعارات التصفية للفنيين.
+  if (targetRoles.includes('all')) {
     audiences.push({ included_segments: ['Total Subscriptions'] });
   } else if (targetRoles.length > 0) {
-    audiences.push({ filters: buildRoleFilters(targetRoles) });
+    audiences.push({ filters: buildRoleFilters(targetRoles), target_channel: 'push' });
   }
 
   if (targetUserIds.length > 0) {
@@ -214,6 +214,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
             ...audience,
             headings: { en: title, ar: title },
             contents: { en: message, ar: message },
+            data: safeData,
             url: deepLink,
             chrome_web_icon: "https://www.maintenanceguide.life/pwa-192.png",
             chrome_web_badge: "https://www.maintenanceguide.life/pwa-192.png",
