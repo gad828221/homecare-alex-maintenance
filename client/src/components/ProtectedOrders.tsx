@@ -2777,7 +2777,7 @@ export default function ProtectedOrders() {
             >
               <Play fill="currentColor" size={20} /> دخول وتفعيل التنبيهات 🔊
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.2.3</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.2.4</p>
           </div>
         </div>
       )}
@@ -3510,9 +3510,13 @@ export default function ProtectedOrders() {
 	                                 <option value="deferred">⏰ مؤجل</option>
 	                               </select>
 	                               
-	                               {transferPending ? (
-	                                 isAdmin && <button type="button" disabled={confirmingTransferId === order.id} onClick={() => confirmCompanyTransferReceipt(order)} className="h-9 px-3 rounded-lg bg-amber-400 text-[9px] font-black text-slate-950 shadow-md active:scale-90 transition-all flex items-center gap-1"><Wallet size={12} /> تأكيد</button>
-	                               ) : (
+                               {transferPending ? (
+                                 isAdmin ? (
+                                   <button type="button" disabled={confirmingTransferId === order.id} onClick={() => confirmCompanyTransferReceipt(order)} className="h-9 px-3 rounded-lg bg-amber-400 text-[9px] font-black text-slate-950 shadow-md active:scale-90 transition-all flex items-center gap-1"><Wallet size={12} /> تأكيد</button>
+                                 ) : (
+                                   <div className="h-9 px-3 rounded-lg bg-slate-800 text-[9px] font-black text-amber-300 border border-amber-500/20 flex items-center gap-1" title="تأكيد التحصيل متاح لمدير النظام فقط"><Wallet size={12} /> بانتظار مدير النظام</div>
+                                 )
+                               ) : (
 	                                 isAdmin ? (
 	                                   <button onClick={() => togglePaidStatus(order.id, order.is_paid)} className={`h-9 px-3 rounded-lg text-[9px] font-black shadow-md active:scale-90 transition-all ${order.is_paid ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white animate-pulse'}`}>
 	                                     {order.is_paid ? 'محصل ✅' : 'تحصيل؟ 💰'}
@@ -4277,7 +4281,7 @@ export default function ProtectedOrders() {
           </div>
           <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-black tracking-wide text-emerald-300 shadow-[0_0_14px_rgba(52,211,153,0.12)]">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.9)]" />
-            إصدار النظام: v4.2.3
+            إصدار النظام: v4.2.4
           </div>
         </div>
         <ScrollButtons />

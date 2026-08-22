@@ -223,7 +223,9 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
             // تفعيل الخصائص التفاعلية لفك حظر Chrome Android (v2.9.5)
             priority: 10,
             web_push_priority: 10,
-            ttl: 3600,
+            // الإشعار التشغيلي يجب أن يكون فورياً؛ لا نسمح بتسليمه بعد انتهاء صلاحيته بساعات.
+            ttl: 120,
+            delayed_option: 'immediate',
             renotify: true,
             android_visibility: 1,
             web_push_require_interaction: true,

@@ -578,7 +578,7 @@ export default function TechnicianPortal() {
         notifyAdmin(actionTitle, oldOrder);
         
         // إرسال Push للمديرين ومدير العمليات
-        void sendExternalPush({
+        await sendExternalPush({
           event: 'system_alert',
           title: `🛠️ تحديث أوردر: ${statusAr}`,
           message: `الفني ${techName} قام بتغيير حالة الأوردر #${oldOrder.order_number} للعميل ${oldOrder.customer_name} إلى ${statusAr}.`,
@@ -594,7 +594,7 @@ export default function TechnicianPortal() {
     const actionTitle = `📞 محاولة تواصل مع العميل (${methodAr})`;
     notifyAdmin(actionTitle, order);
     
-    void sendExternalPush({
+    await sendExternalPush({
       event: 'system_alert',
       title: actionTitle,
       message: `الفني ${techName} يقوم الآن بالاتصال بالعميل ${order.customer_name} عبر ${methodAr} للأوردر #${order.order_number}.`,
@@ -644,8 +644,8 @@ export default function TechnicianPortal() {
         body: JSON.stringify({ technician_note: newNote })
       });
       await addNotification('📝 ملاحظة فنية', `أضاف الفني ملاحظة للأوردر رقم ${order.order_number}: ${note}`);
-      void notifyAdmin('📝 ملاحظة فنية جديدة', order, `النص: ${note}`);
-      void sendExternalPush({
+      await notifyAdmin('📝 ملاحظة فنية جديدة', order, `النص: ${note}`);
+      await sendExternalPush({
         event: 'system_alert',
         title: '📝 ملاحظة فنية جديدة',
         message: `الفني ${techName} أضاف ملاحظة للأوردر #${order.order_number} للعميل ${order.customer_name}: ${note}`,
@@ -711,12 +711,12 @@ export default function TechnicianPortal() {
 
       const details = `نوع السحب: ${typeAr}${partName ? `\\nالقطعة: ${partName}` : ''}\\nالعربون: ${Number(pickupForm.deposit) || 0} ج.م\\nعدد الصور: ${pickupForm.photos.length}\\nرابط الإيصال: ${window.location.origin}/pickup-receipt?id=${order.id}`;
       notifyAdmin('📋 إيصال سحب جديد', order, details);
-      void sendExternalPush({
+      await sendExternalPush({
         event: 'system_alert',
         title: '📋 إيصال سحب جديد',
         message: `تم تسجيل ${typeAr} للأوردر ${order.order_number} بواسطة الفني ${techName}.`,
         targetRoles: ['admin', 'manager'],
-        data: { order_id: order.id, pickup_type: pickupForm.type, pickup_photos: pickupForm.photos.length }
+        data: { order_id: order.id, order_number: order.order_number, pickup_type: pickupForm.type, pickup_photos: pickupForm.photos.length }
       });
 
       await fetchData();
