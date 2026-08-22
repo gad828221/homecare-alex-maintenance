@@ -5,7 +5,7 @@ import {
   Edit, Trash2, RefreshCw, Phone,
   Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut, Send, Play, LogIn,
   RotateCcw, Clock, MapPin, Star, Cpu, ShieldCheck, Wrench, UserCircle, Wallet,
-  ClipboardList, FileCheck, Camera, Navigation, ExternalLink
+  ClipboardList, FileCheck, Camera, Navigation, ExternalLink, Pin, PinOff, History
 } from "lucide-react";
 import { createClient } from '@supabase/supabase-js';
 import { Helmet } from 'react-helmet-async';
@@ -386,6 +386,7 @@ export default function ProtectedOrders() {
   const [visibleNotificationsCount, setVisibleNotificationsCount] = useState(20);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
+  const [pinnedOrderIds, setPinnedOrderIds] = useState<Set<number>>(new Set());
   const [deletedOrders, setDeletedOrders] = useState<any[]>([]);
   const [customDevice, setCustomDevice] = useState('');
   const [customBrand, setCustomBrand] = useState('');
@@ -2146,14 +2147,30 @@ export default function ProtectedOrders() {
   });
 
   const filteredOrders = useMemo(() => {
+    // فصل الأوردرات المثبتة
+    const pinned = allFilteredOrders.filter(o => pinnedOrderIds.has(o.id));
+    const unpinned = allFilteredOrders.filter(o => !pinnedOrderIds.has(o.id));
+    
+    const sorted = [...pinned, ...unpinned];
+
     if (!searchTerm) {
       if (filterStatus === 'completed') {
-        return allFilteredOrders.slice(0, visibleCompletedCount);
+        return sorted.slice(0, visibleCompletedCount);
       }
-      return allFilteredOrders.slice(0, visibleOrdersCount);
+      return sorted.slice(0, visibleOrdersCount);
     }
-    return allFilteredOrders;
-  }, [allFilteredOrders, filterStatus, searchTerm, visibleCompletedCount, visibleOrdersCount]);
+    return sorted;
+  }, [allFilteredOrders, filterStatus, searchTerm, visibleCompletedCount, visibleOrdersCount, pinnedOrderIds]);
+
+  const togglePinOrder = (e: React.MouseEvent, orderId: number) => {
+    e.stopPropagation();
+    setPinnedOrderIds(prev => {
+      const next = new Set(prev);
+      if (next.has(orderId)) next.delete(orderId);
+      else next.add(orderId);
+      return next;
+    });
+  };
 
   const allFilteredArchivedOrders = archivedOrders.filter(o => {
     const query = archiveSearchTerm.trim().toLowerCase();
@@ -3008,8 +3025,16 @@ export default function ProtectedOrders() {
 	                      {transferPending && <div className="absolute inset-0 pointer-events-none rounded-[1.5rem] border border-amber-300/50 shadow-[0_0_20px_rgba(251,191,36,0.2)]"></div>}
 	                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:bg-white/10 transition-all"></div>
 
-	                      {/* Header Section */}
-	                      <div className="flex justify-between items-start mb-3 relative z-10">
+		                      {/* Header Section */}
+		                      <div className="flex justify-between items-start mb-3 relative z-10">
+                            {/* Pin Button */}
+                            <button 
+                              onClick={(e) => togglePinOrder(e, order.id)}
+                              className={`absolute -left-2 -top-2 w-8 h-8 rounded-full flex items-center justify-center transition-all z-20 ${pinnedOrderIds.has(order.id) ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/40 scale-110' : 'bg-slate-800/50 text-slate-500 opacity-0 group-hover:opacity-100 hover:bg-slate-700'}`}
+                            >
+                              {pinnedOrderIds.has(order.id) ? <Pin size={14} fill="currentColor" /> : <PinOff size={14} />}
+                            </button>
+
 	                        <div className="flex flex-col gap-1">
 		                          <div className="flex flex-wrap items-center gap-1.5">
 	                            <h3 className="text-base font-black text-white group-hover:text-orange-400 transition-colors leading-tight">{order.customer_name}</h3>
@@ -3045,8 +3070,28 @@ export default function ProtectedOrders() {
 	                        </div>
 	                      </div>
 
-	                      {/* Alerts Section */}
-	                      {transferPending && isAdmin && (
+		                      {/* Last Action Insight & Pulse */}
+                            <div className="mb-3 relative z-10 flex items-center justify-between gap-2 bg-slate-950/30 px-3 py-1.5 rounded-xl border border-white/5">
+                              <div className="flex items-center gap-1.5 overflow-hidden">
+                                <History size={10} className="text-blue-400 shrink-0" />
+                                <span className="text-[9px] font-bold text-slate-400 truncate">
+                                  {order.status === 'returned' ? '⚠️ مرتجع: ' + (order.technician_note?.split('⚠️')[1]?.split('\n')[0] || 'بانتظار الفحص') : 
+                                   order.status === 'completed' ? '✅ تم الاعتماد والإغلاق' :
+                                   order.technician_note?.includes('OLD') ? '📸 تم رفع صور المعاينة' :
+                                   order.technician ? '👨‍🔧 قيد المتابعة مع الفني' : '⏳ بانتظار تعيين فني'}
+                                </span>
+                              </div>
+                              {/* Priority Pulse Indicator */}
+                              {(!order.technician_note || new Date().getTime() - new Date(order.updated_at || order.created_at).getTime() > 4 * 60 * 60 * 1000) && order.status !== 'completed' && (
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-ping"></div>
+                                  <span className="text-[7px] font-black text-orange-400 uppercase tracking-tighter">متابعة</span>
+                                </div>
+                              )}
+                            </div>
+
+		                      {/* Alerts Section */}
+		                      {transferPending && isAdmin && (
 	                        <div className="mb-5 relative z-10 rounded-2xl border border-amber-300/70 bg-gradient-to-l from-amber-500/20 via-yellow-500/10 to-transparent p-4 shadow-lg shadow-amber-500/20 animate-in zoom-in-95 duration-300">
 	                          <div className="flex items-center justify-between gap-3">
 	                            <div className="flex min-w-0 items-center gap-3 text-amber-100">
@@ -3914,7 +3959,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.7.8-performance-boost-lazy-load</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.8.1-smart-tracking-no-confusion</div>
         </div>
       </div>
 
