@@ -372,7 +372,7 @@ export default function ProtectedOrders() {
   const [partnerForm, setPartnerForm] = useState({ name: '', share_percentage: 0, phone: '', is_active: true });
   const [searchTerm, setSearchTerm] = useState('');
   const [archiveSearchTerm, setArchiveSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('live');
   const [filterTechnician, setFilterTechnician] = useState('');
   const [filterDeviceType, setFilterDeviceType] = useState('');
   const [filterDateFrom, setFilterDateFrom] = useState('');
@@ -2135,6 +2135,20 @@ export default function ProtectedOrders() {
   });
 
   const allFilteredOrders = dateFilteredOrders.filter(o => {
+    // وضع التركيز المباشر (الافتراضي)
+    if (filterStatus === 'live') {
+      // دائماً أظهر الأوردرات المثبتة
+      if (pinnedOrderIds.has(o.id)) return true;
+      
+      // أظهر فقط الأوردرات النشطة (انتظار، تنفيذ، مرتجع، بدون فني)
+      const isLive = (o.status === 'in-progress' || o.status === 'in_progress' || o.status === 'pending' || o.status === 'returned' || !o.technician || o.technician === '-' || o.technician === '');
+      
+      // إذا كان هناك بحث أو فلتر فني، تجاوز قيد "النشط"
+      if (searchTerm || filterTechnician || filterDateFrom) return true;
+      
+      return isLive;
+    }
+
     if (filterStatus === '__UNPAID__') {
       if (o.status !== 'completed' || o.is_paid) return false;
     } else if (filterStatus !== 'all' && o.status !== filterStatus) {
@@ -2791,13 +2805,15 @@ export default function ProtectedOrders() {
 	                    <div className="space-y-1.5">
 	                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">الحالة</label>
 	                      <select value={filterStatus} onChange={e => { const nextStatus = e.target.value; setFilterStatus(nextStatus); if (nextStatus === 'completed') setShowCompletedOrders(true); }} className="w-full p-3 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs font-bold outline-none focus:border-orange-500 transition-all">
+	                        <option value="live">⚡ العمل الحالي (النشط)</option>
 	                        <option value="all">جميع الحالات</option>
-	                        <option value="pending">قيد الانتظار</option>
-	                        <option value="in-progress">قيد التنفيذ</option>
-	                        <option value="inspected">تم الكشف</option>
-	                        <option value="completed">مكتمل</option>
-	                        <option value="cancelled">ملغي</option>
-	                        <option value="deferred">مؤجل</option>
+	                        <option value="pending">⏳ قيد الانتظار</option>
+	                        <option value="in-progress">🔧 قيد التنفيذ</option>
+	                        <option value="inspected">🔍 تم الكشف</option>
+	                        <option value="completed">✅ مكتمل</option>
+	                        <option value="cancelled">❌ ملغي</option>
+	                        <option value="deferred">⏰ مؤجل</option>
+                            <option value="returned">⚠️ المرتجعات</option>
 	                      </select>
 	                    </div>
 	                    <div className="space-y-1.5">
@@ -3959,7 +3975,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.8.1-smart-tracking-no-confusion</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.8.2-live-focus-mode-default</div>
         </div>
       </div>
 
