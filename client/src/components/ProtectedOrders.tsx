@@ -4051,7 +4051,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.9.4-recent-technician-settlement-first</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.9.5-pending-collection-priority-alerts</div>
         </div>
       </div>
 
