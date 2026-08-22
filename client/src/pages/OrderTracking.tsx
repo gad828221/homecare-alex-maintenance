@@ -237,13 +237,13 @@ export default function OrderTracking() {
         </div>
 
         {/* Documents Section */}
-        {(order.status === 'completed' || hasPickupReceipt) && (
+        {(order.status === 'completed' || order.invoice_approved || hasPickupReceipt) && (
           <div className="bg-white rounded-[2.5rem] p-6 shadow-xl border border-slate-100">
             <h3 className="text-sm font-black text-slate-900 mb-6 flex items-center gap-2">
               <FileCheck size={18} className="text-orange-600" /> الوثائق الرسمية
             </h3>
             <div className="space-y-3">
-              {order.status === 'completed' && (
+              {(order.status === 'completed' || order.invoice_approved) && (
                 <a 
                   href={`/invoice?id=${order.id}`} 
                   target="_blank"
