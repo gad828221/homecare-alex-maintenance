@@ -480,6 +480,7 @@ export default function ProtectedOrders() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const alertInterval = useRef<any>(null);
   const lastCheckedOrderId = useRef<number | null>(null);
+  const lastCheckedOrderCreatedAtRef = useRef<number | null>(null);
   const alertBaselineReadyRef = useRef(false);
   const delayedAlertIdsRef = useRef<Set<number>>(new Set());
   const escalationAlertIdsRef = useRef<Set<number>>(new Set());
@@ -1316,17 +1317,29 @@ export default function ProtectedOrders() {
       const allOrders = await fetchAPI(`orders?select=${orderFields}&order=created_at.desc`);
       const ordersArray = Array.isArray(allOrders) ? allOrders : [];
 
-      // نظام المراقب الذكي: إذا وجدنا أوردر جديد برقم ID أكبر من آخر واحد رأيناه
+      // مراقبة الأوردرات الجديدة: لا نعتبر تغيير ID وحده دليلاً على أوردر حديث.
+      // هذا يمنع رنين أوردر قديم عند إعادة فتح الصفحة أو بعد تغيّر التخزين المؤقت.
       if (ordersArray.length > 0) {
-        const newestId = Math.max(...ordersArray.map((o: any) => o.id));
-        if (lastCheckedOrderId.current !== null && newestId > lastCheckedOrderId.current) {
+        const newestOrder = ordersArray.reduce((latest: any, current: any) => {
+          const latestTime = new Date(latest?.created_at || latest?.createdAt || 0).getTime();
+          const currentTime = new Date(current?.created_at || current?.createdAt || 0).getTime();
+          return currentTime > latestTime ? current : latest;
+        }, ordersArray[0]);
+        const newestId = Number(newestOrder?.id);
+        const newestCreatedAt = new Date(newestOrder?.created_at || newestOrder?.createdAt || 0).getTime();
+        const previousCreatedAt = lastCheckedOrderCreatedAtRef.current;
+        const isRecentOrder = Number.isFinite(newestCreatedAt) && newestCreatedAt > 0 && (Date.now() - newestCreatedAt) <= 2 * 60 * 1000;
+        const isNewOrder = alertBaselineReadyRef.current && lastCheckedOrderId.current !== null && newestId > lastCheckedOrderId.current &&
+          (previousCreatedAt === null || newestCreatedAt > previousCreatedAt) && isRecentOrder;
+        if (isNewOrder) {
           const role = userRole?.toLowerCase() || '';
           if (role === 'admin' || role === 'manager') {
-            console.log("🔍 Polling found new order! ID:", newestId);
+            console.log("🔍 Polling found a recent new order! ID:", newestId);
             startUrgentAlert();
           }
         }
-        lastCheckedOrderId.current = newestId;
+        lastCheckedOrderId.current = Number.isFinite(newestId) ? newestId : lastCheckedOrderId.current;
+        lastCheckedOrderCreatedAtRef.current = newestCreatedAt > 0 ? newestCreatedAt : previousCreatedAt;
       }
 
       const notDeleted = ordersArray.filter((o: any) => !o.deleted_at);
@@ -1530,7 +1543,15 @@ export default function ProtectedOrders() {
     const channel = supabase
       .channel('orders-audio-alert')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => {
-        console.log("🆕 New order detected via realtime!", payload);
+        const insertedOrder = payload.new as any;
+        const insertedAt = new Date(insertedOrder?.created_at || 0).getTime();
+        const isRecentInsert = Number.isFinite(insertedAt) && insertedAt > 0 && (Date.now() - insertedAt) <= 2 * 60 * 1000;
+        if (!isRecentInsert) {
+          console.log("ℹ️ Ignored stale realtime order insert", insertedOrder?.id);
+          fetchData(true);
+          return;
+        }
+        console.log("🆕 Recent new order detected via realtime!", payload);
         const role = userRole?.toLowerCase() || '';
         if (role === 'admin' || role === 'manager') {
           startUrgentAlert();
