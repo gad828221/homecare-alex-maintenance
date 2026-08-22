@@ -2150,6 +2150,13 @@ export default function ProtectedOrders() {
       
       // أظهر فقط الأوردرات النشطة (انتظار، تنفيذ، مرتجع، بدون فني)
       const isLive = (o.status === 'in-progress' || o.status === 'in_progress' || o.status === 'pending' || o.status === 'returned' || !o.technician || o.technician === '-' || o.technician === '');
+
+      // بعد تصفية الفني للأوردر قد يصبح مكتملًا أو مؤرشفًا؛ أبقه ظاهراً مؤقتاً ليصل للمدير أولاً.
+      const recentActivityValue = o.updated_at || o.updatedAt || o.last_action_at || o.completed_at;
+      const recentActivityTime = recentActivityValue ? new Date(recentActivityValue).getTime() : 0;
+      const recentlySettled = Number.isFinite(recentActivityTime) && recentActivityTime > 0 &&
+        clockNow - recentActivityTime >= -5 * 60 * 1000 && clockNow - recentActivityTime <= 30 * 60 * 1000;
+      if (recentlySettled) return true;
       
       // إذا كان هناك بحث أو فلتر فني، تجاوز قيد "النشط"
       if (searchTerm || filterTechnician || filterDateFrom) return true;
@@ -3052,7 +3059,7 @@ export default function ProtectedOrders() {
                   const orderCreatedValue = getOrderCreatedValue(order);
                   const activityTime = getOrderActivityTime(order);
                   const activityAge = clockNow - activityTime;
-                  const recentlyUpdated = activityTime > 0 && activityAge >= 0 && activityAge <= 10 * 60 * 1000;
+                  const recentlyUpdated = activityTime > 0 && activityAge >= -5 * 60 * 1000 && activityAge <= 30 * 60 * 1000;
                   const elapsedTone = getElapsedTone(orderCreatedValue, clockNow);
                   const pickup = parsePickupReceipt(order);
                   const companyTransfer = parseCompanyTransfer(order.technician_note);
@@ -4033,7 +4040,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.9.3-3d-neumorphic-cards-ui</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.9.4-recent-technician-settlement-first</div>
         </div>
       </div>
 
