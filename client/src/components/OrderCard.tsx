@@ -67,7 +67,7 @@ export function OrderCard({ order, onSelect, onAssignTech }: OrderCardProps) {
             {/* No Tech Badge */}
             {noTechAssigned && (
               <motion.div
-                animate={{ pulse: [1, 1.05, 1] }}
+                animate={{ scale: [1, 1.05, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
                 className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-3 py-1 rounded-full text-xs font-black flex items-center gap-1 shadow-lg"
               >

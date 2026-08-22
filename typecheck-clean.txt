@@ -1,0 +1,427 @@
+# Terminal Full Output
+# Terminal: audit_typescript
+# Command: cd /home/ubuntu/project_new && npm run check
+# PID: 7734
+# Timestamp: 2026-08-22_12-35-21.688935
+# Original Length: 50036 characters
+# ----------------------------------------
+
+ubuntu@sandbox:~$ cd /home/ubuntu/project_new && npm run check
+> homecare-alex-maintenance@1.0.0 check
+> tsc --noEmit
+client/src/App.tsx:238:58 - error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+238       } else if (['admin', 'manager', 'viewer'].includes(role) && !currentPath.startsWith('/orders')) {
+                                                             ~~~~
+client/src/components/OrderCard.tsx:70:28 - error TS2353: Object literal may only specify known properties, and 'pulse' does not exist in type 'string[] | TargetAndTransition | LegacyAnimationControls'.
+70                 animate={{ pulse: [1, 1.05, 1] }}
+                              ~~~~~
+  node_modules/.pnpm/motion-dom@12.38.0/node_modules/motion-dom/dist/index.d.ts:237:5
+    237     animate?: TargetAndTransition | VariantLabels | boolean | LegacyAnimationControls;
+            ~~~~~~~
+    The expected type comes from property 'animate' which is declared here on type 'IntrinsicAttributes & Omit<HTMLMotionProps<"div">, "ref"> & RefAttributes<HTMLDivElement>'
+client/src/components/ProtectedOrders.tsx:313:27 - error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+313       current.orders.push(order);
+                              ~~~~~
+client/src/components/ProtectedOrders.tsx:445:19 - error TS2345: Argument of type '{ customer_name: string; phone: string; address: string; device_type: string; brand: string; problem_description: string; technician: string; total_amount: number; parts_cost: number; transport_cost: number; ... 8 more ...; parts_used: string; }' is not assignable to parameter of type 'SetStateAction<{ customer_name: string; phone: string; device_type: string; address: string; brand: string; problem_description: s
+tring; technician: string; status: string; total_amount: number; parts_cost: number; ... 9 more ...; date: string; }>'.
+  Property 'date' is missing in type '{ customer_name: string; phone: string; address: string; device_type: string; brand: string; problem_description: string; technician: string; total_amount: number; parts_cost: number; transport_cost: number; ... 8 more ...; parts_used: string; }' but required in type '{ customer_name: string; phone: string; device_type: string; address: string; brand: string; problem_description: string; technician: string; status: string; total_amount: number; parts_cost: n
+umber; ... 9 more ...; date: string; }'.
+445       setFormData({
+                      ~
+446         customer_name: '',
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~
+... 
+464         parts_used: ''
+    ~~~~~~~~~~~~~~~~~~~~~~
+465       });
+    ~~~~~~~
+  client/src/components/ProtectedOrders.tsx:401:5
+    401     date: new Date().toLocaleDateString("ar-EG")
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    'date' is declared here.
+client/src/components/ProtectedOrders.tsx:1066:34 - error TS7006: Parameter 'entry' implicitly has an 'any' type.
+1066         displayData = all.filter(entry => entry.date === cashFilterDate);
+                                      ~~~~~
+client/src/components/ProtectedOrders.tsx:1156:57 - error TS7006: Parameter 'sum' implicitly has an 'any' type.
+1156       const totalIncome = (incomeEntries || []).reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0);
+                                                             ~~~
+client/src/components/ProtectedOrders.tsx:1156:62 - error TS7006: Parameter 'entry' implicitly has an 'any' type.
+1156       const totalIncome = (incomeEntries || []).reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0);
+                                                                  ~~~~~
+client/src/components/ProtectedOrders.tsx:1159:60 - error TS7006: Parameter 'sum' implicitly has an 'any' type.
+1159       const totalExpenses = (expenseEntries || []).reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0);
+                                                                ~~~
+client/src/components/ProtectedOrders.tsx:1159:65 - error TS7006: Parameter 'entry' implicitly has an 'any' type.
+1159       const totalExpenses = (expenseEntries || []).reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0);
+                                                                     ~~~~~
+client/src/components/ProtectedOrders.tsx:1162:75 - error TS7006: Parameter 'sum' implicitly has an 'any' type.
+1162       const totalDistributedSoFar = (existingDistributions || []).reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0);
+                                                                               ~~~
+client/src/components/ProtectedOrders.tsx:1162:80 - error TS7006: Parameter 'entry' implicitly has an 'any' type.
+1162       const totalDistributedSoFar = (existingDistributions || []).reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0);
+                                                                                    ~~~~~
+client/src/components/ProtectedOrders.tsx:1927:87 - error TS2339: Property 'profit_added_to_cash' does not exist on type '{ device_type: string; brand: string; order_number: any; customer_name: string; phone: string; address: string; problem_description: string; technician: string; status: string; total_amount: number; ... 10 more ...; date: string; }'.
+1927         if (orderToSave.status === 'completed' && orderToSave.is_paid && !orderToSave.profit_added_to_cash) await addCompanyProfitToCash({ ...orderToSave, id: editingOrder.id });
+                                                                                           ~~~~~~~~~~~~~~~~~~~~
+client/src/components/ProtectedOrders.tsx:1963:19 - error TS2345: Argument of type '{ customer_name: string; phone: string; device_type: string; address: string; brand: string; problem_description: string; technician: string; status: string; total_amount: number; parts_cost: number; ... 5 more ...; date: string; }' is not assignable to parameter of type 'SetStateAction<{ customer_name: string; phone: string; device_type: string; address: string; brand: string; problem_description: string; techni
+cian: string; status: string; total_amount: number; parts_cost: number; ... 9 more ...; date: string; }>'.
+  Type '{ customer_name: string; phone: string; device_type: string; address: string; brand: string; problem_description: string; technician: string; status: string; total_amount: number; parts_cost: number; ... 5 more ...; date: string; }' is missing the following properties from type '{ customer_name: string; phone: string; device_type: string; address: string; brand: string; problem_description: string; technician: string; status: string; total_amount: number; parts_cost: number; ... 9 more .
+..; date: string; }': invoice_approved, warranty_period, invoice_date, parts_used
+1963       setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") });
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+client/src/components/ProtectedOrders.tsx:2070:74 - error TS2322: Type 'any[]' is not assignable to type 'string | number | boolean | null | undefined'.
+2070       data: { technician: tech.name, old_orders_count: oldOrders.length, order_numbers: oldOrders.map((order: any) => order.order_number) }
+                                                                              ~~~~~~~~~~~~~
+client/src/components/ProtectedOrders.tsx:2333:33 - error TS2339: Property 'customer_name' does not exist on type 'ParserError<"Unexpected input: " | "Unexpected input: , created_at">'.
+  Property 'customer_name' does not exist on type '{ error: true; } & "Unexpected input: "'.
+2333         const customer = (order.customer_name || '').toLowerCase();
+                                     ~~~~~~~~~~~~~
+client/src/components/ProtectedOrders.tsx:2334:30 - error TS2339: Property 'phone' does not exist on type 'ParserError<"Unexpected input: " | "Unexpected input: , created_at">'.
+  Property 'phone' does not exist on type '{ error: true; } & "Unexpected input: "'.
+2334         const phone = (order.phone || '').toLowerCase();
+                                  ~~~~~
+client/src/components/ProtectedOrders.tsx:2335:31 - error TS2339: Property 'device_type' does not exist on type 'ParserError<"Unexpected input: " | "Unexpected input: , created_at">'.
+  Property 'device_type' does not exist on type '{ error: true; } & "Unexpected input: "'.
+2335         const device = (order.device_type || '').toLowerCase();
+                                   ~~~~~~~~~~~
+client/src/components/ProtectedOrders.tsx:2336:30 - error TS2339: Property 'brand' does not exist on type 'ParserError<"Unexpected input: " | "Unexpected input: , created_at">'.
+  Property 'brand' does not exist on type '{ error: true; } & "Unexpected input: "'.
+2336         const brand = (order.brand || '').toLowerCase();
+                                  ~~~~~
+client/src/components/ProtectedOrders.tsx:2350:48 - error TS2339: Property 'created_at' does not exist on type 'ParserError<"Unexpected input: " | "Unexpected input: , created_at">'.
+  Property 'created_at' does not exist on type '{ error: true; } & "Unexpected input: "'.
+2350         const orderDate = parseOrderDate(order.created_at);
+                                                    ~~~~~~~~~~
+client/src/components/ProtectedOrders.tsx:2355:48 - error TS2339: Property 'created_at' does not exist on type 'ParserError<"Unexpected input: " | "Unexpected input: , created_at">'.
+  Property 'created_at' does not exist on type '{ error: true; } & "Unexpected input: "'.
+2355         const orderDate = parseOrderDate(order.created_at);
+                                                    ~~~~~~~~~~
+client/src/components/ProtectedOrders.tsx:2363:47 - error TS2698: Spread types may only be created from object types.
+2363       setReportData(finalData.map(order => ({ ...order, date: formatOrderDateTime(order.created_at) })));
+                                                   ~~~~~~~~
+client/src/components/ProtectedOrders.tsx:2363:89 - error TS2339: Property 'created_at' does not exist on type 'ParserError<"Unexpected input: " | "Unexpected input: , created_at">'.
+  Property 'created_at' does not exist on type '{ error: true; } & "Unexpected input: "'.
+2363       setReportData(finalData.map(order => ({ ...order, date: formatOrderDateTime(order.created_at) })));
+                                                                                             ~~~~~~~~~~
+client/src/components/ProtectedOrders.tsx:2394:48 - error TS2339: Property 'created_at' does not exist on type 'ParserError<"Unexpected input: " | "Unexpected input: , created_at">'.
+  Property 'created_at' does not exist on type '{ error: true; } & "Unexpected input: "'.
+2394         const orderDate = parseOrderDate(order.created_at);
+                                                    ~~~~~~~~~~
+client/src/components/ProtectedOrders.tsx:2401:46 - error TS2698: Spread types may only be created from object types.
+2401       setReportData(filtered.map(order => ({ ...order, date: formatOrderDateTime(order.created_at) })));
+                                                  ~~~~~~~~
+client/src/components/ProtectedOrders.tsx:2401:88 - error TS2339: Property 'created_at' does not exist on type 'ParserError<"Unexpected input: " | "Unexpected input: , created_at">'.
+  Property 'created_at' does not exist on type '{ error: true; } & "Unexpected input: "'.
+2401       setReportData(filtered.map(order => ({ ...order, date: formatOrderDateTime(order.created_at) })));
+                                                                                            ~~~~~~~~~~
+client/src/components/ProtectedOrders.tsx:2802:30 - error TS2322: Type '(isAutoRefresh?: boolean) => Promise<void>' is not assignable to type 'MouseEventHandler<HTMLButtonElement>'.
+  Types of parameters 'isAutoRefresh' and 'event' are incompatible.
+    Type 'MouseEvent<HTMLButtonElement, MouseEvent>' is not assignable to type 'boolean | undefined'.
+2802                      <button onClick={fetchData} className="bg-slate-800 hover:bg-slate-700 text-white p-3 rounded-2xl border border-slate-700 transition-all active:scale-95" aria-label="تحديث">
+                                  ~~~~~~~
+  node_modules/.pnpm/@types+react@19.2.14/node_modules/@types/react/index.d.ts:2375:9
+    2375         onClick?: MouseEventHandler<T> | undefined;
+                 ~~~~~~~
+    The expected type comes from property 'onClick' which is declared here on type 'DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>'
+client/src/components/ProtectedOrders.tsx:2880:78 - error TS2345: Argument of type '{ customer_name: string; phone: string; device_type: string; address: string; brand: string; problem_description: string; technician: string; status: string; total_amount: number; parts_cost: number; ... 5 more ...; date: string; }' is not assignable to parameter of type 'SetStateAction<{ customer_name: string; phone: string; device_type: string; address: string; brand: string; problem_description: string; techni
+cian: string; status: string; total_amount: number; parts_cost: number; ... 9 more ...; date: string; }>'.
+  Type '{ customer_name: string; phone: string; device_type: string; address: string; brand: string; problem_description: string; technician: string; status: string; total_amount: number; parts_cost: number; ... 5 more ...; date: string; }' is missing the following properties from type '{ customer_name: string; phone: string; device_type: string; address: string; brand: string; problem_description: string; technician: string; status: string; total_amount: number; parts_cost: number; ... 9 more .
+..; date: string; }': invoice_approved, warranty_period, invoice_date, parts_used
+2880                          onClick={() => { setEditingOrder(null); setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") }); setShowOrderModal(true); }}
+                                                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+client/src/components/ProtectedOrders.tsx:3268:38 - error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+3268                                 <img src={getPhotoUrl(order.technician_note, 'OLD')} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                                          ~~~
+  node_modules/.pnpm/@types+react@19.2.14/node_modules/@types/react/index.d.ts:3174:9
+    3174         src?:
+                 ~~~
+    The expected type comes from property 'src' which is declared here on type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'
+client/src/components/ProtectedOrders.tsx:3269:213 - error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string | URL | undefined'.
+  Type 'null' is not assignable to type 'string | URL | undefined'.
+3269                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity cursor-pointer" onClick={() => window.open(getPhotoUrl(order.technician_note, 'OLD'), '_blank')}><Camera size={14} className="text-white" /></div>
+                                                                                                                                                                                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+client/src/components/ProtectedOrders.tsx:3275:38 - error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+3275                                 <img src={getPhotoUrl(order.technician_note, 'NEW')} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                                          ~~~
+  node_modules/.pnpm/@types+react@19.2.14/node_modules/@types/react/index.d.ts:3174:9
+    3174         src?:
+                 ~~~
+    The expected type comes from property 'src' which is declared here on type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'
+client/src/components/ProtectedOrders.tsx:3276:212 - error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string | URL | undefined'.
+  Type 'null' is not assignable to type 'string | URL | undefined'.
+3276                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity cursor-pointer" onClick={() => window.open(getPhotoUrl(order.technician_note, 'NEW'), '_blank')}><Camera size={14} className="text-white" /></div>
+                                                                                                                                                                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+client/src/components/ProtectedOrders.tsx:3513:32 - error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ pending: { color: string; label: string; }; 'in-progress': { color: string; label: string; }; completed: { color: string; label: string; }; cancelled: { color: string; label: string; }; deferred: { color: string; label: string; }; inspected: { ...; }; }'.
+3513                 const config = statusConfig[order.status] || { color: 'slate', label: order.status };
+                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~
+client/src/components/ProtectedOrders.tsx:3838:251 - error TS2304: Cannot find name 'deletePartner'.
+3838                   {canManagePartners && <div className="flex gap-2 mt-3"><button onClick={()=>{setEditingPartner(partner); setPartnerForm(partner); setShowPartnerModal(true);}} className="text-blue-500"><Edit size={16}/></button><button onClick={()=>deletePartner(partner.id, partner.name)} className="text-red-500"><Trash2 size={16}/></button></div>}
+                                                                                                                                                                                                                                                               ~~~~~~~~~~~~~
+client/src/components/TechnicianPerformanceAdmin.tsx:251:174 - error TS2304: Cannot find name 'clearFilters'.
+251                  <Metric label="تقييم" value={stats.averageRating ? stats.averageRating.toFixed(1) : '—'} color="text-yellow-300" icon={<Star size={14} />} onClick={() => { clearFilters(); setSearchTerm(card.displayName); setActiveTab('feedback'); }} />
+                                                                                                                                                                                 ~~~~~~~~~~~~
+client/src/components/TechnicianPerformanceAdmin.tsx:251:190 - error TS2304: Cannot find name 'setSearchTerm'.
+251                  <Metric label="تقييم" value={stats.averageRating ? stats.averageRating.toFixed(1) : '—'} color="text-yellow-300" icon={<Star size={14} />} onClick={() => { clearFilters(); setSearchTerm(card.displayName); setActiveTab('feedback'); }} />
+                                                                                                                                                                                                 ~~~~~~~~~~~~~
+client/src/components/TechnicianPerformanceAdmin.tsx:251:223 - error TS2304: Cannot find name 'setActiveTab'.
+251                  <Metric label="تقييم" value={stats.averageRating ? stats.averageRating.toFixed(1) : '—'} color="text-yellow-300" icon={<Star size={14} />} onClick={() => { clearFilters(); setSearchTerm(card.displayName); setActiveTab('feedback'); }} />
+                                                                                                                                                                                                                                  ~~~~~~~~~~~~
+client/src/pages/AristonService.tsx:62:13 - error TS2322: Type '{ src: string; alt: string; className: string; loading: "eager"; fetchpriority: string; }' is not assignable to type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'.
+  Property 'fetchpriority' does not exist on type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'. Did you mean 'fetchPriority'?
+62             fetchpriority="high"
+               ~~~~~~~~~~~~~
+client/src/pages/AristonService.tsx:220:26 - error TS2322: Type '{ defaultService: string; }' is not assignable to type 'IntrinsicAttributes'.
+  Property 'defaultService' does not exist on type 'IntrinsicAttributes'.
+220             <BookingForm defaultService="صيانة اريستون" />
+                             ~~~~~~~~~~~~~~
+client/src/pages/BekoService.tsx:62:13 - error TS2322: Type '{ src: string; alt: string; className: string; loading: "eager"; fetchpriority: string; }' is not assignable to type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'.
+  Property 'fetchpriority' does not exist on type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'. Did you mean 'fetchPriority'?
+62             fetchpriority="high"
+               ~~~~~~~~~~~~~
+client/src/pages/BekoService.tsx:220:26 - error TS2322: Type '{ defaultService: string; }' is not assignable to type 'IntrinsicAttributes'.
+  Property 'defaultService' does not exist on type 'IntrinsicAttributes'.
+220             <BookingForm defaultService="صيانة بيكو" />
+                             ~~~~~~~~~~~~~~
+client/src/pages/DataEntryPage.tsx:109:15 - error TS2322: Type '{ title: string; description: string; }' is not assignable to type 'IntrinsicAttributes'.
+  Property 'title' does not exist on type 'IntrinsicAttributes'.
+109               title="بيانات الأوردر"
+                  ~~~~~
+client/src/pages/FreshService.tsx:62:13 - error TS2322: Type '{ src: string; alt: string; className: string; loading: "eager"; fetchpriority: string; }' is not assignable to type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'.
+  Property 'fetchpriority' does not exist on type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'. Did you mean 'fetchPriority'?
+62             fetchpriority="high"
+               ~~~~~~~~~~~~~
+client/src/pages/FreshService.tsx:220:26 - error TS2322: Type '{ defaultService: string; }' is not assignable to type 'IntrinsicAttributes'.
+  Property 'defaultService' does not exist on type 'IntrinsicAttributes'.
+220             <BookingForm defaultService="صيانة فريش" />
+                             ~~~~~~~~~~~~~~
+client/src/pages/Home.tsx:62:13 - error TS2322: Type '{ src: string; alt: string; className: string; loading: "eager"; fetchpriority: string; }' is not assignable to type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'.
+  Property 'fetchpriority' does not exist on type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'. Did you mean 'fetchPriority'?
+62             fetchpriority="high"
+               ~~~~~~~~~~~~~
+client/src/pages/HooverService.tsx:62:13 - error TS2322: Type '{ src: string; alt: string; className: string; loading: "eager"; fetchpriority: string; }' is not assignable to type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'.
+  Property 'fetchpriority' does not exist on type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'. Did you mean 'fetchPriority'?
+62             fetchpriority="high"
+               ~~~~~~~~~~~~~
+client/src/pages/HooverService.tsx:220:26 - error TS2322: Type '{ defaultService: string; }' is not assignable to type 'IntrinsicAttributes'.
+  Property 'defaultService' does not exist on type 'IntrinsicAttributes'.
+220             <BookingForm defaultService="صيانة هوفر" />
+                             ~~~~~~~~~~~~~~
+client/src/pages/IndesitService.tsx:62:13 - error TS2322: Type '{ src: string; alt: string; className: string; loading: "eager"; fetchpriority: string; }' is not assignable to type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'.
+  Property 'fetchpriority' does not exist on type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'. Did you mean 'fetchPriority'?
+62             fetchpriority="high"
+               ~~~~~~~~~~~~~
+client/src/pages/IndesitService.tsx:220:26 - error TS2322: Type '{ defaultService: string; }' is not assignable to type 'IntrinsicAttributes'.
+  Property 'defaultService' does not exist on type 'IntrinsicAttributes'.
+220             <BookingForm defaultService="صيانة انديست" />
+                             ~~~~~~~~~~~~~~
+client/src/pages/InvoicePage.tsx:130:19 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+130       pdf.setFont(undefined, "bold");
+                      ~~~~~~~~~
+client/src/pages/InvoicePage.tsx:135:19 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+135       pdf.setFont(undefined, "normal");
+                      ~~~~~~~~~
+client/src/pages/InvoicePage.tsx:140:19 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+140       pdf.setFont(undefined, "bold");
+                      ~~~~~~~~~
+client/src/pages/InvoicePage.tsx:143:19 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+143       pdf.setFont(undefined, "normal");
+                      ~~~~~~~~~
+client/src/pages/InvoicePage.tsx:151:19 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+151       pdf.setFont(undefined, "bold");
+                      ~~~~~~~~~
+client/src/pages/InvoicePage.tsx:154:19 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+154       pdf.setFont(undefined, "normal");
+                      ~~~~~~~~~
+client/src/pages/InvoicePage.tsx:162:19 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+162       pdf.setFont(undefined, "bold");
+                      ~~~~~~~~~
+client/src/pages/InvoicePage.tsx:165:19 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+165       pdf.setFont(undefined, "normal");
+                      ~~~~~~~~~
+client/src/pages/InvoicePage.tsx:175:19 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+175       pdf.setFont(undefined, "bold");
+                      ~~~~~~~~~
+client/src/pages/InvoicePage.tsx:178:19 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+178       pdf.setFont(undefined, "normal");
+                      ~~~~~~~~~
+client/src/pages/InvoicePage.tsx:191:19 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+191       pdf.setFont(undefined, "bold");
+                      ~~~~~~~~~
+client/src/pages/InvoicePage.tsx:194:19 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+194       pdf.setFont(undefined, "normal");
+                      ~~~~~~~~~
+client/src/pages/LGService.tsx:62:13 - error TS2322: Type '{ src: string; alt: string; className: string; loading: "eager"; fetchpriority: string; }' is not assignable to type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'.
+  Property 'fetchpriority' does not exist on type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'. Did you mean 'fetchPriority'?
+62             fetchpriority="high"
+               ~~~~~~~~~~~~~
+client/src/pages/LGService.tsx:220:26 - error TS2322: Type '{ defaultService: string; }' is not assignable to type 'IntrinsicAttributes'.
+  Property 'defaultService' does not exist on type 'IntrinsicAttributes'.
+220             <BookingForm defaultService="صيانة ال جي" />
+                             ~~~~~~~~~~~~~~
+client/src/pages/OrderTracking.tsx:138:76 - error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Object literal may only specify known properties, and 'size' does not exist in type 'Partial<unknown> & Attributes'.
+138               {React.cloneElement(statusInfo.icon as React.ReactElement, { size: 40 })}
+                                                                               ~~~~
+  node_modules/.pnpm/@types+react@19.2.14/node_modules/@types/react/index.d.ts:533:14
+    533     function cloneElement<P>(
+                     ~~~~~~~~~~~~
+    The last overload is declared here.
+client/src/pages/PickupReceiptPage.tsx:139:19 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+139       pdf.setFont(undefined, "bold");
+                      ~~~~~~~~~
+client/src/pages/PickupReceiptPage.tsx:144:19 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+144       pdf.setFont(undefined, "normal");
+                      ~~~~~~~~~
+client/src/pages/PickupReceiptPage.tsx:149:19 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+149       pdf.setFont(undefined, "bold");
+                      ~~~~~~~~~
+client/src/pages/PickupReceiptPage.tsx:152:19 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+152       pdf.setFont(undefined, "normal");
+                      ~~~~~~~~~
+client/src/pages/PickupReceiptPage.tsx:160:19 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+160       pdf.setFont(undefined, "bold");
+                      ~~~~~~~~~
+client/src/pages/PickupReceiptPage.tsx:163:19 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+163       pdf.setFont(undefined, "normal");
+                      ~~~~~~~~~
+client/src/pages/PickupReceiptPage.tsx:172:19 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+172       pdf.setFont(undefined, "bold");
+                      ~~~~~~~~~
+client/src/pages/PickupReceiptPage.tsx:178:21 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+178         pdf.setFont(undefined, "bold");
+                        ~~~~~~~~~
+client/src/pages/PickupReceiptPage.tsx:181:21 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+181         pdf.setFont(undefined, "normal");
+                        ~~~~~~~~~
+client/src/pages/PickupReceiptPage.tsx:186:21 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+186         pdf.setFont(undefined, "bold");
+                        ~~~~~~~~~
+client/src/pages/PickupReceiptPage.tsx:189:21 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+189         pdf.setFont(undefined, "normal");
+                        ~~~~~~~~~
+client/src/pages/PickupReceiptPage.tsx:194:19 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+194       pdf.setFont(undefined, "bold");
+                      ~~~~~~~~~
+client/src/pages/PickupReceiptPage.tsx:197:19 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+197       pdf.setFont(undefined, "normal");
+                      ~~~~~~~~~
+client/src/pages/PickupReceiptPage.tsx:201:19 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+201       pdf.setFont(undefined, "bold");
+                      ~~~~~~~~~
+client/src/pages/PickupReceiptPage.tsx:204:19 - error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'string'.
+204       pdf.setFont(undefined, "normal");
+                      ~~~~~~~~~
+client/src/pages/SamsungService.tsx:63:13 - error TS2322: Type '{ src: string; alt: string; loading: "eager"; fetchpriority: string; className: string; }' is not assignable to type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'.
+  Property 'fetchpriority' does not exist on type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'. Did you mean 'fetchPriority'?
+63             fetchpriority="high"
+               ~~~~~~~~~~~~~
+client/src/pages/SharpService.tsx:62:13 - error TS2322: Type '{ src: string; alt: string; className: string; loading: "eager"; fetchpriority: string; }' is not assignable to type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'.
+  Property 'fetchpriority' does not exist on type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'. Did you mean 'fetchPriority'?
+62             fetchpriority="high"
+               ~~~~~~~~~~~~~
+client/src/pages/SharpService.tsx:220:26 - error TS2322: Type '{ defaultService: string; }' is not assignable to type 'IntrinsicAttributes'.
+  Property 'defaultService' does not exist on type 'IntrinsicAttributes'.
+220             <BookingForm defaultService="صيانة شارب" />
+                             ~~~~~~~~~~~~~~
+client/src/pages/TechnicianPortal.tsx:249:60 - error TS2345: Argument of type '(currentPhoto: string) => string | undefined' is not assignable to parameter of type 'SetStateAction<string>'.
+  Type '(currentPhoto: string) => string | undefined' is not assignable to type '(prevState: string) => string'.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+249         if (matchingProfile?.photoUrl) setTechProfilePhoto((currentPhoto) => currentPhoto || matchingProfile.photoUrl);
+                                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+client/src/pages/TechnicianPortal.tsx:645:47 - error TS2554: Expected 1 arguments, but got 2.
+645       await addNotification('📝 ملاحظة فنية', `أضاف الفني ملاحظة للأوردر رقم ${order.order_number}: ${note}`);
+                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+client/src/pages/TechnicianPortal.tsx:682:39 - error TS2345: Argument of type '{ type: string; partName: string; deposit: number; notes: string; photos: string[]; pickupDate: string; status: "active"; }' is not assignable to parameter of type 'PickupReceiptData'.
+  Types of property 'type' are incompatible.
+    Type 'string' is not assignable to type 'PickupType'.
+682     const marker = createPickupMarker(pickupRecord);
+                                          ~~~~~~~~~~~~
+client/src/pages/TechnicianPortal.tsx:683:93 - error TS1501: This regular expression flag is only available when targeting 'es2018' or later.
+683     const mergedNotes = previousNotes.replace(/\n?\[PICKUP_RECEIPT\].*?\[\/PICKUP_RECEIPT\]/s, '').trim();
+                                                                                                ~
+client/src/pages/TechnicianPortal.tsx:860:9 - error TS2322: Type '"critical"' is not assignable to type '"error" | "success" | "warning" | "info"'.
+860         type: 'critical',
+            ~~~~
+  client/src/components/EnhancedNotificationSystem.tsx:6:3
+    6   type: 'success' | 'error' | 'warning' | 'info';
+        ~~~~
+    The expected type comes from property 'type' which is declared here on type 'Omit<Notification, "id" | "timestamp">'
+client/src/pages/TechnicianPortal.tsx:870:9 - error TS2322: Type '"critical"' is not assignable to type '"error" | "success" | "warning" | "info"'.
+870         type: 'critical',
+            ~~~~
+  client/src/components/EnhancedNotificationSystem.tsx:6:3
+    6   type: 'success' | 'error' | 'warning' | 'info';
+        ~~~~
+    The expected type comes from property 'type' which is declared here on type 'Omit<Notification, "id" | "timestamp">'
+client/src/pages/TechnicianPortal.tsx:1689:24 - error TS2304: Cannot find name 'ChevronDown'.
+1689                       <ChevronDown size={18} /> عرض المزيد من الأوردرات المكتملة
+                            ~~~~~~~~~~~
+client/src/pages/ToshibaService.tsx:62:13 - error TS2322: Type '{ src: string; alt: string; className: string; loading: "eager"; fetchpriority: string; }' is not assignable to type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'.
+  Property 'fetchpriority' does not exist on type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'. Did you mean 'fetchPriority'?
+62             fetchpriority="high"
+               ~~~~~~~~~~~~~
+client/src/pages/ToshibaService.tsx:220:26 - error TS2322: Type '{ defaultService: string; }' is not assignable to type 'IntrinsicAttributes'.
+  Property 'defaultService' does not exist on type 'IntrinsicAttributes'.
+220             <BookingForm defaultService="صيانة توشيبا" />
+                             ~~~~~~~~~~~~~~
+client/src/pages/UnionaireService.tsx:62:13 - error TS2322: Type '{ src: string; alt: string; className: string; loading: "eager"; fetchpriority: string; }' is not assignable to type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'.
+  Property 'fetchpriority' does not exist on type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'. Did you mean 'fetchPriority'?
+62             fetchpriority="high"
+               ~~~~~~~~~~~~~
+client/src/pages/UnionaireService.tsx:220:26 - error TS2322: Type '{ defaultService: string; }' is not assignable to type 'IntrinsicAttributes'.
+  Property 'defaultService' does not exist on type 'IntrinsicAttributes'.
+220             <BookingForm defaultService="صيانة يونيون اير" />
+                             ~~~~~~~~~~~~~~
+client/src/pages/WhiteWhaleService.tsx:62:13 - error TS2322: Type '{ src: string; alt: string; className: string; loading: "eager"; fetchpriority: string; }' is not assignable to type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'.
+  Property 'fetchpriority' does not exist on type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'. Did you mean 'fetchPriority'?
+62             fetchpriority="high"
+               ~~~~~~~~~~~~~
+client/src/pages/WhiteWhaleService.tsx:220:26 - error TS2322: Type '{ defaultService: string; }' is not assignable to type 'IntrinsicAttributes'.
+  Property 'defaultService' does not exist on type 'IntrinsicAttributes'.
+220             <BookingForm defaultService="صيانة وايت ويل" />
+                             ~~~~~~~~~~~~~~
+client/src/pages/ZanussiService.tsx:62:13 - error TS2322: Type '{ src: string; alt: string; className: string; loading: "eager"; fetchpriority: string; }' is not assignable to type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'.
+  Property 'fetchpriority' does not exist on type 'DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>'. Did you mean 'fetchPriority'?
+62             fetchpriority="high"
+               ~~~~~~~~~~~~~
+client/src/pages/ZanussiService.tsx:220:26 - error TS2322: Type '{ defaultService: string; }' is not assignable to type 'IntrinsicAttributes'.
+  Property 'defaultService' does not exist on type 'IntrinsicAttributes'.
+220             <BookingForm defaultService="صيانة زانوسي" />
+                             ~~~~~~~~~~~~~~
+client/src/utils/pickupReceipt.ts:29:83 - error TS1501: This regular expression flag is only available when targeting 'es2018' or later.
+29   const markerMatch = rawNotes.match(/\[PICKUP_RECEIPT\](.*?)\[\/PICKUP_RECEIPT\]/s);
+                                                                                     ~
+client/src/utils/pickupReceipt.ts:66:70 - error TS1501: This regular expression flag is only available when targeting 'es2018' or later.
+66   return notes.replace(/\n?\[PICKUP_RECEIPT\].*?\[\/PICKUP_RECEIPT\]/s, '').trim();
+                                                                        ~
+Found 98 errors in 23 files.
+Errors  Files
+     1  client/src/App.tsx:238
+     1  client/src/components/OrderCard.tsx:70
+    31  client/src/components/ProtectedOrders.tsx:313
+     3  client/src/components/TechnicianPerformanceAdmin.tsx:251
+     2  client/src/pages/AristonService.tsx:62
+     2  client/src/pages/BekoService.tsx:62
+     1  client/src/pages/DataEntryPage.tsx:109
+     2  client/src/pages/FreshService.tsx:62
+     1  client/src/pages/Home.tsx:62
+     2  client/src/pages/HooverService.tsx:62
+     2  client/src/pages/IndesitService.tsx:62
+    12  client/src/pages/InvoicePage.tsx:130
+     2  client/src/pages/LGService.tsx:62
+     1  client/src/pages/OrderTracking.tsx:138
+    15  client/src/pages/PickupReceiptPage.tsx:139
+     1  client/src/pages/SamsungService.tsx:63
+     2  client/src/pages/SharpService.tsx:62
+     7  client/src/pages/TechnicianPortal.tsx:249
+     2  client/src/pages/ToshibaService.tsx:62
+     2  client/src/pages/UnionaireService.tsx:62
+     2  client/src/pages/WhiteWhaleService.tsx:62
+     2  client/src/pages/ZanussiService.tsx:62
+     2  client/src/utils/pickupReceipt.ts:29
+ubuntu@sandbox:~/project_new$ 

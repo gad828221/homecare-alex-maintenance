@@ -235,7 +235,7 @@ function App() {
         window.location.replace(`/tech-portal${window.location.search}`);
       } else if (role === 'data-entry' && !currentPath.startsWith('/data-entry')) {
         window.location.replace(`/data-entry${window.location.search}`);
-      } else if (['admin', 'manager', 'viewer'].includes(role) && !currentPath.startsWith('/orders')) {
+      } else if (role && ['admin', 'manager', 'viewer'].includes(role) && !currentPath.startsWith('/orders')) {
         window.location.replace(`/orders${window.location.search}`);
       }
     };

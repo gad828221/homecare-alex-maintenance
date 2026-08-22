@@ -26,7 +26,7 @@ export function createPickupMarker(data: PickupReceiptData): string {
 export function parsePickupReceipt(order: any): PickupReceiptData | null {
   const rawNotes = String(order?.technician_notes || order?.technician_note || '');
   let markerData: Partial<PickupReceiptData> = {};
-  const markerMatch = rawNotes.match(/\[PICKUP_RECEIPT\](.*?)\[\/PICKUP_RECEIPT\]/s);
+  const markerMatch = rawNotes.match(/\[PICKUP_RECEIPT\]([\s\S]*?)\[\/PICKUP_RECEIPT\]/);
 
   if (markerMatch?.[1]) {
     try {
@@ -63,7 +63,7 @@ export function parsePickupReceipt(order: any): PickupReceiptData | null {
 }
 
 export function stripPickupMarker(notes: string): string {
-  return notes.replace(/\n?\[PICKUP_RECEIPT\].*?\[\/PICKUP_RECEIPT\]/s, '').trim();
+  return notes.replace(/\n?\[PICKUP_RECEIPT\][\s\S]*?\[\/PICKUP_RECEIPT\]/g, '').trim();
 }
 
 export function getPickupTypeLabel(type?: string): string {

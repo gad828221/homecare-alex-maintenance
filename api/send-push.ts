@@ -104,8 +104,8 @@ const buildDeepLink = (requestedUrl: unknown, event: string, data: Record<string
   if (focus === 'performance') return buildUrl('/orders', { focus: 'performance' });
   if (focus === 'notifications') return buildUrl('/orders', { focus: 'notifications' });
   
-  if (orderNumber || event === 'order_status_changed' || event === 'technician_assigned') {
-    return buildUrl(portal, { focus: 'order', ...(orderNumber ? { order: orderNumber } : {}) });
+  if (orderNumber || event === 'order_status_changed' || event === 'technician_assigned' || event === 'system_alert') {
+    return `${base}/orders?source=pwa&focus=order${orderNumber ? `&order=${orderNumber}` : ''}`;
   }
   
   if (event === 'new_order') return buildUrl('/orders', { focus: 'new' });

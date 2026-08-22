@@ -14,14 +14,6 @@
   "theme_color": "#f97316",
   "categories": ["business", "productivity", "utilities"],
   "prefer_related_applications": false,
-  "gcm_sender_id": "482941778795",
-  "shortcuts": [
-    {
-      "name": "الأوردرات الجديدة",
-      "url": "/orders?focus=new",
-      "icons": [{ "src": "/pwa-192.png", "sizes": "192x192" }]
-    }
-  ],
   "icons": [
     {
       "src": "/pwa-192.png",

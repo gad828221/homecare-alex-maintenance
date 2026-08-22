@@ -60,7 +60,7 @@ export default function SamsungService() {
             src="/images/brands/samsung-hero.webp"
             alt="صيانة أجهزة سامسونج بالإسكندرية"
             loading="eager"
-            fetchpriority="high"
+            fetchPriority="high"
             className="w-full h-full object-cover opacity-40"
           />
           <div className="absolute inset-0 bg-gradient-to-l from-slate-900 via-slate-900/60 to-transparent"></div>

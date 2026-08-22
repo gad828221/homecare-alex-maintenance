@@ -248,7 +248,7 @@ export default function TechnicianPerformanceAdmin({ orders, technicians, onFilt
 	                <Metric label="متأخر" value={stats.delayed} color="text-orange-300" icon={<Timer size={14} />} onClick={() => onFilter?.('tech-delay', card.displayName)} />
 	                <Metric label="ملغى" value={stats.cancelled} color="text-rose-300" icon={<Ban size={14} />} onClick={() => onFilter?.('tech-status', { tech: card.displayName, status: 'cancelled' })} />
 	                <Metric label="كشف" value={stats.inspected} color="text-yellow-300" icon={<DollarSign size={14} />} onClick={() => onFilter?.('tech-status', { tech: card.displayName, status: 'inspected' })} />
-	                <Metric label="تقييم" value={stats.averageRating ? stats.averageRating.toFixed(1) : '—'} color="text-yellow-300" icon={<Star size={14} />} onClick={() => { clearFilters(); setSearchTerm(card.displayName); setActiveTab('feedback'); }} />
+	                <Metric label="تقييم" value={stats.averageRating ? stats.averageRating.toFixed(1) : '—'} color="text-yellow-300" icon={<Star size={14} />} onClick={() => onFilter?.('tech-feedback', card.displayName)} />
 	              </div>
 
               <div className="grid gap-3 px-4 pb-4 sm:grid-cols-2">

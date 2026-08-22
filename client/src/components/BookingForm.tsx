@@ -15,7 +15,13 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const DEVICE_TYPES = ['غسالة', 'ثلاجة', 'بوتاجاز', 'سخان', 'تكييف', 'ميكروويف', 'غسالة أطباق'];
 const BRANDS = ['سامسونج', 'LG', 'شارب', 'توشيبا', 'زانوسي', 'يونيون إير', 'فريش', 'وايت ويل', 'أريستون', 'بيكو', 'هوفر', 'إنديست', 'كريازي'];
 
-export default function BookingForm() {
+export interface BookingFormProps {
+  defaultService?: string;
+  title?: string;
+  description?: string;
+}
+
+export default function BookingForm({ defaultService, title, description }: BookingFormProps) {
   const formId = useId().replace(/:/g, "");
   const deviceTypeId = `${formId}-device-type`;
   const brandId = `${formId}-brand`;

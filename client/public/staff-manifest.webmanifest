@@ -1,5 +1,4 @@
 {
-  "id": "/staff-portal",
   "name": "Maintenance Guide - بوابة الفنيين والمديرين",
   "short_name": "MG Staff",
   "description": "بوابة إدارة أوردرات الصيانة والتنبيهات للفنيين والمديرين",
@@ -7,7 +6,7 @@
   "dir": "rtl",
   "start_url": "/login?source=pwa&portal=staff",
   "scope": "/",
-  "id": "mg-staff-app-v3",
+  "id": "/staff-portal",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone"],
   "orientation": "portrait",

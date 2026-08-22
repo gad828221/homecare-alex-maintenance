@@ -1,0 +1,3 @@
+[0mFound 98 errors in 23 files.
+Errors  Files
+     1  client/src/App.tsx[90m:238

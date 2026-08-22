@@ -461,7 +461,8 @@ export default function ProtectedOrders() {
         invoice_approved: false,
         warranty_period: '6 أشهر',
         invoice_date: new Date().toISOString().split('T')[0],
-        parts_used: ''
+        parts_used: '',
+        date: new Date().toLocaleDateString('ar-EG')
       });
       setIsOtherDevice(false);
       setIsOtherBrand(false);
@@ -481,6 +482,7 @@ export default function ProtectedOrders() {
   const alertBaselineReadyRef = useRef(false);
   const delayedAlertIdsRef = useRef<Set<number>>(new Set());
   const escalationAlertIdsRef = useRef<Set<number>>(new Set());
+  const cashProfitLocksRef = useRef<Set<number>>(new Set());
   const expiringWarrantyIdsRef = useRef<Set<number>>(new Set());
   const highExpenseAlertIdsRef = useRef<Set<number>>(new Set());
 
@@ -1055,8 +1057,9 @@ export default function ProtectedOrders() {
       const all = allData || [];
       let balance = 0;
       all.forEach((entry: any) => {
-        if (entry.type === 'income') balance += entry.amount;
-        else if (entry.type === 'expense' || entry.type === 'profit_distribution') balance -= entry.amount;
+        const amount = Number(entry.amount) || 0;
+        if (entry.type === 'income') balance += amount;
+        else if (entry.type === 'expense' || entry.type === 'profit_distribution') balance -= amount;
       });
       setCashBalance(balance);
       let displayData = all;
@@ -1094,41 +1097,56 @@ export default function ProtectedOrders() {
     if (!isAdmin) return false;
     try {
       const entries = await fetchAPI(`cash_ledger?description=like=*${order.order_number}*&type=eq.income&select=id`);
-      if (entries && entries.length > 0) {
-        for (const entry of entries) {
-          await fetchAPI(`cash_ledger?id=eq.${entry.id}`, { method: 'DELETE' });
-          await addNotification('حذف أرباح أوردر من الخزنة', `تم حذف أرباح الأوردر رقم ${order.order_number} (${order.customer_name}) من الخزنة`);
-        }
-        await fetchAPI(`orders?id=eq.${order.id}`, { method: 'PATCH', body: JSON.stringify({ profit_added_to_cash: false }) });
-        await fetchCashLedger();
+      for (const entry of entries || []) {
+        await fetchAPI(`cash_ledger?id=eq.${entry.id}`, { method: 'DELETE' });
       }
-    } catch (err) { console.error("فشل حذف أرباح الأوردر من الخزنة:", err); }
+      await fetchAPI(`orders?id=eq.${order.id}`, { method: 'PATCH', body: JSON.stringify({ profit_added_to_cash: false }) });
+      await addNotification('حذف أرباح أوردر من الخزنة', `تم حذف أرباح الأوردر رقم ${order.order_number} (${order.customer_name}) من الخزنة`);
+      await fetchCashLedger();
+      return true;
+    } catch (err) { console.error("فشل حذف أرباح الأوردر من الخزنة:", err); return false; }
   };
 
   const addCompanyProfitToCash = async (order: any) => {
     if (!isAdmin) return false;
-    const companyShare = order.company_share || 0;
-    if (order.profit_added_to_cash) { showToast("ليس لديك صلاحية", "error"); return false; }
-    if (companyShare <= 0) { showToast("ليس لديك صلاحية", "error"); return false; }
-    if (!order.is_paid) { showToast("ليس لديك صلاحية", "error"); return false; }
-    if (order.status !== 'completed') { showToast("ليس لديك صلاحية", "error"); return false; }
+    const orderId = Number(order.id);
+    const companyShare = Number(order.company_share) || 0;
+    if (cashProfitLocksRef.current.has(orderId)) return false;
+    if (order.profit_added_to_cash) { showToast("تمت إضافة ربح هذا الأوردر للخزنة مسبقاً", "info"); return false; }
+    if (companyShare <= 0) { showToast("لا يوجد نصيب شركة صالح لهذا الأوردر", "error"); return false; }
+    if (!order.is_paid) { showToast("يجب اعتماد التحصيل أولاً", "error"); return false; }
+    if (order.status !== 'completed') { showToast("لا يمكن إضافة ربح أوردر غير مكتمل", "error"); return false; }
+
+    cashProfitLocksRef.current.add(orderId);
     try {
       const today = new Date().toISOString().split('T')[0];
       const roundedShare = Number(companyShare.toFixed(2));
       const response = await fetch(`${supabaseUrl}/rest/v1/cash_ledger`, {
-        method: 'POST', headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+        method: 'POST',
+        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
         body: JSON.stringify({ type: 'income', amount: roundedShare, description: `أرباح شركة من أوردر ${order.customer_name} (رقم ${order.order_number})`, date: today })
       });
-      if (response.ok) {
-        await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${order.id}`, {
-          method: 'PATCH', headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ profit_added_to_cash: true })
-        });
-        await addNotification('إضافة أرباح للخزنة', `✅ تم إضافة ${roundedShare} ج.م للخزنة من أوردر ${order.order_number} (${order.customer_name})`);
-        await fetchCashLedger(); await fetchData();
-        return true;
-      } else { const error = await response.text(); alert(`❌ فشل إضافة الأرباح: ${error}`); return false; }
-    } catch (err) { alert(`❌ حدث خطأ في الاتصال: ${err.message}`); return false; }
+      if (!response.ok) { const error = await response.text(); throw new Error(`cash-ledger-insert-failed: ${error}`); }
+      const insertedPayload = await response.json().catch(() => []);
+      const insertedEntry = Array.isArray(insertedPayload) ? insertedPayload[0] : insertedPayload;
+      const patchResponse = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${order.id}`, {
+        method: 'PATCH', headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profit_added_to_cash: true })
+      });
+      if (!patchResponse.ok) {
+        if (insertedEntry?.id) await fetchAPI(`cash_ledger?id=eq.${insertedEntry.id}`, { method: 'DELETE' });
+        throw new Error(`order-profit-flag-update-failed: ${await patchResponse.text()}`);
+      }
+      await addNotification('إضافة أرباح للخزنة', `✅ تم إضافة ${roundedShare} ج.م للخزنة من أوردر ${order.order_number} (${order.customer_name})`);
+      await fetchCashLedger(); await fetchData();
+      return true;
+    } catch (err: any) {
+      console.error('فشل إضافة أرباح الأوردر للخزنة:', err);
+      showToast('تعذر اعتماد ربح الأوردر للخزنة؛ لم تكتمل العملية', 'error');
+      return false;
+    } finally {
+      cashProfitLocksRef.current.delete(orderId);
+    }
   };
 
   // ✅ توزيع أرباح يوم – يعتمد على الإيرادات اليومية فقط، بدون reserve، ويمنع التكرار
@@ -1654,7 +1672,7 @@ export default function ProtectedOrders() {
 
   const updateOrderStatus = async (id: number, newStatus: string, extraData = {}) => {
     if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
-    const order = orders.find(o => o.id === id);
+    const order = [...orders, ...archivedOrders].find(o => o.id === id);
     if (!order) return;
     const oldStatus = order.status;
     try {
@@ -1817,7 +1835,7 @@ export default function ProtectedOrders() {
 
   const togglePaidStatus = async (id: number, currentStatus: boolean) => {
     if (!isAdmin) return showToast("ليس لديك صلاحية التحصيل (للمدير العام فقط)", "error");
-    const order = orders.find(o => o.id === id);
+    const order = [...orders, ...archivedOrders].find(o => o.id === id);
     if (!order) return;
     const newPaidStatus = !currentStatus;
     try {
@@ -1882,7 +1900,7 @@ export default function ProtectedOrders() {
     setIsSubmitting(true);
     const finalDevice = isOtherDevice ? customDevice : formData.device_type;
     const finalBrand = isOtherBrand ? customBrand : formData.brand;
-    const orderToSave = { ...formData, device_type: finalDevice, brand: finalBrand, order_number: editingOrder ? editingOrder.order_number : `MG-${Date.now()}` };
+    const orderToSave: any = { ...formData, device_type: finalDevice, brand: finalBrand, order_number: editingOrder ? editingOrder.order_number : `MG-${Date.now()}` };
     try {
       if (editingOrder) {
         const oldOrder = [...orders, ...archivedOrders].find(o => o.id === editingOrder.id);
@@ -1943,7 +1961,7 @@ export default function ProtectedOrders() {
         else sendWhatsAppToCustomerOnCreate(orderToSave);
       }
       setShowOrderModal(false); setEditingOrder(null);
-      setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") });
+      setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, invoice_approved: false, warranty_period: '6 أشهر', invoice_date: new Date().toISOString().split('T')[0], parts_used: '', date: new Date().toLocaleDateString("ar-EG") });
       setIsOtherDevice(false); setIsOtherBrand(false); setCustomDevice(''); setCustomBrand('');
       fetchData();
     } catch (err) { console.error(err); showToast("حدث خطأ أثناء الحفظ", "error"); } finally { setIsSubmitting(false); }
@@ -2050,7 +2068,7 @@ export default function ProtectedOrders() {
       title: '🚨 إجراء عاجل: إغلاق الأوردرات القديمة',
       message: pushMessage,
       targetUserIds: tech.id ? [`tech:${tech.id}`] : undefined,
-      data: { technician: tech.name, old_orders_count: oldOrders.length, order_numbers: oldOrders.map((order: any) => order.order_number) }
+      data: { technician: tech.name, old_orders_count: oldOrders.length, order_numbers: oldOrders.map((order: any) => order.order_number).join(', ') }
     });
     
     // v3.8.7: تفعيل فتح واتساب فعلياً للفني
@@ -2296,7 +2314,7 @@ export default function ProtectedOrders() {
       const reportOrderFields = isViewer
         ? 'order_number, customer_name, device_type, brand, technician, status, created_at'
         : 'order_number, customer_name, phone, device_type, brand, technician, status, created_at';
-      let query = supabase
+      let query: any = supabase
         .from('orders')
         .select(reportOrderFields)
         .in('status', ['pending', 'in-progress'])
@@ -2312,7 +2330,8 @@ export default function ProtectedOrders() {
       const testKeywords = ['اختبار', 'test', 'تجربة', 'jj', 'nn', 'hh', 'rr', 'zz', '00', '000',
                             'زسةس', 'ويوي', 'تلل', 'أختي', 'جاى', 'gytt', 'ممظم', 'زءووي', 'حذف',
                             'تجربه', 'زسوزي', 'وسووي', 'gff', 'gggg', 'jzjz', 'nznz'];
-      const filteredData = (data || []).filter(order => {
+      const reportRows: any[] = (data || []) as any[];
+      const filteredData = reportRows.filter((order: any) => {
         const customer = (order.customer_name || '').toLowerCase();
         const phone = (order.phone || '').toLowerCase();
         const device = (order.device_type || '').toLowerCase();
@@ -2329,12 +2348,12 @@ export default function ProtectedOrders() {
       const end = parseOrderDate(`${endDate}T23:59:59`);
       if (!start || !end) throw new Error('نطاق التاريخ غير صالح');
 
-      const dateFiltered = filteredData.filter(order => {
+      const dateFiltered = filteredData.filter((order: any) => {
         const orderDate = parseOrderDate(order.created_at);
         return Boolean(orderDate && orderDate >= start && orderDate <= end);
       });
 
-      const finalData = dateFiltered.filter(order => {
+      const finalData = dateFiltered.filter((order: any) => {
         const orderDate = parseOrderDate(order.created_at);
         const diffDays = orderDate ? Math.floor((Date.now() - orderDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
         return diffDays > 3;
@@ -2358,7 +2377,7 @@ export default function ProtectedOrders() {
       const reportOrderFields = isViewer
         ? 'order_number, customer_name, device_type, brand, technician, technician_note, created_at'
         : 'order_number, customer_name, phone, device_type, brand, technician, technician_note, created_at';
-      let query = supabase
+      let query: any = supabase
         .from('orders')
         .select(reportOrderFields)
         .eq('status', 'cancelled')
@@ -2373,7 +2392,8 @@ export default function ProtectedOrders() {
       const end = parseOrderDate(`${endDate}T23:59:59`);
       if (!start || !end) throw new Error('نطاق التاريخ غير صالح');
 
-      const filtered = (data || []).filter(order => {
+      const reportRows: any[] = (data || []) as any[];
+      const filtered = reportRows.filter((order: any) => {
         const orderDate = parseOrderDate(order.created_at);
         return Boolean(orderDate && orderDate >= start && orderDate <= end);
       });
@@ -2640,7 +2660,7 @@ export default function ProtectedOrders() {
             >
               <Play fill="currentColor" size={20} /> دخول وتفعيل التنبيهات 🔊
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v3.3.3</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.1.0</p>
           </div>
         </div>
       )}
@@ -4089,7 +4109,7 @@ export default function ProtectedOrders() {
           </div>
           <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-black tracking-wide text-emerald-300 shadow-[0_0_14px_rgba(52,211,153,0.12)]">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.9)]" />
-            إصدار النظام: v4.0.0
+            إصدار النظام: v4.1.0
           </div>
         </div>
       </div>

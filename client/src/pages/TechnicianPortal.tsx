@@ -4,7 +4,7 @@ import {
   RefreshCw, Phone, MapPin, ClipboardList,
   Calendar, X, Trash2, Eye, EyeOff, ClockArrowUp, StickyNote,
   Play, FileCheck, DollarSign, CalendarX, Ban, MessageSquare, Search, MessageCircle,
-  Camera,   TrendingUp, Award, Wallet, Send, ExternalLink, Bell, Upload, Cpu, UserCircle, ImagePlus, Navigation
+  Camera,   TrendingUp, Award, Wallet, Send, ExternalLink, Bell, Upload, Cpu, UserCircle, ImagePlus, Navigation, ChevronDown
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useNotification } from "../components/EnhancedNotificationSystem";
@@ -680,7 +680,7 @@ export default function TechnicianPortal() {
     };
     const previousNotes = order.technician_notes || order.technician_note || '';
     const marker = createPickupMarker(pickupRecord);
-    const mergedNotes = previousNotes.replace(/\n?\[PICKUP_RECEIPT\].*?\[\/PICKUP_RECEIPT\]/s, '').trim();
+    const mergedNotes = previousNotes.replace(/\n?\[PICKUP_RECEIPT\][\s\S]*?\[\/PICKUP_RECEIPT\]/g, '').trim();
     const finalNotes = `${mergedNotes}${mergedNotes ? '\\n' : ''}${marker}`;
 
     try {
@@ -857,7 +857,7 @@ export default function TechnicianPortal() {
 
     if (!oldPartsPhoto || !newPartsPhoto) {
       addNotification({
-        type: 'critical',
+        type: 'error',
         title: '🚫 تنبيه هام جداً',
         message: 'يجب تصوير قطع الغيار القديمة والجديدة قبل إكمال الأوردر! لن يتم قبول التصفية بدون صور.',
         duration: 0
@@ -867,7 +867,7 @@ export default function TechnicianPortal() {
 
     if (!companyTransferConfirmed) {
       addNotification({
-        type: 'critical',
+        type: 'error',
         title: '💰 يجب تأكيد تحويل نصيب الشركة',
         message: `بعد تحويل ${Number(settleForm.company_share || 0).toLocaleString('ar-EG')} ج.م نصيب الشركة للمدير، اضغط على مربع الإقرار ثم أرسل التصفية. لن يتم اعتماد التحصيل أو إضافة المبلغ للخزنة قبل مراجعة المدير.`,
         duration: 0
@@ -1953,7 +1953,7 @@ export default function TechnicianPortal() {
       )}
       <div className="text-center pb-8">
         <NotificationStatus />
-        <div className="text-[8px] text-slate-500 opacity-10 mt-4">v3.7.8-performance-boost-lazy-load</div>
+        <div className="text-[8px] text-slate-500 opacity-10 mt-4">v4.1.0-radar-notifications-stable</div>
       </div>
     </div>
   );
