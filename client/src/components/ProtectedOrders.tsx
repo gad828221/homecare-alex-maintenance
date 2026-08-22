@@ -2660,7 +2660,7 @@ export default function ProtectedOrders() {
             >
               <Play fill="currentColor" size={20} /> دخول وتفعيل التنبيهات 🔊
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.1.0</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.1.1</p>
           </div>
         </div>
       )}
@@ -3054,19 +3054,33 @@ export default function ProtectedOrders() {
 	            )}
 
             {/* نظام التبويبات الذكي (Kanban Mobile) */}
-                <div className="flex flex-nowrap gap-3 overflow-x-auto no-scrollbar pb-3 mb-4 sticky top-[60px] z-30 bg-slate-950/80 backdrop-blur-md py-2 -mx-4 px-4">
-                  {[
-                    { id: 'all', label: 'الكل', color: 'slate' },
-                    { id: 'pending', label: 'قيد الانتظار', color: 'amber' },
+	                <div className="flex flex-nowrap gap-3 overflow-x-auto no-scrollbar pb-3 mb-4 sticky top-[60px] z-30 bg-slate-950/80 backdrop-blur-md py-2 -mx-4 px-4">
+	                  {[
+	                    { id: 'live', label: 'العمل الحالي ⚡', color: 'emerald' },
+	                    { id: 'all', label: 'الكل', color: 'slate' },
+	                    { id: 'pending', label: 'قيد الانتظار', color: 'amber' },
                     { id: 'in-progress', label: 'قيد التنفيذ', color: 'blue' },
                     { id: 'inspected', label: 'تم الكشف', color: 'cyan' },
                     { id: 'completed', label: 'مكتمل', color: 'emerald' },
                     { id: 'returned', label: 'المرتجع ⚠️', color: 'rose' },
                     { id: 'cancelled', label: 'ملغي', color: 'rose' },
                     { id: 'deferred', label: 'مؤجل', color: 'purple' }
-                  ].map(tab => {
-                    const count = tab.id === 'all' ? dateFilteredOrders.length : dateFilteredOrders.filter(o => o.status === tab.id).length;
-                    const isActive = filterStatus === tab.id;
+	                  ].map(tab => {
+	                    let count = 0;
+	                    if (tab.id === 'all') {
+	                      count = dateFilteredOrders.length;
+	                    } else if (tab.id === 'live') {
+	                      // حساب الأوردرات النشطة فقط (نفس منطق الفلترة الفعلي)
+	                      count = dateFilteredOrders.filter(o => 
+	                        isCollectionPending(o) || 
+	                        pinnedOrderIds.has(o.id) || 
+	                        ['in-progress', 'in_progress', 'pending', 'returned'].includes(o.status) || 
+	                        !o.technician || o.technician === '-' || o.technician === ''
+	                      ).length;
+	                    } else {
+	                      count = dateFilteredOrders.filter(o => o.status === tab.id).length;
+	                    }
+	                    const isActive = filterStatus === tab.id;
                     return (
                       <button
                         key={tab.id}
@@ -4109,7 +4123,7 @@ export default function ProtectedOrders() {
           </div>
           <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-black tracking-wide text-emerald-300 shadow-[0_0_14px_rgba(52,211,153,0.12)]">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.9)]" />
-            إصدار النظام: v4.1.0
+            إصدار النظام: v4.1.1
           </div>
         </div>
       </div>
