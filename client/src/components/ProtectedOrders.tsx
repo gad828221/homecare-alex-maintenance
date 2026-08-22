@@ -889,15 +889,14 @@ export default function ProtectedOrders() {
     const orderDate = parseOrderDate(dateStr);
     if (!orderDate) return 0;
 
-    // v3.8.6: حساب الفرق الدقيق بالأيام بناءً على توقيت القاهرة
-    // نستخدم التوقيت الحالي ونطرح منه توقيت الأوردر
+    // v3.8.7: حساب الفرق الدقيق بالأيام والساعات
     const now = new Date();
     const diffMs = now.getTime() - orderDate.getTime();
     
-    // تحويل الملي ثانية إلى أيام (24 ساعة = يوم)
+    // تحويل الملي ثانية إلى أيام (يوم = 24 ساعة)
     const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     
-    return days > 0 ? days : 0;
+    return days;
   };
 
   const isDelayed = (order: any) => {
@@ -2048,6 +2047,10 @@ export default function ProtectedOrders() {
       targetUserIds: tech.id ? [`tech:${tech.id}`] : undefined,
       data: { technician: tech.name, old_orders_count: oldOrders.length, order_numbers: oldOrders.map((order: any) => order.order_number) }
     });
+    
+    // v3.8.7: تفعيل فتح واتساب فعلياً للفني
+    openWhatsApp(tech.phone, message);
+    
     await addNotification('تنبيه إغلاق أوردرات قديمة', `تم إرسال تنبيه واتساب للفني ${tech.name} بخصوص ${oldOrders.length} أوردر مفتوح قديم: ${oldOrders.map((order: any) => order.order_number).join(', ')}`);
     showToast(`✅ تم فتح واتساب وإرسال التنبيه للفني ${tech.name}`, 'success');
   };
@@ -3978,7 +3981,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.8.6-fixed-cairo-date-logic</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.8.7-fixed-whatsapp-trigger-and-dates</div>
         </div>
       </div>
 
