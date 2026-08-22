@@ -544,7 +544,7 @@ export default function TechnicianPortal() {
     });
   };
 
-  const updateStatus = async (id: number, newStatus: string, extraData = {}) => {
+  const updateStatus = async (id: number, newStatus: string, extraData = {}, options: { notifyManagers?: boolean } = {}) => {
     try {
       const oldOrder = orders.find(o => o.id === id);
       
@@ -565,7 +565,7 @@ export default function TechnicianPortal() {
       await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify(updateData) });
       addNotification({ type: 'success', title: '✅ تم التحديث', message: 'تم حفظ التغييرات وإرسال إشعار للمدير', duration: 3000 });
       fetchData();
-      if (oldOrder && oldOrder.status !== newStatus) {
+      if (options.notifyManagers !== false && oldOrder && oldOrder.status !== newStatus) {
         let statusAr = newStatus;
         if (newStatus === 'completed') statusAr = "تم التنفيذ ✅";
         if (newStatus === 'cancelled') statusAr = "ملغي ❌";
@@ -582,7 +582,7 @@ export default function TechnicianPortal() {
           title: `🛠️ تحديث أوردر: ${statusAr}`,
           message: `الفني ${techName} قام بتغيير حالة الأوردر #${oldOrder.order_number} للعميل ${oldOrder.customer_name} إلى ${statusAr}.`,
           targetRoles: ['admin', 'manager'],
-          data: { order_id: id, status: newStatus, technician: techName }
+          data: { order_id: id, order_number: oldOrder.order_number, customer_name: oldOrder.customer_name, status: newStatus, technician: techName }
         });
       }
     } catch (err) { console.error(err); }
@@ -598,7 +598,7 @@ export default function TechnicianPortal() {
       title: actionTitle,
       message: `الفني ${techName} يقوم الآن بالاتصال بالعميل ${order.customer_name} عبر ${methodAr} للأوردر #${order.order_number}.`,
       targetRoles: ['admin', 'manager'],
-      data: { order_id: order.id, method, technician: techName }
+          data: { order_id: order.id, order_number: order.order_number, customer_name: order.customer_name, method, action: 'customer_contact', technician: techName }
     });
   };
 
@@ -606,12 +606,22 @@ export default function TechnicianPortal() {
     const total = amount;
     const companyShare = Math.round(total * (100 - technicianPercentage) / 100);
     const techShare = total - companyShare;
-    updateStatus(order.id, 'inspected', {
+    const statusChanged = order.status !== 'inspected';
+    void updateStatus(order.id, 'inspected', {
       total_amount: total, parts_cost: 0, transport_cost: 0, net_amount: total,
       company_share: companyShare, technician_share: techShare,
       technician_note: `كشف بقيمة ${total} ج.م`, action_date: new Date().toLocaleString("ar-EG"), invoice_approved: false
     });
     notifyAdmin("💰 كشف جديد", order, `المبلغ: ${total} ج.م`);
+    if (!statusChanged) {
+      void sendExternalPush({
+        event: 'system_alert',
+        title: '💰 تحديث كشف الأوردر',
+        message: `الفني ${techName} حدّث كشف الأوردر #${order.order_number} للعميل ${order.customer_name} بمبلغ ${total} ج.م.`,
+        targetRoles: ['admin', 'manager'],
+        data: { order_id: order.id, order_number: order.order_number, customer_name: order.customer_name, action: 'inspection_update', technician: techName }
+      });
+    }
   };
 
   const handleCancel = (order: any, reason: string) => {
@@ -633,6 +643,14 @@ export default function TechnicianPortal() {
         body: JSON.stringify({ technician_note: newNote })
       });
       await addNotification('📝 ملاحظة فنية', `أضاف الفني ملاحظة للأوردر رقم ${order.order_number}: ${note}`);
+      void notifyAdmin('📝 ملاحظة فنية جديدة', order, `النص: ${note}`);
+      void sendExternalPush({
+        event: 'system_alert',
+        title: '📝 ملاحظة فنية جديدة',
+        message: `الفني ${techName} أضاف ملاحظة للأوردر #${order.order_number} للعميل ${order.customer_name}: ${note}`,
+        targetRoles: ['admin', 'manager'],
+        data: { order_id: order.id, order_number: order.order_number, customer_name: order.customer_name, action: 'technician_note', technician: techName }
+      });
       await fetchData();
       addNotification({ type: 'success', title: '✅ تم الإضافة', message: 'تم حفظ الملاحظة', duration: 3000 });
     } catch (err) { console.error(err); }
@@ -877,7 +895,7 @@ export default function TechnicianPortal() {
       technician_note: finalNote
     };
 
-    await updateStatus(selectedOrder.id, 'completed', settlementData);
+    await updateStatus(selectedOrder.id, 'completed', settlementData, { notifyManagers: false });
 
     setShowSettleModal(false);
 

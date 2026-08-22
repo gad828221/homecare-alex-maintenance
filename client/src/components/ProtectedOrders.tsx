@@ -15,7 +15,6 @@ import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, get
 import { getPickupTypeLabel, parsePickupReceipt } from '../utils/pickupReceipt';
 import { mergeCompanyTransferMarker, parseCompanyTransfer } from '../utils/companyTransfer';
 import TechnicianPerformanceAdmin from './TechnicianPerformanceAdmin';
-import NotificationStatus from "./NotificationStatus";
 
 import { findTechnicianByIdentity, getTechnicianDisplayName, getTechnicianPhotoUrl, getTechnicianSpecialty, parseTechnicianProfileNotification } from '../utils/technicianProfile';
 import { clearAuthSession } from '../utils/authSession';
@@ -946,9 +945,10 @@ export default function ProtectedOrders() {
     // 1. الحالات النهائية تظهر في الأرشيف فوراً للحفاظ على نظافة لوحة التشغيل
     // ملاحظة: الأوردر المكتمل يذهب للأرشيف فقط إذا تم تحصيله (is_paid) ليبقى ظاهراً للمدير للمتابعة المالية إذا لم يُحصل بعد.
     if (order.status === 'cancelled' || order.status === 'inspected') return true;
-    if (order.status === 'completed' && order.is_paid) return true;
+    // المكتمل غير المحصل يظل في التشغيل حتى يتم اعتماد التحصيل، ولا يخضع لحد 30 يوماً.
+    if (order.status === 'completed') return Boolean(order.is_paid);
 
-    // 2. الأوردرات القديمة جداً (أكثر من 30 يوم) تُنقل للأرشيف تلقائياً لتخفيف اللوحة
+    // 2. الأوردرات القديمة المفتوحة جداً (أكثر من 30 يوم) تُنقل للأرشيف تلقائياً لتخفيف اللوحة
     return getDaysDifference(getOrderReferenceDate(order), order.status) > 30;
   };
 
@@ -3091,9 +3091,10 @@ export default function ProtectedOrders() {
                   const elapsedTone = getElapsedTone(orderCreatedValue, clockNow);
                   const pickup = parsePickupReceipt(order);
                   const companyTransfer = parseCompanyTransfer(order.technician_note);
-                  const transferPending = companyTransfer?.status === 'pending' && order.status === 'completed' && !order.is_paid;
+                  const collectionPending = isCollectionPending(order);
+                  const transferPending = collectionPending && companyTransfer?.status === 'pending';
                   const elapsedToneClass = elapsedTone === 'urgent' ? 'text-rose-200 bg-rose-500/20 border-rose-400/50 shadow-lg shadow-rose-500/20 animate-pulse' : elapsedTone === 'warning' ? 'text-amber-200 bg-amber-500/20 border-amber-400/40 shadow-lg shadow-amber-500/10' : 'text-slate-200 bg-slate-950/70 border-slate-700';
-                  const cardTone = transferPending ? 'bg-amber-950/40 border-amber-300 shadow-amber-400/30 animate-pulse' : config.card;
+                  const cardTone = collectionPending ? 'bg-amber-950/40 border-amber-300 shadow-amber-400/30 animate-pulse' : config.card;
                   
                   // تحديد لون التوهج بناءً على الحالة
                   const glowColors: Record<string, string> = {
@@ -3112,7 +3113,7 @@ export default function ProtectedOrders() {
 	                      onClick={() => { stopUrgentAlert(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); }}
 	                      className={`group order-card-3d ${cardTone} ${statusGlow} ${recentlyUpdated ? 'ring-2 ring-emerald-300/70 shadow-[0_0_26px_rgba(52,211,153,0.28)]' : ''} rounded-[1.5rem] border p-4 transition-all hover:shadow-2xl active:scale-[0.98] cursor-pointer relative overflow-hidden ${config.pulse} bg-slate-900/60 backdrop-blur-md border-opacity-30 hover:border-opacity-100`}
 	                    >
-	                      {transferPending && <div className="absolute inset-0 pointer-events-none rounded-[1.5rem] border border-amber-300/50 shadow-[0_0_20px_rgba(251,191,36,0.2)]"></div>}
+	                      {collectionPending && <div className="absolute inset-0 pointer-events-none rounded-[1.5rem] border border-amber-300/50 shadow-[0_0_20px_rgba(251,191,36,0.2)]"></div>}
 	                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:bg-white/10 transition-all"></div>
 
 		                      {/* Header Section */}
@@ -3145,7 +3146,7 @@ export default function ProtectedOrders() {
 	                        
 	                        <div className="flex flex-col items-end gap-1.5">
                           <div className="flex items-center gap-1.5">
-                            {transferPending && <span className="px-2 py-1 rounded-lg text-[8px] font-black border border-amber-200/80 bg-amber-300/30 text-amber-100 shadow-sm animate-pulse">تحتاج تأكيد التحصيل</span>}
+                            {collectionPending && <span className="px-2 py-1 rounded-lg text-[8px] font-black border border-amber-200/80 bg-amber-300/30 text-amber-100 shadow-sm animate-pulse">تحتاج تأكيد التحصيل</span>}
                             {!transferPending && recentlyUpdated && <span className="px-2 py-1 rounded-lg text-[8px] font-black border border-emerald-300/50 bg-emerald-400/20 text-emerald-200 shadow-sm animate-pulse">تم التحديث الآن</span>}
                             <div className={`px-2 py-1 rounded-lg text-[9px] font-black border flex items-center gap-1 shadow-sm ${config.badge}`}>
                               <StatusIcon size={12} strokeWidth={3} />
@@ -4061,15 +4062,16 @@ export default function ProtectedOrders() {
           />
         )}
         <div className="mt-8 flex flex-col items-center gap-2">
-          <NotificationStatus />
-
           <div className="text-[10px] text-slate-500 opacity-20 mt-4">
             Maintenance Guide © 2026 - All Rights Reserved
           </div>
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.9.8-FINAL-SYNC-DASHBOARD-FIX-01</div>
+          <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-black tracking-wide text-emerald-300 shadow-[0_0_14px_rgba(52,211,153,0.12)]">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.9)]" />
+            إصدار النظام: v4.0.0
+          </div>
         </div>
       </div>
 
