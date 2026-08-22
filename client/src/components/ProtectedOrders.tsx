@@ -380,7 +380,10 @@ export default function ProtectedOrders() {
   const [filterDelay, setFilterDelay] = useState<'all' | 'delayed'>('all');
   const [filterWarranty, setFilterWarranty] = useState<'all' | 'active' | 'expired' | 'expiring'>('all');
   const [showCompletedOrders, setShowCompletedOrders] = useState(false);
+  const [visibleOrdersCount, setVisibleOrdersCount] = useState(15);
   const [visibleCompletedCount, setVisibleCompletedCount] = useState(15);
+  const [visibleArchivedCount, setVisibleArchivedCount] = useState(15);
+  const [visibleNotificationsCount, setVisibleNotificationsCount] = useState(20);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
   const [deletedOrders, setDeletedOrders] = useState<any[]>([]);
@@ -2143,13 +2146,16 @@ export default function ProtectedOrders() {
   });
 
   const filteredOrders = useMemo(() => {
-    if (filterStatus === 'completed' && !searchTerm) {
-      return allFilteredOrders.slice(0, visibleCompletedCount);
+    if (!searchTerm) {
+      if (filterStatus === 'completed') {
+        return allFilteredOrders.slice(0, visibleCompletedCount);
+      }
+      return allFilteredOrders.slice(0, visibleOrdersCount);
     }
     return allFilteredOrders;
-  }, [allFilteredOrders, filterStatus, searchTerm, visibleCompletedCount]);
+  }, [allFilteredOrders, filterStatus, searchTerm, visibleCompletedCount, visibleOrdersCount]);
 
-  const filteredArchivedOrders = archivedOrders.filter(o => {
+  const allFilteredArchivedOrders = archivedOrders.filter(o => {
     const query = archiveSearchTerm.trim().toLowerCase();
     if (query) {
       const customerName = String(o.customer_name || '').toLowerCase();
@@ -2167,6 +2173,13 @@ export default function ProtectedOrders() {
     if (filterTechnician && o.technician !== filterTechnician) return false;
     return true;
   });
+
+  const filteredArchivedOrders = useMemo(() => {
+    if (!archiveSearchTerm) {
+      return allFilteredArchivedOrders.slice(0, visibleArchivedCount);
+    }
+    return allFilteredArchivedOrders;
+  }, [allFilteredArchivedOrders, visibleArchivedCount, archiveSearchTerm]);
 
 
   const filteredTechnicians = technicians.filter(t => filterTechStatus === 'all' ? true : filterTechStatus === 'active' ? t.is_active !== false : t.is_active === false);
@@ -3234,13 +3247,24 @@ export default function ProtectedOrders() {
 	              </div>
 	            )}
 
-              {filterStatus === 'completed' && allFilteredOrders.length > visibleCompletedCount && (
+              {filterStatus !== 'completed' && allFilteredOrders.length > visibleOrdersCount && !searchTerm && (
+                <div className="flex justify-center py-8">
+                  <button 
+                    onClick={() => setVisibleOrdersCount(prev => prev + 15)}
+                    className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-3 rounded-2xl font-black shadow-lg border border-slate-700 transition-all active:scale-95 flex items-center gap-2"
+                  >
+                    <ChevronDown size={18} /> عرض المزيد من الأوردرات ({allFilteredOrders.length - visibleOrdersCount} متبقي)
+                  </button>
+                </div>
+              )}
+
+              {filterStatus === 'completed' && allFilteredOrders.length > visibleCompletedCount && !searchTerm && (
                 <div className="flex justify-center py-8">
                   <button 
                     onClick={() => setVisibleCompletedCount(prev => prev + 15)}
                     className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-3 rounded-2xl font-black shadow-lg border border-slate-700 transition-all active:scale-95 flex items-center gap-2"
                   >
-                    <ChevronDown size={18} /> عرض المزيد من الأوردرات المكتملة
+                    <ChevronDown size={18} /> عرض المزيد من الأوردرات المكتملة ({allFilteredOrders.length - visibleCompletedCount} متبقي)
                   </button>
                 </div>
               )}
