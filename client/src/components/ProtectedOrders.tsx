@@ -2103,7 +2103,7 @@ export default function ProtectedOrders() {
   const clearFilters = () => { setSearchTerm(''); setFilterStatus('live'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); setFilterWarranty('all'); };
 
 
-  const dateFilteredOrders = orders.filter(o => {
+  const dateFilteredOrders = [...orders, ...archivedOrders].filter(o => {
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
       const matchesName = o.customer_name?.toLowerCase().includes(searchLower);
@@ -3998,7 +3998,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.8.9-fixed-form-steps-and-assign-jump</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.9.0-integrated-search-results</div>
         </div>
       </div>
 
