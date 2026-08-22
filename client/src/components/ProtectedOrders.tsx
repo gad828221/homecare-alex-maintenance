@@ -380,6 +380,7 @@ export default function ProtectedOrders() {
   const [filterDelay, setFilterDelay] = useState<'all' | 'delayed'>('all');
   const [filterWarranty, setFilterWarranty] = useState<'all' | 'active' | 'expired' | 'expiring'>('all');
   const [showCompletedOrders, setShowCompletedOrders] = useState(false);
+  const [visibleCompletedCount, setVisibleCompletedCount] = useState(15);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
   const [deletedOrders, setDeletedOrders] = useState<any[]>([]);
@@ -2129,7 +2130,7 @@ export default function ProtectedOrders() {
     return true;
   });
 
-  const filteredOrders = dateFilteredOrders.filter(o => {
+  const allFilteredOrders = dateFilteredOrders.filter(o => {
     if (filterStatus === '__UNPAID__') {
       if (o.status !== 'completed' || o.is_paid) return false;
     } else if (filterStatus !== 'all' && o.status !== filterStatus) {
@@ -2140,6 +2141,13 @@ export default function ProtectedOrders() {
     if (filterStatus !== 'all' || filterTechnician || filterDateFrom || searchTerm) return true;
     return (o.status === 'in-progress' || o.status === 'pending' || o.status === 'returned' || !o.technician || o.technician === '-' || o.technician === '');
   });
+
+  const filteredOrders = useMemo(() => {
+    if (filterStatus === 'completed' && !searchTerm) {
+      return allFilteredOrders.slice(0, visibleCompletedCount);
+    }
+    return allFilteredOrders;
+  }, [allFilteredOrders, filterStatus, searchTerm, visibleCompletedCount]);
 
   const filteredArchivedOrders = archivedOrders.filter(o => {
     const query = archiveSearchTerm.trim().toLowerCase();
@@ -3070,15 +3078,15 @@ export default function ProtectedOrders() {
 	                      {(getPhotoUrl(order.technician_note, 'OLD') || getPhotoUrl(order.technician_note, 'NEW')) && (
 	                        <div className="grid grid-cols-2 gap-2 mb-4 relative z-10">
 	                          {getPhotoUrl(order.technician_note, 'OLD') && (
-	                            <div className="relative rounded-xl overflow-hidden border border-rose-500/20 h-16 shadow-sm group/photo">
-	                              <img src={getPhotoUrl(order.technician_note, 'OLD')} className="w-full h-full object-cover" />
-	                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity cursor-pointer" onClick={() => window.open(getPhotoUrl(order.technician_note, 'OLD'), '_blank')}><Camera size={14} className="text-white" /></div>
-	                              <div className="absolute bottom-0 left-0 right-0 bg-rose-600/80 text-[7px] font-black text-white text-center py-0.5">قديم</div>
-	                            </div>
-	                          )}
-	                          {getPhotoUrl(order.technician_note, 'NEW') && (
-	                            <div className="relative rounded-xl overflow-hidden border border-emerald-500/20 h-16 shadow-sm group/photo">
-	                              <img src={getPhotoUrl(order.technician_note, 'NEW')} className="w-full h-full object-cover" />
+		                            <div className="relative rounded-xl overflow-hidden border border-rose-500/20 h-16 shadow-sm group/photo">
+		                              <img src={getPhotoUrl(order.technician_note, 'OLD')} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+		                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity cursor-pointer" onClick={() => window.open(getPhotoUrl(order.technician_note, 'OLD'), '_blank')}><Camera size={14} className="text-white" /></div>
+		                              <div className="absolute bottom-0 left-0 right-0 bg-rose-600/80 text-[7px] font-black text-white text-center py-0.5">قديم</div>
+		                            </div>
+		                          )}
+		                          {getPhotoUrl(order.technician_note, 'NEW') && (
+		                            <div className="relative rounded-xl overflow-hidden border border-emerald-500/20 h-16 shadow-sm group/photo">
+		                              <img src={getPhotoUrl(order.technician_note, 'NEW')} className="w-full h-full object-cover" loading="lazy" decoding="async" />
 	                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity cursor-pointer" onClick={() => window.open(getPhotoUrl(order.technician_note, 'NEW'), '_blank')}><Camera size={14} className="text-white" /></div>
 	                              <div className="absolute bottom-0 left-0 right-0 bg-emerald-600/80 text-[7px] font-black text-white text-center py-0.5">جديد</div>
 	                            </div>
@@ -3223,10 +3231,21 @@ export default function ProtectedOrders() {
 	                    </div>
                   );
                 })}
-              </div>
-            )}
+	              </div>
+	            )}
 
-            {showDeleted && (
+              {filterStatus === 'completed' && allFilteredOrders.length > visibleCompletedCount && (
+                <div className="flex justify-center py-8">
+                  <button 
+                    onClick={() => setVisibleCompletedCount(prev => prev + 15)}
+                    className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-3 rounded-2xl font-black shadow-lg border border-slate-700 transition-all active:scale-95 flex items-center gap-2"
+                  >
+                    <ChevronDown size={18} /> عرض المزيد من الأوردرات المكتملة
+                  </button>
+                </div>
+              )}
+	
+	            {showDeleted && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {deletedOrders.length === 0 && <div className="col-span-full text-center py-8 text-slate-400">لا توجد أوردرات محذوفة</div>}
                 {deletedOrders.map(order => (
@@ -3871,7 +3890,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.7.7-tracking-fix-final</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.7.8-performance-boost-lazy-load</div>
         </div>
       </div>
 

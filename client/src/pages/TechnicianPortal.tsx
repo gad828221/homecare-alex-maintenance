@@ -103,6 +103,7 @@ export default function TechnicianPortal() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [showCompletedOrders, setShowCompletedOrders] = useState(false);
+  const [visibleCompletedCount, setVisibleCompletedCount] = useState(10);
 
   const [technicianPercentage, setTechnicianPercentage] = useState(50);
     const [oldPartsPhoto, setOldPartsPhoto] = useState("");
@@ -1123,10 +1124,17 @@ export default function TechnicianPortal() {
     return true;
   });
 
-  const filteredOrders = searchFilteredOrders.filter(order => {
+  const allFilteredOrders = searchFilteredOrders.filter(order => {
     if (filterStatus !== 'all' && order.status !== filterStatus) return false;
     return true;
   });
+
+  const filteredOrders = useMemo(() => {
+    if (filterStatus === 'completed' && !searchTerm) {
+      return allFilteredOrders.slice(0, visibleCompletedCount);
+    }
+    return allFilteredOrders;
+  }, [allFilteredOrders, filterStatus, searchTerm, visibleCompletedCount]);
 
   const oldOpenOrders = orders
     .filter((order: any) => ['pending', 'in-progress', 'in_progress', 'deferred'].includes(String(order.status || '').toLowerCase()))
@@ -1658,11 +1666,22 @@ export default function TechnicianPortal() {
                       </div>
                     </div>
                   );
-                })}
-              {filteredOrders.length === 0 && <div className="text-center py-8 text-slate-400">لا توجد أوردرات</div>}
-            </div>
-          </>
-        )}
+	                })}
+	              {filteredOrders.length === 0 && <div className="text-center py-8 text-slate-400">لا توجد أوردرات</div>}
+
+                {filterStatus === 'completed' && allFilteredOrders.length > visibleCompletedCount && (
+                  <div className="flex justify-center py-6">
+                    <button 
+                      onClick={() => setVisibleCompletedCount(prev => prev + 10)}
+                      className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-3 rounded-2xl font-black shadow-lg border border-slate-700 transition-all active:scale-95 flex items-center gap-2"
+                    >
+                      <ChevronDown size={18} /> عرض المزيد من الأوردرات المكتملة
+                    </button>
+                  </div>
+                )}
+	            </div>
+	          </>
+	        )}
 
         {activeTab === 'performance' && (
           <TechnicianPerformance technicians={[{ name: techName }]} orders={orders} />
@@ -1923,7 +1942,7 @@ export default function TechnicianPortal() {
       )}
       <div className="text-center pb-8">
         <NotificationStatus />
-        <div className="text-[8px] text-slate-500 opacity-10 mt-4">v3.7.7-tracking-fix-final</div>
+        <div className="text-[8px] text-slate-500 opacity-10 mt-4">v3.7.8-performance-boost-lazy-load</div>
       </div>
     </div>
   );
