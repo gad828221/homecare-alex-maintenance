@@ -2168,11 +2168,39 @@ export default function ProtectedOrders() {
     return (o.status === 'in-progress' || o.status === 'pending' || o.status === 'returned' || !o.technician || o.technician === '-' || o.technician === '');
   });
 
+  const getOrderActivityTime = (order: any) => {
+    const candidates = [
+      order.updated_at,
+      order.updatedAt,
+      order.last_action_at,
+      order.completed_at,
+      order.created_at,
+      order.createdAt,
+      order.date,
+    ];
+
+    for (const value of candidates) {
+      if (!value) continue;
+      const parsed = parseOrderDate(value)?.getTime() ?? new Date(value).getTime();
+      if (Number.isFinite(parsed) && parsed > 0) return parsed;
+    }
+    return 0;
+  };
+
   const filteredOrders = useMemo(() => {
-    // فصل الأوردرات المثبتة
-    const pinned = allFilteredOrders.filter(o => pinnedOrderIds.has(o.id));
-    const unpinned = allFilteredOrders.filter(o => !pinnedOrderIds.has(o.id));
-    
+    // الأوردر المثبت يظل في المقدمة، وداخل كل مجموعة يظهر آخر أوردر تم تحديثه أولاً.
+    const sortByLatestActivity = (a: any, b: any) => {
+      const activityDiff = getOrderActivityTime(b) - getOrderActivityTime(a);
+      if (activityDiff !== 0) return activityDiff;
+      return Number(b.id || 0) - Number(a.id || 0);
+    };
+
+    const pinned = allFilteredOrders
+      .filter(o => pinnedOrderIds.has(o.id))
+      .sort(sortByLatestActivity);
+    const unpinned = allFilteredOrders
+      .filter(o => !pinnedOrderIds.has(o.id))
+      .sort(sortByLatestActivity);
     const sorted = [...pinned, ...unpinned];
 
     if (!searchTerm) {
@@ -3022,6 +3050,9 @@ export default function ProtectedOrders() {
                   const config = delayed ? statusConfig.delayed : baseConfig;
                   const StatusIcon = config.Icon;
                   const orderCreatedValue = getOrderCreatedValue(order);
+                  const activityTime = getOrderActivityTime(order);
+                  const activityAge = clockNow - activityTime;
+                  const recentlyUpdated = activityTime > 0 && activityAge >= 0 && activityAge <= 10 * 60 * 1000;
                   const elapsedTone = getElapsedTone(orderCreatedValue, clockNow);
                   const pickup = parsePickupReceipt(order);
                   const companyTransfer = parseCompanyTransfer(order.technician_note);
@@ -3044,7 +3075,7 @@ export default function ProtectedOrders() {
 	                    <div 
 	                      key={order.id} 
 	                      onClick={() => { stopUrgentAlert(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); }}
-	                      className={`group order-card-3d ${cardTone} ${statusGlow} rounded-[1.5rem] border p-4 transition-all hover:shadow-2xl active:scale-[0.98] cursor-pointer relative overflow-hidden ${config.pulse} bg-slate-900/60 backdrop-blur-md border-opacity-30 hover:border-opacity-100`}
+	                      className={`group order-card-3d ${cardTone} ${statusGlow} ${recentlyUpdated ? 'ring-2 ring-emerald-300/70 shadow-[0_0_26px_rgba(52,211,153,0.28)]' : ''} rounded-[1.5rem] border p-4 transition-all hover:shadow-2xl active:scale-[0.98] cursor-pointer relative overflow-hidden ${config.pulse} bg-slate-900/60 backdrop-blur-md border-opacity-30 hover:border-opacity-100`}
 	                    >
 	                      {transferPending && <div className="absolute inset-0 pointer-events-none rounded-[1.5rem] border border-amber-300/50 shadow-[0_0_20px_rgba(251,191,36,0.2)]"></div>}
 	                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:bg-white/10 transition-all"></div>
@@ -3078,10 +3109,13 @@ export default function ProtectedOrders() {
 	                        </div>
 	                        
 	                        <div className="flex flex-col items-end gap-1.5">
-	                          <div className={`px-2 py-1 rounded-lg text-[9px] font-black border flex items-center gap-1 shadow-sm ${config.badge}`}>
-	                            <StatusIcon size={12} strokeWidth={3} />
-	                            {config.label}
-	                          </div>
+                          <div className="flex items-center gap-1.5">
+                            {recentlyUpdated && <span className="px-2 py-1 rounded-lg text-[8px] font-black border border-emerald-300/50 bg-emerald-400/20 text-emerald-200 shadow-sm animate-pulse">تم التحديث الآن</span>}
+                            <div className={`px-2 py-1 rounded-lg text-[9px] font-black border flex items-center gap-1 shadow-sm ${config.badge}`}>
+                              <StatusIcon size={12} strokeWidth={3} />
+                              {config.label}
+                            </div>
+                          </div>
 	                          
 	                          {(order.status === 'completed' || order.status === 'returned') && canEditDelete() && (
 	                            <button 
