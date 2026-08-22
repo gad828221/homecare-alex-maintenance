@@ -3058,13 +3058,13 @@ export default function ProtectedOrders() {
                             </button>
 
 	                        <div className="flex flex-col gap-1">
-		                          <div className="flex flex-wrap items-center gap-1.5">
-	                            <h3 className="text-base font-black text-white group-hover:text-orange-400 transition-colors leading-tight">{order.customer_name}</h3>
-	                            <div className="flex gap-1">
-	                              {previousCustomerPhones.has(normalizeCustomerPhone(order.phone)) && <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-1.5 py-0.5 text-[8px] font-black text-emerald-300">✨ سابق</span>}
-	                              {isNewOrder(order) && <span className="flex h-1.5 w-1.5 rounded-full bg-blue-500 animate-ping mt-1"></span>}
-	                            </div>
-		                          </div>
+			                          <div className="flex flex-wrap items-center gap-1.5">
+		                            <h3 className="text-lg font-black text-white group-hover:text-orange-400 transition-colors leading-tight">{order.customer_name}</h3>
+		                            <div className="flex gap-1">
+		                              {previousCustomerPhones.has(normalizeCustomerPhone(order.phone)) && <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-1.5 py-0.5 text-[8px] font-black text-emerald-300">✨ عميل سابق</span>}
+		                              {isNewOrder(order) && <span className="inline-flex items-center gap-1 rounded-full border border-blue-400/30 bg-blue-500/20 px-1.5 py-0.5 text-[8px] font-black text-blue-300 animate-pulse">🆕 جديد الآن</span>}
+		                            </div>
+			                          </div>
 	                          <div className="flex items-center gap-1.5">
 	                            <span className="text-[8px] font-black text-slate-500 tracking-tighter uppercase bg-slate-800/80 px-1.5 py-0.5 rounded shadow-inner">#{order.order_number}</span>
 	                            {getWarrantyStatus(order).status !== 'none' && (
@@ -3096,20 +3096,30 @@ export default function ProtectedOrders() {
                             <div className="mb-3 relative z-10 flex items-center justify-between gap-2 bg-slate-950/30 px-3 py-1.5 rounded-xl border border-white/5">
                               <div className="flex items-center gap-1.5 overflow-hidden">
                                 <History size={10} className="text-blue-400 shrink-0" />
-                                <span className="text-[9px] font-bold text-slate-400 truncate">
-                                  {order.status === 'returned' ? '⚠️ مرتجع: ' + (order.technician_note?.split('⚠️')[1]?.split('\n')[0] || 'بانتظار الفحص') : 
-                                   order.status === 'completed' ? '✅ تم الاعتماد والإغلاق' :
-                                   order.technician_note?.includes('OLD') ? '📸 تم رفع صور المعاينة' :
-                                   order.technician ? '👨‍🔧 قيد المتابعة مع الفني' : '⏳ بانتظار تعيين فني'}
-                                </span>
+	                                <span className="text-[10px] font-black text-slate-300 truncate">
+	                                  {order.status === 'returned' ? '⚠️ مرتجع: ' + (order.technician_note?.split('⚠️')[1]?.split('\n')[0] || 'بانتظار الفحص') : 
+	                                   order.status === 'completed' ? '✅ تم الاعتماد والإغلاق' :
+	                                   order.technician_note?.includes('OLD') ? '📸 تم رفع صور المعاينة' :
+	                                   order.technician ? `👨‍🔧 الفني: ${order.technician}` : '⏳ بانتظار تعيين فني فوري'}
+	                                </span>
                               </div>
-                              {/* Priority Pulse Indicator */}
-                              {(!order.technician_note || new Date().getTime() - new Date(order.updated_at || order.created_at).getTime() > 4 * 60 * 60 * 1000) && order.status !== 'completed' && (
-                                <div className="flex items-center gap-1 shrink-0">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-ping"></div>
-                                  <span className="text-[7px] font-black text-orange-400 uppercase tracking-tighter">متابعة</span>
-                                </div>
-                              )}
+	                              {/* Quick Action Button for Assignment */}
+	                              {noTechnician && order.status === 'pending' && (
+	                                <button 
+	                                  onClick={(e) => { e.stopPropagation(); setEditingOrder(order); setFormData(order); setShowOrderModal(true); }}
+	                                  className="bg-orange-600 hover:bg-orange-500 text-white px-2 py-1 rounded-lg text-[9px] font-black flex items-center gap-1 shadow-lg shadow-orange-900/20 transition-all active:scale-90"
+	                                >
+	                                  <UserPlus size={10} /> تعيين فني
+	                                </button>
+	                              )}
+	                              
+	                              {/* Priority Pulse Indicator */}
+	                              {(!order.technician_note || new Date().getTime() - new Date(order.updated_at || order.created_at).getTime() > 4 * 60 * 60 * 1000) && order.status !== 'completed' && !noTechnician && (
+	                                <div className="flex items-center gap-1 shrink-0">
+	                                  <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-ping"></div>
+	                                  <span className="text-[7px] font-black text-orange-400 uppercase tracking-tighter">متابعة</span>
+	                                </div>
+	                              )}
                             </div>
 
 		                      {/* Alerts Section */}
@@ -3981,7 +3991,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.8.7-fixed-whatsapp-trigger-and-dates</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.8.8-improved-ux-and-quick-assign</div>
         </div>
       </div>
 
