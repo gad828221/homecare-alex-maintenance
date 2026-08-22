@@ -2166,6 +2166,9 @@ export default function ProtectedOrders() {
   });
 
   const allFilteredOrders = dateFilteredOrders.filter(o => {
+    // ✅ إخفاء الملغي تماماً من العرض العام (Live/All) إلا إذا تم اختياره صراحة
+    if ((filterStatus === 'live' || filterStatus === 'all') && (o.status === 'cancelled' || o.status === 'canceled')) return false;
+
     // وضع التركيز المباشر (الافتراضي)
     if (filterStatus === 'live') {
       // كل أوردر مكتمل غير محصل يظهر في وضع التركيز ليصل للمدير أولاً.
@@ -2660,7 +2663,7 @@ export default function ProtectedOrders() {
             >
               <Play fill="currentColor" size={20} /> دخول وتفعيل التنبيهات 🔊
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.1.7</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.1.8</p>
           </div>
         </div>
       )}
@@ -3417,9 +3420,23 @@ export default function ProtectedOrders() {
 	                              <button onClick={() => window.open(`/pickup-receipt?id=${order.id}`, '_blank')} className="flex-1 h-9 bg-purple-600/20 hover:bg-purple-700 text-purple-400 hover:text-white rounded-lg text-[9px] font-black border border-purple-500/20 flex items-center justify-center gap-1.5 transition-all active:scale-95"><ClipboardList size={14} /> إيصال</button>
 	                            )}
 	                            
-	                            {order.status === 'completed' && canEditDelete() && (
-	                              <button onClick={() => sendFeedbackRequest(order)} className="w-9 h-9 bg-amber-500/20 text-amber-500 rounded-lg border border-amber-500/20 flex items-center justify-center active:scale-90 transition-all"><Star size={16} /></button>
-	                            )}
+		                            {order.status === 'completed' && canEditDelete() && (
+		                              <div className="flex gap-2">
+		                                <button 
+		                                  onClick={(e) => {
+		                                    e.stopPropagation();
+		                                    const invoiceUrl = `${window.location.origin}/invoice?id=${order.id}`;
+		                                    const message = `شكراً لتعاملك مع مركز الصيانة أ/ ${order.customer_name} ✨\n\nتم إتمام صيانة جهازك (${order.device_type}) بنجاح.\n\n📄 رابط الفاتورة والضمان الرقمي الخاص بك:\n${invoiceUrl}\n\nنرجو منك تقييم الخدمة من خلال الرابط بأسفل الفاتورة لضمان تقديم أفضل جودة دائماً. 🌹`;
+		                                    sendWhatsApp(order.phone, message);
+		                                  }} 
+		                                  className="w-9 h-9 bg-emerald-500/20 text-emerald-500 rounded-lg border border-emerald-500/20 flex items-center justify-center active:scale-90 transition-all" 
+		                                  title="إرسال شكر وفاتورة واتساب"
+		                                >
+		                                  <MessageCircle size={16} />
+		                                </button>
+		                                <button onClick={() => sendFeedbackRequest(order)} className="w-9 h-9 bg-amber-500/20 text-amber-500 rounded-lg border border-amber-500/20 flex items-center justify-center active:scale-90 transition-all" title="طلب تقييم سريع"><Star size={16} /></button>
+		                              </div>
+		                            )}
 
 	                            {order.status === 'in-progress' && canEditDelete() && (
 	                              <button onClick={() => { setSelectedOrder(order); setSettleForm({ total_amount: order.total_amount || 0, parts_cost: order.parts_cost || 0, transport_cost: order.transport_cost || 0, net_amount: order.net_amount || 0, technician_share: order.technician_share || 0, company_share: order.company_share || 0 }); setShowSettleModal(true); }} className="flex-[2] h-9 bg-orange-600 text-white rounded-lg text-[10px] font-black shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all"><DollarSign size={14} /> تصفية</button>
@@ -4123,7 +4140,7 @@ export default function ProtectedOrders() {
           </div>
           <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-black tracking-wide text-emerald-300 shadow-[0_0_14px_rgba(52,211,153,0.12)]">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.9)]" />
-            إصدار النظام: v4.1.7
+            إصدار النظام: v4.1.8
           </div>
         </div>
       </div>
