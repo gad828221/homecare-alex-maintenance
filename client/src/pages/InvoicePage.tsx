@@ -68,11 +68,16 @@ export default function InvoicePageNew() {
   };
 
   const getWarrantyRemaining = () => {
-    const endDate = calculateWarrantyEndDate(invoice?.warranty_period);
+    const warrantyPeriod = invoice?.warranty_period || '';
+    if (warrantyPeriod.includes('بدون') || warrantyPeriod.includes('0')) {
+      return { status: 'expired', text: "بدون ضمان", days: 0, months: 0, remainingDays: 0 };
+    }
+
+    const endDate = calculateWarrantyEndDate(warrantyPeriod);
     const today = new Date();
     const end = new Date(endDate);
     
-    if (today > end) return { status: 'expired', text: "انتهى الضمان", days: 0 };
+    if (today > end) return { status: 'expired', text: "انتهى الضمان", days: 0, months: 0, remainingDays: 0 };
 
     const diffTime = Math.abs(end.getTime() - today.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -83,8 +88,8 @@ export default function InvoicePageNew() {
 
     if (days < 0) {
         months--;
-        const prevMonthDate = new Date(end.getFullYear(), end.getMonth(), 0);
-        days = prevMonthDate.getDate() + days;
+        const lastDayOfPrevMonth = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+        days = lastDayOfPrevMonth + days;
     }
 
     let text = "";
@@ -97,8 +102,8 @@ export default function InvoicePageNew() {
       status: diffDays <= 7 ? 'expiring' : 'active', 
       text, 
       days: diffDays,
-      months,
-      remainingDays: days
+      months: Math.max(0, months),
+      remainingDays: Math.max(0, days)
     };
   };
 
@@ -328,42 +333,44 @@ export default function InvoicePageNew() {
                 </div>
               </div>
               
-	              <div className={`mt-4 p-6 rounded-2xl text-center shadow-inner relative overflow-hidden ${
-	                getWarrantyRemaining().status === 'expired' ? 'bg-red-600 text-white' : 
-	                getWarrantyRemaining().status === 'expiring' ? 'bg-orange-500 text-white' : 'bg-blue-600 text-white'
-	              }`}>
-                {/* عرض التقييم إذا وجد */}
-                {invoice?.rating > 0 && (
-                  <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-md px-2 py-1 rounded-lg flex items-center gap-1 border border-white/30 animate-in fade-in zoom-in duration-500">
-                    <Star size={14} className="text-yellow-300 fill-yellow-300" />
-                    <span className="text-xs font-black">{invoice.rating}/5</span>
-                  </div>
-                )}
-                <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-                  <div className="absolute top-2 left-2 rotate-12"><ShieldCheck className="w-12 h-12" /></div>
-                  <div className="absolute bottom-2 right-2 -rotate-12"><Clock className="w-12 h-12" /></div>
-                </div>
-                
-                <p className="text-sm opacity-90 mb-1">حالة الضمان الرقمي</p>
-                <p className="text-3xl font-black mb-2">{getWarrantyRemaining().text}</p>
-                
-                {getWarrantyRemaining().status !== 'expired' && (
-                  <div className="flex justify-center gap-4 mt-4">
-                    <div className="bg-white/20 px-4 py-2 rounded-xl backdrop-blur-sm">
-                      <p className="text-2xl font-bold">{getWarrantyRemaining().months || 0}</p>
-                      <p className="text-[10px]">شهر</p>
-                    </div>
-                    <div className="bg-white/20 px-4 py-2 rounded-xl backdrop-blur-sm">
-                      <p className="text-2xl font-bold">{getWarrantyRemaining().remainingDays || 0}</p>
-                      <p className="text-[10px]">يوم</p>
-                    </div>
-                  </div>
-                )}
-                
-                <p className="mt-4 text-xs opacity-70 italic">
-                  ينتهي في: {calculateWarrantyEndDate(invoice?.warranty_period).toLocaleDateString('ar-EG')}
-                </p>
-              </div>
+		              {getWarrantyRemaining().text !== "بدون ضمان" && (
+		                <div className={`mt-4 p-6 rounded-2xl text-center shadow-inner relative overflow-hidden ${
+		                  getWarrantyRemaining().status === 'expired' ? 'bg-red-600 text-white' : 
+		                  getWarrantyRemaining().status === 'expiring' ? 'bg-orange-500 text-white' : 'bg-blue-600 text-white'
+		                }`}>
+		                  {/* عرض التقييم إذا وجد */}
+		                  {invoice?.rating > 0 && (
+		                    <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-md px-2 py-1 rounded-lg flex items-center gap-1 border border-white/30 animate-in fade-in zoom-in duration-500">
+		                      <Star size={14} className="text-yellow-300 fill-yellow-300" />
+		                      <span className="text-xs font-black">{invoice.rating}/5</span>
+		                    </div>
+		                  )}
+		                  <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+		                    <div className="absolute top-2 left-2 rotate-12"><ShieldCheck className="w-12 h-12" /></div>
+		                    <div className="absolute bottom-2 right-2 -rotate-12"><Clock className="w-12 h-12" /></div>
+		                  </div>
+		                  
+		                  <p className="text-sm opacity-90 mb-1">حالة الضمان الرقمي</p>
+		                  <p className="text-3xl font-black mb-2">{getWarrantyRemaining().text}</p>
+		                  
+		                  {getWarrantyRemaining().status !== 'expired' && (
+		                    <div className="flex justify-center gap-4 mt-4">
+		                      <div className="bg-white/20 px-4 py-2 rounded-xl backdrop-blur-sm">
+		                        <p className="text-2xl font-bold">{getWarrantyRemaining().months || 0}</p>
+		                        <p className="text-[10px]">شهر</p>
+		                      </div>
+		                      <div className="bg-white/20 px-4 py-2 rounded-xl backdrop-blur-sm">
+		                        <p className="text-2xl font-bold">{getWarrantyRemaining().remainingDays || 0}</p>
+		                        <p className="text-[10px]">يوم</p>
+		                      </div>
+		                    </div>
+		                  )}
+		                  
+		                  <p className="mt-4 text-xs opacity-70 italic">
+		                    ينتهي في: {calculateWarrantyEndDate(invoice?.warranty_period).toLocaleDateString('ar-EG')}
+		                  </p>
+		                </div>
+		              )}
 
 	              {getWarrantyRemaining().status !== 'expired' && (
 	                <div className="space-y-3 mt-4">

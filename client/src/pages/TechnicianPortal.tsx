@@ -1970,7 +1970,7 @@ export default function TechnicianPortal() {
       )}
       <div className="text-center pb-8">
         <NotificationStatus />
-        <div className="text-[8px] text-slate-500 opacity-10 mt-4">v4.1.2-radar-notifications-stable</div>
+        <div className="text-[8px] text-slate-500 opacity-10 mt-4">v4.1.3-radar-notifications-stable</div>
       </div>
     </div>
   );
