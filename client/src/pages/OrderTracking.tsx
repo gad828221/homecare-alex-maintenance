@@ -100,7 +100,11 @@ export default function OrderTracking() {
   };
 
   const statusInfo = getStatusInfo(order.status);
+  const techNameDisplay = getTechnicianDisplayName({ name: order.technician });
   const techPhoto = getTechnicianPhotoUrl({ name: order.technician });
+  
+  // فحص وجود إيصال سحب
+  const hasPickupReceipt = order.technician_note?.includes('[PICKUP_RECEIPT]') || order.pickup_status === 'active';
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-20" dir="rtl">
@@ -202,8 +206,8 @@ export default function OrderTracking() {
                 )}
               </div>
               <div>
-                <h4 className="text-lg font-black text-slate-900">{order.technician}</h4>
-                <p className="text-xs text-orange-600 font-bold">متخصص {order.device_type || 'صيانة معتمد'}</p>
+                <h4 className="text-lg font-black text-slate-900">{techNameDisplay}</h4>
+                <p className="text-xs text-orange-600 font-bold">متخصص {getDeviceSpecialty(order.device_type)}</p>
                 <div className="mt-3 flex gap-2">
                   <a href={`tel:${order.technician_phone || '01278885772'}`} className="bg-blue-600 text-white p-2 rounded-xl shadow-lg shadow-blue-200 active:scale-90 transition-all">
                     <Phone size={18} />
@@ -232,6 +236,35 @@ export default function OrderTracking() {
           </div>
         </div>
 
+        {/* Documents Section */}
+        {(order.status === 'completed' || hasPickupReceipt) && (
+          <div className="bg-white rounded-[2.5rem] p-6 shadow-xl border border-slate-100">
+            <h3 className="text-sm font-black text-slate-900 mb-6 flex items-center gap-2">
+              <FileCheck size={18} className="text-orange-600" /> الوثائق الرسمية
+            </h3>
+            <div className="space-y-3">
+              {order.status === 'completed' && (
+                <a 
+                  href={`/invoice?id=${order.id}`} 
+                  target="_blank"
+                  className="w-full bg-emerald-50 text-emerald-700 border border-emerald-100 py-4 rounded-2xl font-black flex items-center justify-center gap-3 shadow-sm active:scale-95 transition-all"
+                >
+                  <ShieldCheck size={20} /> عرض فاتورة الصيانة والضمان
+                </a>
+              )}
+              {hasPickupReceipt && (
+                <a 
+                  href={`/pickup-receipt?id=${order.id}`} 
+                  target="_blank"
+                  className="w-full bg-indigo-50 text-indigo-700 border border-indigo-100 py-4 rounded-2xl font-black flex items-center justify-center gap-3 shadow-sm active:scale-95 transition-all"
+                >
+                  <ClipboardList size={20} /> عرض إيصال سحب الجهاز
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
         <div className="text-center pt-4">
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Maintenance Guide © 2026</p>
@@ -242,12 +275,14 @@ export default function OrderTracking() {
       {/* Action Bar (Only when completed) */}
       {order.status === 'completed' && (
         <div className="fixed bottom-0 left-0 w-full p-4 bg-white/80 backdrop-blur-md border-t border-slate-100 z-20 animate-in slide-in-from-bottom duration-500">
-          <a 
-            href={`/feedback?order=${order.order_number}`} 
-            className="w-full bg-orange-600 hover:bg-orange-700 text-white py-4 rounded-2xl font-black flex items-center justify-center gap-2 shadow-xl shadow-orange-200 transition-all active:scale-95"
-          >
-            <Star size={20} /> تقييم جودة الخدمة
-          </a>
+          <div className="flex gap-3 max-w-2xl mx-auto">
+            <a 
+              href={`/feedback?order=${order.order_number}`} 
+              className="flex-1 bg-orange-600 hover:bg-orange-700 text-white py-4 rounded-2xl font-black flex items-center justify-center gap-2 shadow-xl shadow-orange-200 transition-all active:scale-95"
+            >
+              <Star size={20} /> تقييم جودة الخدمة
+            </a>
+          </div>
         </div>
       )}
     </div>
