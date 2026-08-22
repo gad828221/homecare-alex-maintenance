@@ -855,6 +855,8 @@ export default function TechnicianPortal() {
     const submitSettlement = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // ✅ تم إلغاء شرط تصوير قطع الغيار بناءً على طلب المدير
+    /* 
     if (!oldPartsPhoto || !newPartsPhoto) {
       addNotification({
         type: 'error',
@@ -864,6 +866,7 @@ export default function TechnicianPortal() {
       });
       return;
     }
+    */
 
     if (!companyTransferConfirmed) {
       addNotification({
@@ -875,9 +878,7 @@ export default function TechnicianPortal() {
       return;
     }
 
-    const photoNotes = `
-[OLD_PARTS:${oldPartsPhoto}]
-[NEW_PARTS:${newPartsPhoto}]`;
+    const photoNotes = (oldPartsPhoto || newPartsPhoto) ? `\n[OLD_PARTS:${oldPartsPhoto || ''}]\n[NEW_PARTS:${newPartsPhoto || ''}]` : '';
     const transferAt = new Date().toISOString();
     const finalNote = mergeCompanyTransferMarker(`${selectedOrder.technician_note || ''}${photoNotes}`, {
       status: 'pending',
@@ -1812,47 +1813,13 @@ export default function TechnicianPortal() {
               <button onClick={() => setShowSettleModal(false)} className="p-2 bg-slate-700 rounded-full text-slate-400 hover:text-white"><X size={20} /></button>
             </div>
             
-            <form onSubmit={submitSettlement} className="space-y-5">
-              {/* Photos Section */}
-              <div className="rounded-2xl border border-orange-500/20 bg-slate-900/40 p-3">
-                <p className="text-[10px] text-slate-400 text-center mb-3">يمكنك التصوير الآن أو اختيار صورة محفوظة من الهاتف</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black text-rose-400 block text-center">📸 القطع القديمة</label>
-                    <div className="relative h-28 bg-slate-950 rounded-2xl border-2 border-dashed border-rose-500/30 flex items-center justify-center overflow-hidden transition-all">
-                      {(oldPartsPhoto || oldPartsPreview) ? (
-                        <img src={oldPartsPhoto || oldPartsPreview} alt="صورة قطع الغيار القديمة" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="text-center"><Camera className="text-rose-500/50 w-8 h-8 mx-auto" /><span className="text-[9px] text-slate-500">لم يتم اختيار صورة</span></div>
-                      )}
-                      {isUploadingPhoto && <div className="absolute inset-0 bg-slate-950/75 flex items-center justify-center"><RefreshCw className="text-orange-400 animate-spin" size={22} /></div>}
-                    </div>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      <label htmlFor={`old-parts-camera-${selectedOrder.id}`} className="cursor-pointer rounded-xl bg-rose-600/20 border border-rose-500/30 text-rose-200 py-2 text-[9px] font-black flex items-center justify-center gap-1 active:scale-95 transition-transform"><Camera size={13} /> تصوير</label>
-                      <label htmlFor={`old-parts-gallery-${selectedOrder.id}`} className="cursor-pointer rounded-xl bg-slate-700 border border-slate-600 text-slate-200 py-2 text-[9px] font-black flex items-center justify-center gap-1 active:scale-95 transition-transform"><Upload size={13} /> من الهاتف</label>
-                      <input id={`old-parts-camera-${selectedOrder.id}`} type="file" accept="image/*" capture="environment" onChange={(e) => handlePhotoUpload(selectedOrder.id, e, 'old')} className="sr-only" disabled={isUploadingPhoto} />
-                      <input id={`old-parts-gallery-${selectedOrder.id}`} type="file" accept="image/*" onChange={(e) => handlePhotoUpload(selectedOrder.id, e, 'old')} className="sr-only" disabled={isUploadingPhoto} />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black text-emerald-400 block text-center">📸 القطع الجديدة</label>
-                    <div className="relative h-28 bg-slate-950 rounded-2xl border-2 border-dashed border-emerald-500/30 flex items-center justify-center overflow-hidden transition-all">
-                      {(newPartsPhoto || newPartsPreview) ? (
-                        <img src={newPartsPhoto || newPartsPreview} alt="صورة قطع الغيار الجديدة" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="text-center"><Camera className="text-emerald-500/50 w-8 h-8 mx-auto" /><span className="text-[9px] text-slate-500">لم يتم اختيار صورة</span></div>
-                      )}
-                      {isUploadingPhoto && <div className="absolute inset-0 bg-slate-950/75 flex items-center justify-center"><RefreshCw className="text-orange-400 animate-spin" size={22} /></div>}
-                    </div>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      <label htmlFor={`new-parts-camera-${selectedOrder.id}`} className="cursor-pointer rounded-xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-200 py-2 text-[9px] font-black flex items-center justify-center gap-1 active:scale-95 transition-transform"><Camera size={13} /> تصوير</label>
-                      <label htmlFor={`new-parts-gallery-${selectedOrder.id}`} className="cursor-pointer rounded-xl bg-slate-700 border border-slate-600 text-slate-200 py-2 text-[9px] font-black flex items-center justify-center gap-1 active:scale-95 transition-transform"><Upload size={13} /> من الهاتف</label>
-                      <input id={`new-parts-camera-${selectedOrder.id}`} type="file" accept="image/*" capture="environment" onChange={(e) => handlePhotoUpload(selectedOrder.id, e, 'new')} className="sr-only" disabled={isUploadingPhoto} />
-                      <input id={`new-parts-gallery-${selectedOrder.id}`} type="file" accept="image/*" onChange={(e) => handlePhotoUpload(selectedOrder.id, e, 'new')} className="sr-only" disabled={isUploadingPhoto} />
-                    </div>
-                  </div>
-                </div>
-              </div>
+	            <form onSubmit={submitSettlement} className="space-y-5">
+	              {/* ✅ تم إخفاء قسم الصور بناءً على طلب المدير لتبسيط التصفية */}
+	              {/* 
+	              <div className="rounded-2xl border border-orange-500/20 bg-slate-900/40 p-3">
+	                ...
+	              </div>
+	              */}
 
               {/* Financial Inputs */}
               <div className="space-y-4 bg-slate-900/50 p-4 rounded-2xl border border-slate-700/50">
@@ -1970,7 +1937,7 @@ export default function TechnicianPortal() {
       )}
       <div className="text-center pb-8">
         <NotificationStatus />
-        <div className="text-[8px] text-slate-500 opacity-10 mt-4">v4.1.3-radar-notifications-stable</div>
+        <div className="text-[8px] text-slate-500 opacity-10 mt-4">v4.1.4-radar-notifications-stable</div>
       </div>
     </div>
   );
