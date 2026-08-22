@@ -114,7 +114,7 @@ export default function NotificationStatus() {
               className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl border transition-all ${
                 loading 
                   ? "text-slate-400 bg-slate-800 border-slate-700 cursor-wait" 
-                  : "text-orange-500 bg-orange-500/10 border-orange-500/20 hover:bg-orange-500/20 animate-pulse"
+                  : "text-orange-500 bg-orange-500/10 border-orange-500/20 hover:bg-orange-500/20"
               }`}
             >
               {loading ? <RefreshCw size={12} className="animate-spin" /> : <BellOff size={12} />}
