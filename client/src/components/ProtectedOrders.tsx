@@ -2093,7 +2093,7 @@ export default function ProtectedOrders() {
       }
     }
   };
-  const clearFilters = () => { setSearchTerm(''); setFilterStatus('all'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); setFilterWarranty('all'); };
+  const clearFilters = () => { setSearchTerm(''); setFilterStatus('live'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); setFilterWarranty('all'); };
 
 
   const dateFilteredOrders = orders.filter(o => {
@@ -2672,7 +2672,7 @@ export default function ProtectedOrders() {
       <div className="sticky top-[60px] z-30 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-2 py-2 overflow-x-auto no-scrollbar flex gap-1.5 shadow-xl">
         {[
           { id: 'orders', label: 'الأوردرات', icon: <ClipboardList size={16} />, color: 'orange' },
-          { id: 'archived', label: `الأرشيف (${archivedOrders.length})`, icon: <LayoutDashboard size={16} />, color: 'indigo' },
+	          { id: 'archived', label: `الأرشيف (${archivedOrders.length})`, icon: <LayoutDashboard size={16} />, color: 'indigo' },
           { id: 'technicians', label: 'الفنيين', icon: <Users size={16} />, color: 'orange', hide: userRole === 'viewer' },
           { id: 'reports', label: 'التقارير', icon: <FileCheck size={16} />, color: 'orange', hide: userRole === 'viewer' },
           { id: 'repeatCustomers', label: `المتكررون (${repeatCustomers.length})`, icon: <Star size={16} />, color: 'emerald', hide: userRole === 'viewer' },
@@ -2866,7 +2866,7 @@ export default function ProtectedOrders() {
 	                    <>
 	                      <span className="text-[10px] font-black text-slate-600 uppercase tracking-tighter">النتائج لـ:</span>
 	                      {searchTerm && <span className="bg-orange-500/10 text-orange-400 border border-orange-500/20 px-3 py-1 rounded-full text-[9px] font-black flex items-center gap-1.5">🔍 {searchTerm} <X size={10} className="cursor-pointer" onClick={() => setSearchTerm('')}/></span>}
-	                      {filterStatus !== 'all' && <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1 rounded-full text-[9px] font-black flex items-center gap-1.5">🏷️ {filterStatus} <X size={10} className="cursor-pointer" onClick={() => setFilterStatus('all')}/></span>}
+	                      {filterStatus !== 'live' && <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1 rounded-full text-[9px] font-black flex items-center gap-1.5">🏷️ {filterStatus === 'all' ? 'الكل' : filterStatus} <X size={10} className="cursor-pointer" onClick={() => setFilterStatus('live')}/></span>}
 	                      {filterTechnician && <span className="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-3 py-1 rounded-full text-[9px] font-black flex items-center gap-1.5">👨‍🔧 {filterTechnician === '__NONE__' ? 'بدون فني' : filterTechnician} <X size={10} className="cursor-pointer" onClick={() => setFilterTechnician('')}/></span>}
 	                      {filterDelay === 'delayed' && <span className="bg-red-500/10 text-red-400 border border-red-500/20 px-3 py-1 rounded-full text-[9px] font-black flex items-center gap-1.5">🚨 متأخر <X size={10} className="cursor-pointer" onClick={() => setFilterDelay('all')}/></span>}
 	                      
@@ -2913,10 +2913,10 @@ export default function ProtectedOrders() {
 			                    <div className="text-4xl font-black text-emerald-400 group-hover:scale-110 transition-transform tabular-nums">{filteredOrders.filter(o => o.status === 'completed').length}</div>
 			                    <div className="text-[10px] font-black text-emerald-300/60 mt-2 uppercase tracking-widest flex items-center justify-center gap-1.5"><CheckCircle2 size={12}/> مكتملة</div>
 			                  </button>
-			                  <button type="button" onClick={clearFilters} className="bg-slate-800/50 border border-slate-700/50 rounded-[2rem] p-5 text-center hover:bg-slate-800 transition-all group shadow-lg active:scale-95">
-			                    <div className="text-4xl font-black text-white group-hover:scale-110 transition-transform tabular-nums">{filteredOrders.length}</div>
-			                    <div className="text-[10px] font-black text-slate-500 mt-2 uppercase tracking-widest flex items-center justify-center gap-1.5"><ClipboardList size={12}/> الإجمالي</div>
-			                  </button>
+				                  <button type="button" onClick={() => setFilterStatus('all')} className="bg-slate-800/50 border border-slate-700/50 rounded-[2rem] p-5 text-center hover:bg-slate-800 transition-all group shadow-lg active:scale-95">
+				                    <div className="text-4xl font-black text-white group-hover:scale-110 transition-transform tabular-nums">{filterStatus === 'live' ? filteredOrders.length : allFilteredOrders.length}</div>
+				                    <div className="text-[10px] font-black text-slate-500 mt-2 uppercase tracking-widest flex items-center justify-center gap-1.5"><ClipboardList size={12}/> {filterStatus === 'live' ? 'العمل الحالي' : 'الإجمالي'}</div>
+				                  </button>
 		                </div>
 
                   {/* لوحة التقارير البيانية المصغرة */}
@@ -3975,7 +3975,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.8.2-live-focus-mode-default</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.8.3-synchronized-live-counters</div>
         </div>
       </div>
 
