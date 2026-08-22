@@ -836,7 +836,8 @@ export default function ProtectedOrders() {
 
   const sendWhatsAppToCustomerOnCreate = (order: any) => {
     if (isViewer) return;
-    const message = `📝 *تم استلام طلب الصيانة بنجاح* 📝\n\n🔢 *رقم الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n🔧 *الجهاز:* ${order.device_type} - ${order.brand}\n📍 *العنوان:* ${order.address || 'غير محدد'}\n\n✅ تم تسجيل طلبك وسيتم التواصل معك قريباً.`;
+    const trackingUrl = `https://www.maintenanceguide.life/track/${order.order_number}`;
+    const message = `📝 *تم استلام طلب الصيانة بنجاح* 📝\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n🔧 *الجهاز:* ${order.device_type} - ${order.brand}\n📍 *العنوان:* ${order.address || 'غير محدد'}\n\n✅ تم تسجيل طلبك وسيتم التواصل معك قريباً.\n\n📍 *يمكنك تتبع حالة طلبك من هنا:*\n${trackingUrl}`;
     openWhatsApp(order.phone, message);
   };
 
@@ -863,8 +864,9 @@ export default function ProtectedOrders() {
     if (!['admin', 'manager'].includes(userRole?.toLowerCase() || '') || !order?.phone || !technicianIdentity) return false;
     const profile = getOrderTechnicianProfile(technicianIdentity);
     const specialty = getTechnicianSpecialty(profile.technician, order.device_type);
+    const trackingUrl = `https://www.maintenanceguide.life/track/${order.order_number}`;
     const photoLine = profile.photoUrl ? `🖼️ *صورة الفني:*\n${profile.photoUrl}\n` : '';
-    const message = `👨‍🔧 *تم تعيين الفني المسؤول عن طلبك* 👨‍🔧\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n\n✅ *الفني المتوجه إليك:* ${profile.displayName}\n🛠️ *التخصص:* متخصص ${specialty}\n${photoLine}\n📍 سيقوم الفني بالتواصل معك والتوجه إلى العنوان المسجل في الطلب.\n\n🏢 *Maintenance Guide (MG)*\nشكراً لثقتكم.`;
+    const message = `👨‍🔧 *تم تعيين الفني المسؤول عن طلبك* 👨‍🔧\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n\n✅ *الفني المتوجه إليك:* ${profile.displayName}\n🛠️ *التخصص:* متخصص ${specialty}\n${photoLine}\n📍 سيقوم الفني بالتواصل معك والتوجه إلى العنوان المسجل في الطلب.\n\n📍 *تتبع طلبك والضمان من هنا:*\n${trackingUrl}\n\n🏢 *Maintenance Guide (MG)*\nشكراً لثقتكم.`;
     openWhatsApp(order.phone, message);
     return true;
   };
@@ -3860,7 +3862,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.7.3-tracking-bug-fix</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.7.4-manager-tracking-link</div>
         </div>
       </div>
 
