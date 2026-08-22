@@ -5,7 +5,7 @@ import {
   Edit, Trash2, RefreshCw, Phone,
   Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut, Send, Play, LogIn,
   RotateCcw, Clock, MapPin, Star, Cpu, ShieldCheck, Wrench, UserCircle, Wallet,
-  ClipboardList, FileCheck, Camera, Navigation
+  ClipboardList, FileCheck, Camera, Navigation, ExternalLink
 } from "lucide-react";
 import { createClient } from '@supabase/supabase-js';
 import { Helmet } from 'react-helmet-async';
@@ -3143,9 +3143,18 @@ export default function ProtectedOrders() {
 	                            <div className="flex gap-2">
 	                              <a onClick={(e) => e.stopPropagation()} href={`tel:${order.phone}`} className="w-9 h-9 bg-blue-600/90 hover:bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-md active:scale-90 transition-all border border-white/10" title="اتصال"><Phone size={16} /></a>
 	                              <button onClick={(e) => { e.stopPropagation(); sendWhatsApp(order.phone, `مرحباً أ/ ${order.customer_name}، معك مركز الصيانة بخصوص طلبك رقم ${order.order_number}`); }} className="w-9 h-9 bg-emerald-600/90 hover:bg-emerald-600 text-white rounded-xl flex items-center justify-center shadow-md active:scale-90 transition-all border border-white/10" title="واتساب"><Send size={16} /></button>
-	                              {canEditDelete() && order.technician && (
-	                                <button onClick={(e) => { e.stopPropagation(); if (!order.phone) return showToast('رقم العميل غير مسجل', 'error'); sendTechnicianAssignmentToCustomer(order, order.technician); }} className="w-9 h-9 bg-orange-600/90 hover:bg-orange-600 text-white rounded-xl flex items-center justify-center shadow-md active:scale-90 transition-all border border-white/10" title="بيانات الفني"><UserCircle size={16} /></button>
-	                              )}
+		                              {canEditDelete() && (
+		                                <button 
+		                                  onClick={(e) => { 
+		                                    e.stopPropagation(); 
+		                                    window.open(`/track/${order.order_number}`, '_blank');
+		                                  }} 
+		                                  className="w-9 h-9 bg-indigo-600/90 hover:bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-md active:scale-90 transition-all border border-white/10" 
+		                                  title="رابط التتبع الشامل"
+		                                >
+		                                  <ExternalLink size={16} />
+		                                </button>
+		                              )}
 	                            </div>
 	                            
 	                            <div className="flex gap-2">
@@ -3862,7 +3871,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.7.4-manager-tracking-link</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.7.6-comprehensive-tracking-button</div>
         </div>
       </div>
 
