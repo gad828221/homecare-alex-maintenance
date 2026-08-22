@@ -2200,7 +2200,7 @@ export default function ProtectedOrders() {
       const matchesOrderNum = orderNumber.includes(query);
       if (!matchesName && !matchesTechnician && !matchesPhone && !matchesOrderNum) return false;
     }
-    if (filterStatus !== 'all' && o.status !== filterStatus) return false;
+    if (filterStatus !== 'all' && filterStatus !== 'live' && o.status !== filterStatus) return false;
     if (filterTechnician && o.technician !== filterTechnician) return false;
     return true;
   });
@@ -3975,7 +3975,7 @@ export default function ProtectedOrders() {
           <div className="text-[10px] text-orange-500/30 mt-1 font-mono">
             System Time: {new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo' })}
           </div>
-          <div className="text-[8px] text-slate-500 opacity-10">v3.8.3-synchronized-live-counters</div>
+          <div className="text-[8px] text-slate-500 opacity-10">v3.8.4-fixed-archive-visibility</div>
         </div>
       </div>
 
