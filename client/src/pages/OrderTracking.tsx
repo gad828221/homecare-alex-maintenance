@@ -3,7 +3,7 @@ import { useRoute } from "wouter";
 import { 
   CheckCircle2, Clock, MapPin, Wrench, Phone, MessageCircle, 
   ChevronLeft, ShieldCheck, AlertCircle, RotateCcw, LayoutDashboard,
-  Star
+  Star, FileCheck, ClipboardList
 } from "lucide-react";
 import { createClient } from '@supabase/supabase-js';
 import { Helmet } from 'react-helmet-async';
