@@ -8,7 +8,7 @@ import {
 import { createClient } from '@supabase/supabase-js';
 import { Helmet } from 'react-helmet-async';
 import { formatOrderDateTime } from '../utils/orderTiming';
-import { getTechnicianDisplayName, getTechnicianPhotoUrl, getTechnicianSpecialty } from '../utils/technicianProfile';
+import { getTechnicianDisplayName, getTechnicianPhotoUrl, getTechnicianSpecialty, getDeviceSpecialty } from '../utils/technicianProfile';
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
