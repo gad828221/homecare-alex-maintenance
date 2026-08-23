@@ -51,7 +51,10 @@ export default function OneSignalDiagnostics() {
     const sdk = win.OneSignal;
     const subscription = sdk?.User?.PushSubscription;
     const optedIn = subscription?.optedIn instanceof Promise
-      ? await subscription.optedIn
+      ? await Promise.race([
+          subscription.optedIn,
+          new Promise<undefined>((resolve) => window.setTimeout(() => resolve(undefined), 2000)),
+        ])
       : subscription?.optedIn;
     const registrations = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistrations() : [];
     const pushWorkers = registrations.filter((registration) => registration.scope.includes('/push/onesignal/'));
@@ -78,10 +81,15 @@ export default function OneSignalDiagnostics() {
     const { user, role } = readAuthSession();
     if (!user) return;
     setBusy(true);
-    syncOneSignalIdentity(user, role || user.role);
-    window.setTimeout(() => {
-      void inspect().finally(() => setBusy(false));
-    }, 1200);
+    try {
+      syncOneSignalIdentity(user, role || user.role);
+      await new Promise((resolve) => window.setTimeout(resolve, 1200));
+      await inspect();
+    } catch (error) {
+      setState((previous) => ({ ...previous, error: error instanceof Error ? error.message : String(error) }));
+    } finally {
+      setBusy(false);
+    }
   };
 
   const enableNotifications = async () => {
