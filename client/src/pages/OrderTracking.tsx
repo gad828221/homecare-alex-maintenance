@@ -9,6 +9,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Helmet } from 'react-helmet-async';
 import { formatOrderDateTime } from '../utils/orderTiming';
 import { getTechnicianDisplayName, getTechnicianPhotoUrl, getTechnicianSpecialty, getDeviceSpecialty } from '../utils/technicianProfile';
+import { getPickupTypeLabel, parsePickupReceipt } from '../utils/pickupReceipt';
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -103,14 +104,9 @@ export default function OrderTracking() {
   const techNameDisplay = getTechnicianDisplayName({ name: order.technician });
   const techPhoto = getTechnicianPhotoUrl({ name: order.technician });
   
-  // فحص وجود إيصال سحب
-  const hasPickupReceipt = Boolean(
-    order.technician_note?.includes('[PICKUP_RECEIPT]') ||
-    order.technician_notes?.includes('[PICKUP_RECEIPT]') ||
-    order.pickup_status === 'active' ||
-    order.pickup_date ||
-    order.pickup_type
-  );
+  // فحص وجود إيصال سحب من نفس المصدر الذي تستخدمه صفحة الإيصال
+  const pickupReceipt = parsePickupReceipt(order);
+  const hasPickupReceipt = Boolean(pickupReceipt);
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-20" dir="rtl">
@@ -273,7 +269,9 @@ export default function OrderTracking() {
                   target="_blank"
                   className="w-full bg-indigo-50 text-indigo-700 border border-indigo-100 py-4 rounded-2xl font-black flex items-center justify-center gap-3 shadow-sm active:scale-95 transition-all"
                 >
-                  <ClipboardList size={20} /> عرض إيصال سحب الجهاز
+                  <ClipboardList size={20} />
+                  <span>عرض إيصال السحب</span>
+                  {pickupReceipt && <span className="mr-auto rounded-full bg-white/80 px-3 py-1 text-[10px] font-black text-indigo-700">{getPickupTypeLabel(pickupReceipt.type)}</span>}
                 </a>
               )}
             </div>

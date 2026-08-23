@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import jsPDF from "jspdf";
 import { openWhatsAppDirectly } from '../utils/whatsapp';
-import { getPickupTypeLabel, parsePickupReceipt, stripPickupMarker } from '../utils/pickupReceipt';
+import { createPickupMarker, getPickupTypeLabel, parsePickupReceipt, stripPickupMarker, type PickupReceiptData, type PickupType } from '../utils/pickupReceipt';
 import { Download, Printer, Send, Copy, Check, MapPin, Phone, MessageCircle, Clock, ShieldCheck, User, Wrench, AlertCircle, Edit2, Save, X, ClipboardList, Camera, Package } from "lucide-react";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -21,7 +21,9 @@ export default function PickupReceiptPage() {
     admin_notes: "",
     warranty_period: "6 أشهر",
     status: "in-progress",
-    technician: ""
+    technician: "",
+    pickupType: 'full_device' as PickupType,
+    pickupPartName: ''
   });
   const [saving, setSaving] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -54,13 +56,16 @@ export default function PickupReceiptPage() {
         if (data && data.length > 0) {
           const orderData = data[0];
           setOrder(orderData);
+          const existingPickup = parsePickupReceipt(orderData);
           setEditForm({
             deposit_amount: orderData.deposit_amount || 0,
             technician_notes: getCleanTechnicianNotes(orderData.technician_notes || orderData.technician_note),
             admin_notes: orderData.admin_notes || "",
             warranty_period: orderData.warranty_period || "6 أشهر",
             status: orderData.status || "in-progress",
-            technician: orderData.technician || ""
+            technician: orderData.technician || "",
+            pickupType: existingPickup?.type || 'full_device',
+            pickupPartName: existingPickup?.partName || orderData.pickup_part_name || ''
           });
         } else {
           setError("الأوردر غير موجود");
@@ -88,9 +93,23 @@ export default function PickupReceiptPage() {
     if (!order) return;
     setSaving(true);
     try {
-      const pickupMarker = getPickupMarker(order.technician_notes || order.technician_note);
+      if (canManageOrderMeta && editForm.pickupType !== 'full_device' && !editForm.pickupPartName.trim()) {
+        alert('اكتب اسم أو وصف قطعة الغيار أولًا');
+        return;
+      }
+      const existingPickup = parsePickupReceipt(order);
+      const pickupRecord: PickupReceiptData = {
+        type: editForm.pickupType,
+        partName: editForm.pickupType === 'full_device' ? '' : editForm.pickupPartName.trim(),
+        deposit: Number(editForm.deposit_amount) || 0,
+        notes: existingPickup?.notes || '',
+        photos: existingPickup?.photos || [],
+        pickupDate: existingPickup?.pickupDate || String(order.created_at || new Date().toISOString()),
+        status: existingPickup?.status || 'active'
+      };
+      const pickupMarker = createPickupMarker(pickupRecord);
       const cleanTechnicianNotes = getCleanTechnicianNotes(editForm.technician_notes);
-      const persistedTechnicianNotes = `${cleanTechnicianNotes}${cleanTechnicianNotes && pickupMarker ? '\n' : ''}${pickupMarker}`;
+      const persistedTechnicianNotes = `${cleanTechnicianNotes}${cleanTechnicianNotes ? '\n' : ''}${pickupMarker}`;
       const updatedFields = {
         deposit_amount: editForm.deposit_amount,
         technician_notes: persistedTechnicianNotes,
@@ -112,7 +131,23 @@ export default function PickupReceiptPage() {
       });
 
       if (response.ok) {
-        setOrder({ ...order, ...updatedFields });
+        try {
+          await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${order.id}`, {
+            method: 'PATCH',
+            headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              pickup_type: pickupRecord.type,
+              pickup_part_name: pickupRecord.partName,
+              pickup_notes: pickupRecord.notes,
+              pickup_photos: pickupRecord.photos,
+              pickup_date: pickupRecord.pickupDate,
+              pickup_status: pickupRecord.status
+            })
+          });
+        } catch (optionalError) {
+          console.warn('أعمدة السحب الاختيارية غير متاحة؛ تم حفظ النوع داخل علامة الإيصال.', optionalError);
+        }
+        setOrder({ ...order, ...updatedFields, technician_notes: persistedTechnicianNotes, technician_note: persistedTechnicianNotes });
         setIsEditing(false);
         alert("✅ تم حفظ التعديلات بنجاح");
       } else {
@@ -388,6 +423,20 @@ export default function PickupReceiptPage() {
                         <label className="block font-bold text-slate-700 mb-1">🛡️ مدة الضمان</label>
                         <input value={editForm.warranty_period} onChange={(e) => setEditForm({ ...editForm, warranty_period: e.target.value })} placeholder="مثال: 6 أشهر أو بدون ضمان" className="w-full p-2 border rounded-lg" />
                       </div>
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">📦 نوع السحب</label>
+                        <select value={editForm.pickupType} onChange={(e) => setEditForm({ ...editForm, pickupType: e.target.value as PickupType })} className="w-full p-2 border rounded-lg">
+                          <option value="full_device">سحب الجهاز بالكامل</option>
+                          <option value="part_repair">سحب قطعة للإصلاح</option>
+                          <option value="part_replacement">سحب قطعة للاستبدال</option>
+                        </select>
+                      </div>
+                      {editForm.pickupType !== 'full_device' && (
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-1">اسم أو وصف القطعة</label>
+                          <input value={editForm.pickupPartName} onChange={(e) => setEditForm({ ...editForm, pickupPartName: e.target.value })} placeholder="مثال: كارتة تشغيل" className="w-full p-2 border rounded-lg" />
+                        </div>
+                      )}
                       <div>
                         <label className="block font-bold text-slate-700 mb-1">📍 حالة التتبع</label>
                         <select value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })} className="w-full p-2 border rounded-lg">
