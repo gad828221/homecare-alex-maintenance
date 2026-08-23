@@ -8,6 +8,9 @@ type PushState = {
   permission: string;
   subscribed: string;
   subscriptionId: string;
+  token: string;
+  serviceWorker: string;
+  error: string;
   externalId: string;
 };
 
@@ -20,8 +23,10 @@ type OneSignalRuntime = {
     externalId?: string;
     PushSubscription?: {
       id?: string;
+      token?: string;
       optedIn?: boolean | Promise<boolean>;
       optIn?: () => Promise<void> | void;
+      addEventListener?: (event: 'change', listener: (change: { current?: { id?: string; token?: string; optedIn?: boolean } }) => void) => void;
     };
   };
 };
@@ -32,6 +37,9 @@ const initialState: PushState = {
   subscribed: 'غير معروف',
   subscriptionId: '—',
   externalId: '—',
+  token: '—',
+  serviceWorker: 'جارٍ الفحص',
+  error: '',
 };
 
 export default function OneSignalDiagnostics() {
@@ -45,14 +53,19 @@ export default function OneSignalDiagnostics() {
     const optedIn = subscription?.optedIn instanceof Promise
       ? await subscription.optedIn
       : subscription?.optedIn;
+    const registrations = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistrations() : [];
+    const pushWorkers = registrations.filter((registration) => registration.scope.includes('/push/onesignal/'));
     const { user, role } = readAuthSession();
-    setState({
+    setState((previous) => ({
+      ...previous,
       sdk: sdk?.User ? 'جاهز' : win.OneSignalReady ? 'مهيأ بلا بيانات مستخدم' : 'غير جاهز',
       permission: 'Notification' in window ? Notification.permission : 'غير مدعوم',
       subscribed: optedIn === true ? 'مشترك' : optedIn === false ? 'غير مشترك' : 'غير معروف',
       subscriptionId: String(subscription?.id || '—'),
+      token: String(subscription?.token || '—'),
+      serviceWorker: pushWorkers.length > 0 ? 'مسجل' : 'غير مسجل',
       externalId: String(sdk?.User?.externalId || getOneSignalExternalId(user, role || user?.role) || '—'),
-    });
+    }));
   };
 
   useEffect(() => {
@@ -75,6 +88,10 @@ export default function OneSignalDiagnostics() {
     setBusy(true);
     try {
       const win = window as Window & { OneSignal?: OneSignalRuntime };
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.register('/push/onesignal/OneSignalSDKWorker.js', { scope: '/push/onesignal/' });
+        await registration.update();
+      }
       if ('Notification' in window && Notification.permission !== 'granted') {
         if (win.OneSignal?.Notifications?.requestPermission) {
           await win.OneSignal.Notifications.requestPermission();
@@ -89,6 +106,8 @@ export default function OneSignalDiagnostics() {
       if (user) syncOneSignalIdentity(user, role || user.role);
       await new Promise((resolve) => window.setTimeout(resolve, 2500));
       await inspect();
+    } catch (error) {
+      setState((previous) => ({ ...previous, error: error instanceof Error ? error.message : String(error) }));
     } finally {
       setBusy(false);
     }
@@ -126,6 +145,8 @@ export default function OneSignalDiagnostics() {
         <span className="truncate">External ID: <b className="text-white">{state.externalId}</b></span>
       </div>
       {state.subscriptionId !== '—' && <p className="mt-1 truncate text-[9px] text-slate-500">Subscription: {state.subscriptionId}</p>}
+      <p className="mt-1 text-[9px] text-slate-500">العامل: {state.serviceWorker} · Token: {state.token === '—' ? 'غير موجود' : 'موجود'}</p>
+      {state.error && <p className="mt-1 break-words text-[9px] font-bold text-rose-300">خطأ التسجيل: {state.error}</p>}
     </section>
   );
 }
