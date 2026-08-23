@@ -889,8 +889,13 @@ export default function TechnicianPortal() {
       at: transferAt
     });
 
+    const isInspectionVisit = selectedOrder.status === 'inspected';
     const settlementData = {
       ...settleForm,
+      status: isInspectionVisit ? 'inspected' : 'completed',
+      warranty_period: isInspectionVisit ? 'بدون ضمان' : settleForm.warranty_period,
+      parts_cost: isInspectionVisit ? 0 : settleForm.parts_cost,
+      parts_used: isInspectionVisit ? 'لا توجد — كشف/زيارة فقط' : settleForm.parts_used,
       invoice_approved: true,
       invoice_date: new Date().toISOString().split('T')[0],
       is_paid: false,
@@ -898,7 +903,7 @@ export default function TechnicianPortal() {
       technician_note: finalNote
     };
 
-    await updateStatus(selectedOrder.id, 'completed', settlementData, { notifyManagers: false });
+    await updateStatus(selectedOrder.id, isInspectionVisit ? 'inspected' : 'completed', settlementData, { notifyManagers: false });
 
     setShowSettleModal(false);
 
@@ -910,8 +915,10 @@ export default function TechnicianPortal() {
       partsPercent > 40 ? `⚠️ قطع الغيار ${partsPercent.toFixed(1)}% من الإجمالي (الحد 40%)` : '',
       transportPercent > 15 ? `⚠️ المواصلات ${transportPercent.toFixed(1)}% من الإجمالي (الحد 15%)` : ''
     ].filter(Boolean);
-    const settlementTitle = expenseWarnings.length > 0 ? '⚠️ تصفية بمصاريف مرتفعة — تحويل بانتظار التأكيد' : '💰 الفني أكد تحويل نصيب الشركة';
-    const settlementDetails = `${settlementTitle}\nالفني: ${techName}\nرقم الأوردر: ${selectedOrder.order_number}\nالعميل: ${selectedOrder.customer_name}\nالجهاز: ${selectedOrder.device_type}\nإجمالي الفاتورة: ${settlementTotal} ج.م\nنصيب الشركة المحول: ${Number(settleForm.company_share) || 0} ج.م\nالحالة: بانتظار تأكيد استلام المدير\nقطع الغيار: ${settleForm.parts_cost} ج.م (${partsPercent.toFixed(1)}%)\nالمواصلات: ${settleForm.transport_cost} ج.م (${transportPercent.toFixed(1)}%)${expenseWarnings.length > 0 ? `\n${expenseWarnings.join('\n')}` : ''}\nالوقت: ${new Date().toLocaleString('ar-EG')}`;
+    const settlementTitle = isInspectionVisit
+      ? '🔍 تصفية كشف/زيارة — تحويل بانتظار التأكيد'
+      : expenseWarnings.length > 0 ? '⚠️ تصفية بمصاريف مرتفعة — تحويل بانتظار التأكيد' : '💰 الفني أكد تحويل نصيب الشركة';
+    const settlementDetails = `${settlementTitle}\nالفني: ${techName}\nرقم الأوردر: ${selectedOrder.order_number}\nالعميل: ${selectedOrder.customer_name}\nالجهاز: ${selectedOrder.device_type}\nإجمالي الفاتورة: ${settlementTotal} ج.م\nنصيب الشركة المحول: ${Number(settleForm.company_share) || 0} ج.م\nنوع الخدمة: ${isInspectionVisit ? 'كشف/زيارة فقط — العميل رفض الإصلاح' : 'إصلاح'}\nالحالة: بانتظار تأكيد استلام المدير\nقطع الغيار: ${isInspectionVisit ? 0 : settleForm.parts_cost} ج.م (${partsPercent.toFixed(1)}%)\nالمواصلات: ${settleForm.transport_cost} ج.م (${transportPercent.toFixed(1)}%)${expenseWarnings.length > 0 ? `\n${expenseWarnings.join('\n')}` : ''}\nالوقت: ${new Date().toLocaleString('ar-EG')}`;
     try {
       await fetch(`${supabaseUrl}/rest/v1/notifications`, {
         method: 'POST',
@@ -932,7 +939,7 @@ export default function TechnicianPortal() {
       });
     } catch (e) { console.error('Settlement alert error:', e); }
 
-    const details = `المبلغ: ${settleForm.total_amount} ج.م | قطع غيار: ${settleForm.parts_cost} ج.م | مواصلات: ${settleForm.transport_cost} ج.م
+    const details = `نوع الخدمة: ${isInspectionVisit ? 'كشف/زيارة فقط — العميل رفض الإصلاح' : 'إصلاح'}\nالمبلغ: ${settleForm.total_amount} ج.م | قطع غيار: ${isInspectionVisit ? 0 : settleForm.parts_cost} ج.م | مواصلات: ${settleForm.transport_cost} ج.م
 💰 نصيب الشركة المحول: ${settleForm.company_share} ج.م
 ⏳ الحالة: بانتظار تأكيد استلام المدير
 🛡️ الضمان: ${settleForm.warranty_period}
@@ -944,12 +951,12 @@ export default function TechnicianPortal() {
 
     // إرسال رابط الضمان للعميل تلقائياً
     const invoiceLink = `${window.location.origin}/invoice?id=${selectedOrder.id}`;
-    const customerMsg = `🛡️ *بطاقة الضمان الرقمية - Maintenance Guide* 🛡️\n\n` +
+    const customerMsg = `${isInspectionVisit ? '🔍 *إيصال كشف وزيارة - Maintenance Guide* 🔍' : '🛡️ *بطاقة الضمان الرقمية - Maintenance Guide* 🛡️'}\n\n` +
       `👤 *العميل:* ${selectedOrder.customer_name}\n` +
       `🔢 *رقم الأوردر:* ${selectedOrder.order_number}\n` +
       `🔧 *الجهاز:* ${selectedOrder.device_type}\n` +
       `💰 *المبلغ:* ${settleForm.total_amount} ج.م\n` +
-      `🛡️ *فترة الضمان:* ${settleForm.warranty_period}\n\n` +
+      `🛡️ *فترة الضمان:* ${isInspectionVisit ? 'بدون ضمان — كشف/زيارة فقط' : settleForm.warranty_period}\n\n` +
       `📎 *رابط الضمان والفاتورة الإلكترونية:* \n` +
       `${invoiceLink}\n\n` +
       `✨ *شكراً لثقتك بنا. نحن دائماً في خدمتك.* ✨`;
@@ -1681,7 +1688,7 @@ export default function TechnicianPortal() {
                           )}
                           {(order.status === 'inspected' || order.status === 'deferred') && (
                             <button onClick={() => openSettleModal(order)} className="w-full h-10 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-[10px] font-black transition-all active:scale-95">
-                              📝 تحديث التصفية
+                              {order.status === 'inspected' ? '🔍 تصفية الكشف/الزيارة' : '📝 تحديث التصفية'}
                             </button>
                           )}
                         </div>
@@ -1722,7 +1729,7 @@ export default function TechnicianPortal() {
           <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md">
             <div className="flex justify-between mb-4"><h3 className="text-xl font-bold text-white">إجراءات الأوردر</h3><button onClick={() => setShowActionsModal(false)} className="text-slate-400"><X className="w-5 h-5" /></button></div>
             <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => { setShowActionsModal(false); openActionModal(selectedOrderForActions, 'inspect'); }} className="bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-400 p-3 rounded-xl flex flex-col items-center gap-1 transition"><DollarSign className="w-6 h-6" /><span className="text-xs">كشف بقيمة</span></button>
+              <button onClick={() => { setShowActionsModal(false); openActionModal(selectedOrderForActions, 'inspect'); }} className="bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-400 p-3 rounded-xl flex flex-col items-center gap-1 transition"><DollarSign className="w-6 h-6" /><span className="text-xs">كشف / زيارة بقيمة</span></button>
               <button onClick={() => { setShowActionsModal(false); openActionModal(selectedOrderForActions, 'cancel'); }} className="bg-red-600/20 hover:bg-red-600/30 text-red-400 p-3 rounded-xl flex flex-col items-center gap-1 transition"><Ban className="w-6 h-6" /><span className="text-xs">إلغاء</span></button>
               <button onClick={() => { setShowActionsModal(false); openActionModal(selectedOrderForActions, 'defer'); }} className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 p-3 rounded-xl flex flex-col items-center gap-1 transition"><CalendarX className="w-6 h-6" /><span className="text-xs">تأجيل</span></button>
               <button onClick={() => { setShowActionsModal(false); openActionModal(selectedOrderForActions, 'note'); }} className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 p-3 rounded-xl flex flex-col items-center gap-1 transition"><MessageSquare className="w-6 h-6" /><span className="text-xs">ملاحظة</span></button>
@@ -1936,7 +1943,7 @@ export default function TechnicianPortal() {
         </div>
       )}
       <div className="text-center pb-8">
-        <div className="text-[11px] text-white font-black opacity-90 mt-4 tracking-widest bg-slate-800/50 px-3 py-1 rounded-full inline-block border border-white/10">v4.2.5-technician-alerts-stable</div>
+        <div className="text-[11px] text-white font-black opacity-90 mt-4 tracking-widest bg-slate-800/50 px-3 py-1 rounded-full inline-block border border-white/10">v4.3.2-technician-inspection-settlement</div>
       </div>
       <ScrollButtons />
     </div>

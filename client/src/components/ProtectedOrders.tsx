@@ -1682,7 +1682,7 @@ export default function ProtectedOrders() {
     let statusMessage = "";
     switch (newStatus) {
       case 'in-progress': statusMessage = "🔧 تم بدء العمل على طلبك بواسطة الفني."; break;
-      case 'inspected': statusMessage = "🔍 تم الكشف على جهازك. سيتم إبلاغك بالخطوات التالية."; break;
+      case 'inspected': statusMessage = "🔍 تمت زيارة الكشف وتشخيص العطل. تم تسجيل قيمة الكشف/الزيارة فقط، والإصلاح غير منفذ."; break;
       case 'completed': statusMessage = "✅ تم إكمال طلب الصيانة بنجاح. شكراً لثقتك بنا!"; break;
       case 'cancelled': statusMessage = "❌ تم إلغاء طلب الصيانة. للاستفسار، يرجى الاتصال بنا."; break;
       default: return;
@@ -1698,10 +1698,10 @@ export default function ProtectedOrders() {
     if (!order) return;
     const oldStatus = order.status;
     try {
-      if (oldStatus === 'completed' && newStatus !== 'completed' && order.profit_added_to_cash) await deleteOrderProfitFromCash(order);
+      if (['completed', 'inspected'].includes(oldStatus) && !['completed', 'inspected'].includes(newStatus) && order.profit_added_to_cash) await deleteOrderProfitFromCash(order);
       await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ status: newStatus, ...extraData }) });
       await addNotification('تغيير حالة أوردر', `🔄 تم تغيير حالة أوردر ${order.customer_name} إلى ${newStatus}`);
-      if (newStatus === 'completed' && order.is_paid && !order.profit_added_to_cash) await addCompanyProfitToCash({ ...order, status: newStatus, ...extraData });
+      if (['completed', 'inspected'].includes(newStatus) && order.is_paid && !order.profit_added_to_cash) await addCompanyProfitToCash({ ...order, status: newStatus, ...extraData });
       sendWhatsAppToCustomer(order, newStatus);
       fetchData();
 
@@ -2226,7 +2226,8 @@ export default function ProtectedOrders() {
   const clearFilters = () => { setSearchTerm(''); setFilterStatus('live'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); setFilterWarranty('all'); };
 
   // أي أوردر مكتمل ولم يتم تحصيله يحتاج مراجعة المدير، سواء كان له وسم تحويل أم لا.
-  const isCollectionPending = (order: any) => order.status === 'completed' && !order.is_paid;
+  // الكشف يعني زيارة وتشخيصاً مدفوعاً عند رفض الإصلاح، ولذلك يخضع للتحصيل مثل المكتمل دون اعتباره إصلاحاً منفذاً.
+  const isCollectionPending = (order: any) => ['completed', 'inspected'].includes(order.status) && !order.is_paid;
 
   const dateFilteredOrders = [...orders, ...archivedOrders].filter(o => {
     if (searchTerm) {
@@ -2777,7 +2778,7 @@ export default function ProtectedOrders() {
             >
               <Play fill="currentColor" size={20} /> دخول وتفعيل التنبيهات 🔊
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.3.1</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.3.2</p>
           </div>
         </div>
       )}
@@ -3177,7 +3178,7 @@ export default function ProtectedOrders() {
 	                    { id: 'all', label: 'الكل', color: 'slate' },
 	                    { id: 'pending', label: 'قيد الانتظار', color: 'amber' },
                     { id: 'in-progress', label: 'قيد التنفيذ', color: 'blue' },
-                    { id: 'inspected', label: 'تم الكشف', color: 'cyan' },
+                    { id: 'inspected', label: 'كشف / زيارة', color: 'cyan' },
                     { id: 'completed', label: 'مكتمل', color: 'emerald' },
                     { id: 'returned', label: 'المرتجع ⚠️', color: 'rose' },
                     { id: 'cancelled', label: 'ملغي', color: 'rose' },
@@ -3228,7 +3229,7 @@ export default function ProtectedOrders() {
                     completed: { label: 'مكتمل', Icon: CheckCircle2, card: 'bg-emerald-950/30 border-emerald-400/50 hover:border-emerald-300 hover:shadow-emerald-500/20', badge: 'bg-emerald-500/15 text-emerald-300 border-emerald-400/40', icon: 'bg-emerald-500/20 text-emerald-300', pulse: '' },
                     cancelled: { label: 'ملغي', Icon: AlertCircle, card: 'bg-rose-950/30 border-rose-400/50 hover:border-rose-300 hover:shadow-rose-500/20', badge: 'bg-rose-500/15 text-rose-300 border-rose-400/40', icon: 'bg-rose-500/20 text-rose-300', pulse: '' },
                     deferred: { label: 'مؤجل', Icon: Clock, card: 'bg-purple-950/30 border-purple-400/50 hover:border-purple-300 hover:shadow-purple-500/20', badge: 'bg-purple-500/15 text-purple-300 border-purple-400/40', icon: 'bg-purple-500/20 text-purple-300', pulse: '' },
-                    inspected: { label: 'تم الكشف', Icon: Search, card: 'bg-cyan-950/30 border-cyan-400/50 hover:border-cyan-300 hover:shadow-cyan-500/20', badge: 'bg-cyan-500/15 text-cyan-300 border-cyan-400/40', icon: 'bg-cyan-500/20 text-cyan-300', pulse: '' },
+                    inspected: { label: 'كشف / زيارة', Icon: Search, card: 'bg-cyan-950/30 border-cyan-400/50 hover:border-cyan-300 hover:shadow-cyan-500/20', badge: 'bg-cyan-500/15 text-cyan-300 border-cyan-400/40', icon: 'bg-cyan-500/20 text-cyan-300', pulse: '' },
                     returned: { label: 'مرتجع صيانة', Icon: RotateCcw, card: 'bg-rose-950/40 border-rose-500/70 hover:border-rose-300 hover:shadow-rose-500/30', badge: 'bg-rose-600 text-white border-rose-400/50', icon: 'bg-rose-500/20 text-rose-300', pulse: 'animate-pulse' },
                     delayed: { label: 'متأخر', Icon: AlertCircle, card: 'bg-red-950/40 border-red-500/70 hover:border-red-300 hover:shadow-red-500/30', badge: 'bg-red-500/20 text-red-300 border-red-400/50', icon: 'bg-red-500/20 text-red-300', pulse: 'animate-pulse' }
                   };
@@ -4316,7 +4317,7 @@ export default function ProtectedOrders() {
           </div>
           <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-black tracking-wide text-emerald-300 shadow-[0_0_14px_rgba(52,211,153,0.12)]">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.9)]" />
-            إصدار النظام: v4.3.1
+            إصدار النظام: v4.3.2
           </div>
         </div>
         <ScrollButtons />

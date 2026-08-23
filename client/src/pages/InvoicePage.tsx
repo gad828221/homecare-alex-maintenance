@@ -300,6 +300,11 @@ export default function InvoicePageNew() {
             
             <div className="border-r-4 border-green-500 bg-gradient-to-l from-green-50 to-white p-4 rounded-lg">
               <h3 className="font-bold text-green-700 mb-3 text-lg">🔧 تفاصيل الخدمة</h3>
+              {invoice.status === 'inspected' && (
+                <div className="mb-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-800">
+                  🔍 كشف / زيارة فقط — تم تشخيص العطل، والعميل رفض الإصلاح ودفع قيمة الزيارة.
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="bg-white p-2 rounded">
                   <span className="text-gray-500 text-xs">الجهاز</span>
@@ -314,8 +319,12 @@ export default function InvoicePageNew() {
                   <p className="font-bold text-gray-800">{invoice.problem_description || invoice.problem || '-'}</p>
                 </div>
                 <div className="col-span-2 bg-white p-2 rounded">
+                  <span className="text-gray-500 text-xs">نوع الخدمة</span>
+                  <p className="font-bold text-gray-800">{invoice.status === 'inspected' ? 'كشف / زيارة — بدون إصلاح' : 'صيانة وإصلاح'}</p>
+                </div>
+                <div className="col-span-2 bg-white p-2 rounded">
                   <span className="text-gray-500 text-xs">قطع الغيار المستخدمة</span>
-                  <p className="font-bold text-gray-800">{invoice.parts_used || 'لا توجد'}</p>
+                  <p className="font-bold text-gray-800">{invoice.status === 'inspected' ? 'لا توجد — كشف فقط' : (invoice.parts_used || 'لا توجد')}</p>
                 </div>
               </div>
             </div>
