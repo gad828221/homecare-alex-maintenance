@@ -13,6 +13,9 @@ type PushState = {
 
 type OneSignalRuntime = {
   login?: (externalId: string) => Promise<void> | void;
+  Notifications?: {
+    requestPermission?: () => Promise<boolean | void>;
+  };
   User?: {
     externalId?: string;
     PushSubscription?: {
@@ -71,16 +74,20 @@ export default function OneSignalDiagnostics() {
   const enableNotifications = async () => {
     setBusy(true);
     try {
-      if ('Notification' in window && Notification.permission !== 'granted') {
-        await Notification.requestPermission();
-      }
       const win = window as Window & { OneSignal?: OneSignalRuntime };
+      if ('Notification' in window && Notification.permission !== 'granted') {
+        if (win.OneSignal?.Notifications?.requestPermission) {
+          await win.OneSignal.Notifications.requestPermission();
+        } else {
+          await Notification.requestPermission();
+        }
+      }
       if (Notification.permission === 'granted') {
         await win.OneSignal?.User?.PushSubscription?.optIn?.();
       }
       const { user, role } = readAuthSession();
       if (user) syncOneSignalIdentity(user, role || user.role);
-      await new Promise((resolve) => window.setTimeout(resolve, 1200));
+      await new Promise((resolve) => window.setTimeout(resolve, 2500));
       await inspect();
     } finally {
       setBusy(false);
