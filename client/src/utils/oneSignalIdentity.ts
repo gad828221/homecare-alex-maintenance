@@ -106,8 +106,11 @@ export function syncOneSignalIdentity(user: IdentityUser | null | undefined, rol
   };
 
   const tryCurrentSdk = () => {
-    if (win.OneSignalReady && win.OneSignal) {
-      run(win.OneSignal);
+    const oneSignal = win.OneSignal;
+    const hasLogin = typeof oneSignal?.login === 'function' || typeof oneSignal?.User?.login === 'function';
+    const hasPushSubscription = Boolean(oneSignal?.User?.PushSubscription);
+    if (oneSignal && hasLogin && hasPushSubscription) {
+      run(oneSignal);
       return true;
     }
     return false;
