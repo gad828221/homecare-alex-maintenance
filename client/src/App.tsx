@@ -10,6 +10,7 @@ import { usePwaInstall } from './hooks/usePwaInstall';
 import PresenceManager from "./components/PresenceManager";
 // EmployeeChat removed as per user request (v3.2.8)
 import { readAuthSession } from './utils/authSession';
+import { syncOneSignalIdentity } from './utils/oneSignalIdentity';
 
 const PUBLIC_PATHS = new Set([
   '/', '/login', '/invoice', '/pickup-receipt', '/feedback', '/track',
@@ -124,30 +125,10 @@ function AppContent() {
       manifestLink.setAttribute('href', manifestHref);
     }
 
-    // الربط الصامت مع OneSignal للموظفين والمديرين
+    // الربط الصامت مع OneSignal للموظفين والمديرين بهوية موحدة
     if (isStaffPath) {
-      const storedUser = localStorage.getItem('currentUser');
-      if (storedUser) {
-        try {
-          const user = JSON.parse(storedUser);
-          const role = user.role || localStorage.getItem('userRole') || 'user';
-          const stableId = user.id ?? user.username ?? user.techName;
-          const externalId = stableId !== undefined && stableId !== null ? `${role}:${stableId}` : null;
-          
-          const win = window as any;
-          win.OneSignalDeferred = win.OneSignalDeferred || [];
-          win.OneSignalDeferred.push(async (OneSignal: any) => {
-            if (externalId) {
-              await OneSignal.login(externalId).catch(() => {});
-              await OneSignal.User.addTags({
-                role: role,
-                user_id: String(stableId),
-                ...(user.techName ? { tech_name: user.techName } : {})
-              }).catch(() => {});
-            }
-          });
-        } catch (e) {}
-      }
+      const { user, role } = readAuthSession();
+      if (user) syncOneSignalIdentity(user, role || user.role);
     }
   }, [currentPath]);
 

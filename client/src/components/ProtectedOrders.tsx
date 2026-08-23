@@ -18,15 +18,8 @@ import TechnicianPerformanceAdmin from './TechnicianPerformanceAdmin';
 import ScrollButtons from './ScrollButtons';
 
 import { findTechnicianByIdentity, getTechnicianDisplayName, getTechnicianPhotoUrl, getTechnicianSpecialty, parseTechnicianProfileNotification } from '../utils/technicianProfile';
-import { clearAuthSession } from '../utils/authSession';
-
-const runWithOneSignal = (callback: (OneSignal: any) => void | Promise<void>) => {
-  if (typeof window === 'undefined') return;
-  const win = window as any;
-  win.OneSignalDeferred = win.OneSignalDeferred || [];
-  win.OneSignalDeferred.push(callback);
-};
-
+import { clearAuthSession, readAuthSession } from '../utils/authSession';
+import { syncOneSignalIdentity } from '../utils/oneSignalIdentity';
 
 // ==================== الإعدادات الأساسية ====================
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -1570,14 +1563,9 @@ export default function ProtectedOrders() {
     fetchData();
     fetchNotifications();
 
-    // إجبار وسم OneSignal للمدير فور الدخول
-    runWithOneSignal(async (OneSignal: any) => {
-      const role = userRole?.toLowerCase();
-      if (role === 'admin' || role === 'manager') {
-        await OneSignal.User.addTag('role', role).catch(() => {});
-        console.log("✅ OneSignal Tag Forced:", role);
-      }
-    });
+    // ربط المدير ومدير العمليات بهوية ثابتة ووسوم OneSignal الموثوقة
+    const { user: signedInUser } = readAuthSession();
+    syncOneSignalIdentity(signedInUser, userRole);
 
     // نظام التحديث التلقائي (المراقب الذكي)
     const interval = setInterval(() => {

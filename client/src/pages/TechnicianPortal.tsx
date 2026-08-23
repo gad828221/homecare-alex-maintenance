@@ -12,6 +12,7 @@ import TechnicianPerformance from "../components/TechnicianPerformance";
 import ScrollButtons from "../components/ScrollButtons";
 
 import { clearAuthSession } from "../utils/authSession";
+import { syncOneSignalIdentity } from "../utils/oneSignalIdentity";
 import { createClient } from '@supabase/supabase-js';
 import { openWhatsAppDirectly } from '../utils/whatsapp';
 import { sendExternalPush } from '../utils/pushNotifications';
@@ -217,17 +218,8 @@ export default function TechnicianPortal() {
           if (ctx.state === 'suspended') ctx.resume();
         }
 
-        // ✅ إضافة وسم OneSignal للفني لضمان وصول الإشعارات
-        if (typeof window !== 'undefined') {
-          const win = window as any;
-          win.OneSignalDeferred = win.OneSignalDeferred || [];
-          win.OneSignalDeferred.push(async (OneSignal: any) => {
-            await OneSignal.User.addTag('role', 'tech');
-            await OneSignal.User.addTag('tech_id', user.id?.toString());
-            await OneSignal.User.addTag('tech_name', user.techName);
-            console.log("✅ OneSignal Tags Set for Tech:", user.techName);
-          });
-        }
+        // ربط الفني بهوية OneSignal ثابتة: tech:<id> مع وسوم الاسم والدور
+        syncOneSignalIdentity(user, 'tech');
       }
     }
   }, []);
