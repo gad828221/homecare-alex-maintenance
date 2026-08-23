@@ -7,6 +7,8 @@ export interface NotificationPayload {
   orderNumber?: string;
   priority?: 'low' | 'normal' | 'high';
   sound?: 'default' | 'urgent' | 'success';
+  event?: 'new_order' | 'technician_assigned' | 'order_status_changed' | 'customer_feedback' | 'system_alert';
+  data?: Record<string, string | number | boolean>;
 }
 
 /**
@@ -14,17 +16,32 @@ export interface NotificationPayload {
  */
 export const sendNotification = async (payload: NotificationPayload) => {
   try {
-    const response = await fetch('/.netlify/functions/send-notification', {
+    const targetRoles = payload.role === 'all'
+      ? ['admin', 'manager', 'tech', 'data-entry']
+      : [payload.role];
+    const response = await fetch('/api/send-push', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        title: payload.title,
+        message: payload.message,
+        event: payload.event || 'system_alert',
+        targetRoles,
+        data: {
+          ...(payload.data || {}),
+          ...(payload.orderNumber ? { order_number: payload.orderNumber } : {})
+        }
+      })
     });
-    
-    if (!response.ok) throw new Error('Failed to send notification');
+
+    if (!response.ok) {
+      const details = await response.text().catch(() => '');
+      throw new Error(`Push request failed (${response.status}): ${details.slice(0, 300)}`);
+    }
     return await response.json();
   } catch (err) {
     console.error('Notification error:', err);
-    // Fallback to local notification
+    // Fallback to local notification while the remote push is unavailable.
     playLocalNotification(payload);
   }
 };
@@ -142,21 +159,12 @@ export const playLocalNotification = (payload: NotificationPayload) => {
  * Send SMS notification (requires backend integration)
  */
 export const sendSMSNotification = async (
-  phone: string,
-  message: string
+  _phone: string,
+  _message: string
 ) => {
-  try {
-    const response = await fetch('/.netlify/functions/send-sms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, message })
-    });
-    
-    if (!response.ok) throw new Error('Failed to send SMS');
-    return await response.json();
-  } catch (err) {
-    console.error('SMS error:', err);
-  }
+  // لا توجد خدمة SMS مفعلة حاليًا؛ لا نرسل أي طلب إلى مسار Netlify القديم.
+  console.warn('SMS notification is not configured for the Vercel deployment.');
+  return undefined;
 };
 
 /**
@@ -169,7 +177,8 @@ export const notifyAdminNewOrder = async (order: any) => {
     role: 'admin',
     orderNumber: order.order_number,
     priority: 'high',
-    sound: 'urgent'
+    sound: 'urgent',
+    event: 'new_order'
   });
   
   playLocalNotification({
@@ -194,7 +203,8 @@ export const notifyTechnicianAssignment = async (
     role: 'tech',
     orderNumber: order.order_number,
     priority: 'high',
-    sound: 'urgent'
+    sound: 'urgent',
+    event: 'technician_assigned'
   });
 
   playLocalNotification({
@@ -225,6 +235,7 @@ export const notifyStaffOrderUpdate = async (
     role: 'all',
     orderNumber: order.order_number,
     priority: 'normal',
-    sound: 'success'
+    sound: 'success',
+    event: 'order_status_changed'
   });
 };
