@@ -135,7 +135,7 @@ export default function OrderTracking() {
           
           <div className="relative z-10 text-center">
             <div className={`w-20 h-20 bg-${statusInfo.color}-500/10 text-${statusInfo.color}-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse`}>
-              {React.cloneElement(statusInfo.icon as React.ReactElement, { size: 40 })}
+              {React.cloneElement(statusInfo.icon as React.ReactElement<{ size?: number }>, { size: 40 })}
             </div>
             <h2 className={`text-2xl font-black text-${statusInfo.color}-600 mb-1`}>{statusInfo.label}</h2>
             <p className="text-slate-400 text-xs font-bold italic">آخر تحديث: {new Date().toLocaleTimeString('ar-EG')}</p>

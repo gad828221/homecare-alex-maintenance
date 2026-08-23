@@ -136,20 +136,20 @@ export default function PickupReceiptPage() {
 
       pdf.setTextColor(0, 0, 0);
       pdf.setFontSize(14);
-      pdf.setFont(undefined, "bold");
+      pdf.setFont("helvetica", "bold");
       pdf.text("📄 إيصال سحب جهاز", pageWidth / 2, yPosition, { align: "center" });
       yPosition += 8;
 
       pdf.setFontSize(10);
-      pdf.setFont(undefined, "normal");
+      pdf.setFont("helvetica", "normal");
       pdf.text(`رقم الإيصال: ${order?.order_number || order?.id}`, 15, yPosition);
       pdf.text(`التاريخ: ${new Date(order?.created_at || new Date()).toLocaleDateString('ar-EG')}`, pageWidth - 15, yPosition, { align: "right" });
       yPosition += 10;
 
-      pdf.setFont(undefined, "bold");
+      pdf.setFont("helvetica", "bold");
       pdf.text("👤 بيانات العميل", 15, yPosition);
       yPosition += 7;
-      pdf.setFont(undefined, "normal");
+      pdf.setFont("helvetica", "normal");
       pdf.text(`الاسم: ${order?.customer_name || '-'}`, 20, yPosition);
       yPosition += 5;
       pdf.text(`الهاتف: ${order?.phone || '-'}`, 20, yPosition);
@@ -157,10 +157,10 @@ export default function PickupReceiptPage() {
       pdf.text(`العنوان: ${order?.address || '-'}`, 20, yPosition);
       yPosition += 10;
 
-      pdf.setFont(undefined, "bold");
+      pdf.setFont("helvetica", "bold");
       pdf.text("🔧 بيانات الجهاز المسحوب", 15, yPosition);
       yPosition += 7;
-      pdf.setFont(undefined, "normal");
+      pdf.setFont("helvetica", "normal");
       pdf.text(`الجهاز: ${order?.device_type || '-'}`, 20, yPosition);
       yPosition += 5;
       pdf.text(`الماركة: ${order?.brand || '-'}`, 20, yPosition);
@@ -169,39 +169,39 @@ export default function PickupReceiptPage() {
       yPosition += 10;
 
       // إضافة العربون
-      pdf.setFont(undefined, "bold");
+      pdf.setFont("helvetica", "bold");
       pdf.text(`💰 العربون المدفوع: ${order?.deposit_amount || 0} ج.م`, 15, yPosition);
       yPosition += 10;
 
       // ملاحظات الفني والمدير
       if (order?.technician_notes) {
-        pdf.setFont(undefined, "bold");
+        pdf.setFont("helvetica", "bold");
         pdf.text("📝 ملاحظات الفني:", 15, yPosition);
         yPosition += 6;
-        pdf.setFont(undefined, "normal");
+        pdf.setFont("helvetica", "normal");
         pdf.text(order.technician_notes, 20, yPosition);
         yPosition += 8;
       }
       if (order?.admin_notes) {
-        pdf.setFont(undefined, "bold");
+        pdf.setFont("helvetica", "bold");
         pdf.text("📋 ملاحظات الإدارة:", 15, yPosition);
         yPosition += 6;
-        pdf.setFont(undefined, "normal");
+        pdf.setFont("helvetica", "normal");
         pdf.text(order.admin_notes, 20, yPosition);
         yPosition += 8;
       }
 
-      pdf.setFont(undefined, "bold");
+      pdf.setFont("helvetica", "bold");
       pdf.text("📝 حالة الجهاز عند الاستلام", 15, yPosition);
       yPosition += 7;
-      pdf.setFont(undefined, "normal");
+      pdf.setFont("helvetica", "normal");
       pdf.text("تم سحب الجهاز لإجراء الفحص الشامل والإصلاح في المركز.", 20, yPosition);
       yPosition += 10;
 
-      pdf.setFont(undefined, "bold");
+      pdf.setFont("helvetica", "bold");
       pdf.text("📋 ملاحظات هامة", 15, yPosition);
       yPosition += 7;
-      pdf.setFont(undefined, "normal");
+      pdf.setFont("helvetica", "normal");
       const terms = [
         "يتم التواصل مع العميل لتحديد التكلفة قبل البدء في الإصلاح",
         "المركز مسؤول عن الجهاز طوال فترة تواجده لديه",

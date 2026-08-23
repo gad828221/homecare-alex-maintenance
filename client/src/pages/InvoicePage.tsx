@@ -132,20 +132,20 @@ export default function InvoicePageNew() {
 
       pdf.setTextColor(0, 0, 0);
       pdf.setFontSize(14);
-      pdf.setFont(undefined, "bold");
+      pdf.setFont("helvetica", "bold");
       pdf.text("📄 فاتورة الصيانة والضمان", pageWidth / 2, yPosition, { align: "center" });
       yPosition += 8;
 
       pdf.setFontSize(10);
-      pdf.setFont(undefined, "normal");
+      pdf.setFont("helvetica", "normal");
       pdf.text(`رقم الفاتورة: ${invoice?.order_number || invoice?.id}`, 15, yPosition);
       pdf.text(`التاريخ: ${new Date(invoice?.created_at || new Date()).toLocaleDateString('ar-EG')}`, pageWidth - 15, yPosition, { align: "right" });
       yPosition += 10;
 
-      pdf.setFont(undefined, "bold");
+      pdf.setFont("helvetica", "bold");
       pdf.text("👤 بيانات العميل", 15, yPosition);
       yPosition += 7;
-      pdf.setFont(undefined, "normal");
+      pdf.setFont("helvetica", "normal");
       pdf.text(`الاسم: ${invoice?.customer_name || '-'}`, 20, yPosition);
       yPosition += 5;
       pdf.text(`الهاتف: ${invoice?.phone || '-'}`, 20, yPosition);
@@ -153,10 +153,10 @@ export default function InvoicePageNew() {
       pdf.text(`العنوان: ${invoice?.address || '-'}`, 20, yPosition);
       yPosition += 10;
 
-      pdf.setFont(undefined, "bold");
+      pdf.setFont("helvetica", "bold");
       pdf.text("🔧 تفاصيل الخدمة", 15, yPosition);
       yPosition += 7;
-      pdf.setFont(undefined, "normal");
+      pdf.setFont("helvetica", "normal");
       pdf.text(`الجهاز: ${invoice?.device_type || invoice?.device || '-'} - ${invoice?.brand || '-'}`, 20, yPosition);
       yPosition += 5;
       pdf.text(`المشكلة: ${invoice?.problem_description || invoice?.problem || '-'}`, 20, yPosition);
@@ -164,10 +164,10 @@ export default function InvoicePageNew() {
       pdf.text(`قطع الغيار: ${invoice?.parts_used || 'لا توجد'}`, 20, yPosition);
       yPosition += 10;
 
-      pdf.setFont(undefined, "bold");
+      pdf.setFont("helvetica", "bold");
       pdf.text("💰 المبلغ والضمان", 15, yPosition);
       yPosition += 7;
-      pdf.setFont(undefined, "normal");
+      pdf.setFont("helvetica", "normal");
       pdf.text(`المبلغ الإجمالي: ${invoice?.total_amount || 0} ج.م`, 20, yPosition);
       yPosition += 5;
       pdf.text(`فترة الضمان: 🛡️ ${invoice?.warranty_period || '6 أشهر'}`, 20, yPosition);
@@ -177,10 +177,10 @@ export default function InvoicePageNew() {
       pdf.text(`المتبقي من الضمان: ${getWarrantyRemaining()}`, 20, yPosition);
       yPosition += 10;
 
-      pdf.setFont(undefined, "bold");
+      pdf.setFont("helvetica", "bold");
       pdf.text("📋 شروط الضمان", 15, yPosition);
       yPosition += 7;
-      pdf.setFont(undefined, "normal");
+      pdf.setFont("helvetica", "normal");
       const warrantyTerms = [
         "الضمان يغطي جميع الأعطال المفاجئة والعيوب الصناعية",
         "الضمان لا يغطي الأعطال الناتجة عن الاستخدام الخاطئ",
@@ -193,10 +193,10 @@ export default function InvoicePageNew() {
       });
       yPosition += 5;
 
-      pdf.setFont(undefined, "bold");
+      pdf.setFont("helvetica", "bold");
       pdf.text("✨ شكراً لثقتك بنا ✨", pageWidth / 2, yPosition, { align: "center" });
       yPosition += 7;
-      pdf.setFont(undefined, "normal");
+      pdf.setFont("helvetica", "normal");
       pdf.text("للاستفسار والدعم الفني: 01278885772", pageWidth / 2, yPosition, { align: "center" });
       yPosition += 5;
       pdf.text("خدمة صيانة 24 ساعة بالمنزل - Maintenance Guide", pageWidth / 2, yPosition, { align: "center" });

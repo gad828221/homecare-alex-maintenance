@@ -59,7 +59,7 @@ export default function ZanussiService() {
             alt="صيانة زانوسي المتخصصة بالإسكندرية"
             className="w-full h-full object-cover opacity-30"
             loading="eager"
-            fetchpriority="high"
+            fetchPriority="high"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-yellow-900 via-yellow-900/70 to-transparent"></div>
         </div>

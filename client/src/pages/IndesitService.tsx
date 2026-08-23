@@ -59,7 +59,7 @@ export default function IndesitService() {
             alt="صيانة انديست المتخصصة بالإسكندرية"
             className="w-full h-full object-cover opacity-30"
             loading="eager"
-            fetchpriority="high"
+            fetchPriority="high"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-blue-900 via-blue-900/70 to-transparent"></div>
         </div>

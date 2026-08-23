@@ -18,7 +18,7 @@ import { sendExternalPush } from '../utils/pushNotifications';
 import { useScreenWakeLock } from '../hooks/useScreenWakeLock';
 import { usePwaInstall } from '../hooks/usePwaInstall';
 import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, getOrderCreatedValue, parseOrderDate } from '../utils/orderTiming';
-import { createPickupMarker, getPickupTypeLabel } from '../utils/pickupReceipt';
+import { createPickupMarker, getPickupTypeLabel, type PickupType, type PickupReceiptData } from '../utils/pickupReceipt';
 import { mergeCompanyTransferMarker } from '../utils/companyTransfer';
 import { getTechnicianDisplayName, getTechnicianPhotoUrl, parseTechnicianProfileNotification, profileNotificationPayload } from '../utils/technicianProfile';
 
@@ -246,7 +246,7 @@ export default function TechnicianPortal() {
         const matchingProfile = (Array.isArray(profileRows) ? profileRows : []).map(parseTechnicianProfileNotification).filter(Boolean).find((profile: any) => {
           return [profile.id, profile.code, profile.username, profile.name].filter(Boolean).some((value) => String(value).trim().toLowerCase() === String(storedUser.id || storedUser.username || techName).trim().toLowerCase());
         });
-        if (matchingProfile?.photoUrl) setTechProfilePhoto((currentPhoto) => currentPhoto || matchingProfile.photoUrl);
+        if (matchingProfile?.photoUrl) setTechProfilePhoto((currentPhoto) => currentPhoto || String(matchingProfile.photoUrl));
       } catch (err) { console.error(err); }
     };
     checkActiveStatus();
@@ -422,7 +422,7 @@ export default function TechnicianPortal() {
         try { currentUser = currentUserRaw ? JSON.parse(currentUserRaw) : null; } catch { currentUser = null; }
         const now = new Date().getTime();
         if (!lastAlert || (now - parseInt(lastAlert)) > 3600000) {
-          void sendExternalPush({
+          await sendExternalPush({
             event: 'system_alert',
             title: '⚠️ تنبيه أوردر دخل مرحلة التأخير',
             message: `⚠️ يوجد لديك ${newDelayedOrders.length} طلب صيانة دخل مرحلة التأخير الآن. يرجى اتخاذ إجراء فوراً.`,
@@ -604,7 +604,7 @@ export default function TechnicianPortal() {
     });
   };
 
-  const handleInspection = (order: any, amount: number) => {
+  const handleInspection = async (order: any, amount: number) => {
     const total = amount;
     const companyShare = Math.round(total * (100 - technicianPercentage) / 100);
     const techShare = total - companyShare;
@@ -616,7 +616,7 @@ export default function TechnicianPortal() {
     });
     notifyAdmin("💰 كشف جديد", order, `المبلغ: ${total} ج.م`);
     if (!statusChanged) {
-      void sendExternalPush({
+      await sendExternalPush({
         event: 'system_alert',
         title: '💰 تحديث كشف الأوردر',
         message: `الفني ${techName} حدّث كشف الأوردر #${order.order_number} للعميل ${order.customer_name} بمبلغ ${total} ج.م.`,
@@ -644,7 +644,7 @@ export default function TechnicianPortal() {
         method: 'PATCH',
         body: JSON.stringify({ technician_note: newNote })
       });
-      await addNotification('📝 ملاحظة فنية', `أضاف الفني ملاحظة للأوردر رقم ${order.order_number}: ${note}`);
+      addNotification({ type: 'info', title: '📝 ملاحظة فنية', message: `أضاف الفني ملاحظة للأوردر رقم ${order.order_number}: ${note}`, duration: 5000 });
       await notifyAdmin('📝 ملاحظة فنية جديدة', order, `النص: ${note}`);
       await sendExternalPush({
         event: 'system_alert',
@@ -671,8 +671,8 @@ export default function TechnicianPortal() {
     }
 
     const pickupDate = new Date().toISOString();
-    const pickupRecord = {
-      type: pickupForm.type,
+    const pickupRecord: PickupReceiptData = {
+      type: pickupForm.type as PickupType,
       partName,
       deposit: Number(pickupForm.deposit) || 0,
       notes: pickupForm.notes.trim(),
@@ -935,7 +935,7 @@ export default function TechnicianPortal() {
           created_at: new Date().toISOString()
         })
       });
-      void sendExternalPush({
+      await sendExternalPush({
         event: 'system_alert',
         title: settlementTitle,
         message: settlementDetails,

@@ -59,7 +59,7 @@ export default function SharpService() {
             alt="صيانة شارب المتخصصة بالإسكندرية"
             className="w-full h-full object-cover opacity-30"
             loading="eager"
-            fetchpriority="high"
+            fetchPriority="high"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-red-900 via-red-900/70 to-transparent"></div>
         </div>

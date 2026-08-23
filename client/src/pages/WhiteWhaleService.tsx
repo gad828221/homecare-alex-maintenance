@@ -59,7 +59,7 @@ export default function WhiteWhaleService() {
             alt="صيانة وايت ويل المتخصصة بالإسكندرية"
             className="w-full h-full object-cover opacity-30"
             loading="eager"
-            fetchpriority="high"
+            fetchPriority="high"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/70 to-transparent"></div>
         </div>

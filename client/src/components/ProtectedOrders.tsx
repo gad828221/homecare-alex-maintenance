@@ -310,7 +310,7 @@ export default function ProtectedOrders() {
     [...orders, ...archivedOrders].forEach((order) => {
       const phone = normalizeCustomerPhone(order.phone);
       if (phone.length < 10) return;
-      const current = groups.get(phone) || { phone, name: order.customer_name || 'عميل بدون اسم', orders: [] };
+      const current: { phone: string; name: string; orders: any[] } = groups.get(phone) || { phone, name: order.customer_name || 'عميل بدون اسم', orders: [] };
       current.orders.push(order);
       if ((!current.name || current.name === 'عميل بدون اسم') && order.customer_name) current.name = order.customer_name;
       groups.set(phone, current);
@@ -1053,6 +1053,19 @@ export default function ProtectedOrders() {
     } catch (err) { console.error(err); }
   }, []);
 
+  const deletePartner = async (id: number, name: string) => {
+    if (!canManagePartners) return showToast('ليس لديك صلاحية حذف الشركاء', 'error');
+    if (!confirm(`هل تريد حذف الشريك ${name} نهائياً؟`)) return;
+    try {
+      await fetchAPI(`partners?id=eq.${id}`, { method: 'DELETE' });
+      await addNotification('حذف شريك', `تم حذف الشريك ${name}`);
+      await fetchPartners();
+    } catch (err) {
+      console.error(err);
+      showToast('تعذر حذف الشريك', 'error');
+    }
+  };
+
   const fetchCashLedger = useCallback(async () => {
     try {
       const allData = await fetchAPI('cash_ledger?select=*&order=date.desc,created_at.desc');
@@ -1066,7 +1079,7 @@ export default function ProtectedOrders() {
       setCashBalance(balance);
       let displayData = all;
       if (cashFilterDate) {
-        displayData = all.filter(entry => entry.date === cashFilterDate);
+        displayData = all.filter((entry: any) => entry.date === cashFilterDate);
       }
       setCashLedger(displayData);
     } catch (err) { console.error(err); }
@@ -1156,13 +1169,13 @@ export default function ProtectedOrders() {
     if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
     try {
       const incomeEntries = await fetchAPI(`cash_ledger?select=amount&date=eq.${targetDate}&type=eq.income`);
-      const totalIncome = (incomeEntries || []).reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0);
+      const totalIncome = (incomeEntries || []).reduce((sum: number, entry: any) => sum + (Number(entry.amount) || 0), 0);
 
       const expenseEntries = await fetchAPI(`cash_ledger?select=amount&date=eq.${targetDate}&type=eq.expense`);
-      const totalExpenses = (expenseEntries || []).reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0);
+      const totalExpenses = (expenseEntries || []).reduce((sum: number, entry: any) => sum + (Number(entry.amount) || 0), 0);
 
       const existingDistributions = await fetchAPI(`cash_ledger?select=amount&date=eq.${targetDate}&type=eq.profit_distribution`);
-      const totalDistributedSoFar = (existingDistributions || []).reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0);
+      const totalDistributedSoFar = (existingDistributions || []).reduce((sum: number, entry: any) => sum + (Number(entry.amount) || 0), 0);
 
       if (totalIncome <= 0) {
         alert(`⚠️ لا توجد أرباح ليوم ${targetDate}.`);
@@ -2952,7 +2965,7 @@ export default function ProtectedOrders() {
 	                    <button onClick={() => setActiveTab('cash')} className="flex-1 md:flex-none bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-3 rounded-2xl text-xs font-black transition-all border border-slate-700 flex items-center justify-center gap-2 active:scale-95">
 	                      <Wallet size={18} /> الخزنة
 	                    </button>
-	                    <button onClick={fetchData} className="bg-slate-800 hover:bg-slate-700 text-white p-3 rounded-2xl border border-slate-700 transition-all active:scale-95" aria-label="تحديث">
+	                    <button onClick={() => { void fetchData(); }} className="bg-slate-800 hover:bg-slate-700 text-white p-3 rounded-2xl border border-slate-700 transition-all active:scale-95" aria-label="تحديث">
 	                      <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
 	                    </button>
 	                  </div>
@@ -3033,7 +3046,7 @@ export default function ProtectedOrders() {
 	                    
 	                    {canEditDelete() && (
 	                      <button 
-	                        onClick={() => { setEditingOrder(null); setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, date: new Date().toLocaleDateString("ar-EG") }); setShowOrderModal(true); }} 
+	                        onClick={() => { setEditingOrder(null); setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, invoice_approved: false, warranty_period: '6 أشهر', invoice_date: '', parts_used: '', date: new Date().toLocaleDateString("ar-EG") }); setShowOrderModal(true); }}
 	                        className="flex-1 lg:flex-none bg-orange-600 hover:bg-orange-500 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg shadow-orange-900/20 transition-all flex items-center justify-center gap-2 active:scale-95"
 	                      >
 	                        <Plus size={20} /> أوردر جديد
@@ -3470,15 +3483,15 @@ export default function ProtectedOrders() {
 	                        <div className="grid grid-cols-2 gap-2 mb-4 relative z-10">
 	                          {getPhotoUrl(order.technician_note, 'OLD') && (
 		                            <div className="relative rounded-xl overflow-hidden border border-rose-500/20 h-16 shadow-sm group/photo">
-		                              <img src={getPhotoUrl(order.technician_note, 'OLD')} className="w-full h-full object-cover" loading="lazy" decoding="async" />
-		                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity cursor-pointer" onClick={() => window.open(getPhotoUrl(order.technician_note, 'OLD'), '_blank')}><Camera size={14} className="text-white" /></div>
+		                              <img src={getPhotoUrl(order.technician_note, 'OLD') || undefined} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+		                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity cursor-pointer" onClick={() => window.open(getPhotoUrl(order.technician_note, 'OLD') || '', '_blank')}><Camera size={14} className="text-white" /></div>
 		                              <div className="absolute bottom-0 left-0 right-0 bg-rose-600/80 text-[7px] font-black text-white text-center py-0.5">قديم</div>
 		                            </div>
 		                          )}
 		                          {getPhotoUrl(order.technician_note, 'NEW') && (
 		                            <div className="relative rounded-xl overflow-hidden border border-emerald-500/20 h-16 shadow-sm group/photo">
-		                              <img src={getPhotoUrl(order.technician_note, 'NEW')} className="w-full h-full object-cover" loading="lazy" decoding="async" />
-	                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity cursor-pointer" onClick={() => window.open(getPhotoUrl(order.technician_note, 'NEW'), '_blank')}><Camera size={14} className="text-white" /></div>
+		                              <img src={getPhotoUrl(order.technician_note, 'NEW') || undefined} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+	                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity cursor-pointer" onClick={() => window.open(getPhotoUrl(order.technician_note, 'NEW') || '', '_blank')}><Camera size={14} className="text-white" /></div>
 	                              <div className="absolute bottom-0 left-0 right-0 bg-emerald-600/80 text-[7px] font-black text-white text-center py-0.5">جديد</div>
 	                            </div>
 	                          )}
@@ -3748,7 +3761,7 @@ export default function ProtectedOrders() {
                 </div>
               )}
               {filteredArchivedOrders.map(order => {
-                const statusConfig = {
+                  const statusConfig: Record<string, { color: string; label: string }> = {
                   pending: { color: 'amber', label: '⏳ قيد الانتظار' },
                   'in-progress': { color: 'blue', label: '🔧 قيد التنفيذ' },
                   completed: { color: 'emerald', label: '✅ مكتمل' },

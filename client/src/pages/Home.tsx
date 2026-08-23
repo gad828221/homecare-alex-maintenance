@@ -59,7 +59,7 @@ export default function Home() {
             alt="صيانة أجهزة منزلية احترافية بالإسكندرية"
             className="w-full h-full object-cover opacity-40 scale-105"
             loading="eager"
-            fetchpriority="high"
+            fetchPriority="high"
           />
           <div className="absolute inset-0 bg-gradient-to-l from-slate-900 via-slate-900/60 to-transparent"></div>
         </div>
