@@ -15,7 +15,7 @@ export default function NotificationStatus() {
       
       const win = window as any;
       let optedIn = false;
-      if (win.OneSignal?.User?.PushSubscription) {
+      if (win.OneSignalReady && win.OneSignal?.User?.PushSubscription) {
         optedIn = await win.OneSignal.User.PushSubscription.optedIn;
       }
       
@@ -72,9 +72,17 @@ export default function NotificationStatus() {
     const timeoutId = setTimeout(() => {
       setLoading(false);
       alert("يبدو أن المتصفح لا يستجيب. يرجى استخدام زر 'إعادة ضبط المحرك' أو تجربة متصفح Firefox.");
-    }, 6000);
+    }, 15000);
 
     try {
+      const startedAt = Date.now();
+      while (!win.OneSignalReady && Date.now() - startedAt < 10000) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+      if (!win.OneSignalReady) {
+        throw new Error('OneSignal is still initializing');
+      }
+
       if ('Notification' in window && Notification.permission !== 'granted') {
         await Notification.requestPermission();
       }

@@ -43,24 +43,29 @@
     <meta name="apple-mobile-web-app-title" content="Maintenance Guide" />
     <link rel="preload" as="image" href="/images/hero-bg-professional.webp" type="image/webp" fetchpriority="high" />
 
-    <!-- OneSignal Web Push SDK: Unified Engine v2.7.0 -->
+    <!-- OneSignal Web Push SDK: one shared worker for the staff PWA and push notifications -->
     <script defer src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"></script>
     <script>
       if (window.__MG_STAFF_PATH__) {
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         window.OneSignalDeferred.push(async function(OneSignal) {
-          await OneSignal.init({
+          try {
+            await OneSignal.init({
             appId: "9abc8506-3935-44a8-b044-3117e77d26dc",
             safari_web_id: "web.onesignal.auto.064c3983-500e-473d-8884-6338c0317c24",
             autoResubscribe: true,
             notifyButton: { enable: false },
             allowLocalhostAsSecureOrigin: true,
-            serviceWorkerPath: "OneSignalSDKWorker.js",
+            serviceWorkerPath: "sw.js",
             serviceWorkerParam: { scope: "/" },
             notificationClickHandlerMatch: "origin",
             notificationClickHandlerAction: "navigate"
-          });
-          window.OneSignalReady = true;
+            });
+            window.OneSignalReady = true;
+            console.info('[Maintenance Guide] OneSignal initialized with shared sw.js');
+          } catch (error) {
+            console.error('[Maintenance Guide] OneSignal initialization failed:', error);
+          }
         });
       }
     </script>
