@@ -104,7 +104,13 @@ export default function OrderTracking() {
   const techPhoto = getTechnicianPhotoUrl({ name: order.technician });
   
   // فحص وجود إيصال سحب
-  const hasPickupReceipt = order.technician_note?.includes('[PICKUP_RECEIPT]') || order.pickup_status === 'active';
+  const hasPickupReceipt = Boolean(
+    order.technician_note?.includes('[PICKUP_RECEIPT]') ||
+    order.technician_notes?.includes('[PICKUP_RECEIPT]') ||
+    order.pickup_status === 'active' ||
+    order.pickup_date ||
+    order.pickup_type
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-20" dir="rtl">
