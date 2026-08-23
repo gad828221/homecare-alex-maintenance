@@ -194,6 +194,15 @@ export default function OrderTracking() {
           </div>
         </div>
 
+        {order.admin_notes && (
+          <div className="bg-amber-50 rounded-[2.5rem] p-6 shadow-xl border border-amber-100">
+            <h3 className="text-sm font-black text-amber-800 mb-3 flex items-center gap-2">
+              <AlertCircle size={18} className="text-amber-600" /> ملاحظة أو حالة الطلب
+            </h3>
+            <p className="text-sm font-bold leading-7 text-amber-900 whitespace-pre-wrap">{order.admin_notes}</p>
+          </div>
+        )}
+
         {/* Technician Info */}
         {order.technician && order.technician !== '-' && (
           <div className="bg-white rounded-[2.5rem] p-6 shadow-xl border border-slate-100">

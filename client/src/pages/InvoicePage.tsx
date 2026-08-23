@@ -15,7 +15,7 @@ export default function InvoicePageNew() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isManagerEditing, setIsManagerEditing] = useState(false);
   const [managerSaving, setManagerSaving] = useState(false);
-  const [managerForm, setManagerForm] = useState({ warranty_period: '', status: 'completed', technician: '', technician_note: '' });
+  const [managerForm, setManagerForm] = useState({ warranty_period: '', status: 'completed', technician: '', admin_notes: '' });
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function InvoicePageNew() {
             warranty_period: data[0].warranty_period || '6 أشهر',
             status: data[0].status || 'completed',
             technician: data[0].technician || '',
-            technician_note: data[0].technician_note || data[0].technician_notes || ''
+            admin_notes: data[0].admin_notes || ''
           });
         } else {
           setError("الفاتورة غير موجودة");
@@ -78,6 +78,7 @@ export default function InvoicePageNew() {
         warranty_period: managerForm.warranty_period.trim() || 'بدون ضمان',
         status: managerForm.status,
         technician: managerForm.technician.trim(),
+        admin_notes: managerForm.admin_notes.trim(),
         receipt_updated_by: currentUser?.name || currentUser?.username || 'المدير',
         receipt_updated_at: new Date().toISOString()
       };
@@ -453,6 +454,13 @@ export default function InvoicePageNew() {
 	              )}
             </div>
             
+            {invoice.admin_notes && (
+              <div className="bg-gradient-to-l from-amber-50 to-white p-4 rounded-lg border-r-4 border-amber-500">
+                <h3 className="font-bold text-amber-700 mb-2 text-lg">📌 ملاحظة أو حالة الطلب</h3>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap leading-7">{invoice.admin_notes}</p>
+              </div>
+            )}
+
             <div className="bg-gradient-to-l from-purple-50 to-white p-4 rounded-lg border-r-4 border-purple-500">
               <h3 className="font-bold text-purple-700 mb-2 text-lg">📋 شروط الضمان</h3>
               <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
@@ -497,6 +505,9 @@ export default function InvoicePageNew() {
                 </label>
                 <label className="text-sm font-bold text-slate-700">الفني الظاهر للعميل
                   <input value={managerForm.technician} onChange={(e) => setManagerForm({ ...managerForm, technician: e.target.value })} placeholder="اسم الفني" className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
+                </label>
+                <label className="text-sm font-bold text-slate-700 md:col-span-3">ملاحظة أو حالة تُعرض للعميل
+                  <textarea value={managerForm.admin_notes} onChange={(e) => setManagerForm({ ...managerForm, admin_notes: e.target.value })} placeholder="مثال: في انتظار قطعة غيار، سيتم التواصل غدًا..." rows={3} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
                 </label>
                 <div className="md:col-span-3 flex justify-end">
                   <button type="button" onClick={() => { void saveManagerChanges(); }} disabled={managerSaving} className="flex items-center gap-2 rounded-xl bg-orange-600 px-5 py-3 text-sm font-black text-white hover:bg-orange-700 disabled:opacity-50"><Save size={17} /> {managerSaving ? 'جاري الحفظ...' : 'حفظ تعديلات المدير'}</button>
