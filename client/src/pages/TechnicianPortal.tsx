@@ -828,7 +828,12 @@ export default function TechnicianPortal() {
       return;
     }
     const numValue = parseFloat(value) || 0;
-    const updated = { ...settleForm, [field]: numValue };
+    const isInspectionVisit = selectedOrder?.status === 'inspected';
+    const updated = {
+      ...settleForm,
+      [field]: numValue,
+      ...(isInspectionVisit ? { parts_cost: 0, parts_used: 'لا توجد — كشف/زيارة فقط' } : {})
+    };
     const net = updated.total_amount - updated.parts_cost - updated.transport_cost;
     const techShare = Math.round(net * (technicianPercentage / 100));
     const companyShare = net - techShare;
@@ -1904,6 +1909,7 @@ export default function TechnicianPortal() {
               {/* Summary */}
               <div className="bg-slate-950/50 p-4 rounded-2xl space-y-3 border border-slate-800">
                 <div className="flex justify-between items-center"><span className="text-xs text-slate-500">الصافي للشركة والفني:</span><span className="text-sm font-black text-white">{settleForm.net_amount} ج.م</span></div>
+                {selectedOrder?.status === 'inspected' && <div className="mb-3 rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-3 py-2 text-[10px] font-bold text-cyan-200">🔍 كشف / زيارة فقط: يتم توزيع قيمة الزيارة الصافية بين الفني والشركة حسب نسبة الفني ({technicianPercentage}%)، ولا تُحتسب كإصلاح.</div>}
                 <div className="flex justify-between items-center"><span className="text-xs text-slate-500">نصيب الفني ({technicianPercentage}%):</span><span className="text-sm font-black text-emerald-400">{settleForm.technician_share} ج.م</span></div>
                 <div className="flex justify-between items-center pt-2 border-t border-slate-800"><span className="text-xs text-slate-400 font-bold">المستحق للشركة:</span><span className="text-lg font-black text-orange-500">{settleForm.company_share} ج.م</span></div>
               </div>
@@ -1943,7 +1949,7 @@ export default function TechnicianPortal() {
         </div>
       )}
       <div className="text-center pb-8">
-        <div className="text-[11px] text-white font-black opacity-90 mt-4 tracking-widest bg-slate-800/50 px-3 py-1 rounded-full inline-block border border-white/10">v4.3.2-technician-inspection-settlement</div>
+        <div className="text-[11px] text-white font-black opacity-90 mt-4 tracking-widest bg-slate-800/50 px-3 py-1 rounded-full inline-block border border-white/10">v4.3.3-technician-inspection-share</div>
       </div>
       <ScrollButtons />
     </div>
