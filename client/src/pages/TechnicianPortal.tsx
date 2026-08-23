@@ -689,8 +689,15 @@ export default function TechnicianPortal() {
       // حفظ أساسي يعتمد على الحقول الموجودة بالفعل في النظام.
       await fetchAPI(`orders?id=eq.${order.id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ technician_notes: finalNotes, status: 'in-progress' })
+        body: JSON.stringify({ technician_notes: finalNotes, technician_note: finalNotes, status: 'in-progress' })
       });
+
+      const savedNotesRows = await fetchAPI(`orders?id=eq.${order.id}&select=technician_note,technician_notes`);
+      const savedNotes = savedNotesRows?.[0];
+      const savedMarker = String(savedNotes?.technician_notes || savedNotes?.technician_note || '');
+      if (!savedMarker.includes('[PICKUP_RECEIPT]')) {
+        throw new Error('pickup-receipt-marker-was-not-saved');
+      }
 
       // حفظ الحقول الجديدة عند توفرها، مع بقاء العلامة النصية كخطة توافق احتياطية.
       try {
