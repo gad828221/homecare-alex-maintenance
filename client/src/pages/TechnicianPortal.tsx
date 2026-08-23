@@ -10,6 +10,7 @@ import { useLocation } from "wouter";
 import { useNotification } from "../components/EnhancedNotificationSystem";
 import TechnicianPerformance from "../components/TechnicianPerformance";
 import ScrollButtons from "../components/ScrollButtons";
+import OneSignalDiagnostics from "../components/OneSignalDiagnostics";
 
 import { clearAuthSession } from "../utils/authSession";
 import { syncOneSignalIdentity } from "../utils/oneSignalIdentity";
@@ -1383,7 +1384,7 @@ export default function TechnicianPortal() {
       </div>
 
       <main className="max-w-4xl mx-auto p-4 space-y-5">
-
+        <OneSignalDiagnostics />
 
         {technicianWarnings.length > 0 && (
           <section className="bg-gradient-to-br from-rose-950/70 via-slate-900 to-slate-900 border-2 border-rose-500/60 rounded-[1.5rem] p-4 shadow-xl shadow-rose-950/30 animate-in fade-in slide-in-from-top-3 duration-500" aria-live="assertive">
