@@ -1,6 +1,15 @@
 {
   "headers": [
     {
+      "source": "/(login|orders|tech-portal|data-entry|track/.*|index.html)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+        }
+      ]
+    },
+    {
       "source": "/(sw.js|OneSignalSDKWorker.js|OneSignalSDKUpdaterWorker.js)",
       "headers": [
         {
