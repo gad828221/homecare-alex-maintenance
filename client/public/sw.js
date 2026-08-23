@@ -2,7 +2,7 @@
 importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
 
 // PWA Caching Logic
-const CACHE_NAME = 'maintenance-guide-v4.2.3';
+const CACHE_NAME = 'maintenance-guide-v4.2.5';
 const APP_SHELL = [
   '/staff-manifest.webmanifest',
   '/pwa-192.png',

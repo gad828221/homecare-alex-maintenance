@@ -9,7 +9,6 @@ import {
 import { useLocation } from "wouter";
 import { useNotification } from "../components/EnhancedNotificationSystem";
 import TechnicianPerformance from "../components/TechnicianPerformance";
-import NotificationStatus from "../components/NotificationStatus";
 import ScrollButtons from "../components/ScrollButtons";
 
 import { clearAuthSession } from "../utils/authSession";
@@ -461,6 +460,7 @@ export default function TechnicianPortal() {
           console.log('تغيير في الأوردرات:', payload);
           fetchData();
           if (payload.eventType === 'INSERT') {
+            startUrgentAlert();
             addNotification({
               type: 'error',
               title: '📢 أوردر جديد',
@@ -468,6 +468,7 @@ export default function TechnicianPortal() {
               duration: 0
             });
           } else if (payload.eventType === 'UPDATE') {
+            startUrgentAlert();
             addNotification({
               type: 'warning',
               title: '🔄 تحديث أوردر',
@@ -1293,8 +1294,6 @@ export default function TechnicianPortal() {
               <Play fill="currentColor" size={20} /> بدء العمل واستقبال الأوردرات
             </button>
             <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold mb-4">Maintenance Guide OS v3.3.3-technician-live-status</p>
-            <NotificationStatus />
-
           </div>
         </div>
       )}
@@ -1937,8 +1936,7 @@ export default function TechnicianPortal() {
         </div>
       )}
       <div className="text-center pb-8">
-        <NotificationStatus />
-        <div className="text-[11px] text-white font-black opacity-90 mt-4 tracking-widest bg-slate-800/50 px-3 py-1 rounded-full inline-block border border-white/10">v4.2.3-radar-notifications-stable</div>
+        <div className="text-[11px] text-white font-black opacity-90 mt-4 tracking-widest bg-slate-800/50 px-3 py-1 rounded-full inline-block border border-white/10">v4.2.5-technician-alerts-stable</div>
       </div>
       <ScrollButtons />
     </div>
