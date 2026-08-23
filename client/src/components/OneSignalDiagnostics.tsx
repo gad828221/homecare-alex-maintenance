@@ -18,6 +18,7 @@ type OneSignalRuntime = {
     PushSubscription?: {
       id?: string;
       optedIn?: boolean | Promise<boolean>;
+      optIn?: () => Promise<void> | void;
     };
   };
 };
@@ -67,6 +68,25 @@ export default function OneSignalDiagnostics() {
     }, 1200);
   };
 
+  const enableNotifications = async () => {
+    setBusy(true);
+    try {
+      if ('Notification' in window && Notification.permission !== 'granted') {
+        await Notification.requestPermission();
+      }
+      const win = window as Window & { OneSignal?: OneSignalRuntime };
+      if (Notification.permission === 'granted') {
+        await win.OneSignal?.User?.PushSubscription?.optIn?.();
+      }
+      const { user, role } = readAuthSession();
+      if (user) syncOneSignalIdentity(user, role || user.role);
+      await new Promise((resolve) => window.setTimeout(resolve, 1200));
+      await inspect();
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const healthy = state.sdk === 'جاهز' && state.permission === 'granted' && state.subscribed === 'مشترك';
 
   return (
@@ -81,9 +101,16 @@ export default function OneSignalDiagnostics() {
             </p>
           </div>
         </div>
-        <button type="button" onClick={() => void relink()} disabled={busy} className="rounded-lg bg-slate-800 px-2.5 py-1.5 text-[10px] font-black text-slate-200 disabled:opacity-50">
-          <RefreshCw size={13} className={`inline ml-1 ${busy ? 'animate-spin' : ''}`} /> إعادة الربط
-        </button>
+        {state.permission !== 'granted' && (
+          <button type="button" onClick={() => void enableNotifications()} disabled={busy} className="rounded-lg bg-orange-600 px-2.5 py-1.5 text-[10px] font-black text-white disabled:opacity-50">
+            <Bell size={13} className="inline ml-1" /> تفعيل الإشعارات الآن
+          </button>
+        )}
+        {state.permission === 'granted' && (
+          <button type="button" onClick={() => void relink()} disabled={busy} className="rounded-lg bg-slate-800 px-2.5 py-1.5 text-[10px] font-black text-slate-200 disabled:opacity-50">
+            <RefreshCw size={13} className={`inline ml-1 ${busy ? 'animate-spin' : ''}`} /> إعادة الربط
+          </button>
+        )}
       </div>
       <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] text-slate-300">
         <span>SDK: <b className="text-white">{state.sdk}</b></span>
