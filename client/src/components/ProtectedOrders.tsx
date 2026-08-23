@@ -369,6 +369,7 @@ export default function ProtectedOrders() {
   const [editingUserAccount, setEditingUserAccount] = useState<any>(null);
   const [userForm, setUserForm] = useState({ name: '', username: '', password: '', role: 'viewer', is_active: true });
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [trackingShareOrderId, setTrackingShareOrderId] = useState<number | null>(null);
   const [filterTechStatus, setFilterTechStatus] = useState<'all' | 'active' | 'inactive'>('active');
   const [cashFilterDate, setCashFilterDate] = useState('');
   const [cashForm, setCashForm] = useState({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] });
@@ -2023,6 +2024,35 @@ export default function ProtectedOrders() {
     }
   };
 
+  const getTrackingUrl = (order: any) => `${window.location.origin}/track/${encodeURIComponent(String(order.order_number || order.id))}`;
+
+  const sendTrackingLinkToCustomer = (order: any) => {
+    const trackingUrl = getTrackingUrl(order);
+    const message = `أ/ ${order.customer_name || 'العميل'}،
+
+يمكنك متابعة حالة طلب الصيانة رقم ${order.order_number || order.id} من خلال الرابط التالي:
+${trackingUrl}
+
+مع تحيات Maintenance Guide`;
+    sendWhatsApp(order.phone, message);
+    setTrackingShareOrderId(null);
+    showToast('✅ تم فتح واتساب برابط التتبع', 'success');
+  };
+
+  const copyTrackingLink = async (order: any) => {
+    const trackingUrl = getTrackingUrl(order);
+    try {
+      await navigator.clipboard.writeText(trackingUrl);
+      setCopiedId(order.id);
+      setTimeout(() => setCopiedId(null), 2500);
+      showToast('✅ تم نسخ رابط التتبع', 'success');
+    } catch (err) {
+      console.error('فشل نسخ رابط التتبع:', err);
+      showToast('تعذر نسخ الرابط، حاول مرة أخرى', 'error');
+    }
+    setTrackingShareOrderId(null);
+  };
+
   const copyOrderDetails = (order: any) => {
     if (isViewer) return showToast("ليس لديك صلاحية", "error");
     const text = `📋 *بيانات الأوردر* 📋\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n📞 *الهاتف:* ${order.phone}\n🔧 *الجهاز:* ${order.device_type} - ${order.brand}\n📍 *العنوان:* ${order.address || 'غير محدد'}\n📝 *المشكلة:* ${order.problem_description || 'لا توجد'}\n💰 *المبلغ:* ${order.total_amount} ج.م\n👨‍🔧 *الفني:* ${order.technician || 'غير معين'}\n━━━━━━━━━━━━━━━━━━━━━━`;
@@ -3589,18 +3619,28 @@ export default function ProtectedOrders() {
 	                            <div className="flex gap-2">
 	                              <a onClick={(e) => e.stopPropagation()} href={`tel:${order.phone}`} className="w-9 h-9 bg-blue-600/90 hover:bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-md active:scale-90 transition-all border border-white/10" title="اتصال"><Phone size={16} /></a>
 	                              <button onClick={(e) => { e.stopPropagation(); sendWhatsApp(order.phone, `مرحباً أ/ ${order.customer_name}، معك مركز الصيانة بخصوص طلبك رقم ${order.order_number}`); }} className="w-9 h-9 bg-emerald-600/90 hover:bg-emerald-600 text-white rounded-xl flex items-center justify-center shadow-md active:scale-90 transition-all border border-white/10" title="واتساب"><Send size={16} /></button>
-		                              {canEditDelete() && (
-		                                <button 
-		                                  onClick={(e) => { 
-		                                    e.stopPropagation(); 
-		                                    window.open(`/track/${order.order_number}`, '_blank');
-		                                  }} 
-		                                  className="w-9 h-9 bg-indigo-600/90 hover:bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-md active:scale-90 transition-all border border-white/10" 
-		                                  title="رابط التتبع الشامل"
-		                                >
-		                                  <ExternalLink size={16} />
-		                                </button>
-		                              )}
+                              {canEditDelete() && (
+                                <div className="relative">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setTrackingShareOrderId((current) => current === order.id ? null : order.id);
+                                    }}
+                                    className="w-9 h-9 bg-indigo-600/90 hover:bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-md active:scale-90 transition-all border border-white/10"
+                                    title="فتح خيارات رابط التتبع"
+                                    aria-label="خيارات رابط التتبع"
+                                  >
+                                    <ExternalLink size={16} />
+                                  </button>
+                                  {trackingShareOrderId === order.id && (
+                                    <div className="absolute left-0 top-11 z-50 w-44 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                                      <button onClick={() => window.open(getTrackingUrl(order), '_blank')} className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-right text-xs font-black text-slate-700 hover:bg-indigo-50 hover:text-indigo-700"><ExternalLink size={15} /> فتح التتبع</button>
+                                      <button onClick={() => sendTrackingLinkToCustomer(order)} className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-right text-xs font-black text-slate-700 hover:bg-emerald-50 hover:text-emerald-700"><Send size={15} /> إرسال واتساب</button>
+                                      <button onClick={() => { void copyTrackingLink(order); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-right text-xs font-black text-slate-700 hover:bg-purple-50 hover:text-purple-700"><Copy size={15} /> نسخ الرابط</button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
 	                            </div>
 	                            
 	                            <div className="flex gap-2">
