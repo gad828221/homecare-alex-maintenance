@@ -89,7 +89,7 @@ export default function OneSignalDiagnostics() {
     try {
       const win = window as Window & { OneSignal?: OneSignalRuntime };
       if ('serviceWorker' in navigator) {
-        const registration = await navigator.serviceWorker.register('/push/onesignal/OneSignalSDKWorker.js', { scope: '/push/onesignal/' });
+        const registration = await navigator.serviceWorker.register('/push/onesignal/OneSignalSDKWorker-v2.js', { scope: '/push/onesignal/' });
         await registration.update();
       }
       if ('Notification' in window && Notification.permission !== 'granted') {
