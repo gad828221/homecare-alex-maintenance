@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import jsPDF from "jspdf";
 import { openWhatsAppDirectly } from '../utils/whatsapp';
-import { getPickupTypeLabel, parsePickupReceipt } from '../utils/pickupReceipt';
+import { getPickupTypeLabel, parsePickupReceipt, stripPickupMarker } from '../utils/pickupReceipt';
 import { Download, Printer, Send, Copy, Check, MapPin, Phone, MessageCircle, Clock, ShieldCheck, User, Wrench, AlertCircle, Edit2, Save, X, ClipboardList, Camera, Package } from "lucide-react";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
+const getCleanTechnicianNotes = (notes: unknown) => stripPickupMarker(String(notes ?? '')).trim();
+const getPickupMarker = (notes: unknown) => String(notes ?? '').match(/\[PICKUP_RECEIPT\][\s\S]*?\[\/PICKUP_RECEIPT\]/)?.[0] || '';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
 
 export default function PickupReceiptPage() {
@@ -51,7 +53,7 @@ export default function PickupReceiptPage() {
           setOrder(orderData);
           setEditForm({
             deposit_amount: orderData.deposit_amount || 0,
-            technician_notes: orderData.technician_notes || "",
+            technician_notes: getCleanTechnicianNotes(orderData.technician_notes || orderData.technician_note),
             admin_notes: orderData.admin_notes || ""
           });
         } else {
@@ -79,9 +81,13 @@ export default function PickupReceiptPage() {
     if (!order) return;
     setSaving(true);
     try {
+      const pickupMarker = getPickupMarker(order.technician_notes || order.technician_note);
+      const cleanTechnicianNotes = getCleanTechnicianNotes(editForm.technician_notes);
+      const persistedTechnicianNotes = `${cleanTechnicianNotes}${cleanTechnicianNotes && pickupMarker ? '\n' : ''}${pickupMarker}`;
       const updatedFields = {
         deposit_amount: editForm.deposit_amount,
-        technician_notes: editForm.technician_notes,
+        technician_notes: persistedTechnicianNotes,
+        technician_note: persistedTechnicianNotes,
         admin_notes: editForm.admin_notes,
         receipt_updated_by: currentUser?.name || currentUser?.username || 'غير معروف',
         receipt_updated_at: new Date().toISOString()
@@ -174,12 +180,13 @@ export default function PickupReceiptPage() {
       yPosition += 10;
 
       // ملاحظات الفني والمدير
-      if (order?.technician_notes) {
+      const technicianNotes = getCleanTechnicianNotes(order?.technician_notes || order?.technician_note);
+      if (technicianNotes) {
         pdf.setFont("helvetica", "bold");
         pdf.text("📝 ملاحظات الفني:", 15, yPosition);
         yPosition += 6;
         pdf.setFont("helvetica", "normal");
-        pdf.text(order.technician_notes, 20, yPosition);
+        pdf.text(technicianNotes, 20, yPosition);
         yPosition += 8;
       }
       if (order?.admin_notes) {
@@ -406,10 +413,10 @@ export default function PickupReceiptPage() {
                   </div>
                   <p className="text-2xl font-black text-green-600 mb-6">{order.deposit_amount || 0} ج.م</p>
 
-                  {order.technician_notes && (
+                  {getCleanTechnicianNotes(order.technician_notes || order.technician_note) && (
                     <div className="mb-4">
                       <h4 className="font-bold text-slate-700 flex items-center gap-1">📝 ملاحظات الفني</h4>
-                      <p className="text-slate-600 bg-slate-50 p-3 rounded-lg mt-1">{order.technician_notes}</p>
+                      <p className="text-slate-600 bg-slate-50 p-3 rounded-lg mt-1 whitespace-pre-wrap">{getCleanTechnicianNotes(order.technician_notes || order.technician_note)}</p>
                     </div>
                   )}
                   {order.admin_notes && (
