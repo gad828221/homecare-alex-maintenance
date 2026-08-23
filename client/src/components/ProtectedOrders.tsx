@@ -2777,7 +2777,7 @@ export default function ProtectedOrders() {
             >
               <Play fill="currentColor" size={20} /> دخول وتفعيل التنبيهات 🔊
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.2.5</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.3.0</p>
           </div>
         </div>
       )}
@@ -3244,6 +3244,17 @@ export default function ProtectedOrders() {
                   const companyTransfer = parseCompanyTransfer(order.technician_note);
                   const collectionPending = isCollectionPending(order);
                   const transferPending = collectionPending && companyTransfer?.status === 'pending';
+                  const orderWorkflow = [
+                    { key: 'pending', label: 'جديد' },
+                    { key: 'in-progress', label: 'تنفيذ' },
+                    { key: 'inspected', label: 'كشف' },
+                    { key: 'completed', label: 'مكتمل' }
+                  ];
+                  const normalizedStatus = order.status === 'in_progress' ? 'in-progress' : order.status;
+                  const workflowIndex = normalizedStatus === 'returned' || normalizedStatus === 'deferred'
+                    ? 1
+                    : Math.max(0, orderWorkflow.findIndex((step) => step.key === normalizedStatus));
+                  const shortOrderNumber = String(order.order_number || '').match(/\d{3,}$/)?.[0] || String(order.order_number || '').slice(-6);
                   const elapsedToneClass = elapsedTone === 'urgent' ? 'text-rose-200 bg-rose-500/20 border-rose-400/50 shadow-lg shadow-rose-500/20 animate-pulse' : elapsedTone === 'warning' ? 'text-amber-200 bg-amber-500/20 border-amber-400/40 shadow-lg shadow-amber-500/10' : 'text-slate-200 bg-slate-950/70 border-slate-700';
                   const cardTone = collectionPending ? 'bg-amber-950/40 border-amber-300 shadow-amber-400/30 animate-pulse' : config.card;
                   
@@ -3287,6 +3298,7 @@ export default function ProtectedOrders() {
 			                          </div>
 	                          <div className="flex items-center gap-1.5">
 	                            <span className="text-[8px] font-black text-slate-500 tracking-tighter uppercase bg-slate-800/80 px-1.5 py-0.5 rounded shadow-inner">#{order.order_number}</span>
+                            {shortOrderNumber && shortOrderNumber !== String(order.order_number) && <span className="text-[9px] font-black text-orange-300 bg-orange-500/10 border border-orange-400/20 px-1.5 py-0.5 rounded-md">#{shortOrderNumber}</span>}
 	                            {getWarrantyStatus(order).status !== 'none' && (
 	                              <div className={`px-1.5 py-0.5 rounded-full text-[7px] font-black bg-${getWarrantyStatus(order).color}-500/20 text-${getWarrantyStatus(order).color}-400 border border-${getWarrantyStatus(order).color}-500/30 flex items-center gap-1`}>
 	                                <ShieldCheck size={8} /> {getWarrantyStatus(order).text}
@@ -3352,7 +3364,26 @@ export default function ProtectedOrders() {
 	                              )}
                             </div>
 
-		                      {/* Alerts Section */}
+                            {/* Smart workflow progress */}
+                            <div className="mb-4 relative z-10 rounded-xl border border-white/5 bg-slate-950/40 px-3 py-2.5">
+                              <div className="flex items-center justify-between gap-1">
+                                {orderWorkflow.map((step, index) => {
+                                  const completedStep = index <= workflowIndex;
+                                  const currentStep = index === workflowIndex;
+                                  return (
+                                    <React.Fragment key={step.key}>
+                                      <button type="button" onClick={(event) => { event.stopPropagation(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); }} className={`flex min-w-0 flex-col items-center gap-1 transition-colors ${currentStep ? 'text-orange-300' : completedStep ? 'text-emerald-300' : 'text-slate-600'}`} title="فتح تفاصيل المرحلة">
+                                        <span className={`h-2.5 w-2.5 rounded-full border ${currentStep ? 'border-orange-200 bg-orange-400 shadow-[0_0_10px_rgba(251,146,60,0.8)]' : completedStep ? 'border-emerald-300 bg-emerald-400' : 'border-slate-600 bg-slate-800'}`} />
+                                        <span className="truncate text-[8px] font-black">{step.label}</span>
+                                      </button>
+                                      {index < orderWorkflow.length - 1 && <span className={`h-px flex-1 ${index < workflowIndex ? 'bg-emerald-400/70' : 'bg-slate-700'}`} />}
+                                    </React.Fragment>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+			                      {/* Alerts Section */}
 		                      {transferPending && isAdmin && (
 	                        <div className="mb-5 relative z-10 rounded-2xl border border-amber-300/70 bg-gradient-to-l from-amber-500/20 via-yellow-500/10 to-transparent p-4 shadow-lg shadow-amber-500/20 animate-in zoom-in-95 duration-300">
 	                          <div className="flex items-center justify-between gap-3">
@@ -4281,7 +4312,7 @@ export default function ProtectedOrders() {
           </div>
           <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-black tracking-wide text-emerald-300 shadow-[0_0_14px_rgba(52,211,153,0.12)]">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.9)]" />
-            إصدار النظام: v4.2.5
+            إصدار النظام: v4.3.0
           </div>
         </div>
         <ScrollButtons />
