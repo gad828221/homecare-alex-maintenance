@@ -1,5 +1,5 @@
-// OneSignal SDK Service Worker
-importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
+// PWA Service Worker
+// OneSignal uses its own dedicated worker under /push/onesignal/.
 
 // PWA Caching Logic
 const CACHE_NAME = 'maintenance-guide-v4.3.7';

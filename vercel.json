@@ -10,7 +10,7 @@
       ]
     },
     {
-      "source": "/sw.js",
+      "source": "/(sw.js|push/onesignal/OneSignalSDKWorker.js)",
       "headers": [
         {
           "key": "Cache-Control",
