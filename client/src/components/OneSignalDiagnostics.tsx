@@ -101,9 +101,9 @@ export default function OneSignalDiagnostics() {
             </p>
           </div>
         </div>
-        {state.permission !== 'granted' && (
+        {state.subscribed !== 'مشترك' && (
           <button type="button" onClick={() => void enableNotifications()} disabled={busy} className="rounded-lg bg-orange-600 px-2.5 py-1.5 text-[10px] font-black text-white disabled:opacity-50">
-            <Bell size={13} className="inline ml-1" /> تفعيل الإشعارات الآن
+            <Bell size={13} className="inline ml-1" /> {state.permission === 'granted' ? 'إكمال الاشتراك' : 'تفعيل الإشعارات الآن'}
           </button>
         )}
         {state.permission === 'granted' && (
