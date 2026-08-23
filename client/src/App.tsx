@@ -125,6 +125,18 @@ function AppContent() {
       manifestLink.setAttribute('href', manifestHref);
     }
 
+    // تنظيف أي Service Worker قديم من إعداد Netlify/OneSignal قبل استخدام العامل الموحد.
+    // لا نلمس sw.js الحالي؛ فهو العامل المشترك لـPWA وOneSignal.
+    if (isStaffPath && 'serviceWorker' in navigator) {
+      void navigator.serviceWorker.getRegistrations().then(async (registrations) => {
+        const legacyWorkers = registrations.filter((registration) => {
+          const scriptUrl = registration.active?.scriptURL || registration.waiting?.scriptURL || '';
+          return scriptUrl.includes('/OneSignalSDKWorker.js') || scriptUrl.includes('/OneSignalSDKUpdaterWorker.js');
+        });
+        await Promise.all(legacyWorkers.map((registration) => registration.unregister()));
+      }).catch((error) => console.warn('[Maintenance Guide] Legacy push worker cleanup failed:', error));
+    }
+
     // الربط الصامت مع OneSignal للموظفين والمديرين بهوية موحدة
     if (isStaffPath) {
       const { user, role } = readAuthSession();
