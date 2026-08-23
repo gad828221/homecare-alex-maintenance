@@ -12,7 +12,7 @@ import { Helmet } from 'react-helmet-async';
 import { sendExternalPush } from '../utils/pushNotifications';
 import { useScreenWakeLock } from '../hooks/useScreenWakeLock';
 import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, getOrderCreatedValue, parseOrderDate, getEgyptTodayString } from '../utils/orderTiming';
-import { getPickupTypeLabel, parsePickupReceipt } from '../utils/pickupReceipt';
+import { createPickupMarker, getPickupTypeLabel, parsePickupReceipt, type PickupReceiptData } from '../utils/pickupReceipt';
 import { mergeCompanyTransferMarker, parseCompanyTransfer } from '../utils/companyTransfer';
 import TechnicianPerformanceAdmin from './TechnicianPerformanceAdmin';
 import ScrollButtons from './ScrollButtons';
@@ -1530,6 +1530,40 @@ export default function ProtectedOrders() {
       setLoading(false);
     }
   }, [userRole, isViewer]);
+
+  const openManagerPickupReceipt = async (order: any) => {
+    try {
+      if (!parsePickupReceipt(order)) {
+        const pickupRecord: PickupReceiptData = {
+          type: 'full_device',
+          partName: '',
+          deposit: Number(order.deposit_amount) || 0,
+          notes: '',
+          photos: [],
+          pickupDate: String(order.created_at || new Date().toISOString()),
+          status: 'active'
+        };
+        const previousNotes = String(order.technician_notes || order.technician_note || '').trim();
+        const marker = createPickupMarker(pickupRecord);
+        const finalNotes = `${previousNotes}${previousNotes ? '\\n' : ''}${marker}`;
+        const response = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${order.id}`, {
+          method: 'PATCH',
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ technician_notes: finalNotes, technician_note: finalNotes })
+        });
+        if (!response.ok) throw new Error(await response.text());
+        await fetchData(true);
+      }
+      window.open(`/pickup-receipt?id=${order.id}`, '_blank');
+    } catch (err) {
+      console.error('فشل تجهيز إيصال السحب من لوحة المدير:', err);
+      showToast('تعذر ربط إيصال السحب بالتتبع، حاول مرة أخرى', 'error');
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -3619,7 +3653,7 @@ export default function ProtectedOrders() {
 	                            {order.status === 'completed' ? (
 	                              <button onClick={() => window.open(`/invoice?id=${order.id}`, '_blank')} className="flex-1 h-9 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white rounded-lg text-[9px] font-black border border-blue-500/20 flex items-center justify-center gap-1.5 transition-all active:scale-95"><FileCheck size={14} /> فاتورة</button>
 	                            ) : (
-	                              <button onClick={() => window.open(`/pickup-receipt?id=${order.id}`, '_blank')} className="flex-1 h-9 bg-purple-600/20 hover:bg-purple-700 text-purple-400 hover:text-white rounded-lg text-[9px] font-black border border-purple-500/20 flex items-center justify-center gap-1.5 transition-all active:scale-95"><ClipboardList size={14} /> إيصال</button>
+	                              <button onClick={() => { void openManagerPickupReceipt(order); }} className="flex-1 h-9 bg-purple-600/20 hover:bg-purple-700 text-purple-400 hover:text-white rounded-lg text-[9px] font-black border border-purple-500/20 flex items-center justify-center gap-1.5 transition-all active:scale-95"><ClipboardList size={14} /> إيصال</button>
 	                            )}
 	                            
 		                            {order.status === 'completed' && canEditDelete() && (
