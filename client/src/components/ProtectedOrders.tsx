@@ -1757,7 +1757,8 @@ export default function ProtectedOrders() {
   };
 
   const handleBatchConfirmPaid = async () => {
-    const unpaidCompleted = filteredOrders.filter(o => o.status === 'completed' && !o.is_paid);
+    if (!isAdmin) return showToast('اعتماد التحصيل متاح لمدير النظام فقط', 'error');
+    const unpaidCompleted = filteredOrders.filter(isCollectionPending);
     if (unpaidCompleted.length === 0) return;
     
     if (!window.confirm(`هل أنت متأكد من اعتماد تحصيل عدد ${unpaidCompleted.length} أوردر دفعة واحدة؟ سيتم تصفير عداد التحصيل المعلق.`)) return;
@@ -1777,6 +1778,31 @@ export default function ProtectedOrders() {
     } catch (err) {
       console.error(err);
       showToast("تعذر اعتماد التحصيل الجماعي", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const hideOldManualCollections = async () => {
+    if (!isAdmin) return showToast('هذا الإجراء متاح لمدير النظام فقط', 'error');
+    const candidates = pendingCollectionOrders.filter(order => isOlderThan30Days(order) && !isManualCollectionClosed(order));
+    if (candidates.length === 0) return showToast('لا توجد أوردرات تحصيل أقدم من 30 يوماً لهذا الإجراء', 'info');
+    const confirmation = window.prompt(`سيتم إخفاء ${candidates.length} أوردر تحصيل أقدم من 30 يوماً من قائمة التأكيد فقط، دون تعديل الخزنة أو تسجيل تحصيل جديد. اكتب: إخفاء التحصيل القديم`);
+    if (confirmation?.trim() !== 'إخفاء التحصيل القديم') return showToast('تم إلغاء العملية للحماية', 'info');
+    setIsSubmitting(true);
+    try {
+      await Promise.all(candidates.map(order => {
+        const currentNote = String(order.technician_note || '').trim();
+        return fetchAPI(`orders?id=eq.${order.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ technician_note: `${currentNote}${currentNote ? '\\n' : ''}${MANUAL_COLLECTION_CLOSED_MARKER} تم الإنهاء يدوياً` })
+        });
+      }));
+      showToast(`تم إخفاء ${candidates.length} أوردر قديم من قائمة التحصيل`, 'success');
+      await fetchData();
+    } catch (err) {
+      console.error(err);
+      showToast('تعذر إخفاء بعض الأوردرات القديمة', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -2225,9 +2251,15 @@ export default function ProtectedOrders() {
   };
   const clearFilters = () => { setSearchTerm(''); setFilterStatus('live'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); setFilterWarranty('all'); };
 
-  // أي أوردر مكتمل ولم يتم تحصيله يحتاج مراجعة المدير، سواء كان له وسم تحويل أم لا.
+  // علامة صريحة للأوردرات التي تم إنهاء تحصيلها يدوياً خارج البرنامج.
+  const MANUAL_COLLECTION_CLOSED_MARKER = '[COLLECTION_MANUAL_CLOSED]';
+  const isManualCollectionClosed = (order: any) => String(order.technician_note || '').includes(MANUAL_COLLECTION_CLOSED_MARKER);
   // الكشف يعني زيارة وتشخيصاً مدفوعاً عند رفض الإصلاح، ولذلك يخضع للتحصيل مثل المكتمل دون اعتباره إصلاحاً منفذاً.
-  const isCollectionPending = (order: any) => ['completed', 'inspected'].includes(order.status) && !order.is_paid;
+  const isCollectionPending = (order: any) => ['completed', 'inspected'].includes(order.status) && !order.is_paid && !isManualCollectionClosed(order);
+  const isOlderThan30Days = (order: any) => {
+    const createdAt = new Date(order.created_at || order.createdAt || order.date).getTime();
+    return Number.isFinite(createdAt) && Date.now() - createdAt > 30 * 24 * 60 * 60 * 1000;
+  };
 
   const dateFilteredOrders = [...orders, ...archivedOrders].filter(o => {
     if (searchTerm) {
@@ -2778,7 +2810,7 @@ export default function ProtectedOrders() {
             >
               <Play fill="currentColor" size={20} /> دخول وتفعيل التنبيهات 🔊
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.3.3</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.3.5</p>
           </div>
         </div>
       )}
@@ -2965,10 +2997,13 @@ export default function ProtectedOrders() {
 	                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-300/25 text-amber-100 border border-amber-200/50 animate-pulse"><Wallet size={22} /></div>
 	                      <div>
 	                        <p className="text-sm font-black text-amber-100">تحصيل يحتاج تأكيدك الآن</p>
-	                        <p className="mt-1 text-[10px] font-bold text-amber-200/70">{pendingCollectionOrders.length} أوردر مكتمل ينتظر اعتماد استلام نصيب الشركة</p>
+	                        <p className="mt-1 text-[10px] font-bold text-amber-200/70">{pendingCollectionOrders.length} أوردر ينتظر اعتماد استلام نصيب الشركة، ويشمل كشف/زيارة عند وجوده</p>
 	                      </div>
 	                    </div>
-	                    <button type="button" onClick={() => { setShowCompletedOrders(true); setFilterStatus('__UNPAID__'); }} className="w-full sm:w-auto rounded-xl bg-amber-300 px-4 py-2.5 text-xs font-black text-slate-950 shadow-lg shadow-amber-500/30 transition-all hover:bg-amber-200 active:scale-95">فتح قائمة التحصيل</button>
+	                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                          <button type="button" onClick={() => { setShowCompletedOrders(true); setFilterStatus('__UNPAID__'); }} className="w-full rounded-xl bg-amber-300 px-4 py-2.5 text-xs font-black text-slate-950 shadow-lg shadow-amber-500/30 transition-all hover:bg-amber-200 active:scale-95">فتح قائمة التحصيل</button>
+                          {isAdmin && <button type="button" disabled={isSubmitting} onClick={hideOldManualCollections} className="w-full rounded-xl border border-amber-200/40 bg-slate-950/40 px-3 py-2.5 text-[10px] font-black text-amber-100 transition-all hover:bg-slate-950/70 disabled:opacity-50">إنهاء القديم يدوياً (+30 يوم)</button>}
+                        </div>
 	                  </div>
 	                </div>
 	              )}
@@ -4317,7 +4352,7 @@ export default function ProtectedOrders() {
           </div>
           <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-black tracking-wide text-emerald-300 shadow-[0_0_14px_rgba(52,211,153,0.12)]">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.9)]" />
-            إصدار النظام: v4.3.3
+            إصدار النظام: v4.3.5
           </div>
         </div>
         <ScrollButtons />
