@@ -18,7 +18,10 @@ export default function PickupReceiptPage() {
   const [editForm, setEditForm] = useState({
     deposit_amount: 0,
     technician_notes: "",
-    admin_notes: ""
+    admin_notes: "",
+    warranty_period: "6 أشهر",
+    status: "in-progress",
+    technician: ""
   });
   const [saving, setSaving] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -54,7 +57,10 @@ export default function PickupReceiptPage() {
           setEditForm({
             deposit_amount: orderData.deposit_amount || 0,
             technician_notes: getCleanTechnicianNotes(orderData.technician_notes || orderData.technician_note),
-            admin_notes: orderData.admin_notes || ""
+            admin_notes: orderData.admin_notes || "",
+            warranty_period: orderData.warranty_period || "6 أشهر",
+            status: orderData.status || "in-progress",
+            technician: orderData.technician || ""
           });
         } else {
           setError("الأوردر غير موجود");
@@ -72,9 +78,10 @@ export default function PickupReceiptPage() {
   // التحقق من صلاحية التعديل (مدير أو فني)
   const canEdit = () => {
     if (!currentUser) return false;
-    const role = currentUser.role;
-    return role === 'admin' || role === 'tech';
+    const role = String(currentUser.role || '').toLowerCase();
+    return role === 'admin' || role === 'manager' || role === 'tech';
   };
+  const canManageOrderMeta = ['admin', 'manager'].includes(String(currentUser?.role || '').toLowerCase());
 
   // حفظ التعديلات
   const saveChanges = async () => {
@@ -89,6 +96,11 @@ export default function PickupReceiptPage() {
         technician_notes: persistedTechnicianNotes,
         technician_note: persistedTechnicianNotes,
         admin_notes: editForm.admin_notes,
+        ...(canManageOrderMeta ? {
+          warranty_period: editForm.warranty_period.trim() || 'بدون ضمان',
+          status: editForm.status,
+          technician: editForm.technician.trim()
+        } : {}),
         receipt_updated_by: currentUser?.name || currentUser?.username || 'غير معروف',
         receipt_updated_at: new Date().toISOString()
       };
@@ -370,6 +382,29 @@ export default function PickupReceiptPage() {
                       className="w-full p-2 border rounded-lg"
                     />
                   </div>
+                  {canManageOrderMeta && (
+                    <>
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">🛡️ مدة الضمان</label>
+                        <input value={editForm.warranty_period} onChange={(e) => setEditForm({ ...editForm, warranty_period: e.target.value })} placeholder="مثال: 6 أشهر أو بدون ضمان" className="w-full p-2 border rounded-lg" />
+                      </div>
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">📍 حالة التتبع</label>
+                        <select value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })} className="w-full p-2 border rounded-lg">
+                          <option value="pending">قيد الانتظار</option>
+                          <option value="in-progress">جاري العمل</option>
+                          <option value="inspected">تم الكشف</option>
+                          <option value="completed">مكتمل</option>
+                          <option value="returned">مرتجع</option>
+                          <option value="cancelled">ملغي</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">👨‍🔧 الفني الظاهر في التتبع</label>
+                        <input value={editForm.technician} onChange={(e) => setEditForm({ ...editForm, technician: e.target.value })} placeholder="اسم الفني" className="w-full p-2 border rounded-lg" />
+                      </div>
+                    </>
+                  )}
                   <div>
                     <label className="block font-bold text-slate-700 mb-1">📝 ملاحظات الفني</label>
                     <textarea

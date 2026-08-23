@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import jsPDF from "jspdf";
 import { openWhatsAppDirectly } from '../utils/whatsapp';
-import { Download, Printer, Send, Copy, Check, Link, ShieldCheck, MessageCircle, Clock, Star } from "lucide-react";
+import { Download, Printer, Send, Copy, Check, Link, ShieldCheck, MessageCircle, Clock, Star, Edit2, Save, X } from "lucide-react";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -12,9 +12,19 @@ export default function InvoicePageNew() {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isManagerEditing, setIsManagerEditing] = useState(false);
+  const [managerSaving, setManagerSaving] = useState(false);
+  const [managerForm, setManagerForm] = useState({ warranty_period: '', status: 'completed', technician: '', technician_note: '' });
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    try {
+      const storedUser = localStorage.getItem('currentUser');
+      if (storedUser) setCurrentUser(JSON.parse(storedUser));
+    } catch (err) {
+      console.error('تعذر قراءة جلسة المستخدم:', err);
+    }
     const params = new URLSearchParams(window.location.search);
     const orderId = params.get("id");
     if (!orderId) {
@@ -31,6 +41,12 @@ export default function InvoicePageNew() {
         const data = await response.json();
         if (data && data.length > 0) {
           setInvoice(data[0]);
+          setManagerForm({
+            warranty_period: data[0].warranty_period || '6 أشهر',
+            status: data[0].status || 'completed',
+            technician: data[0].technician || '',
+            technician_note: data[0].technician_note || data[0].technician_notes || ''
+          });
         } else {
           setError("الفاتورة غير موجودة");
         }
@@ -50,6 +66,40 @@ export default function InvoicePageNew() {
     if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
     if (cleaned.length === 10) cleaned = '20' + cleaned;
     return cleaned;
+  };
+
+  const canManagerEdit = ['admin', 'manager'].includes(String(currentUser?.role || '').toLowerCase());
+
+  const saveManagerChanges = async () => {
+    if (!invoice || !canManagerEdit) return;
+    setManagerSaving(true);
+    try {
+      const updatedFields = {
+        warranty_period: managerForm.warranty_period.trim() || 'بدون ضمان',
+        status: managerForm.status,
+        technician: managerForm.technician.trim(),
+        receipt_updated_by: currentUser?.name || currentUser?.username || 'المدير',
+        receipt_updated_at: new Date().toISOString()
+      };
+      const response = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${invoice.id}`, {
+        method: 'PATCH',
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updatedFields)
+      });
+      if (!response.ok) throw new Error(await response.text());
+      setInvoice({ ...invoice, ...updatedFields });
+      setIsManagerEditing(false);
+      alert('✅ تم حفظ تعديلات المدير على الضمان والتتبع');
+    } catch (err) {
+      console.error('فشل حفظ تعديلات المدير:', err);
+      alert('❌ تعذر حفظ تعديلات المدير');
+    } finally {
+      setManagerSaving(false);
+    }
   };
 
   const calculateWarrantyEndDate = (warrantyPeriod: string) => {
@@ -421,6 +471,41 @@ export default function InvoicePageNew() {
           </div>
         </div>
         
+        {canManagerEdit && (
+          <div className="mt-8 rounded-3xl border-2 border-orange-200 bg-white p-5 shadow-xl" dir="rtl">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="flex items-center gap-2 text-lg font-black text-slate-900"><Edit2 className="text-orange-600" size={20} /> تعديل المدير</h3>
+                <p className="mt-1 text-xs font-bold text-slate-500">تعديل الضمان وبيانات التتبع في أي وقت. هذه اللوحة لا تظهر للعميل.</p>
+              </div>
+              <button type="button" onClick={() => setIsManagerEditing((value) => !value)} className="rounded-xl bg-orange-100 px-4 py-2 text-sm font-black text-orange-700 hover:bg-orange-200">{isManagerEditing ? 'إغلاق' : 'فتح التعديل'}</button>
+            </div>
+            {isManagerEditing && (
+              <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
+                <label className="text-sm font-bold text-slate-700">مدة الضمان
+                  <input value={managerForm.warranty_period} onChange={(e) => setManagerForm({ ...managerForm, warranty_period: e.target.value })} placeholder="مثال: 6 أشهر أو بدون ضمان" className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
+                </label>
+                <label className="text-sm font-bold text-slate-700">حالة التتبع
+                  <select value={managerForm.status} onChange={(e) => setManagerForm({ ...managerForm, status: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500">
+                    <option value="pending">قيد الانتظار</option>
+                    <option value="in-progress">جاري العمل</option>
+                    <option value="inspected">تم الكشف</option>
+                    <option value="completed">مكتمل</option>
+                    <option value="returned">مرتجع</option>
+                    <option value="cancelled">ملغي</option>
+                  </select>
+                </label>
+                <label className="text-sm font-bold text-slate-700">الفني الظاهر للعميل
+                  <input value={managerForm.technician} onChange={(e) => setManagerForm({ ...managerForm, technician: e.target.value })} placeholder="اسم الفني" className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
+                </label>
+                <div className="md:col-span-3 flex justify-end">
+                  <button type="button" onClick={() => { void saveManagerChanges(); }} disabled={managerSaving} className="flex items-center gap-2 rounded-xl bg-orange-600 px-5 py-3 text-sm font-black text-white hover:bg-orange-700 disabled:opacity-50"><Save size={17} /> {managerSaving ? 'جاري الحفظ...' : 'حفظ تعديلات المدير'}</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="flex flex-wrap justify-center gap-3 mt-8">
           <button onClick={downloadPDF} className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-all">
             <Download className="w-5 h-5" /> تحميل PDF
