@@ -46,6 +46,13 @@ export default function OneSignalDiagnostics() {
   const [state, setState] = useState<PushState>(initialState);
   const [busy, setBusy] = useState(false);
 
+  const ensureOneSignalWorker = async () => {
+    if (!('serviceWorker' in navigator)) throw new Error('المتصفح لا يدعم Service Worker');
+    const registration = await navigator.serviceWorker.register('/push/onesignal/OneSignalSDKWorker-v2.js', { scope: '/push/onesignal/' });
+    await registration.update();
+    return registration;
+  };
+
   const inspect = async () => {
     const win = window as Window & { OneSignal?: OneSignalRuntime; OneSignalReady?: boolean };
     const sdk = win.OneSignal;
@@ -72,7 +79,9 @@ export default function OneSignalDiagnostics() {
   };
 
   useEffect(() => {
-    void inspect();
+    void ensureOneSignalWorker().catch((error) => {
+      setState((previous) => ({ ...previous, serviceWorker: 'فشل التسجيل', error: error instanceof Error ? error.message : String(error) }));
+    }).finally(() => void inspect());
     const timer = window.setInterval(() => void inspect(), 3000);
     return () => window.clearInterval(timer);
   }, []);
@@ -96,10 +105,7 @@ export default function OneSignalDiagnostics() {
     setBusy(true);
     try {
       const win = window as Window & { OneSignal?: OneSignalRuntime };
-      if ('serviceWorker' in navigator) {
-        const registration = await navigator.serviceWorker.register('/push/onesignal/OneSignalSDKWorker-v2.js', { scope: '/push/onesignal/' });
-        await registration.update();
-      }
+      await ensureOneSignalWorker();
       if ('Notification' in window && Notification.permission !== 'granted') {
         if (win.OneSignal?.Notifications?.requestPermission) {
           await win.OneSignal.Notifications.requestPermission();
