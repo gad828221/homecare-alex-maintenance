@@ -1785,10 +1785,10 @@ export default function ProtectedOrders() {
 
   const hideOldManualCollections = async () => {
     if (!isAdmin) return showToast('هذا الإجراء متاح لمدير النظام فقط', 'error');
-    const candidates = pendingCollectionOrders.filter(order => isOlderThan30Days(order) && !isManualCollectionClosed(order));
-    if (candidates.length === 0) return showToast('لا توجد أوردرات تحصيل أقدم من 30 يوماً لهذا الإجراء', 'info');
-    const confirmation = window.prompt(`سيتم إخفاء ${candidates.length} أوردر تحصيل أقدم من 30 يوماً من قائمة التأكيد فقط، دون تعديل الخزنة أو تسجيل تحصيل جديد. اكتب: إخفاء التحصيل القديم`);
-    if (confirmation?.trim() !== 'إخفاء التحصيل القديم') return showToast('تم إلغاء العملية للحماية', 'info');
+    const candidates = pendingCollectionOrders.filter(order => !isManualCollectionClosed(order));
+    if (candidates.length === 0) return showToast('لا توجد أوردرات تحصيل ظاهرة للإخفاء', 'info');
+    const confirmation = window.prompt(`سيتم إخفاء ${candidates.length} أوردر الظاهرة حالياً من قائمة التأكيد فقط، دون تعديل الخزنة أو تسجيل تحصيل جديد. اكتب: إخفاء التحصيل الظاهر`);
+    if (confirmation?.trim() !== 'إخفاء التحصيل الظاهر') return showToast('تم إلغاء العملية للحماية', 'info');
     setIsSubmitting(true);
     try {
       await Promise.all(candidates.map(order => {
@@ -2810,7 +2810,7 @@ export default function ProtectedOrders() {
             >
               <Play fill="currentColor" size={20} /> دخول وتفعيل التنبيهات 🔊
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.3.5</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.3.6</p>
           </div>
         </div>
       )}
@@ -3002,7 +3002,7 @@ export default function ProtectedOrders() {
 	                    </div>
 	                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                           <button type="button" onClick={() => { setShowCompletedOrders(true); setFilterStatus('__UNPAID__'); }} className="w-full rounded-xl bg-amber-300 px-4 py-2.5 text-xs font-black text-slate-950 shadow-lg shadow-amber-500/30 transition-all hover:bg-amber-200 active:scale-95">فتح قائمة التحصيل</button>
-                          {isAdmin && <button type="button" disabled={isSubmitting} onClick={hideOldManualCollections} className="w-full rounded-xl border border-amber-200/40 bg-slate-950/40 px-3 py-2.5 text-[10px] font-black text-amber-100 transition-all hover:bg-slate-950/70 disabled:opacity-50">إنهاء القديم يدوياً (+30 يوم)</button>}
+                          {isAdmin && <button type="button" disabled={isSubmitting} onClick={hideOldManualCollections} className="w-full rounded-xl border border-amber-200/40 bg-slate-950/40 px-3 py-2.5 text-[10px] font-black text-amber-100 transition-all hover:bg-slate-950/70 disabled:opacity-50">إنهاء التحصيل الظاهر يدوياً</button>}
                         </div>
 	                  </div>
 	                </div>
@@ -4352,7 +4352,7 @@ export default function ProtectedOrders() {
           </div>
           <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-black tracking-wide text-emerald-300 shadow-[0_0_14px_rgba(52,211,153,0.12)]">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.9)]" />
-            إصدار النظام: v4.3.5
+            إصدار النظام: v4.3.6
           </div>
         </div>
         <ScrollButtons />
