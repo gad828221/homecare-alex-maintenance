@@ -286,7 +286,7 @@ export default function TechnicianPortal() {
     }
   };
 
-  const playDing = (isUrgent = false) => {
+  const playDing = async (isUrgent = false) => {
     try {
       const AudioCtor = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioCtor) return;
@@ -296,10 +296,10 @@ export default function TechnicianPortal() {
       }
       const ctx = audioContextRef.current;
       
-      if (ctx.state === 'suspended') {
-        void ctx.resume().catch(() => undefined);
+            if (ctx.state === 'suspended') {
+        await ctx.resume();
       }
-
+      if (ctx.state !== 'running') return;
       const tones = isUrgent
         ? [{ frequency: 1040, offset: 0, duration: 0.28 }, { frequency: 1320, offset: 0.22, duration: 0.28 }, { frequency: 1040, offset: 0.44, duration: 0.28 }]
         : [{ frequency: 880, offset: 0, duration: 0.5 }];
@@ -335,8 +335,8 @@ export default function TechnicianPortal() {
   const startUrgentAlert = () => {
     if (alertInterval.current) return;
     setIsUrgentAlert(true);
-    playDing(true);
-    alertInterval.current = window.setInterval(() => playDing(true), 1500);
+    void playDing(true);
+    alertInterval.current = window.setInterval(() => { void playDing(true); }, 1500);
   };
 
   const stopUrgentAlert = () => {
