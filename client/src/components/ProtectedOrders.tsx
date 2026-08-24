@@ -20,7 +20,7 @@ import IOSPushEnablePrompt from './IOSPushEnablePrompt';
 
 import { findTechnicianByIdentity, getTechnicianDisplayName, getTechnicianPhotoUrl, getTechnicianSpecialty, parseTechnicianProfileNotification } from '../utils/technicianProfile';
 import { clearAuthSession, readAuthSession } from '../utils/authSession';
-import { syncOneSignalIdentity } from '../utils/oneSignalIdentity';
+import { getOneSignalExternalId, syncOneSignalIdentity } from '../utils/oneSignalIdentity';
 
 // ==================== الإعدادات الأساسية ====================
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -1062,12 +1062,14 @@ export default function ProtectedOrders() {
     const message = `📊 *ملخص سير العمل اليومي* 📊\n━━━━━━━━━━━━━━━━━━━━━━\n📅 *التاريخ:* ${new Date().toLocaleDateString('ar-EG')}\n\n✅ *إحصائيات الإنجاز:* \n🔹 طلبات جديدة: ${todayOrders.length}\n🔹 طلبات مكتملة: ${completedToday}\n💰 إجمالي التحصيل: ${incomeToday.toLocaleString()} ج.م\n\n⚠️ *حالة الطلبات القائمة:* \n🔸 قيد العمل: ${pendingCount}\n🚨 طلبات متأخرة: ${delayedCount}\n👤 بدون فني: ${noTechCount}\n━━━━━━━━━━━━━━━━━━━━━━\n🚀 *نعمل معاً لتقديم أفضل خدمة عملاء.*`;
 
     // إرسال Push أولًا حتى لا يتعطل التقرير إذا تأخر حفظ سجل الإشعارات.
+    const signedInStaff = readAuthSession().user;
+    const currentStaffExternalId = getOneSignalExternalId(signedInStaff, signedInStaff?.role);
     const pushResult = await sendExternalPush({
       event: 'system_alert',
       title: '📊 تقرير العمليات اليومي',
       message,
       targetRoles: ['admin', 'manager'],
-      targetUserIds: ['staff:admin:1', 'staff:manager:1'],
+      targetUserIds: currentStaffExternalId ? [currentStaffExternalId] : [],
       data: { focus: 'notifications' }
     });
     // حفظ نسخة داخلية في الخلفية دون تعطيل نتيجة الإرسال الخارجي.
