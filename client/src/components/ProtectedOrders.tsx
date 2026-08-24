@@ -336,6 +336,7 @@ export default function ProtectedOrders() {
   const [cashLedger, setCashLedger] = useState<any[]>([]);
   const [cashBalance, setCashBalance] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [confirmingTransferId, setConfirmingTransferId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'orders' | 'archived' | 'technicians' | 'reports' | 'repeatCustomers' | 'invoicesReview' | 'cash' | 'partners' | 'notifications' | 'permissions' | 'performance' | 'analytics' | 'feedback'>('orders');
   const [showOrderModal, setShowOrderModal] = useState(false);
@@ -1564,7 +1565,10 @@ export default function ProtectedOrders() {
     } catch (err) {
       console.error(err);
     } finally {
-      if (requestId === latestFetchRequestRef.current) setLoading(false);
+      if (requestId === latestFetchRequestRef.current) {
+        setLoading(false);
+        if (!isAutoRefresh) setInitialLoadComplete(true);
+      }
     }
   }, [userRole, isViewer]);
 
@@ -2953,6 +2957,9 @@ ${trackingUrl}
     }
   };
 
+    if (!initialLoadComplete) {
+      return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-300" dir="rtl"><div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-5 text-sm font-black shadow-2xl">جاري تحميل بيانات لوحة المدير…</div></div>;
+    }
     return (
     <div className={`min-h-screen bg-slate-950 text-slate-200 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`}>
       {loading && (
