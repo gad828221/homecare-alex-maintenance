@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, useDeferredValue } from 'react';
 import {
   Plus, Search, LayoutDashboard, Users, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
   CheckCircle2, AlertCircle, Eye, EyeOff,
@@ -369,6 +369,8 @@ export default function ProtectedOrders() {
   const [cashForm, setCashForm] = useState({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] });
   const [partnerForm, setPartnerForm] = useState({ name: '', share_percentage: 0, phone: '', is_active: true });
   const [searchTerm, setSearchTerm] = useState('');
+  // إبقاء الكتابة فورية وتأجيل الفلترة الثقيلة حتى لا يتجمد الكيبورد مع كل حرف.
+  const deferredSearchTerm = useDeferredValue(searchTerm);
   const [archiveSearchTerm, setArchiveSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('live');
   const [filterTechnician, setFilterTechnician] = useState('');
@@ -2333,11 +2335,11 @@ ${trackingUrl}
   };
 
   const dateFilteredOrders = [...orders, ...archivedOrders].filter(o => {
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
+    if (deferredSearchTerm) {
+      const searchLower = deferredSearchTerm.toLowerCase();
       const matchesName = o.customer_name?.toLowerCase().includes(searchLower);
-      const matchesPhone = o.phone?.includes(searchTerm);
-      const matchesOrderNum = String(o.order_number).includes(searchTerm);
+      const matchesPhone = o.phone?.includes(deferredSearchTerm);
+      const matchesOrderNum = String(o.order_number).includes(deferredSearchTerm);
       if (!matchesName && !matchesPhone && !matchesOrderNum) return false;
     }
 
@@ -2373,7 +2375,7 @@ ${trackingUrl}
   const allFilteredOrders = dateFilteredOrders.filter(o => {
     // ✅ أرشفة تلقائية: إخفاء أي أوردر مر عليه أكثر من 30 يوماً من العرض العام (Live/All)
     // إلا إذا كان هناك بحث نشط أو فلترة يدوية بالتاريخ أو الفني
-    const isManualFilterActive = searchTerm || filterTechnician || filterDateFrom || filterDateTo || filterDeviceType || filterDelay !== 'all' || filterWarranty !== 'all';
+    const isManualFilterActive = deferredSearchTerm || filterTechnician || filterDateFrom || filterDateTo || filterDeviceType || filterDelay !== 'all' || filterWarranty !== 'all';
     
     if ((filterStatus === 'live' || filterStatus === 'all') && !isManualFilterActive) {
       const orderDate = new Date(o.created_at || o.createdAt);
@@ -2398,7 +2400,7 @@ ${trackingUrl}
       const isLive = (o.status === 'in-progress' || o.status === 'in_progress' || o.status === 'pending' || o.status === 'returned' || !o.technician || o.technician === '-' || o.technician === '');
 
       // أي فلتر إضافي يستدعي فقط النتائج المطابقة بعد تطبيق البحث والفترة والفني والجهاز.
-      if (searchTerm || filterTechnician || filterDateFrom || filterDateTo || filterDeviceType || filterDelay !== 'all' || filterWarranty !== 'all') return true;
+      if (deferredSearchTerm || filterTechnician || filterDateFrom || filterDateTo || filterDeviceType || filterDelay !== 'all' || filterWarranty !== 'all') return true;
       
       return isLive;
     }
@@ -2413,7 +2415,7 @@ ${trackingUrl}
     // عند «جميع الحالات» أو وضع التركيز نعرض التحصيل المعلق حتى لو كان المكتمل مخفياً افتراضياً.
     if (isCollectionPending(o) && (filterStatus === 'all' || filterStatus === 'live')) return true;
     if (o.status === 'completed' && filterStatus !== 'completed') return showCompletedOrders;
-    if (filterStatus !== 'all' || filterTechnician || filterDeviceType || filterDateFrom || filterDateTo || filterDelay !== 'all' || filterWarranty !== 'all' || searchTerm) return true;
+    if (filterStatus !== 'all' || filterTechnician || filterDeviceType || filterDateFrom || filterDateTo || filterDelay !== 'all' || filterWarranty !== 'all' || deferredSearchTerm) return true;
     return (o.status === 'in-progress' || o.status === 'pending' || o.status === 'returned' || !o.technician || o.technician === '-' || o.technician === '');
   });
 
@@ -2455,14 +2457,14 @@ ${trackingUrl}
 
     const sorted = [...allFilteredOrders].sort(sortByPriority);
 
-    if (!searchTerm) {
+    if (!deferredSearchTerm) {
       if (filterStatus === 'completed') {
         return sorted.slice(0, visibleCompletedCount);
       }
       return sorted.slice(0, visibleOrdersCount);
     }
     return sorted;
-  }, [allFilteredOrders, filterStatus, searchTerm, visibleCompletedCount, visibleOrdersCount, pinnedOrderIds]);
+  }, [allFilteredOrders, filterStatus, deferredSearchTerm, visibleCompletedCount, visibleOrdersCount, pinnedOrderIds]);
 
   const pendingCollectionOrders = [...dateFilteredOrders]
     .filter(isCollectionPending)
