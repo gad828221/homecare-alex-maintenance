@@ -487,6 +487,7 @@ export default function ProtectedOrders() {
   const lastCheckedOrderCreatedAtRef = useRef<number | null>(null);
   const lastGoodOrdersRef = useRef<any[] | null>(null);
   const lastGoodNotificationsRef = useRef<any[] | null>(null);
+  const latestFetchRequestRef = useRef(0);
   const alertBaselineReadyRef = useRef(false);
   const delayedAlertIdsRef = useRef<Set<number>>(new Set());
   const escalationAlertIdsRef = useRef<Set<number>>(new Set());
@@ -1349,12 +1350,14 @@ export default function ProtectedOrders() {
 
   const fetchData = useCallback(async (isAutoRefresh = false) => {
     if (!userRole) return;
+    const requestId = ++latestFetchRequestRef.current;
     if (!isAutoRefresh) setLoading(true);
     try {
       const orderFields = isViewer
         ? 'id,order_number,customer_name,device_type,address,brand,problem_description,technician,status,total_amount,parts_cost,transport_cost,net_amount,company_share,technician_share,is_paid,created_at,date,deleted_at,technician_note,warranty_period,invoice_approved,invoice_date,parts_used,completed_at'
         : '*';
       const allOrders = await fetchAPI(`orders?select=${orderFields}&order=created_at.desc`);
+      if (requestId !== latestFetchRequestRef.current) return;
       if (allOrders === null) throw new Error('تعذر تحديث بيانات الأوردرات مؤقتًا');
       if (!Array.isArray(allOrders)) throw new Error('بيانات الأوردرات غير صالحة');
       // لا نستبدل البيانات المعروضة بصفر أثناء رد فارغ عابر من الشبكة أو الجلسة.
@@ -1389,8 +1392,8 @@ export default function ProtectedOrders() {
       const notDeleted = ordersArray.filter((o: any) => !o.deleted_at);
       const activeOrders = notDeleted.filter((o: any) => !isOldAndShouldArchive(o));
       const archivedOrders = notDeleted.filter((o: any) => isOldAndShouldArchive(o));
-      const deletedOrders = ordersArray.filter((o: any) => o.deleted_at);
-
+            const deletedOrders = ordersArray.filter((o: any) => o.deleted_at);
+      if (requestId !== latestFetchRequestRef.current) return;
       setOrders(activeOrders);
       setArchivedOrders(archivedOrders);
       setDeletedOrders(deletedOrders);
@@ -1404,11 +1407,11 @@ export default function ProtectedOrders() {
             fetchAPI('notifications?select=*&action=neq.employee_chat&order=created_at.desc'),
             fetchAPI('partners?select=*&order=created_at.desc'),
             fetchAPI('cash_ledger?select=*&order=date.desc,created_at.desc'),
-            fetchAPI('users?select=*&order=created_at.desc')
+                        fetchAPI('users?select=*&order=created_at.desc')
           ]);
-
-      const nextTechnicians = Array.isArray(techsData) ? techsData : [];
-      const nextNotifications = Array.isArray(notificationsData) ? notificationsData : [];
+      if (requestId !== latestFetchRequestRef.current) return;
+      const nextTechnicians = Array.isArray(techsData) ? techsData : technicians;
+      const nextNotifications = Array.isArray(notificationsData) ? notificationsData : notifications;
       setTechnicians(nextTechnicians);
       setNotifications(nextNotifications);
       const nextProfiles: Record<string, any> = {};
@@ -1421,13 +1424,12 @@ export default function ProtectedOrders() {
           if (!current || new Date(profile.updatedAt || 0).getTime() >= new Date(current.updatedAt || 0).getTime()) nextProfiles[normalizedKey] = profile;
         });
       });
-      setTechnicianProfiles(nextProfiles);
-      setPartners(Array.isArray(partnersData) ? partnersData : []);
-      setCashLedger(Array.isArray(cashData) ? cashData : []);
-      setUsers(Array.isArray(usersData) ? usersData : []);
-
+            setTechnicianProfiles(nextProfiles);
+      setPartners(Array.isArray(partnersData) ? partnersData : partners);
+      setCashLedger(Array.isArray(cashData) ? cashData : cashLedger);
+      setUsers(Array.isArray(usersData) ? usersData : users);
       let balance = 0;
-      (cashData || []).forEach((entry: any) => {
+      (Array.isArray(cashData) ? cashData : cashLedger).forEach((entry: any) => {
         if (entry.type === 'income') balance += entry.amount;
         else if (entry.type === 'expense' || entry.type === 'profit_distribution') balance -= entry.amount;
       });
@@ -1562,7 +1564,7 @@ export default function ProtectedOrders() {
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+      if (requestId === latestFetchRequestRef.current) setLoading(false);
     }
   }, [userRole, isViewer]);
 
