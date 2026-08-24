@@ -52,7 +52,6 @@ export default function IOSPushEnablePrompt() {
   return (
     <section className={`mx-auto mb-4 max-w-7xl rounded-2xl border p-4 text-right shadow-lg ${subscribed ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-orange-500/40 bg-orange-500/10'}`} dir="rtl">
       <div className="flex items-start gap-3">
-        <div className={`rounded-xl p-2 ${subscribed ? 'bg-emerald-500/20 text-emerald-300' : 'bg-orange-500/20 text-orange-300'}`}><Bell size={22} /></div>
         <div className="flex-1">
           <h2 className="font-black text-white">{subscribed ? 'إشعارات الأوردرات مفعّلة' : 'تفعيل إشعارات الأوردرات'}</h2>
           {subscribed ? (
@@ -68,7 +67,7 @@ export default function IOSPushEnablePrompt() {
               {loading ? 'جاري التفعيل...' : 'تفعيل الإشعارات الآن'}
             </button>
           )}
-          {subscribed && <button type="button" onClick={() => { void refresh(); }} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 font-bold text-white">إعادة التحقق</button>}
+
           {message && <p className="mt-2 text-xs font-bold text-orange-200">{message}</p>}
         </div>
       </div>
