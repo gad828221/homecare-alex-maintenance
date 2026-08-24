@@ -486,6 +486,7 @@ export default function ProtectedOrders() {
   const lastCheckedOrderId = useRef<number | null>(null);
   const lastCheckedOrderCreatedAtRef = useRef<number | null>(null);
   const lastGoodOrdersRef = useRef<any[] | null>(null);
+  const lastGoodNotificationsRef = useRef<any[] | null>(null);
   const alertBaselineReadyRef = useRef(false);
   const delayedAlertIdsRef = useRef<Set<number>>(new Set());
   const escalationAlertIdsRef = useRef<Set<number>>(new Set());
@@ -1064,7 +1065,11 @@ export default function ProtectedOrders() {
   const fetchNotifications = useCallback(async () => {
     try {
       const data = await fetchAPI('notifications?select=*&action=neq.employee_chat&order=created_at.desc');
-      setNotifications(data || []);
+      if (!Array.isArray(data)) return;
+      // لا نمسح سجل الإشعارات بسبب فشل شبكة أو رد فارغ عابر أثناء التحديث.
+      if (data.length === 0 && lastGoodNotificationsRef.current?.length) return;
+      if (data.length > 0) lastGoodNotificationsRef.current = data;
+      setNotifications(data);
     } catch (err) { console.error(err); }
   }, []);
 
