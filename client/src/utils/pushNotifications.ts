@@ -6,6 +6,7 @@ export type PushNotificationInput = {
   targetUserIds?: Array<string | number>;
   targetTags?: Array<{ key: string; value: string | number }>;
   data?: Record<string, string | number | boolean | null | undefined>;
+  url?: string;
 };
 
 export async function sendExternalPush(input: PushNotificationInput): Promise<{ ok: boolean; error?: string; ids?: string[] }> {

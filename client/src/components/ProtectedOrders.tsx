@@ -353,6 +353,11 @@ export default function ProtectedOrders() {
 
   const [showTechModal, setShowTechModal] = useState(false);
   const [showPartnerModal, setShowPartnerModal] = useState(false);
+  const [showManualPushModal, setShowManualPushModal] = useState(false);
+  const [manualPushTarget, setManualPushTarget] = useState('all');
+  const [manualPushTitle, setManualPushTitle] = useState('رسالة من الإدارة');
+  const [manualPushMessage, setManualPushMessage] = useState('');
+  const [manualPushSending, setManualPushSending] = useState(false);
   const [showCashModal, setShowCashModal] = useState(false);
   const [editingOrder, setEditingOrder] = useState<any>(null);
   const [editingTech, setEditingTech] = useState<any>(null);
@@ -2861,8 +2866,43 @@ ${trackingUrl}
     showToast(pushResult.ok ? `✅ تم إرسال إنذار إلى ${tech.name}` : `⚠️ تم تسجيل الإنذار ولم يصل Push إلى ${tech.name}`, pushResult.ok ? 'success' : 'error');
   };
 
-  if (loading) return <div className="flex justify-center items-center h-screen text-slate-400">جاري التحميل...</div>;
+    const handleManualPushSend = async () => {
+    if (userRole !== 'admin') {
+      showToast('إرسال الإشعارات اليدوية متاح لمدير النظام فقط', 'error');
+      return;
+    }
+    const title = manualPushTitle.trim();
+    const message = manualPushMessage.trim();
+    if (!title || !message) {
+      showToast('اكتب عنوان الرسالة ونصها أولاً', 'error');
+      return;
+    }
+    setManualPushSending(true);
+    try {
+      const result = await sendExternalPush({
+        event: 'system_alert',
+        title,
+        message,
+        ...(manualPushTarget === 'all' ? { targetRoles: ['tech'] } : { targetUserIds: [`tech:${manualPushTarget}`] }),
+        data: { manual: true, sent_by: 'admin' },
+        url: '/tech-portal',
+      });
+      if (!result.ok) {
+        showToast(`تعذر إرسال الإشعار: ${result.error || 'خطأ غير معروف'}`, 'error');
+        return;
+      }
+      showToast(manualPushTarget === 'all' ? 'تم إرسال الإشعار للفنيين المشتركين' : 'تم إرسال الإشعار للفني المحدد', 'success');
+      setManualPushMessage('');
+      setShowManualPushModal(false);
+    } catch (error) {
+      console.error('Manual push failed:', error);
+      showToast('تعذر إرسال الإشعار', 'error');
+    } finally {
+      setManualPushSending(false);
+    }
+  };
 
+  if (loading) return <div className="flex justify-center items-center h-screen text-slate-400">جاري التحميل...</div>;
   return (
     <div className={`min-h-screen bg-slate-950 text-slate-200 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`}>
 
@@ -3023,6 +3063,11 @@ ${trackingUrl}
 	                    <button onClick={() => { void sendDailyReportToApp(); }} className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl text-xs font-black flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-900/20 active:scale-95">
 	                      <Send size={18} /> تقرير اليوم
 	                    </button>
+	                    {isAdmin && (
+	                      <button type="button" onClick={() => setShowManualPushModal(true)} className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-2xl text-xs font-black flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-900/20 active:scale-95">
+	                        <Bell size={18} /> رسالة للفنيين
+	                      </button>
+	                    )}
 	                    <button onClick={() => setActiveTab('cash')} className="flex-1 md:flex-none bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-3 rounded-2xl text-xs font-black transition-all border border-slate-700 flex items-center justify-center gap-2 active:scale-95">
 	                      <Wallet size={18} /> الخزنة
 	                    </button>
@@ -4441,6 +4486,38 @@ ${trackingUrl}
         </div>
         <ScrollButtons />
       </div>
+
+      {showManualPushModal && isAdmin && (
+        <div className="fixed inset-0 z-[160] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-3xl border border-blue-500/30 bg-slate-900 p-5 shadow-2xl">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-black text-white">إرسال إشعار خارجي للفنيين</h3>
+                <p className="mt-1 text-xs text-slate-400">سيصل إلى الأجهزة المشتركة حتى إذا كان البرنامج مغلقًا.</p>
+              </div>
+              <button type="button" onClick={() => setShowManualPushModal(false)} className="rounded-xl p-2 text-slate-400 hover:bg-slate-800 hover:text-white" aria-label="إغلاق"><X size={20} /></button>
+            </div>
+            <div className="space-y-3">
+              <label className="block text-right text-xs font-black text-slate-300">المستلم
+                <select value={manualPushTarget} onChange={(e) => setManualPushTarget(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm font-bold text-white outline-none focus:border-blue-500">
+                  <option value="all">كل الفنيين المشتركين</option>
+                  {technicians.filter((tech: any) => tech.is_active !== false).map((tech: any) => <option key={tech.id} value={String(tech.id)}>{tech.name || `فني ${tech.id}`}</option>)}
+                </select>
+              </label>
+              <label className="block text-right text-xs font-black text-slate-300">عنوان الرسالة
+                <input value={manualPushTitle} onChange={(e) => setManualPushTitle(e.target.value)} maxLength={120} className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm font-bold text-white outline-none focus:border-blue-500" />
+              </label>
+              <label className="block text-right text-xs font-black text-slate-300">نص الرسالة
+                <textarea value={manualPushMessage} onChange={(e) => setManualPushMessage(e.target.value)} maxLength={1000} rows={4} placeholder="اكتب الرسالة التي تريد إرسالها..." className="mt-1 w-full resize-none rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm font-bold text-white outline-none focus:border-blue-500" />
+              </label>
+              <div className="flex gap-2 pt-2">
+                <button type="button" onClick={() => setShowManualPushModal(false)} className="flex-1 rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm font-black text-slate-300 hover:bg-slate-700">إلغاء</button>
+                <button type="button" disabled={manualPushSending} onClick={() => { void handleManualPushSend(); }} className="flex-1 rounded-xl bg-blue-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/30 hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50">{manualPushSending ? 'جاري الإرسال...' : 'إرسال الإشعار'}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showReturnModal && selectedOrderForReturn && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
