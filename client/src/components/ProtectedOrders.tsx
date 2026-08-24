@@ -480,6 +480,7 @@ export default function ProtectedOrders() {
   const [isUrgentAlert, setIsUrgentAlert] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const notificationAudioRef = useRef<HTMLAudioElement | null>(null);
   const alertInterval = useRef<any>(null);
   const lastCheckedOrderId = useRef<number | null>(null);
   const lastCheckedOrderCreatedAtRef = useRef<number | null>(null);
@@ -631,6 +632,18 @@ export default function ProtectedOrders() {
   };
 
   const playDing = async (isUrgent = false) => {
+    try {
+      // MP3 أكثر ثباتًا على أندرويد من جدولة Oscillator بعد تغيّر حالة الصفحة.
+      if (!notificationAudioRef.current) notificationAudioRef.current = new Audio('/sounds/notification.mp3');
+      const audio = notificationAudioRef.current;
+      audio.volume = isUrgent ? 1 : 0.75;
+      audio.currentTime = 0;
+      await audio.play();
+      if (isUrgent && 'vibrate' in navigator) navigator.vibrate?.([260, 100, 260, 100, 260]);
+      return;
+    } catch (mp3Error) {
+      console.warn('MP3 playback unavailable, trying Web Audio:', mp3Error);
+    }
     try {
       const AudioCtor = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioCtor) return;
