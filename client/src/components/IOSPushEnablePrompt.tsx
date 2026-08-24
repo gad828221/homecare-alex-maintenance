@@ -49,23 +49,23 @@ export default function IOSPushEnablePrompt() {
     }
   };
 
-  if (!isIOS || subscribed) return null;
+  if (subscribed) return null;
 
   return (
     <section className="mx-auto mb-4 max-w-7xl rounded-2xl border border-orange-500/40 bg-orange-500/10 p-4 text-right shadow-lg" dir="rtl">
       <div className="flex items-start gap-3">
         <div className="rounded-xl bg-orange-500/20 p-2 text-orange-300"><Bell size={22} /></div>
         <div className="flex-1">
-          <h2 className="font-black text-white">تفعيل إشعارات مدير العمليات على iPhone</h2>
-          {!isStandalone ? (
-            <p className="mt-1 text-sm text-orange-100/80">افتح الرابط في Safari، اضغط مشاركة، ثم «إضافة إلى الشاشة الرئيسية»، وبعدها افتح بوابة الموظفين من الأيقونة الجديدة.</p>
+          <h2 className="font-black text-white">تفعيل إشعارات الأوردرات</h2>
+          {isIOS && !isStandalone ? (
+            <p className="mt-1 text-sm text-orange-100/80">افتح الرابط في Safari، اضغط مشاركة، ثم «إضافة إلى الشاشة الرئيسية»، وبعدها افتح البرنامج من الأيقونة الجديدة.</p>
           ) : (
-            <p className="mt-1 text-sm text-orange-100/80">البوابة مثبتة. اضغط الزر لتفعيل استقبال إشعارات الأوردرات.</p>
+            <p className="mt-1 text-sm text-orange-100/80">الإشعارات غير مفعّلة على هذا الجهاز. اضغط الزر للسماح بإشعارات الأوردرات الجديدة والصوت الخارجي.</p>
           )}
-          {isStandalone && (
+          {(!isIOS || isStandalone) && (
             <button type="button" onClick={enable} disabled={loading} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-orange-600 px-4 py-2 font-bold text-white disabled:opacity-60">
               {loading ? <Smartphone size={16} className="animate-pulse" /> : <Bell size={16} />}
-              {loading ? 'جاري التفعيل...' : 'تفعيل الإشعارات'}
+              {loading ? 'جاري التفعيل...' : 'تفعيل الإشعارات الآن'}
             </button>
           )}
           {message && <p className="mt-2 text-xs font-bold text-orange-200">{message}</p>}
