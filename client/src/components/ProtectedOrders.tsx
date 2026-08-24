@@ -2952,10 +2952,13 @@ ${trackingUrl}
     }
   };
 
-  if (loading) return <div className="flex justify-center items-center h-screen text-slate-400">جاري التحميل...</div>;
-  return (
+    return (
     <div className={`min-h-screen bg-slate-950 text-slate-200 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`}>
-
+      {loading && (
+        <div className="fixed top-2 left-1/2 -translate-x-1/2 z-[210] rounded-full border border-blue-400/40 bg-slate-900/95 px-4 py-2 text-xs font-black text-blue-200 shadow-xl" role="status">
+          جاري تحديث البيانات…
+        </div>
+      )}
       {/* ✅ قفل الشاشة الإجباري للمدير لتفعيل الصوت */}
       {!audioEnabled && (
         <div className="fixed inset-0 z-[200] bg-slate-950 flex items-center justify-center p-6 text-center backdrop-blur-xl">
