@@ -1650,7 +1650,8 @@ export default function ProtectedOrders() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, (payload) => {
         const notification = payload.new as any;
         const action = String(notification?.action || '');
-        const isUrgentOperation = action === 'new_order_alert' || action === 'settlement_alert';
+        const isNewOrderOperation = action === 'new_order_alert' || action === 'new_order' || action === 'إضافة أوردر' || action.includes('أوردر جديد') || action.includes('طلب صيانة جديد');
+        const isUrgentOperation = isNewOrderOperation || action === 'settlement_alert';
         const createdAt = new Date(notification?.created_at || 0).getTime();
         const isRecentNotification = Number.isFinite(createdAt) && createdAt > 0 && (Date.now() - createdAt) >= -30_000 && (Date.now() - createdAt) <= 2 * 60 * 1000;
         if (!isUrgentOperation || !isRecentNotification) {
