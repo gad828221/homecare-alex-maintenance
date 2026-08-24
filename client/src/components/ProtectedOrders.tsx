@@ -991,9 +991,14 @@ export default function ProtectedOrders() {
       const date = parseOrderDate(order.date);
       if (date) return date;
     }
-    return null;
+        return null;
   };
-
+  const isOrderToday = (order: any) => {
+    const createdAt = getOrderCreatedAt(order);
+    if (!createdAt) return false;
+    const cairoDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(createdAt);
+    return cairoDate === getEgyptTodayString();
+  };
   const getWarrantyStatus = (order: any) => {
     if (!order.invoice_approved || !order.warranty_period || order.status !== 'completed') {
       return { status: 'none', text: 'لا يوجد ضمان', color: 'slate' };
@@ -2961,7 +2966,7 @@ ${trackingUrl}
             >
               <Play fill="currentColor" size={20} /> دخول وتفعيل التنبيهات 🔊
             </button>
-            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.3.6</p>
+            <p className="text-[10px] text-slate-600 mt-6 uppercase tracking-widest font-bold">Maintenance Guide Admin v4.3.8</p>
           </div>
         </div>
       )}
@@ -3119,7 +3124,7 @@ ${trackingUrl}
 		                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 mt-8">
 		                  <button type="button" className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-blue-500/30 transition-all group text-right active:scale-95" onClick={() => { clearFilters(); const today = getEgyptTodayString(); setFilterDateFrom(today); setFilterDateTo(today); }}>
 		                    <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest flex items-center gap-1.5"><Clock size={12}/> أوردرات اليوم</div>
-		                    <div className="text-2xl font-black text-white group-hover:text-blue-400 transition-colors">{orders.filter(o => (o.created_at || o.date).includes(getEgyptTodayString())).length}</div>
+		                    <div className="text-2xl font-black text-white group-hover:text-blue-400 transition-colors">{orders.filter(isOrderToday).length}</div>
 		                  </button>
 		                  <button type="button" className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-orange-500/30 transition-all group text-right active:scale-95" onClick={() => { clearFilters(); setFilterTechnician('__NONE__'); }}>
 		                    <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest flex items-center gap-1.5"><UserPlus size={12}/> بدون فني</div>
@@ -4519,7 +4524,7 @@ ${trackingUrl}
           </div>
           <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-black tracking-wide text-emerald-300 shadow-[0_0_14px_rgba(52,211,153,0.12)]">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.9)]" />
-            إصدار النظام: v4.3.6
+            إصدار النظام: v4.3.8
           </div>
         </div>
         <ScrollButtons />
