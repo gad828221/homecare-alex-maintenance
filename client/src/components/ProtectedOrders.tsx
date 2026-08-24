@@ -16,6 +16,7 @@ import { createPickupMarker, getPickupTypeLabel, parsePickupReceipt, type Pickup
 import { mergeCompanyTransferMarker, parseCompanyTransfer } from '../utils/companyTransfer';
 import TechnicianPerformanceAdmin from './TechnicianPerformanceAdmin';
 import ScrollButtons from './ScrollButtons';
+import IOSPushEnablePrompt from './IOSPushEnablePrompt';
 
 import { findTechnicianByIdentity, getTechnicianDisplayName, getTechnicianPhotoUrl, getTechnicianSpecialty, parseTechnicianProfileNotification } from '../utils/technicianProfile';
 import { clearAuthSession, readAuthSession } from '../utils/authSession';
@@ -2893,6 +2894,7 @@ ${trackingUrl}
       <Helmet>
         <title>لوحة التحكم | Homecare Alex Maintenance</title>
       </Helmet>
+      <IOSPushEnablePrompt />
       {toast && (
         <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-xl text-white font-bold shadow-lg ${
           toast.type === 'success' ? 'bg-green-600' : toast.type === 'error' ? 'bg-red-600' : 'bg-blue-600'
