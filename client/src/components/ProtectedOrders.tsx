@@ -1359,13 +1359,17 @@ export default function ProtectedOrders() {
       setArchivedOrders(archivedOrders);
       setDeletedOrders(deletedOrders);
 
-      const [techsData, notificationsData, partnersData, cashData, usersData] = await Promise.all([
-        fetchAPI('technicians?select=*'),
-        fetchAPI('notifications?select=*&action=neq.employee_chat&order=created_at.desc'),
-        fetchAPI('partners?select=*&order=created_at.desc'),
-        fetchAPI('cash_ledger?select=*&order=date.desc,created_at.desc'),
-        fetchAPI('users?select=*&order=created_at.desc')
-      ]);
+      // التحديث الدوري يحتاج الأوردرات فقط؛ إعادة تحميل كل الجداول والصور كل 10 ثوانٍ كانت سبب البطء.
+      // عند الفتح اليدوي أو تبديل البيانات، نجلب الجداول المساندة كاملة كما هي.
+      const [techsData, notificationsData, partnersData, cashData, usersData] = isAutoRefresh
+        ? [technicians, notifications, partners, cashLedger, users]
+        : await Promise.all([
+            fetchAPI('technicians?select=*'),
+            fetchAPI('notifications?select=*&action=neq.employee_chat&order=created_at.desc'),
+            fetchAPI('partners?select=*&order=created_at.desc'),
+            fetchAPI('cash_ledger?select=*&order=date.desc,created_at.desc'),
+            fetchAPI('users?select=*&order=created_at.desc')
+          ]);
 
       const nextTechnicians = Array.isArray(techsData) ? techsData : [];
       const nextNotifications = Array.isArray(notificationsData) ? notificationsData : [];
@@ -1571,9 +1575,10 @@ export default function ProtectedOrders() {
     // نظام التحديث التلقائي (المراقب الذكي)
     const interval = setInterval(() => {
       console.log("🔄 Auto-polling for new orders...");
-      fetchData(true);
-      fetchNotifications();
-    }, 10000);
+      void fetchData(true);
+      // لا نعيد تحميل سجل الإشعارات الكامل إلا عند فتح تبويبه؛ التنبيهات الفورية تأتي عبر Realtime.
+      if (activeTab === 'notifications' || activeTab === 'feedback') void fetchNotifications();
+    }, 30000);
 
     // اشتراك حي للأوردرات الجديدة لإصدار صوت تنبيه ملح للمدير
     console.log("🔔 Realtime subscription active for role:", userRole);
