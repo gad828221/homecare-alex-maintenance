@@ -1410,43 +1410,42 @@ export default function ProtectedOrders() {
 
       // التحديث الدوري يحتاج الأوردرات فقط؛ إعادة تحميل كل الجداول والصور كل 10 ثوانٍ كانت سبب البطء.
       // عند الفتح اليدوي أو تبديل البيانات، نجلب الجداول المساندة كاملة كما هي.
-      const [techsData, notificationsData, partnersData, cashData, usersData] = isAutoRefresh
-        ? [technicians, notifications, partners, cashLedger, users]
-        : await Promise.all([
-            fetchAPIWithRetry('technicians?select=*'),
-            fetchAPIWithRetry('notifications?select=*&action=neq.employee_chat&order=created_at.desc'),
-            fetchAPIWithRetry('partners?select=*&order=created_at.desc'),
-            fetchAPIWithRetry('cash_ledger?select=*&order=date.desc,created_at.desc'),
-                        fetchAPIWithRetry('users?select=*&order=created_at.desc')
-          ]);
-      if (requestId !== latestFetchRequestRef.current) return;
-      if (!isAutoRefresh && (!Array.isArray(techsData) || !Array.isArray(notificationsData) || !Array.isArray(partnersData) || !Array.isArray(cashData) || !Array.isArray(usersData))) {
-        throw new Error('لم تكتمل بيانات لوحة المدير بعد');
-      }
-      const nextTechnicians = Array.isArray(techsData) ? techsData : technicians;
-      const nextNotifications = Array.isArray(notificationsData) ? notificationsData : notifications;
-      setTechnicians(nextTechnicians);
-      setNotifications(nextNotifications);
-      const nextProfiles: Record<string, any> = {};
-      nextNotifications.filter((row: any) => row.action === 'technician_profile_updated').forEach((row: any) => {
-        const profile = parseTechnicianProfileNotification(row);
-        if (!profile) return;
-        [profile.id, profile.code, profile.username, profile.name].filter(Boolean).forEach((key) => {
-          const normalizedKey = String(key).trim().toLowerCase();
-          const current = nextProfiles[normalizedKey];
-          if (!current || new Date(profile.updatedAt || 0).getTime() >= new Date(current.updatedAt || 0).getTime()) nextProfiles[normalizedKey] = profile;
+      if (!isAutoRefresh) {
+        const [techsData, notificationsData, partnersData, cashData, usersData] = await Promise.all([
+          fetchAPIWithRetry('technicians?select=*'),
+          fetchAPIWithRetry('notifications?select=*&action=neq.employee_chat&order=created_at.desc'),
+          fetchAPIWithRetry('partners?select=*&order=created_at.desc'),
+          fetchAPIWithRetry('cash_ledger?select=*&order=date.desc,created_at.desc'),
+          fetchAPIWithRetry('users?select=*&order=created_at.desc')
+        ]);
+        if (requestId !== latestFetchRequestRef.current) return;
+        if (!Array.isArray(techsData) || !Array.isArray(notificationsData) || !Array.isArray(partnersData) || !Array.isArray(cashData) || !Array.isArray(usersData)) {
+          throw new Error('لم تكتمل بيانات لوحة المدير بعد');
+        }
+        setTechnicians(techsData);
+        setNotifications(notificationsData);
+        const nextProfiles: Record<string, any> = {};
+        notificationsData.filter((row: any) => row.action === 'technician_profile_updated').forEach((row: any) => {
+          const profile = parseTechnicianProfileNotification(row);
+          if (!profile) return;
+          [profile.id, profile.code, profile.username, profile.name].filter(Boolean).forEach((key) => {
+            const normalizedKey = String(key).trim().toLowerCase();
+            const current = nextProfiles[normalizedKey];
+            if (!current || new Date(profile.updatedAt || 0).getTime() >= new Date(current.updatedAt || 0).getTime()) nextProfiles[normalizedKey] = profile;
+          });
         });
-      });
-            setTechnicianProfiles(nextProfiles);
-      setPartners(Array.isArray(partnersData) ? partnersData : partners);
-      setCashLedger(Array.isArray(cashData) ? cashData : cashLedger);
-      setUsers(Array.isArray(usersData) ? usersData : users);
-      let balance = 0;
-      (Array.isArray(cashData) ? cashData : cashLedger).forEach((entry: any) => {
-        if (entry.type === 'income') balance += entry.amount;
-        else if (entry.type === 'expense' || entry.type === 'profit_distribution') balance -= entry.amount;
-      });
-      setCashBalance(balance);
+        setTechnicianProfiles(nextProfiles);
+        setPartners(partnersData);
+        setCashLedger(cashData);
+        setUsers(usersData);
+        let balance = 0;
+        cashData.forEach((entry: any) => {
+          const amount = Number(entry.amount) || 0;
+          if (entry.type === 'income') balance += amount;
+          else if (entry.type === 'expense' || entry.type === 'profit_distribution') balance -= amount;
+        });
+        setCashBalance(balance);
+      }
 
       const pending = notDeleted.filter((o: any) => o.status === 'pending').length;
       const inProgress = notDeleted.filter((o: any) => o.status === 'in_progress').length;
@@ -1551,9 +1550,9 @@ export default function ProtectedOrders() {
         }
 
         // حصاد يومي للفنيين بعد الساعة 9 مساءً، يبدأ بعد baseline الصامت
-        if (canEmitLiveAlerts && new Date().getHours() >= 21 && Array.isArray(techsData)) {
-          const todayKey = new Date().toISOString().split('T')[0];
-          for (const tech of techsData) {
+      if (canEmitLiveAlerts && new Date().getHours() >= 21 && Array.isArray(technicians)) {
+        const todayKey = new Date().toISOString().split('T')[0];
+        for (const tech of technicians) {
             const techOrders = notDeleted.filter((order: any) => order.technician === tech.name);
             const todayOrders = techOrders.filter((order: any) => {
               const createdAt = getOrderCreatedAt(order);
