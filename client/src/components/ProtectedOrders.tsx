@@ -263,6 +263,14 @@ const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   }
 };
 
+const fetchAPIWithRetry = async (endpoint: string, attempts = 3) => {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const result = await fetchAPI(endpoint);
+    if (result !== null) return result;
+    if (attempt < attempts) await new Promise(resolve => window.setTimeout(resolve, 500 * attempt));
+  }
+  return null;
+};
 const addNotification = async (action: string, details: string, userName = 'المدير') => {
   try {
     await fetch('https://hjrnfsdvrrwgyppqhwml.supabase.co/rest/v1/notifications', {
@@ -1357,7 +1365,7 @@ export default function ProtectedOrders() {
       const orderFields = isViewer
         ? 'id,order_number,customer_name,device_type,address,brand,problem_description,technician,status,total_amount,parts_cost,transport_cost,net_amount,company_share,technician_share,is_paid,created_at,date,deleted_at,technician_note,warranty_period,invoice_approved,invoice_date,parts_used,completed_at'
         : '*';
-      const allOrders = await fetchAPI(`orders?select=${orderFields}&order=created_at.desc`);
+      const allOrders = await fetchAPIWithRetry(`orders?select=${orderFields}&order=created_at.desc`);
       if (requestId !== latestFetchRequestRef.current) return;
       if (allOrders === null) throw new Error('تعذر تحديث بيانات الأوردرات مؤقتًا');
       if (!Array.isArray(allOrders)) throw new Error('بيانات الأوردرات غير صالحة');
@@ -1404,11 +1412,11 @@ export default function ProtectedOrders() {
       const [techsData, notificationsData, partnersData, cashData, usersData] = isAutoRefresh
         ? [technicians, notifications, partners, cashLedger, users]
         : await Promise.all([
-            fetchAPI('technicians?select=*'),
-            fetchAPI('notifications?select=*&action=neq.employee_chat&order=created_at.desc'),
-            fetchAPI('partners?select=*&order=created_at.desc'),
-            fetchAPI('cash_ledger?select=*&order=date.desc,created_at.desc'),
-                        fetchAPI('users?select=*&order=created_at.desc')
+            fetchAPIWithRetry('technicians?select=*'),
+            fetchAPIWithRetry('notifications?select=*&action=neq.employee_chat&order=created_at.desc'),
+            fetchAPIWithRetry('partners?select=*&order=created_at.desc'),
+            fetchAPIWithRetry('cash_ledger?select=*&order=date.desc,created_at.desc'),
+                        fetchAPIWithRetry('users?select=*&order=created_at.desc')
           ]);
       if (requestId !== latestFetchRequestRef.current) return;
       const nextTechnicians = Array.isArray(techsData) ? techsData : technicians;
