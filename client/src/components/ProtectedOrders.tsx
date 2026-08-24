@@ -484,6 +484,7 @@ export default function ProtectedOrders() {
   const alertInterval = useRef<any>(null);
   const lastCheckedOrderId = useRef<number | null>(null);
   const lastCheckedOrderCreatedAtRef = useRef<number | null>(null);
+  const lastGoodOrdersRef = useRef<any[] | null>(null);
   const alertBaselineReadyRef = useRef(false);
   const delayedAlertIdsRef = useRef<Set<number>>(new Set());
   const escalationAlertIdsRef = useRef<Set<number>>(new Set());
@@ -1343,7 +1344,10 @@ export default function ProtectedOrders() {
         ? 'id,order_number,customer_name,device_type,address,brand,problem_description,technician,status,total_amount,parts_cost,transport_cost,net_amount,company_share,technician_share,is_paid,created_at,date,deleted_at,technician_note,warranty_period,invoice_approved,invoice_date,parts_used,completed_at'
         : '*';
       const allOrders = await fetchAPI(`orders?select=${orderFields}&order=created_at.desc`);
-      const ordersArray = Array.isArray(allOrders) ? allOrders : [];
+      if (!Array.isArray(allOrders)) throw new Error('تعذر قراءة بيانات الأوردرات');
+      // لا نستبدل البيانات المعروضة بصفر أثناء رد فارغ عابر من الشبكة أو الجلسة.
+      const ordersArray = allOrders.length === 0 && lastGoodOrdersRef.current?.length ? lastGoodOrdersRef.current : allOrders;
+      if (allOrders.length > 0) lastGoodOrdersRef.current = allOrders;
 
       // مراقبة الأوردرات الجديدة: لا نعتبر تغيير ID وحده دليلاً على أوردر حديث.
       // هذا يمنع رنين أوردر قديم عند إعادة فتح الصفحة أو بعد تغيّر التخزين المؤقت.
@@ -1630,9 +1634,15 @@ export default function ProtectedOrders() {
     const alertChannel = supabase
       .channel('admin-operation-alerts')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, (payload) => {
-        const action = String((payload.new as any)?.action || '');
+        const notification = payload.new as any;
+        const action = String(notification?.action || '');
         const isUrgentOperation = action === 'new_order_alert' || action === 'settlement_alert';
-        if (!isUrgentOperation) return;
+        const createdAt = new Date(notification?.created_at || 0).getTime();
+        const isRecentNotification = Number.isFinite(createdAt) && createdAt > 0 && (Date.now() - createdAt) >= -30_000 && (Date.now() - createdAt) <= 2 * 60 * 1000;
+        if (!isUrgentOperation || !isRecentNotification) {
+          if (isUrgentOperation) console.log('ℹ️ Ignored stale operation notification', notification?.id);
+          return;
+        }
         console.log("🔔 Operation alert received!", payload);
         const role = userRole?.toLowerCase() || '';
         if (role === 'admin' || role === 'manager') {
