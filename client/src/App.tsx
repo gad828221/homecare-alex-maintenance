@@ -119,10 +119,10 @@ function AppContent() {
   // كل مسار له هوية تثبيت مستقلة: الزوار لا يرثون تطبيق الموظفين والعكس صحيح.
   useEffect(() => {
     const isStaffPath = ['/login', '/orders', '/tech-portal', '/data-entry'].some((path) => currentPath.startsWith(path));
-    const manifestHref = isStaffPath ? '/staff-manifest.webmanifest' : '/manifest.webmanifest';
     const manifestLink = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
-    if (manifestLink && manifestLink.getAttribute('href') !== manifestHref) {
-      manifestLink.setAttribute('href', manifestHref);
+    if (manifestLink) {
+      if (isStaffPath) manifestLink.setAttribute('href', '/staff-manifest.webmanifest');
+      else manifestLink.removeAttribute('href');
     }
 
     // تنظيف أي Service Worker قديم من إعداد Netlify/OneSignal قبل استخدام العامل الموحد.

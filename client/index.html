@@ -33,7 +33,9 @@
       (function () {
         var staffPath = /^\/(login|orders|tech-portal|data-entry)(?:\/|$)/.test(window.location.pathname);
         window.__MG_STAFF_PATH__ = staffPath;
-        document.getElementById('app-manifest').setAttribute('href', staffPath ? '/staff-manifest.webmanifest' : '/manifest.webmanifest');
+        var manifest = document.getElementById('app-manifest');
+        if (staffPath) manifest.setAttribute('href', '/staff-manifest.webmanifest');
+        else manifest.removeAttribute('href');
       })();
     </script>
     <meta name="theme-color" content="#f97316" />
