@@ -2153,11 +2153,11 @@ ${trackingUrl}
         if (orderToSave.status === 'completed' && orderToSave.is_paid && !orderToSave.profit_added_to_cash) await addCompanyProfitToCash({ ...orderToSave, id: editingOrder.id });
         showToast('تم تعديل الأوردر بنجاح', 'success');
       } else {
-        await fetchAPI('orders', { method: 'POST', body: JSON.stringify(orderToSave) });
-        await addNotification('إضافة أوردر', `تم إضافة أوردر جديد للعميل ${formData.customer_name}`);
-
-        // تشغيل التنبيه من نفس عملية الحفظ، دون الاعتماد على Realtime وحده.
+                const savedOrderResult = await fetchAPI('orders', { method: 'POST', body: JSON.stringify(orderToSave) });
+        if (savedOrderResult === null) throw new Error('تعذر حفظ الأوردر بسبب مشكلة اتصال');
+        // التنبيه لا ينتظر أي طلب فرعي؛ يجب أن يبدأ فور نجاح حفظ الأوردر.
         startUrgentAlert();
+        void addNotification('إضافة أوردر', `تم إضافة أوردر جديد للعميل ${formData.customer_name}`);
         const adminMsg = `🆕 *إشعار: طلب صيانة جديد* 🆕\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الطلب:* ${orderToSave.order_number}\n👤 *العميل:* ${formData.customer_name}\n📱 *الهاتف:* ${formData.phone}\n🔧 *الجهاز:* ${finalDevice} - ${finalBrand}\n📍 *العنوان:* ${formData.address}\n👨‍🔧 *الفني:* ${orderToSave.technician || 'غير معين'}\n📝 *المشكلة:* ${formData.problem_description || 'لا يوجد وصف'}\n━━━━━━━━━━━━━━━━━━━━━━`;
         notifyAdmin(adminMsg);
         const pushResult = await sendExternalPush({
