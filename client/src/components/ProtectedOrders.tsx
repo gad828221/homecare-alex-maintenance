@@ -2101,15 +2101,21 @@ ${trackingUrl}
         await fetchAPI('orders', { method: 'POST', body: JSON.stringify(orderToSave) });
         await addNotification('إضافة أوردر', `تم إضافة أوردر جديد للعميل ${formData.customer_name}`);
 
+        // تشغيل التنبيه من نفس عملية الحفظ، دون الاعتماد على Realtime وحده.
+        startUrgentAlert();
         const adminMsg = `🆕 *إشعار: طلب صيانة جديد* 🆕\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الطلب:* ${orderToSave.order_number}\n👤 *العميل:* ${formData.customer_name}\n📱 *الهاتف:* ${formData.phone}\n🔧 *الجهاز:* ${finalDevice} - ${finalBrand}\n📍 *العنوان:* ${formData.address}\n👨‍🔧 *الفني:* ${orderToSave.technician || 'غير معين'}\n📝 *المشكلة:* ${formData.problem_description || 'لا يوجد وصف'}\n━━━━━━━━━━━━━━━━━━━━━━`;
         notifyAdmin(adminMsg);
-        void sendExternalPush({
+        const pushResult = await sendExternalPush({
           event: 'new_order',
           title: '🆕 أوردر جديد',
           message: adminMsg,
           targetRoles: ['admin', 'manager', 'all'],
           data: { order_number: orderToSave.order_number }
         });
+        if (!pushResult.ok) {
+          console.warn('New order push failed:', pushResult.error);
+          showToast(`تم حفظ الأوردر والتنبيه الداخلي، لكن فشل Push: ${pushResult.error || 'خطأ غير معروف'}`, 'error');
+        }
 
         if (orderToSave.technician) {
           const tech = findTechnicianByIdentity(technicians, orderToSave.technician);
