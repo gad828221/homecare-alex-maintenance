@@ -113,15 +113,18 @@ export default function BookingForm({ defaultService, title, description }: Book
         setSubmitMessage("✅ تم استلام طلبك بنجاح! سنتواصل معك خلال 5 دقائق.");
         setStep(4);
         
-        await sendExternalPush({
+        const publicOrderMessage = `عميل جديد: ${formData.customer_name}\nالجهاز: ${finalDeviceType}\nالعنوان: ${formData.address}\nرقم الأوردر: ${orderNumber}`;
+        // إرسال Push مباشرة بعد حفظ الأوردر، مع استهداف الهوية المشتركة الحالية.
+        void sendExternalPush({
           event: 'new_order',
           title: '📋 أوردر جديد من الموقع',
-          message: `عميل جديد: ${formData.customer_name}\nالجهاز: ${finalDeviceType}\nالعنوان: ${formData.address}\nرقم الأوردر: ${orderNumber}`,
+          message: publicOrderMessage,
           targetRoles: ['admin', 'manager'],
+          targetUserIds: ['staff:admin:1', 'staff:manager:5'],
           data: { order_number: orderNumber }
         });
 
-        // إرسال تنبيه يدوي مباشر للوحة التحكم لضمان عمل الإنذار الصوتي
+        // إنشاء سجل التنبيه الداخلي فورًا كي يلتقطه Realtime ويشغل الصوت.
         try {
           await supabase.from('notifications').insert([{ 
             action: 'new_order_alert', 

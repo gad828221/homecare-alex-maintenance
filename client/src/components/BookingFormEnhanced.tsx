@@ -82,13 +82,22 @@ export default function BookingFormEnhanced() {
         setSubmitMessage("✅ تم استلام طلبك بنجاح! سنتواصل معك خلال 5 دقائق.");
         setStep(4); // Success step
         
-        await sendExternalPush({
+        const publicOrderMessage = `عميل جديد: ${formData.customer_name}\nالجهاز: ${finalDeviceType}\nالعنوان: ${formData.address}\nرقم الأوردر: ${orderNumber}`;
+        // إرسال Push مباشرة بعد نجاح حفظ الأوردر، مع استهداف المديرين الحاليين.
+        void sendExternalPush({
           event: 'new_order',
           title: '📋 أوردر جديد من الموقع',
-          message: `عميل جديد: ${formData.customer_name}\nالجهاز: ${finalDeviceType}\nالعنوان: ${formData.address}\nرقم الأوردر: ${orderNumber}`,
+          message: publicOrderMessage,
           targetRoles: ['admin', 'manager'],
+          targetUserIds: ['staff:admin:1', 'staff:manager:5'],
           data: { order_number: orderNumber }
         });
+        // إنشاء سجل داخلي حتى يصل الحدث إلى لوحة المدير عبر Realtime.
+        void fetch(`${supabaseUrl}/rest/v1/notifications`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
+          body: JSON.stringify({ action: 'new_order_alert', details: orderNumber, user_name: 'نظام الموقع', created_at: new Date().toISOString() })
+        }).catch((error) => console.error('Realtime alert error:', error));
         
         // التنبيه الإداري يتم عبر Push وقناة الإشعارات الداخلية فقط، دون واتساب.
       } else {
