@@ -2109,7 +2109,14 @@ ${trackingUrl}
           event: 'new_order',
           title: '🆕 أوردر جديد',
           message: adminMsg,
-          targetRoles: ['admin', 'manager', 'all'],
+          targetRoles: ['admin', 'manager'],
+          targetUserIds: (() => {
+            const signedInUser = readAuthSession().user;
+            const role = String(userRole || signedInUser?.role || '').toLowerCase();
+            const identity = String(signedInUser?.id ?? signedInUser?.username ?? '').trim();
+            const externalId = `staff:${role}:${identity}`;
+            return (role === 'admin' || role === 'manager') && identity ? [externalId] : [];
+          })(),
           data: { order_number: orderToSave.order_number }
         });
         if (!pushResult.ok) {
