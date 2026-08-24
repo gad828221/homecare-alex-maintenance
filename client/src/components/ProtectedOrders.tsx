@@ -258,7 +258,8 @@ const fetchAPI = async (endpoint: string, options?: RequestInit) => {
     return JSON.parse(text);
   } catch (e) {
     console.error("fetchAPI error:", e);
-    return [];
+    // null تعني فشل الشبكة؛ المصفوفة الفارغة تعني نتيجة صحيحة بلا بيانات.
+    return null;
   }
 };
 
@@ -1344,7 +1345,8 @@ export default function ProtectedOrders() {
         ? 'id,order_number,customer_name,device_type,address,brand,problem_description,technician,status,total_amount,parts_cost,transport_cost,net_amount,company_share,technician_share,is_paid,created_at,date,deleted_at,technician_note,warranty_period,invoice_approved,invoice_date,parts_used,completed_at'
         : '*';
       const allOrders = await fetchAPI(`orders?select=${orderFields}&order=created_at.desc`);
-      if (!Array.isArray(allOrders)) throw new Error('تعذر قراءة بيانات الأوردرات');
+      if (allOrders === null) throw new Error('تعذر تحديث بيانات الأوردرات مؤقتًا');
+      if (!Array.isArray(allOrders)) throw new Error('بيانات الأوردرات غير صالحة');
       // لا نستبدل البيانات المعروضة بصفر أثناء رد فارغ عابر من الشبكة أو الجلسة.
       const ordersArray = allOrders.length === 0 && lastGoodOrdersRef.current?.length ? lastGoodOrdersRef.current : allOrders;
       if (allOrders.length > 0) lastGoodOrdersRef.current = allOrders;
