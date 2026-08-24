@@ -2168,21 +2168,15 @@ ${trackingUrl}
         if (savedOrderResult === null) throw new Error('تعذر حفظ الأوردر بسبب مشكلة اتصال');
         // التنبيه لا ينتظر أي طلب فرعي؛ يجب أن يبدأ فور نجاح حفظ الأوردر.
         startUrgentAlert();
-        void addNotification('إضافة أوردر', `تم إضافة أوردر جديد للعميل ${formData.customer_name}`);
+        void addNotification('new_order_alert', `تم إضافة أوردر جديد للعميل ${formData.customer_name} — ${orderToSave.order_number}`);
         const adminMsg = `🆕 *إشعار: طلب صيانة جديد* 🆕\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الطلب:* ${orderToSave.order_number}\n👤 *العميل:* ${formData.customer_name}\n📱 *الهاتف:* ${formData.phone}\n🔧 *الجهاز:* ${finalDevice} - ${finalBrand}\n📍 *العنوان:* ${formData.address}\n👨‍🔧 *الفني:* ${orderToSave.technician || 'غير معين'}\n📝 *المشكلة:* ${formData.problem_description || 'لا يوجد وصف'}\n━━━━━━━━━━━━━━━━━━━━━━`;
         notifyAdmin(adminMsg);
         const pushResult = await sendExternalPush({
           event: 'new_order',
           title: '🆕 أوردر جديد',
           message: adminMsg,
-          targetRoles: ['admin', 'manager'],
-          targetUserIds: (() => {
-            const signedInUser = readAuthSession().user;
-            const role = String(userRole || signedInUser?.role || '').toLowerCase();
-            const identity = String(signedInUser?.id ?? signedInUser?.username ?? '').trim();
-            const externalId = `staff:${role}:${identity}`;
-            return (role === 'admin' || role === 'manager') && identity ? [externalId] : [];
-          })(),
+          // استهداف مباشر للحسابين الإداريين حتى لا يعتمد الإرسال على وسوم OneSignal القديمة.
+          targetUserIds: ['staff:admin:1', 'staff:manager:5'],
           data: { order_number: orderToSave.order_number }
         });
         if (!pushResult.ok) {
