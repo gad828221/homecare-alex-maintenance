@@ -1061,8 +1061,10 @@ export default function ProtectedOrders() {
 
     const message = `📊 *ملخص سير العمل اليومي* 📊\n━━━━━━━━━━━━━━━━━━━━━━\n📅 *التاريخ:* ${new Date().toLocaleDateString('ar-EG')}\n\n✅ *إحصائيات الإنجاز:* \n🔹 طلبات جديدة: ${todayOrders.length}\n🔹 طلبات مكتملة: ${completedToday}\n💰 إجمالي التحصيل: ${incomeToday.toLocaleString()} ج.م\n\n⚠️ *حالة الطلبات القائمة:* \n🔸 قيد العمل: ${pendingCount}\n🚨 طلبات متأخرة: ${delayedCount}\n👤 بدون فني: ${noTechCount}\n━━━━━━━━━━━━━━━━━━━━━━\n🚀 *نعمل معاً لتقديم أفضل خدمة عملاء.*`;
 
-    await addNotification('تقرير العمليات اليومي', message);
+    // إرسال Push أولًا حتى لا يتعطل التقرير إذا تأخر حفظ سجل الإشعارات.
     const pushResult = await sendExternalPush({ event: 'system_alert', title: '📊 تقرير العمليات اليومي', message, targetRoles: ['admin', 'manager'], data: { focus: 'notifications' } });
+    // حفظ نسخة داخلية في الخلفية دون تعطيل نتيجة الإرسال الخارجي.
+    void addNotification('تقرير العمليات اليومي', message);
     if (pushResult.ok) {
       showToast('✅ تم إرسال التقرير داخل البرنامج وPush بنجاح', 'success');
     } else {
