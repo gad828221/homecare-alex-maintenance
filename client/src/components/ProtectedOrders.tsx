@@ -1361,6 +1361,7 @@ export default function ProtectedOrders() {
     if (!userRole) return;
     const requestId = ++latestFetchRequestRef.current;
     if (!isAutoRefresh) setLoading(true);
+    let loadedAllDashboardData = false;
     try {
       const orderFields = isViewer
         ? 'id,order_number,customer_name,device_type,address,brand,problem_description,technician,status,total_amount,parts_cost,transport_cost,net_amount,company_share,technician_share,is_paid,created_at,date,deleted_at,technician_note,warranty_period,invoice_approved,invoice_date,parts_used,completed_at'
@@ -1419,6 +1420,9 @@ export default function ProtectedOrders() {
                         fetchAPIWithRetry('users?select=*&order=created_at.desc')
           ]);
       if (requestId !== latestFetchRequestRef.current) return;
+      if (!isAutoRefresh && (!Array.isArray(techsData) || !Array.isArray(notificationsData) || !Array.isArray(partnersData) || !Array.isArray(cashData) || !Array.isArray(usersData))) {
+        throw new Error('لم تكتمل بيانات لوحة المدير بعد');
+      }
       const nextTechnicians = Array.isArray(techsData) ? techsData : technicians;
       const nextNotifications = Array.isArray(notificationsData) ? notificationsData : notifications;
       setTechnicians(nextTechnicians);
@@ -1570,12 +1574,14 @@ export default function ProtectedOrders() {
       }
       // بعد تخزين baseline لا نعتبر البيانات القديمة أحداثاً جديدة في التحديث التالي
       alertBaselineReadyRef.current = true;
+      loadedAllDashboardData = true;
     } catch (err) {
       console.error(err);
+      if (!isAutoRefresh) window.setTimeout(() => { void fetchData(); }, 1500);
     } finally {
       if (requestId === latestFetchRequestRef.current) {
         setLoading(false);
-        if (!isAutoRefresh) setInitialLoadComplete(true);
+        if (!isAutoRefresh && loadedAllDashboardData) setInitialLoadComplete(true);
       }
     }
   }, [userRole, isViewer]);
