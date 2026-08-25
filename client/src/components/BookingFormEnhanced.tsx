@@ -83,15 +83,15 @@ export default function BookingFormEnhanced() {
         setStep(4); // Success step
         
         const publicOrderMessage = `عميل جديد: ${formData.customer_name}\nالجهاز: ${finalDeviceType}\nالعنوان: ${formData.address}\nرقم الأوردر: ${orderNumber}`;
-        // إرسال Push مباشرة بعد نجاح حفظ الأوردر، مع استهداف المديرين الحاليين.
-        void sendExternalPush({
+        // استهداف مباشر للاشتراكات الإدارية الحالية؛ لا نعتمد على وسوم الدور القديمة.
+        const pushResult = await sendExternalPush({
           event: 'new_order',
           title: '📋 أوردر جديد من الموقع',
           message: publicOrderMessage,
-          targetRoles: ['admin', 'manager'],
           targetUserIds: ['staff:admin:1', 'staff:manager:5'],
           data: { order_number: orderNumber }
         });
+        if (!pushResult.ok) console.error('[Public booking] Push failed:', pushResult.error);
         // إنشاء سجل داخلي حتى يصل الحدث إلى لوحة المدير عبر Realtime.
         void fetch(`${supabaseUrl}/rest/v1/notifications`, {
           method: 'POST',
