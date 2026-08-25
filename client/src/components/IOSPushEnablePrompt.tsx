@@ -49,9 +49,20 @@ export default function IOSPushEnablePrompt() {
     }
   };
 
-  // The subscription and OneSignal identity sync run in the effect above.
-  // Keep this component mounted but intentionally render no banner in the manager UI.
-  return null;
+  // يظهر هذا الزر داخل لوحة الموظف فقط، ويختفي تلقائيًا بعد إنشاء Push Token.
+  if (subscribed) return null;
+  return (
+    <div className="fixed bottom-4 left-4 right-4 z-[70] mx-auto flex max-w-sm items-center justify-between gap-3 rounded-2xl border border-orange-500/30 bg-slate-950/95 px-4 py-3 text-right shadow-2xl backdrop-blur">
+      <div className="flex min-w-0 items-center gap-2">
+        <Smartphone className="shrink-0 text-orange-400" size={18} />
+        <span className="text-[11px] font-bold leading-5 text-slate-200">إشعارات الهاتف غير مفعّلة</span>
+      </div>
+      <button type="button" onClick={() => { void enable(); }} disabled={loading} className="shrink-0 rounded-xl bg-orange-600 px-3 py-2 text-[10px] font-black text-white transition hover:bg-orange-500 disabled:opacity-60">
+        {loading ? 'جاري التفعيل...' : 'تفعيل الآن'}
+      </button>
+      {message && <span className="sr-only">{message}</span>}
+    </div>
+  );
 }
 
 export function IOSPushEnabledBadge() {
