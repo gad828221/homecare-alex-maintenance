@@ -1646,11 +1646,9 @@ export default function ProtectedOrders() {
 
     // نظام التحديث التلقائي (المراقب الذكي)
     const interval = setInterval(() => {
-      console.log("🔄 Auto-polling for new orders...");
+      // التحديث الدوري يقتصر على الأوردرات؛ الإشعارات تصل عبر Realtime.
       void fetchData(true);
-      // لا نعيد تحميل سجل الإشعارات الكامل إلا عند فتح تبويبه؛ التنبيهات الفورية تأتي عبر Realtime.
-      if (activeTab === 'notifications' || activeTab === 'feedback') void fetchNotifications();
-    }, 30000);
+    }, 45000);
 
     // اشتراك حي للأوردرات الجديدة لإصدار صوت تنبيه ملح للمدير
     console.log("🔔 Realtime subscription active for role:", userRole);

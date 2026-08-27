@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { EnhancedNotificationProvider } from "./components/EnhancedNotificationSystem";
-import { Phone, MessageCircle, Download } from "lucide-react";
-import { usePwaInstall } from './hooks/usePwaInstall';
+import { Phone, MessageCircle } from "lucide-react";
 import PresenceManager from "./components/PresenceManager";
 // EmployeeChat removed as per user request (v3.2.8)
 import { readAuthSession } from './utils/authSession';
@@ -148,35 +147,8 @@ function AppContent() {
   const hideFloatingButtons = [
     "/orders", "/tech-portal", "/data-entry", "/login"
   ].includes(currentPath);
-  const currentRole = localStorage.getItem('userRole');
   // EmployeeChat paths and logic removed (v3.2.8)
-
-  // تنبيه صوتي داخلي بسيط للأوردرات الجديدة (يعمل والبرنامج مفتوح)
-  useEffect(() => {
-    if (!['admin', 'manager', 'tech'].includes(currentRole || '')) return;
-    
-    const audio = new Audio('https://www.soundjay.com/buttons/beep-01a.mp3');
-    const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
-    
-    let lastOrderCount = -1;
-    const checkNewOrders = async () => {
-      try {
-        const res = await fetch(`${supabaseUrl}/rest/v1/orders?select=id&status=eq.pending`, {
-          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
-        });
-        const data = await res.json();
-        if (lastOrderCount !== -1 && data.length > lastOrderCount) {
-          audio.play().catch(() => {});
-        }
-        lastOrderCount = data.length;
-      } catch (e) {}
-    };
-
-    const interval = setInterval(checkNewOrders, 30000);
-    checkNewOrders();
-    return () => clearInterval(interval);
-  }, [currentRole]);
+  // يتم تشغيل التنبيه الداخلي من ProtectedOrders عبر Realtime؛ أُلغي الفحص الدوري المكرر لتقليل طلبات الشبكة ومنع الصوت المزدوج.
 
   return (
     <>
