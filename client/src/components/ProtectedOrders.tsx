@@ -281,6 +281,10 @@ const addNotification = async (action: string, details: string, userName = 'ال
     });
   } catch (err) { console.error(err); }
 };
+const addAuditLog = async (operation: string, entity: string, entityId: string | number, before: any, after: any, userName = 'المدير') => {
+  const details = JSON.stringify({ audit: true, entity, entity_id: entityId, operation, before, after, changed_at: new Date().toISOString() });
+  await addNotification(`تدقيق: ${operation}`, details, userName);
+};
 
 const sendSmartAlertOnce = async (key: string, action: string, details: string, push: { title: string; message: string; data?: Record<string, any> }) => {
   if (typeof window === 'undefined' || localStorage.getItem(key)) return false;
@@ -1145,8 +1149,10 @@ export default function ProtectedOrders() {
     try {
       const amount = Number(Number(cashForm.amount).toFixed(2));
       const entryData = { ...cashForm, amount };
+      const previousCash = editingCash ? cashLedger.find((entry: any) => entry.id === editingCash.id) : null;
       if (editingCash) await fetchAPI(`cash_ledger?id=eq.${editingCash.id}`, { method: 'PATCH', body: JSON.stringify(entryData) });
       else await fetchAPI('cash_ledger', { method: 'POST', body: JSON.stringify(entryData) });
+      void addAuditLog(editingCash ? 'تعديل حركة خزنة' : 'إضافة حركة خزنة', 'cash_ledger', editingCash?.id || 'new', previousCash || {}, entryData, currentUser?.name || 'المدير');
       await addNotification(editingCash ? 'تعديل حركة خزنة' : 'إضافة حركة خزنة', `تم ${editingCash ? 'تعديل' : 'إضافة'} حركة ${cashForm.type} بقيمة ${amount} ج.م`);
       setShowCashModal(false); setEditingCash(null); setCashForm({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] });
       fetchCashLedger();
@@ -1156,7 +1162,9 @@ export default function ProtectedOrders() {
   const deleteCashEntry = async (id: number) => {
     if (!canManageCash) return showToast("مدير العمليات لا يملك صلاحية تعديل الخزنة", "error");
     if (confirm('هل تريد حذف هذا القيد نهائياً؟')) {
+      const deletedCash = cashLedger.find((entry: any) => entry.id === id);
       await fetchAPI(`cash_ledger?id=eq.${id}`, { method: 'DELETE' });
+      void addAuditLog('حذف قيد خزنة', 'cash_ledger', id, deletedCash || {}, null, currentUser?.name || 'المدير');
       await addNotification('حذف قيد خزنة', `تم حذف قيد من سجل الخزنة`);
       fetchCashLedger();
     }
@@ -2050,6 +2058,7 @@ export default function ProtectedOrders() {
     }
     try {
       await fetchAPI(`orders?id=eq.${id}`, { method: 'DELETE' });
+      void addAuditLog('حذف نهائي', 'orders', id, order, null, currentUser?.name || 'المدير');
       await addNotification('حذف نهائي', `تم حذف أوردر ${order.customer_name} (رقم ${order.order_number}) نهائياً`);
       await fetchData();
       showToast('تم حذف الأوردر نهائياً', 'error');
@@ -2146,6 +2155,7 @@ ${trackingUrl}
         const oldOrder = [...orders, ...archivedOrders].find(o => o.id === editingOrder.id);
         if (oldOrder?.status === 'completed' && oldOrder?.is_paid && oldOrder?.profit_added_to_cash) await deleteOrderProfitFromCash(oldOrder);
         await fetchAPI(`orders?id=eq.${editingOrder.id}`, { method: 'PATCH', body: JSON.stringify(orderToSave) });
+        void addAuditLog('تعديل أوردر', 'orders', editingOrder.id, oldOrder || {}, orderToSave, currentUser?.name || 'المدير');
         await addNotification('تعديل أوردر', `تم تعديل أوردر ${formData.customer_name}`);
         const technicianChanged = String(oldOrder?.technician || '').trim().toLowerCase() !== String(orderToSave.technician || '').trim().toLowerCase();
         if (technicianChanged && orderToSave.technician) sendTechnicianAssignmentToCustomer({ ...orderToSave, id: editingOrder.id }, orderToSave.technician);
@@ -2331,7 +2341,10 @@ ${trackingUrl}
     const warranty = prompt("🛡️ فترة الضمان", "6 أشهر") || "6 أشهر";
     if (!order.phone) return showToast("ليس لديك صلاحية", "error");
 
-    await fetchAPI(`orders?id=eq.${order.id}`, { method: 'PATCH', body: JSON.stringify({ invoice_approved: true, warranty_period: warranty, parts_used: parts, invoice_date: new Date().toISOString().split('T')[0] }) });
+    const beforeInvoice = { invoice_approved: order.invoice_approved, warranty_period: order.warranty_period, parts_used: order.parts_used, invoice_date: order.invoice_date };
+    const afterInvoice = { invoice_approved: true, warranty_period: warranty, parts_used: parts, invoice_date: new Date().toISOString().split('T')[0] };
+    await fetchAPI(`orders?id=eq.${order.id}`, { method: 'PATCH', body: JSON.stringify(afterInvoice) });
+    void addAuditLog('اعتماد فاتورة', 'orders', order.id, beforeInvoice, afterInvoice, currentUser?.name || 'المدير');
     await addNotification('اعتماد فاتورة', `تم اعتماد فاتورة ${order.customer_name} مع ضمان ${warranty}`);
     window.open(`/invoice?id=${order.id}`, '_blank');
     invoiceService.sendInvoiceViaWhatsApp({
@@ -2679,6 +2692,25 @@ ${trackingUrl}
       })
       .sort((a, b) => (getOrderActivityTime(b) || 0) - (getOrderActivityTime(a) || 0));
   }, [orders, archivedOrders, invoiceSearchTerm, invoiceDateFilter]);
+  const auditEntries = useMemo(() => notifications.filter((notification: any) => String(notification.action || '').startsWith('تدقيق:')).slice(0, 50), [notifications]);
+  const restoreAuditEntry = async (entry: any) => {
+    if (userRole !== 'admin') return showToast('الاسترجاع متاح لمدير النظام فقط', 'error');
+    try {
+      const record = JSON.parse(String(entry.details || '{}'));
+      if (!record.audit || !record.before || !record.entity_id || record.entity_id === 'new' || !['orders', 'cash_ledger'].includes(record.entity)) {
+        return showToast('هذا السجل لا يدعم الاسترجاع المباشر', 'info');
+      }
+      if (!window.confirm(`استرجاع القيمة السابقة للعملية: ${record.operation}؟`)) return;
+      await fetchAPI(`${record.entity}?id=eq.${record.entity_id}`, { method: 'PATCH', body: JSON.stringify(record.before) });
+      await addAuditLog('استرجاع تعديل', record.entity, record.entity_id, record.after || {}, record.before, currentUser?.name || 'مدير النظام');
+      showToast('تم استرجاع القيمة السابقة بنجاح', 'success');
+      if (record.entity === 'orders') await fetchData(); else await fetchCashLedger();
+      await fetchNotifications();
+    } catch (error) {
+      console.error(error);
+      showToast('تعذر استرجاع التعديل', 'error');
+    }
+  };
   const systemHealthStats = useMemo(() => {
     const allKnownOrders = [...orders, ...archivedOrders, ...deletedOrders];
     const lastNotification = notifications[0];
@@ -4508,7 +4540,8 @@ ${trackingUrl}
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4"><h3 className="font-black text-white">حالة البيانات</h3><p className="mt-2 text-xs font-bold text-emerald-300">✓ البيانات محملة داخل اللوحة</p><p className="mt-1 text-[11px] text-slate-500">الأوردرات والخزنة والإشعارات محفوظة دون تغيير.</p></div>
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4"><h3 className="font-black text-white">آخر نشاط</h3><p className="mt-2 text-xs text-slate-400">آخر إشعار: {systemHealthStats.lastNotificationAt ? new Date(systemHealthStats.lastNotificationAt).toLocaleString('ar-EG') : 'لا يوجد'}</p><p className="mt-1 text-xs text-slate-400">آخر قيد خزنة: {systemHealthStats.lastCashAt ? new Date(systemHealthStats.lastCashAt).toLocaleString('ar-EG') : 'لا يوجد'}</p></div>
             </div>
-            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-xs font-bold text-amber-200">النسخة الاحتياطية تُنزّل على جهازك بصيغة JSON للقراءة والاسترجاع اليدوي، ولا تحذف أو تعدّل أي سجل داخل Supabase.</div>
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4"><div className="mb-3 flex items-center justify-between"><h3 className="font-black text-white">سجل التعديلات</h3><span className="text-[10px] font-bold text-slate-500">آخر {auditEntries.length} عملية</span></div>{auditEntries.length === 0 ? <p className="text-xs text-slate-500">ستظهر هنا تعديلات الأوردرات والخزنة والفواتير الجديدة.</p> : <div className="space-y-2">{auditEntries.map((entry: any) => { let record: any = {}; try { record = JSON.parse(String(entry.details || '{}')); } catch { record = {}; } const canRestore = record.entity_id && record.entity_id !== 'new' && record.before && ['orders', 'cash_ledger'].includes(record.entity); return <div key={entry.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-800 bg-slate-950/60 p-3"><div><div className="text-xs font-black text-slate-200">{String(entry.action).replace('تدقيق: ', '')}</div><div className="mt-1 text-[10px] text-slate-500">{entry.user_name || 'المدير'} · {entry.created_at ? new Date(entry.created_at).toLocaleString('ar-EG') : ''} · {record.entity_id || '—'}</div></div>{canRestore && <button type="button" onClick={() => restoreAuditEntry(entry)} className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[10px] font-black text-amber-300 hover:bg-amber-500/20">استرجاع السابق</button>}</div>; })}</div>}</div>
+            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-xs font-bold text-amber-200">النسخة الاحتياطية تُنزّل على جهازك بصيغة JSON للقراءة والاسترجاع اليدوي، ولا تحذف أو تعدّل أي سجل داخل Supabase. سجلات التدقيق تُحفظ داخل سجل الإشعارات ولا تُحذف عند استدعاء العرض.</div>
           </div>
         )}
         {activeTab === 'notifications' && (
