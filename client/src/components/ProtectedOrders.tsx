@@ -390,6 +390,7 @@ export default function ProtectedOrders() {
   // إبقاء الكتابة فورية وتأجيل الفلترة الثقيلة حتى لا يتجمد الكيبورد مع كل حرف.
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const [archiveSearchTerm, setArchiveSearchTerm] = useState('');
+  const [archiveDateFilter, setArchiveDateFilter] = useState('');
   const [filterStatus, setFilterStatus] = useState('live');
   const [filterTechnician, setFilterTechnician] = useState('');
   const [filterDeviceType, setFilterDeviceType] = useState('');
@@ -2586,9 +2587,17 @@ ${trackingUrl}
     }
     if (filterStatus !== 'all' && filterStatus !== 'live' && o.status !== filterStatus) return false;
     if (filterTechnician && o.technician !== filterTechnician) return false;
+    if (archiveDateFilter) {
+      const orderDate = String(o.created_at || '').slice(0, 10);
+      if (orderDate !== archiveDateFilter) return false;
+    }
     return true;
-  });
-
+    });
+  const archiveSummary = useMemo(() => ({
+    completed: allFilteredArchivedOrders.filter(order => order.status === 'completed').length,
+    cancelled: allFilteredArchivedOrders.filter(order => order.status === 'cancelled').length,
+    withTechnician: allFilteredArchivedOrders.filter(order => order.technician && order.technician !== '-').length,
+  }), [allFilteredArchivedOrders]);
   const filteredArchivedOrders = useMemo(() => {
     if (!archiveSearchTerm) {
       return allFilteredArchivedOrders.slice(0, visibleArchivedCount);
@@ -4084,7 +4093,13 @@ ${trackingUrl}
                   {archiveSearchTerm && <button type="button" onClick={() => setArchiveSearchTerm('')} className="rounded-xl bg-slate-800 px-3 py-2 text-slate-300 transition hover:bg-slate-700">مسح البحث</button>}
                 </div>
               </div>
-              <p className="text-[10px] text-slate-500">يمكنك كتابة جزء من الاسم أو آخر أرقام الهاتف أو اسم الفني للوصول إلى الأوردر بسرعة.</p>
+              <div className="flex flex-wrap items-center gap-2 border-t border-slate-800 pt-3">
+                <span className="text-[10px] font-black text-slate-500">تصفية زمنية:</span>
+                <input type="date" value={archiveDateFilter} onChange={event => { setArchiveDateFilter(event.target.value); setVisibleArchivedCount(15); }} className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-bold text-white" aria-label="اختيار تاريخ الأرشيف" />
+                <button type="button" onClick={() => { setArchiveDateFilter(''); setVisibleArchivedCount(15); }} className="rounded-xl bg-slate-800 px-3 py-2 text-[10px] font-black text-slate-300 hover:bg-slate-700">كل التواريخ</button>
+                <span className="mr-auto text-[10px] font-bold text-slate-500">مكتمل: {archiveSummary.completed} · ملغي: {archiveSummary.cancelled} · بفني: {archiveSummary.withTechnician}</span>
+              </div>
+              <p className="text-[10px] text-slate-500">يمكنك كتابة جزء من الاسم أو آخر أرقام الهاتف أو اسم الفني للوصول إلى الأوردر بسرعة، أو اختر تاريخًا لاستدعاء أرشيف يوم محدد.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
