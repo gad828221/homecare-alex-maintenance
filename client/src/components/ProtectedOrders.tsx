@@ -402,6 +402,8 @@ export default function ProtectedOrders() {
   const [visibleCompletedCount, setVisibleCompletedCount] = useState(15);
   const [visibleArchivedCount, setVisibleArchivedCount] = useState(15);
   const [visibleNotificationsCount, setVisibleNotificationsCount] = useState(20);
+  const [notificationCategory, setNotificationCategory] = useState<'all' | 'urgent' | 'orders' | 'money' | 'system'>('all');
+  const [notificationSearch, setNotificationSearch] = useState('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
   const [pinnedOrderIds, setPinnedOrderIds] = useState<Set<number>>(new Set());
@@ -2635,6 +2637,27 @@ ${trackingUrl}
     );
     return order?.technician && order.technician !== '-' ? String(order.technician) : '';
   };
+  const smartNotifications = useMemo(() => {
+    const query = notificationSearch.trim().toLowerCase();
+    const classify = (notification: any) => {
+      const text = `${notification.action || ''} ${notification.details || ''}`.toLowerCase();
+      if (text.includes('تحصيل') || text.includes('متأخر') || text.includes('عاجل') || text.includes('بدون فني')) return 'urgent';
+      if (text.includes('أوردر') || text.includes('طلب') || text.includes('فني')) return 'orders';
+      if (text.includes('خزنة') || text.includes('أرباح') || text.includes('تصفية') || text.includes('مصروف')) return 'money';
+      return 'system';
+    };
+    return notifications
+      .filter(notification => notificationCategory === 'all' || classify(notification) === notificationCategory)
+      .filter(notification => !query || `${notification.action || ''} ${notification.details || ''}`.toLowerCase().includes(query))
+      .sort((a, b) => {
+        const unreadDiff = Number(readNotificationIds.has(Number(a.id))) - Number(readNotificationIds.has(Number(b.id)));
+        if (unreadDiff !== 0) return unreadDiff;
+        const priority = { urgent: 0, orders: 1, money: 2, system: 3 } as Record<string, number>;
+        const priorityDiff = priority[classify(a)] - priority[classify(b)];
+        if (priorityDiff !== 0) return priorityDiff;
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+      });
+  }, [notifications, notificationCategory, notificationSearch, readNotificationIds]);
   const commandCenterStats = useMemo(() => ({
     unassigned: filteredOrders.filter(order => !order.technician || order.technician === '-' || order.technician === '').length,
     collection: filteredOrders.filter(isCollectionPending).length,
@@ -4418,7 +4441,7 @@ ${trackingUrl}
         {activeTab === 'notifications' && (
           <div className="space-y-3 w-full max-w-full overflow-hidden">
             <div className="flex justify-between items-center bg-slate-900/50 border border-slate-800 p-4 rounded-2xl">
-              <h2 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">🔔 سجل الإشعارات</h2>
+              <div><h2 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">🔔 مركز الإشعارات الذكي</h2><p className="mt-1 text-[10px] font-bold text-slate-500">الجديد يظهر أولًا، واضغط على الإشعار لفتح الحدث المرتبط</p></div>
               {userRole === 'admin' && notifications.length > 0 && (
                 <button
                   onClick={deleteAllNotifications}
@@ -4428,8 +4451,18 @@ ${trackingUrl}
                 </button>
               )}
             </div>
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+              <div className="rounded-2xl border border-orange-400/30 bg-orange-500/10 p-3"><div className="text-2xl font-black text-orange-300">{notifications.filter(n => !readNotificationIds.has(Number(n.id))).length}</div><div className="text-[10px] font-bold text-orange-200/70">غير مقروء</div></div>
+              <div className="rounded-2xl border border-rose-400/30 bg-rose-500/10 p-3"><div className="text-2xl font-black text-rose-300">{notifications.filter(n => `${n.action || ''} ${n.details || ''}`.includes('تحصيل') || `${n.action || ''} ${n.details || ''}`.includes('متأخر')).length}</div><div className="text-[10px] font-bold text-rose-200/70">عاجل</div></div>
+              <div className="rounded-2xl border border-blue-400/30 bg-blue-500/10 p-3"><div className="text-2xl font-black text-blue-300">{notifications.filter(n => `${n.action || ''} ${n.details || ''}`.includes('أوردر') || `${n.action || ''} ${n.details || ''}`.includes('طلب')).length}</div><div className="text-[10px] font-bold text-blue-200/70">أوردرات</div></div>
+              <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-3"><div className="text-2xl font-black text-emerald-300">{notifications.length}</div><div className="text-[10px] font-bold text-emerald-200/70">كل السجل</div></div>
+            </div>
+            <div className="flex flex-col gap-2 rounded-2xl border border-slate-800 bg-slate-950/40 p-3 md:flex-row md:items-center">
+              <input value={notificationSearch} onChange={event => { setNotificationSearch(event.target.value); setVisibleNotificationsCount(20); }} placeholder="ابحث برقم الأوردر أو اسم الفني أو نوع الحدث..." className="min-w-0 flex-1 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-orange-500" />
+              <div className="flex flex-wrap gap-1.5">{([['all','الكل'],['urgent','عاجل'],['orders','أوردرات'],['money','مالي'],['system','نظام']] as const).map(([value, label]) => <button key={value} type="button" onClick={() => { setNotificationCategory(value); setVisibleNotificationsCount(20); }} className={`rounded-xl px-3 py-2 text-[10px] font-black transition ${notificationCategory === value ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>{label}</button>)}</div>
+            </div>
             <div className="space-y-2.5">
-              {notifications.map(notif=>{
+              {smartNotifications.slice(0, visibleNotificationsCount).map(notif=>{
                 const isLogin = notif.action?.includes('دخول');
                 const isOrder = notif.action?.includes('أوردر') || notif.action?.includes('طلب');
                 const isMoney = notif.action?.includes('خزنة') || notif.action?.includes('أرباح');
@@ -4465,7 +4498,8 @@ ${trackingUrl}
                 );
               })}
             </div>
-            {notifications.length===0 && <div className="text-center py-12 text-slate-500 text-sm">لا توجد إشعارات حالياً</div>}
+            {smartNotifications.length === 0 && <div className="text-center py-12 text-slate-500 text-sm">لا توجد إشعارات مطابقة</div>}
+            {smartNotifications.length > visibleNotificationsCount && <button type="button" onClick={() => setVisibleNotificationsCount(count => count + 20)} className="w-full rounded-2xl border border-slate-800 bg-slate-900 py-3 text-xs font-black text-orange-300 hover:bg-slate-800">عرض المزيد ({smartNotifications.length - visibleNotificationsCount})</button>}
           </div>
         )}
 
