@@ -4003,6 +4003,9 @@ ${trackingUrl}
 
 	                          {/* Footer Buttons Row */}
 	                          <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                            {canEditDelete() && (
+                              <button type="button" onClick={() => { stopUrgentAlert(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); }} className="flex-1 h-9 bg-orange-600/20 hover:bg-orange-600 text-orange-300 hover:text-white rounded-lg text-[9px] font-black border border-orange-500/30 flex items-center justify-center gap-1.5 transition-all active:scale-95" title="تحويل الأوردر إلى فني آخر"><UserPlus size={14} /> تحويل لفني آخر</button>
+                            )}
 	                            {order.status === 'completed' ? (
 	                              <button onClick={() => window.open(`/invoice?id=${order.id}`, '_blank')} className="flex-1 h-9 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white rounded-lg text-[9px] font-black border border-blue-500/20 flex items-center justify-center gap-1.5 transition-all active:scale-95"><FileCheck size={14} /> فاتورة</button>
 	                            ) : (
