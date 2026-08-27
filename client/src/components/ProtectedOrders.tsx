@@ -3492,7 +3492,7 @@ ${trackingUrl}
                           <div className="mt-1 text-[10px] font-bold text-amber-200/70">أوردر يحتاج تعيين{technicianOrderCards.unassigned.collection ? ` · ${technicianOrderCards.unassigned.collection} تحصيل` : ''}</div>
                         </button>
                       )}
-                      {technicianOrderCards.technicians.map(({ tech, stats }) => (
+                      {technicianOrderCards.technicians.filter(({ stats }) => stats.total > 0).map(({ tech, stats }) => (
                         <button type="button" key={tech.id} onClick={() => setFilterTechnician(tech.name)} className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 text-right transition hover:-translate-y-0.5 hover:border-orange-500/60 hover:bg-slate-900">
                           <div className="flex items-center justify-between gap-2"><span className="truncate text-xs font-black text-white">{tech.name}</span><span className={`h-2.5 w-2.5 shrink-0 rounded-full ${tech.is_active === false ? 'bg-slate-600' : 'bg-emerald-400'}`} /></div>
                           <div className="mt-3 flex items-end justify-between"><span className="text-3xl font-black text-orange-300">{stats.total}</span><span className="text-[10px] font-bold text-slate-500">أوردر</span></div>
