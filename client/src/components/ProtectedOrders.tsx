@@ -2613,6 +2613,34 @@ ${trackingUrl}
         .sort((a, b) => b.stats.total - a.stats.total || String(a.tech.name).localeCompare(String(b.tech.name), 'ar'))
     };
   }, [filteredOrders, technicians]);
+  const commandCenterStats = useMemo(() => ({
+    unassigned: filteredOrders.filter(order => !order.technician || order.technician === '-' || order.technician === '').length,
+    collection: filteredOrders.filter(isCollectionPending).length,
+    delayed: filteredOrders.filter(isDelayed).length,
+    active: filteredOrders.filter(order => order.status === 'in-progress' || order.status === 'in_progress').length,
+  }), [filteredOrders]);
+  const openCommandCenter = (type: 'unassigned' | 'collection' | 'delayed' | 'active') => {
+    setSearchTerm('');
+    setFilterTechnician('');
+    setFilterDeviceType('');
+    setFilterDateFrom('');
+    setFilterDateTo('');
+    setFilterWarranty('all');
+    if (type === 'unassigned') {
+      setFilterDelay('all');
+      setFilterStatus('live');
+      setFilterTechnician('__NONE__');
+    } else if (type === 'collection') {
+      setFilterDelay('all');
+      setFilterStatus('__UNPAID__');
+    } else if (type === 'delayed') {
+      setFilterDelay('delayed');
+      setFilterStatus('live');
+    } else {
+      setFilterDelay('all');
+      setFilterStatus('in-progress');
+    }
+  };
   // ========== دوال التقارير ==========
   const fetchCashReport = async () => {
     setReportLoading(true);
@@ -3476,6 +3504,19 @@ ${trackingUrl}
                   })}
                 </div>
                 {!showDeleted && !searchTerm && !filterTechnician && (
+                  <>
+                  <section className="mb-5 rounded-3xl border border-white/10 bg-slate-950/40 p-4" aria-label="مركز قيادة الأوردرات">
+                    <div className="mb-3 flex items-center justify-between">
+                      <div><h3 className="text-sm font-black text-white">مركز قيادة الأوردرات</h3><p className="mt-1 text-[10px] font-bold text-slate-500">الأولوية أولًا، ثم توزيع الحمل على الفنيين</p></div>
+                      <span className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-black text-slate-500">تحديث مباشر</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+                      <button type="button" onClick={() => openCommandCenter('unassigned')} className="rounded-2xl border border-amber-400/50 bg-amber-500/10 p-3 text-right transition hover:-translate-y-0.5 hover:bg-amber-500/20"><div className="flex items-center justify-between text-[10px] font-black text-amber-200"><span>بدون فني</span><AlertCircle size={15} /></div><div className="mt-2 text-2xl font-black text-amber-300">{commandCenterStats.unassigned}</div><div className="text-[9px] font-bold text-amber-200/60">أولوية التعيين</div></button>
+                      <button type="button" onClick={() => openCommandCenter('collection')} className="rounded-2xl border border-rose-400/50 bg-rose-500/10 p-3 text-right transition hover:-translate-y-0.5 hover:bg-rose-500/20"><div className="flex items-center justify-between text-[10px] font-black text-rose-200"><span>يحتاج تحصيل</span><Wallet size={15} /></div><div className="mt-2 text-2xl font-black text-rose-300">{commandCenterStats.collection}</div><div className="text-[9px] font-bold text-rose-200/60">تأكيد مطلوب</div></button>
+                      <button type="button" onClick={() => openCommandCenter('delayed')} className="rounded-2xl border border-red-400/50 bg-red-500/10 p-3 text-right transition hover:-translate-y-0.5 hover:bg-red-500/20"><div className="flex items-center justify-between text-[10px] font-black text-red-200"><span>متأخر</span><Clock size={15} /></div><div className="mt-2 text-2xl font-black text-red-300">{commandCenterStats.delayed}</div><div className="text-[9px] font-bold text-red-200/60">يحتاج متابعة</div></button>
+                      <button type="button" onClick={() => openCommandCenter('active')} className="rounded-2xl border border-blue-400/50 bg-blue-500/10 p-3 text-right transition hover:-translate-y-0.5 hover:bg-blue-500/20"><div className="flex items-center justify-between text-[10px] font-black text-blue-200"><span>نشط الآن</span><Wrench size={15} /></div><div className="mt-2 text-2xl font-black text-blue-300">{commandCenterStats.active}</div><div className="text-[9px] font-bold text-blue-200/60">قيد التنفيذ</div></button>
+                    </div>
+                  </section>
                   <section className="mb-6 rounded-3xl border border-white/10 bg-slate-950/40 p-4" aria-label="ملخص أوردرات الفنيين">
                     <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div>
@@ -3501,6 +3542,7 @@ ${trackingUrl}
                       ))}
                     </div>
                   </section>
+                  </>
                 )}
                 {!showDeleted && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
