@@ -405,6 +405,8 @@ export default function ProtectedOrders() {
   const [visibleNotificationsCount, setVisibleNotificationsCount] = useState(20);
   const [notificationCategory, setNotificationCategory] = useState<'all' | 'urgent' | 'orders' | 'money' | 'system'>('all');
   const [notificationSearch, setNotificationSearch] = useState('');
+  const [invoiceSearchTerm, setInvoiceSearchTerm] = useState('');
+  const [invoiceDateFilter, setInvoiceDateFilter] = useState('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
   const [pinnedOrderIds, setPinnedOrderIds] = useState<Set<number>>(new Set());
@@ -2667,6 +2669,17 @@ ${trackingUrl}
         return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
       });
   }, [notifications, notificationCategory, notificationSearch, readNotificationIds]);
+  const invoiceReviewOrders = useMemo(() => {
+    const query = invoiceSearchTerm.trim().toLowerCase();
+    return [...orders, ...archivedOrders]
+      .filter(order => order.status === 'completed' && !order.invoice_approved)
+      .filter(order => {
+        if (invoiceDateFilter && String(order.created_at || '').slice(0, 10) !== invoiceDateFilter) return false;
+        if (!query) return true;
+        return `${order.customer_name || ''} ${order.phone || ''} ${order.order_number || ''} ${order.technician || ''}`.toLowerCase().includes(query);
+      })
+      .sort((a, b) => (getOrderActivityTime(b) || 0) - (getOrderActivityTime(a) || 0));
+  }, [orders, archivedOrders, invoiceSearchTerm, invoiceDateFilter]);
   const commandCenterStats = useMemo(() => ({
     unassigned: filteredOrders.filter(order => !order.technician || order.technician === '-' || order.technician === '').length,
     collection: filteredOrders.filter(isCollectionPending).length,
@@ -4371,33 +4384,28 @@ ${trackingUrl}
         )}
 
         {activeTab === 'invoicesReview' && userRole !== 'viewer' && (
-          <div className="space-y-3">
-            {[...orders, ...archivedOrders]
-              .filter(o => o.status === 'completed' && !o.invoice_approved)
-              .sort((a, b) => (getOrderActivityTime(b) || 0) - (getOrderActivityTime(a) || 0))
-              .map(order => (
-                <div key={order.id} className="bg-slate-900 rounded-xl p-4 flex justify-between items-center flex-wrap gap-3 border border-slate-800">
-                  <div>
-                    <p className="font-bold text-white">{order.customer_name}</p>
-                    <p className="text-sm text-slate-400">{order.device_type} - {order.brand}</p>
-                    <p className="text-orange-400 font-black">المبلغ: {order.total_amount} ج.م</p>
-                  </div>
-                  {canEditDelete() && (
-                    <button 
-                      onClick={() => printAndSendInvoice(order)} 
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 font-bold shadow-lg"
-                    >
-                      <Printer size={16}/> طباعة الفاتورة
-                    </button>
-                  )}
+          <div className="space-y-4">
+            <div className="rounded-3xl border border-orange-500/20 bg-slate-900/70 p-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div><h2 className="flex items-center gap-2 text-xl font-black text-white"><Printer className="text-orange-400" /> مركز الفواتير</h2><p className="mt-1 text-xs font-bold text-slate-500">الفواتير المكتملة التي تحتاج اعتماد المدير قبل إرسالها للعميل</p></div>
+                <div className="flex flex-wrap gap-2 text-[10px] font-black"><span className="rounded-full bg-orange-500/15 px-3 py-2 text-orange-300">تحتاج مراجعة: {invoiceReviewOrders.length}</span><span className="rounded-full bg-slate-800 px-3 py-2 text-slate-400">المحتوى للعميل: المبلغ والضمان فقط</span></div>
+              </div>
+              <div className="mt-4 flex flex-col gap-2 md:flex-row">
+                <div className="relative flex-1"><Search className="absolute right-3 top-1/2 -translate-y-1/2 text-orange-300" size={17} /><input value={invoiceSearchTerm} onChange={event => setInvoiceSearchTerm(event.target.value)} placeholder="ابحث باسم العميل أو الهاتف أو رقم الأوردر أو الفني..." className="w-full rounded-xl border border-slate-700 bg-slate-800 py-3 pr-10 pl-3 text-xs font-bold text-white outline-none focus:border-orange-400" /></div>
+                <input type="date" value={invoiceDateFilter} onChange={event => setInvoiceDateFilter(event.target.value)} className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-bold text-white" aria-label="تصفية فواتير بتاريخ" />
+                <button type="button" onClick={() => { setInvoiceSearchTerm(''); setInvoiceDateFilter(''); }} className="rounded-xl bg-slate-800 px-4 py-2 text-xs font-black text-slate-300 hover:bg-slate-700">مسح الفلاتر</button>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+              {invoiceReviewOrders.map(order => (
+                <div key={order.id} className="rounded-2xl border border-slate-800 bg-slate-900 p-4 transition hover:border-orange-500/50">
+                  <div className="flex items-start justify-between gap-3"><div><p className="font-black text-white">{order.customer_name}</p><p className="mt-1 text-[10px] font-bold text-slate-500">{order.order_number || `#${order.id}`} · {order.device_type} - {order.brand}</p></div><span className="rounded-full bg-amber-500/15 px-2 py-1 text-[9px] font-black text-amber-300">تحتاج اعتماد</span></div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs"><div className="rounded-xl bg-slate-950/60 p-2"><span className="text-slate-500">الفني</span><p className="mt-1 font-black text-orange-300">{order.technician || 'غير محدد'}</p></div><div className="rounded-xl bg-slate-950/60 p-2"><span className="text-slate-500">المبلغ</span><p className="mt-1 font-black text-emerald-300">{Number(order.total_amount || 0).toLocaleString()} ج.م</p></div></div>
+                  <div className="mt-3 flex items-center justify-between gap-2"><span className="text-[10px] font-bold text-slate-500">تاريخ التسجيل: {new Date(order.created_at || order.date).toLocaleDateString('ar-EG')}</span>{canEditDelete() && <button onClick={() => printAndSendInvoice(order)} className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-black text-white shadow-lg hover:bg-blue-500"><Printer size={15} className="ml-1 inline" /> اعتماد وطباعة</button>}</div>
                 </div>
               ))}
-            {[...orders, ...archivedOrders].filter(o => o.status === 'completed' && !o.invoice_approved).length === 0 && (
-              <div className="text-center py-12 bg-slate-900/50 rounded-2xl border border-dashed border-slate-800">
-                <Printer size={48} className="mx-auto text-slate-700 mb-4 opacity-20" />
-                <p className="text-slate-400 font-bold">لا توجد فواتير بانتظار المراجعة حالياً</p>
-              </div>
-            )}
+            </div>
+            {invoiceReviewOrders.length === 0 && <div className="rounded-2xl border border-dashed border-slate-800 bg-slate-900/50 py-12 text-center"><Printer size={48} className="mx-auto mb-4 text-slate-700 opacity-20" /><p className="font-bold text-slate-400">لا توجد فواتير مطابقة أو بانتظار المراجعة</p></div>}
           </div>
         )}
 
