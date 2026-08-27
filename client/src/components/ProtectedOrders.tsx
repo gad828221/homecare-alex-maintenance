@@ -383,7 +383,7 @@ export default function ProtectedOrders() {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [trackingShareOrderId, setTrackingShareOrderId] = useState<number | null>(null);
   const [filterTechStatus, setFilterTechStatus] = useState<'all' | 'active' | 'inactive'>('active');
-  const [cashFilterDate, setCashFilterDate] = useState('');
+  const [cashFilterDate, setCashFilterDate] = useState(() => getEgyptTodayString());
   const [cashForm, setCashForm] = useState({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] });
   const [partnerForm, setPartnerForm] = useState({ name: '', share_percentage: 0, phone: '', is_active: true });
   const [searchTerm, setSearchTerm] = useState('');
@@ -1128,11 +1128,8 @@ export default function ProtectedOrders() {
         else if (entry.type === 'expense' || entry.type === 'profit_distribution') balance -= amount;
       });
       setCashBalance(balance);
-      let displayData = all;
-      if (cashFilterDate) {
-        displayData = all.filter((entry: any) => entry.date === cashFilterDate);
-      }
-      setCashLedger(displayData);
+      // نخزن كل القيود في الحالة؛ الفلترة التالية للعرض فقط ولا تمس الرصيد.
+      setCashLedger(all);
     } catch (err) { console.error(err); }
   }, [cashFilterDate]);
 
@@ -2625,6 +2622,19 @@ ${trackingUrl}
         .sort((a, b) => b.stats.total - a.stats.total || String(a.tech.name).localeCompare(String(b.tech.name), 'ar'))
     };
   }, [filteredOrders, technicians]);
+  const visibleCashLedger = useMemo(() => {
+    if (!cashFilterDate) return cashLedger;
+    return cashLedger.filter((entry: any) => entry.date === cashFilterDate);
+  }, [cashLedger, cashFilterDate]);
+  const getCashEntryTechnician = (entry: any) => {
+    const source = `${entry.order_id || ''} ${entry.description || ''}`;
+    const orderNumber = source.match(/MG-?\d{6,}/i)?.[0]?.toLowerCase().replace(/^mg-?/, 'mg-');
+    const order = [...orders, ...archivedOrders, ...deletedOrders].find((item: any) =>
+      (entry.order_id && String(item.id) === String(entry.order_id)) ||
+      (orderNumber && String(item.order_number || '').toLowerCase() === orderNumber)
+    );
+    return order?.technician && order.technician !== '-' ? String(order.technician) : '';
+  };
   const commandCenterStats = useMemo(() => ({
     unassigned: filteredOrders.filter(order => !order.technician || order.technician === '-' || order.technician === '').length,
     collection: filteredOrders.filter(isCollectionPending).length,
@@ -4357,9 +4367,11 @@ ${trackingUrl}
           <div className="space-y-4">
             <div className="flex justify-between items-center flex-wrap gap-3">
               <div className="bg-emerald-500/20 p-4 rounded-xl border border-emerald-500/20"><p className="text-slate-400">صافي نصيب الخزنة (المحل)</p><p className="text-3xl font-bold text-emerald-400">{cashBalance.toLocaleString()} ج.م</p><p className="text-[11px] text-slate-500 mt-1">الربع المخصص للخزنة بعد خصم المصروفات والتوزيعات</p></div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-black text-slate-400">عرض الخزنة:</span>
                 <input type="date" value={cashFilterDate} onChange={e=>setCashFilterDate(e.target.value)} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"/>
-                <button onClick={()=>setCashFilterDate('')} className="bg-slate-700 text-white px-3 py-2 rounded-lg text-sm">إلغاء الفلتر</button>
+                <button onClick={()=>setCashFilterDate(getEgyptTodayString())} className="bg-emerald-700/70 text-white px-3 py-2 rounded-lg text-sm">اليوم</button>
+                <button onClick={()=>setCashFilterDate('')} className="bg-slate-700 text-white px-3 py-2 rounded-lg text-sm">كل السجل</button>
                 {canManageCash && <button onClick={()=>{setEditingCash(null); setCashForm({type:'expense',amount:0,description:'',date:new Date().toISOString().split('T')[0]}); setShowCashModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={16}/> حركة جديدة</button>}
               </div>
             </div>
@@ -4372,12 +4384,13 @@ ${trackingUrl}
               <div className="flex flex-wrap items-center gap-3"><input type="date" value={reportDate} onChange={e=>setReportDate(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"/>{canEditDelete() && <button onClick={handleSendReportForDate} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"><Send size={16}/> حفظ التقرير داخل البرنامج</button>}</div>
             </div>
             <div className="bg-slate-900 rounded-xl overflow-x-auto">
-              <table className="w-full text-sm"><thead className="bg-slate-800"><tr><th className="p-3">التاريخ</th><th>النوع</th><th>المبلغ</th><th>الوصف</th><th>إجراءات</th></tr></thead>
-              <tbody>{cashLedger.map((entry) => (
+              <table className="w-full text-sm"><thead className="bg-slate-800"><tr><th className="p-3">التاريخ</th><th>النوع</th><th>المبلغ</th><th>الفني</th><th>الوصف</th><th>إجراءات</th></tr></thead>
+              <tbody>{visibleCashLedger.map((entry) => (
                 <tr key={entry.id} className="border-b border-slate-800">
                   <td className="p-3 text-slate-300">{entry.date}</td>
                   <td className="text-slate-300">{entry.type==='income'?'💰 دخل':entry.type==='expense'?'💸 مصروف':'📤 توزيع أرباح'}</td>
                   <td className={entry.type==='income'?'text-green-400':'text-red-400'}>{entry.amount} ج.م</td>
+                  <td className="whitespace-nowrap text-orange-300 font-black">{getCashEntryTechnician(entry) || '—'}</td>
                   <td className="max-w-xs break-words text-slate-300">{entry.description}</td>
                   <td>{canManageCash && <button onClick={()=>deleteCashEntry(entry.id)} className="text-red-400"><Trash2 size={16}/></button>}</td>
                 </tr>
