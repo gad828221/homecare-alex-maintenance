@@ -3,7 +3,8 @@ import {
   Plus, Search, LayoutDashboard, Users, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
   CheckCircle2, AlertCircle, Eye, EyeOff,
   Edit, Trash2, RefreshCw, Phone,
-  Copy, Check, Trash, Bell, DollarSign, X, Printer, UserPlus, UserMinus, LogOut, Send, Play, LogIn,
+  Copy, Check, Trash, Bell,   DollarSign,
+  Download, X, Printer, UserPlus, UserMinus, LogOut, Send, Play, LogIn,
   RotateCcw, Clock, MapPin, Star, Cpu, ShieldCheck, Wrench, UserCircle, Wallet,
   ClipboardList, FileCheck, Camera, Navigation, ExternalLink, Pin, PinOff, History, MessageCircle
 } from "lucide-react";
@@ -349,7 +350,7 @@ export default function ProtectedOrders() {
   const [loading, setLoading] = useState(true);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [confirmingTransferId, setConfirmingTransferId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'orders' | 'archived' | 'technicians' | 'reports' | 'repeatCustomers' | 'invoicesReview' | 'cash' | 'partners' | 'notifications' | 'permissions' | 'performance' | 'analytics' | 'feedback'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'archived' | 'technicians' | 'reports' | 'repeatCustomers' | 'invoicesReview' | 'cash' | 'partners' | 'notifications' | 'permissions' | 'performance' | 'analytics' | 'feedback' | 'systemHealth'>('orders');
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [formStep, setFormStep] = useState(1);
   const DEVICE_ICONS: Record<string, string> = {
@@ -766,7 +767,7 @@ export default function ProtectedOrders() {
   const canManageCash = isAdmin;
   const canManagePartners = isAdmin;
   const isViewer = userRole?.toLowerCase() === 'viewer';
-  const viewerBlockedTabs = ['technicians', 'reports', 'invoicesReview', 'partners', 'performance', 'feedback', 'permissions'];
+  const viewerBlockedTabs = ['technicians', 'reports', 'invoicesReview', 'partners', 'performance', 'feedback', 'permissions', 'systemHealth'];
 
   const saveUserAccount = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2680,6 +2681,37 @@ ${trackingUrl}
       })
       .sort((a, b) => (getOrderActivityTime(b) || 0) - (getOrderActivityTime(a) || 0));
   }, [orders, archivedOrders, invoiceSearchTerm, invoiceDateFilter]);
+  const systemHealthStats = useMemo(() => {
+    const allKnownOrders = [...orders, ...archivedOrders, ...deletedOrders];
+    const lastNotification = notifications[0];
+    const lastCashEntry = cashLedger[0];
+    return {
+      totalOrders: allKnownOrders.length,
+      activeOrders: orders.length,
+      archivedOrders: archivedOrders.length,
+      deletedOrders: deletedOrders.length,
+      cashEntries: cashLedger.length,
+      technicians: technicians.length,
+      activeTechnicians: technicians.filter(tech => tech.is_active !== false).length,
+      users: users.length,
+      notifications: notifications.length,
+      unreadNotifications: notifications.filter(notification => !readNotificationIds.has(Number(notification.id))).length,
+      lastNotificationAt: lastNotification?.created_at || '',
+      lastCashAt: lastCashEntry?.created_at || '',
+    };
+  }, [orders, archivedOrders, deletedOrders, cashLedger, technicians, users, notifications, readNotificationIds]);
+  const exportSystemBackup = () => {
+    if (userRole !== 'admin') return;
+    const backup = { exported_at: new Date().toISOString(), app: 'Maintenance Guide', version: 'v4.3.8', orders, archivedOrders, deletedOrders, cashLedger, technicians, users, partners, notifications };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `maintenance-guide-backup-${getEgyptTodayString()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast('تم تنزيل النسخة الاحتياطية محليًا دون تعديل البيانات', 'success');
+  };
   const commandCenterStats = useMemo(() => ({
     unassigned: filteredOrders.filter(order => !order.technician || order.technician === '-' || order.technician === '').length,
     collection: filteredOrders.filter(isCollectionPending).length,
@@ -3217,6 +3249,7 @@ ${trackingUrl}
           { id: 'cash', label: 'الخزنة', icon: <Wallet size={16} />, color: 'emerald' },
           { id: 'partners', label: 'الشركاء', icon: <Users size={16} />, color: 'orange', hide: userRole === 'viewer' },
           { id: 'notifications', label: `الإشعارات (${notifications.length})`, icon: <Bell size={16} />, color: 'blue' },
+          { id: 'systemHealth', label: 'صحة النظام', icon: <ShieldCheck size={16} />, color: 'emerald', hide: userRole !== 'admin' },
           { id: 'feedback', label: 'التقييمات', icon: <Star size={16} />, color: 'yellow', hide: !canEditDelete() },
           { id: 'permissions', label: 'الصلاحيات', icon: <ShieldCheck size={16} />, color: 'orange', hide: userRole !== 'admin' },
           { id: 'analytics', label: 'الإحصائيات', icon: <LayoutDashboard size={16} />, color: 'orange' },
@@ -4461,6 +4494,22 @@ ${trackingUrl}
           </div>
         )}
 
+        {activeTab === 'systemHealth' && userRole === 'admin' && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-emerald-500/20 bg-slate-900/70 p-5">
+              <div><h2 className="flex items-center gap-2 text-xl font-black text-white"><ShieldCheck className="text-emerald-400" /> صحة النظام والنسخ الاحتياطي</h2><p className="mt-1 text-xs font-bold text-slate-500">مراقبة القراءة فقط وتصدير نسخة دون تغيير أي بيانات</p></div>
+              <button type="button" onClick={exportSystemBackup} className="rounded-2xl bg-emerald-600 px-4 py-3 text-xs font-black text-white shadow-lg hover:bg-emerald-500"><Download size={16} className="ml-1 inline" /> تنزيل نسخة احتياطية</button>
+            </div>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              {[[systemHealthStats.totalOrders,'كل الأوردرات'],[systemHealthStats.activeOrders,'الأوردرات النشطة'],[systemHealthStats.archivedOrders,'الأرشيف'],[systemHealthStats.cashEntries,'قيود الخزنة'],[systemHealthStats.technicians,'الفنيون'],[systemHealthStats.activeTechnicians,'الفنيون النشطون'],[systemHealthStats.users,'حسابات المستخدمين'],[systemHealthStats.unreadNotifications,'إشعارات غير مقروءة']].map(([value,label]) => <div key={String(label)} className="rounded-2xl border border-slate-800 bg-slate-900 p-4"><div className="text-2xl font-black text-emerald-300">{value}</div><div className="mt-1 text-[10px] font-bold text-slate-500">{label}</div></div>)}
+            </div>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4"><h3 className="font-black text-white">حالة البيانات</h3><p className="mt-2 text-xs font-bold text-emerald-300">✓ البيانات محملة داخل اللوحة</p><p className="mt-1 text-[11px] text-slate-500">الأوردرات والخزنة والإشعارات محفوظة دون تغيير.</p></div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4"><h3 className="font-black text-white">آخر نشاط</h3><p className="mt-2 text-xs text-slate-400">آخر إشعار: {systemHealthStats.lastNotificationAt ? new Date(systemHealthStats.lastNotificationAt).toLocaleString('ar-EG') : 'لا يوجد'}</p><p className="mt-1 text-xs text-slate-400">آخر قيد خزنة: {systemHealthStats.lastCashAt ? new Date(systemHealthStats.lastCashAt).toLocaleString('ar-EG') : 'لا يوجد'}</p></div>
+            </div>
+            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-xs font-bold text-amber-200">النسخة الاحتياطية تُنزّل على جهازك بصيغة JSON للقراءة والاسترجاع اليدوي، ولا تحذف أو تعدّل أي سجل داخل Supabase.</div>
+          </div>
+        )}
         {activeTab === 'notifications' && (
           <div className="space-y-3 w-full max-w-full overflow-hidden">
             <div className="flex justify-between items-center bg-slate-900/50 border border-slate-800 p-4 rounded-2xl">
