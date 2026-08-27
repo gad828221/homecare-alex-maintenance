@@ -15,7 +15,7 @@ import { useScreenWakeLock } from '../hooks/useScreenWakeLock';
 import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, getOrderCreatedValue, parseOrderDate, getEgyptTodayString } from '../utils/orderTiming';
 import { createPickupMarker, getPickupTypeLabel, parsePickupReceipt, type PickupReceiptData } from '../utils/pickupReceipt';
 import { mergeCompanyTransferMarker, parseCompanyTransfer } from '../utils/companyTransfer';
-import TechnicianPerformanceAdmin from './TechnicianPerformanceAdmin';
+const TechnicianPerformanceAdmin = React.lazy(() => import('./TechnicianPerformanceAdmin'));
 import ScrollButtons from './ScrollButtons';
 import IOSPushEnablePrompt from './IOSPushEnablePrompt';
 
