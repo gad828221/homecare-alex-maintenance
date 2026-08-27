@@ -2586,8 +2586,33 @@ ${trackingUrl}
   }, [allFilteredArchivedOrders, visibleArchivedCount, archiveSearchTerm]);
 
 
-  const filteredTechnicians = technicians.filter(t => filterTechStatus === 'all' ? true : filterTechStatus === 'active' ? t.is_active !== false : t.is_active === false);
-
+    const filteredTechnicians = technicians.filter(t => filterTechStatus === 'all' ? true : filterTechStatus === 'active' ? t.is_active !== false : t.is_active === false);
+  const technicianOrderCards = useMemo(() => {
+    const assigned = new Map<string, { total: number; pending: number; active: number; collection: number }>();
+    let unassigned = 0;
+    let unassignedCollection = 0;
+    for (const order of filteredOrders) {
+      const technician = String(order.technician || '').trim();
+      if (!technician || technician === '-') {
+        unassigned += 1;
+        if (isCollectionPending(order)) unassignedCollection += 1;
+        continue;
+      }
+      const stats = assigned.get(technician) || { total: 0, pending: 0, active: 0, collection: 0 };
+      stats.total += 1;
+      if (order.status === 'pending') stats.pending += 1;
+      if (order.status === 'in-progress' || order.status === 'in_progress') stats.active += 1;
+      if (isCollectionPending(order)) stats.collection += 1;
+      assigned.set(technician, stats);
+    }
+    return {
+      unassigned: { total: unassigned, collection: unassignedCollection },
+      technicians: technicians
+        .filter(tech => tech.is_active !== false)
+        .map(tech => ({ tech, stats: assigned.get(String(tech.name).trim()) || { total: 0, pending: 0, active: 0, collection: 0 } }))
+        .sort((a, b) => b.stats.total - a.stats.total || String(a.tech.name).localeCompare(String(b.tech.name), 'ar'))
+    };
+  }, [filteredOrders, technicians]);
   // ========== دوال التقارير ==========
   const fetchCashReport = async () => {
     setReportLoading(true);
@@ -3450,6 +3475,33 @@ ${trackingUrl}
                     );
                   })}
                 </div>
+                {!showDeleted && !searchTerm && !filterTechnician && (
+                  <section className="mb-6 rounded-3xl border border-white/10 bg-slate-950/40 p-4" aria-label="ملخص أوردرات الفنيين">
+                    <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h3 className="flex items-center gap-2 text-sm font-black text-white"><Users size={17} className="text-orange-400" /> توزيع الأوردرات على الفنيين</h3>
+                        <p className="mt-1 text-[10px] font-bold text-slate-500">اضغط على أي كارت لعرض أوردرات الفني فقط</p>
+                      </div>
+                      {filterStatus !== 'live' && <span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-[10px] font-bold text-slate-400">حسب الفلتر الحالي</span>}
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                      {technicianOrderCards.unassigned.total > 0 && (
+                        <button type="button" onClick={() => setFilterTechnician('__NONE__')} className="rounded-2xl border border-amber-400/60 bg-amber-500/10 p-4 text-right transition hover:-translate-y-0.5 hover:bg-amber-500/20">
+                          <div className="flex items-center justify-between"><span className="text-xs font-black text-amber-200">بدون فني</span><AlertCircle size={18} className="text-amber-300" /></div>
+                          <div className="mt-3 text-3xl font-black text-amber-300">{technicianOrderCards.unassigned.total}</div>
+                          <div className="mt-1 text-[10px] font-bold text-amber-200/70">أوردر يحتاج تعيين{technicianOrderCards.unassigned.collection ? ` · ${technicianOrderCards.unassigned.collection} تحصيل` : ''}</div>
+                        </button>
+                      )}
+                      {technicianOrderCards.technicians.map(({ tech, stats }) => (
+                        <button type="button" key={tech.id} onClick={() => setFilterTechnician(tech.name)} className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 text-right transition hover:-translate-y-0.5 hover:border-orange-500/60 hover:bg-slate-900">
+                          <div className="flex items-center justify-between gap-2"><span className="truncate text-xs font-black text-white">{tech.name}</span><span className={`h-2.5 w-2.5 shrink-0 rounded-full ${tech.is_active === false ? 'bg-slate-600' : 'bg-emerald-400'}`} /></div>
+                          <div className="mt-3 flex items-end justify-between"><span className="text-3xl font-black text-orange-300">{stats.total}</span><span className="text-[10px] font-bold text-slate-500">أوردر</span></div>
+                          <div className="mt-2 flex flex-wrap gap-1.5 text-[9px] font-bold"><span className="rounded-full bg-blue-500/10 px-2 py-1 text-blue-300">تنفيذ {stats.active}</span><span className="rounded-full bg-amber-500/10 px-2 py-1 text-amber-300">انتظار {stats.pending}</span>{stats.collection > 0 && <span className="rounded-full bg-rose-500/10 px-2 py-1 text-rose-300">تحصيل {stats.collection}</span>}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                )}
                 {!showDeleted && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredOrders.map(order => {
