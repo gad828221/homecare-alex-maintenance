@@ -340,6 +340,9 @@ export default function ProtectedOrders() {
   const [technicians, setTechnicians] = useState<any[]>([]);
   const [technicianProfiles, setTechnicianProfiles] = useState<Record<string, any>>({});
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [readNotificationIds, setReadNotificationIds] = useState<Set<number>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('mg_read_notification_ids') || '[]')); } catch { return new Set(); }
+  });
   const [partners, setPartners] = useState<any[]>([]);
   const [cashLedger, setCashLedger] = useState<any[]>([]);
   const [cashBalance, setCashBalance] = useState(0);
@@ -2340,7 +2343,16 @@ ${trackingUrl}
     fetchData();
   };
 
+  const markNotificationRead = (id: number) => {
+    setReadNotificationIds(previous => {
+      const next = new Set(previous);
+      next.add(id);
+      try { localStorage.setItem('mg_read_notification_ids', JSON.stringify(Array.from(next).slice(-1000))); } catch { /* storage unavailable */ }
+      return next;
+    });
+  };
   const openNotificationTarget = (notif: any) => {
+    if (notif?.id != null) markNotificationRead(Number(notif.id));
     const details = String(notif?.details || '');
     const explicitOrderNumber = String(
       notif?.order_number || notif?.orderNumber || notif?.data?.order_number || notif?.metadata?.order_number || ''
@@ -4410,7 +4422,7 @@ ${trackingUrl}
                 const isMoney = notif.action?.includes('خزنة') || notif.action?.includes('أرباح');
 
                 return (
-                  <div key={notif.id} onClick={() => openNotificationTarget(notif)} role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') openNotificationTarget(notif); }} className={`bg-slate-900 rounded-2xl p-4 flex justify-between items-center border-l-4 w-full cursor-pointer hover:bg-slate-800/90 active:scale-[0.99] transition-all ${
+                  <div key={notif.id} onClick={() => openNotificationTarget(notif)} role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') openNotificationTarget(notif); }} className={`${readNotificationIds.has(Number(notif.id)) ? 'bg-slate-900/60 opacity-80' : 'bg-slate-900'} rounded-2xl p-4 flex justify-between items-center border-l-4 w-full cursor-pointer hover:bg-slate-800/90 active:scale-[0.99] transition-all ${
                     isLogin ? 'border-blue-500' : isOrder ? 'border-orange-500' : isMoney ? 'border-emerald-500' : 'border-slate-700'
                   }`}>
                     <div className="flex items-center gap-3 overflow-hidden">
@@ -4426,7 +4438,7 @@ ${trackingUrl}
                           }`}>
                             {notif.action}
                           </span>
-                          <span className="text-[9px] text-slate-500">{new Date(notif.created_at).toLocaleString('ar-EG')}</span>
+                          <span className="text-[9px] text-slate-500">{new Date(notif.created_at).toLocaleString('ar-EG')}</span>{!readNotificationIds.has(Number(notif.id)) && <span className="rounded-full bg-orange-500/20 px-2 py-0.5 text-[9px] font-black text-orange-300">جديد</span>}
                         </div>
                         <p className="text-xs md:text-sm text-slate-300 mt-1 font-medium truncate">{notif.details}</p>
                       </div>
