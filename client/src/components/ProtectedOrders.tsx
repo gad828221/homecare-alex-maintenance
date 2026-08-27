@@ -19,7 +19,7 @@ const TechnicianPerformanceAdmin = React.lazy(() => import('./TechnicianPerforma
 import ScrollButtons from './ScrollButtons';
 import IOSPushEnablePrompt from './IOSPushEnablePrompt';
 
-import { findTechnicianByIdentity, getTechnicianDisplayName, getTechnicianPhotoUrl, getTechnicianSpecialty, parseTechnicianProfileNotification } from '../utils/technicianProfile';
+import { findTechnicianByIdentity, getTechnicianDisplayName, getTechnicianPhotoUrl, getTechnicianSpecialty, getDeviceSpecialty, parseTechnicianProfileNotification } from '../utils/technicianProfile';
 import { clearAuthSession, readAuthSession } from '../utils/authSession';
 import { getOneSignalExternalId, syncOneSignalIdentity } from '../utils/oneSignalIdentity';
 
@@ -917,7 +917,8 @@ export default function ProtectedOrders() {
   const sendTechnicianAssignmentToCustomer = (order: any, technicianIdentity: any) => {
     if (!['admin', 'manager'].includes(userRole?.toLowerCase() || '') || !order?.phone || !technicianIdentity) return false;
     const profile = getOrderTechnicianProfile(technicianIdentity);
-    const specialty = getTechnicianSpecialty(profile.technician, order.device_type);
+    // تخصص الرسالة للعميل يتبع جهاز هذا الأوردر، وليس التخصص العام المسجل في ملف الفني.
+    const specialty = getDeviceSpecialty(order.device_type);
     const trackingUrl = `https://www.maintenanceguide.life/track/${order.order_number}`;
     const photoLine = profile.photoUrl ? `🖼️ *صورة الفني:*\n${profile.photoUrl}\n` : '';
     const message = `👨‍🔧 *تم تعيين الفني المسؤول عن طلبك* 👨‍🔧\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n\n✅ *الفني المتوجه إليك:* ${profile.displayName}\n🛠️ *التخصص:* متخصص ${specialty}\n${photoLine}\n📍 سيقوم الفني بالتواصل معك والتوجه إلى العنوان المسجل في الطلب.\n\n📍 *تتبع طلبك والضمان من هنا:*\n${trackingUrl}\n\n🏢 *Maintenance Guide (MG)*\nشكراً لثقتكم.`;
