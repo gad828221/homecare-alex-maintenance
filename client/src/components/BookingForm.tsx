@@ -103,7 +103,8 @@ export default function BookingForm({ defaultService, title, description }: Book
       problem_description: formData.problem_description,
       status: 'pending',
       date: new Date().toLocaleDateString("ar-EG"),
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      admin_notes: '[مصدر التسجيل: عميل]'
     };
 
     try {

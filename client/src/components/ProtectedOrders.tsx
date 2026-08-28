@@ -2150,7 +2150,8 @@ ${trackingUrl}
     setIsSubmitting(true);
     const finalDevice = isOtherDevice ? customDevice : formData.device_type;
     const finalBrand = isOtherBrand ? customBrand : formData.brand;
-      const sourceLabel = currentUser?.role?.toLowerCase() === 'admin' ? 'مدير النظام' : 'مدير العمليات';
+      const activeRole = String(currentUser?.role || localStorage.getItem('userRole') || '').toLowerCase();
+      const sourceLabel = activeRole === 'admin' ? 'مدير النظام' : activeRole === 'manager' ? 'مدير العمليات' : 'مدير النظام';
     const sourceMarker = `[مصدر التسجيل: ${editingOrder ? '' : sourceLabel}]`;
     const existingAdminNotes = String((formData as any).admin_notes || '');
     const adminNotesWithSource = editingOrder || existingAdminNotes.includes('[مصدر التسجيل:') ? existingAdminNotes : `${existingAdminNotes}${existingAdminNotes ? '\n' : ''}${sourceMarker}`;
@@ -2537,7 +2538,7 @@ ${trackingUrl}
     if (source) return source;
     if (order?.created_by_role === 'admin') return 'مدير النظام';
     if (order?.created_by_role === 'manager') return 'مدير العمليات';
-    return 'مصدر التسجيل غير محدد';
+    return 'أوردر قديم — المصدر غير محفوظ';
   };
   const getOrderActivityTime = (order: any) => {
     const candidates = [
@@ -3777,7 +3778,7 @@ ${trackingUrl}
 	                          <div className="flex items-center gap-1.5">
 	                            <span className="text-[8px] font-black text-slate-500 tracking-tighter uppercase bg-slate-800/80 px-1.5 py-0.5 rounded shadow-inner">#{order.order_number}</span>
                             {shortOrderNumber && shortOrderNumber !== String(order.order_number) && <span className="text-[9px] font-black text-orange-300 bg-orange-500/10 border border-orange-400/20 px-1.5 py-0.5 rounded-md">#{shortOrderNumber}</span>}
-                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md border ${getOrderSourceLabel(order) === 'مصدر التسجيل غير محدد' ? 'text-slate-500 bg-slate-800/60 border-slate-700' : 'text-cyan-300 bg-cyan-500/10 border-cyan-400/20'}`}>سجل بواسطة: {getOrderSourceLabel(order)}</span>
+                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md border ${getOrderSourceLabel(order) === 'أوردر قديم — المصدر غير محفوظ' ? 'text-slate-500 bg-slate-800/60 border-slate-700' : 'text-cyan-300 bg-cyan-500/10 border-cyan-400/20'}`}>سجل بواسطة: {getOrderSourceLabel(order)}</span>
                             {getWarrantyStatus(order).status !== 'none' && (
 	                              <div className={`px-1.5 py-0.5 rounded-full text-[7px] font-black bg-${getWarrantyStatus(order).color}-500/20 text-${getWarrantyStatus(order).color}-400 border border-${getWarrantyStatus(order).color}-500/30 flex items-center gap-1`}>
 	                                <ShieldCheck size={8} /> {getWarrantyStatus(order).text}
