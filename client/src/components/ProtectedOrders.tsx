@@ -2150,7 +2150,11 @@ ${trackingUrl}
     setIsSubmitting(true);
     const finalDevice = isOtherDevice ? customDevice : formData.device_type;
     const finalBrand = isOtherBrand ? customBrand : formData.brand;
-    const orderToSave: any = { ...formData, device_type: finalDevice, brand: finalBrand, order_number: editingOrder ? editingOrder.order_number : `MG-${Date.now()}` };
+      const sourceLabel = currentUser?.role?.toLowerCase() === 'admin' ? 'مدير النظام' : 'مدير العمليات';
+    const sourceMarker = `[مصدر التسجيل: ${editingOrder ? '' : sourceLabel}]`;
+    const existingAdminNotes = String((formData as any).admin_notes || '');
+    const adminNotesWithSource = editingOrder || existingAdminNotes.includes('[مصدر التسجيل:') ? existingAdminNotes : `${existingAdminNotes}${existingAdminNotes ? '\n' : ''}${sourceMarker}`;
+    const orderToSave: any = { ...formData, device_type: finalDevice, brand: finalBrand, admin_notes: adminNotesWithSource, order_number: editingOrder ? editingOrder.order_number : `MG-${Date.now()}` };
     try {
       if (editingOrder) {
         const oldOrder = [...orders, ...archivedOrders].find(o => o.id === editingOrder.id);
@@ -2494,6 +2498,9 @@ ${trackingUrl}
     // ✅ إخفاء الملغي تماماً من العرض العام (Live/All) إلا إذا تم اختياره صراحة
     if ((filterStatus === 'live' || filterStatus === 'all') && (o.status === 'cancelled' || o.status === 'canceled')) return false;
 
+    // عند فتح كارت فني، نعرض أوردراته المفتوحة فقط؛ المكتمل يبقى في الأرشيف أو عند اختياره صراحة.
+    if (filterStatus === 'live' && filterTechnician && filterTechnician !== '__NONE__' && o.status === 'completed') return false;
+
     // وضع التركيز المباشر (الافتراضي)
     if (filterStatus === 'live') {
       // كل أوردر مكتمل غير محصل يظهر في وضع التركيز ليصل للمدير أولاً.
@@ -2524,6 +2531,14 @@ ${trackingUrl}
     return (o.status === 'in-progress' || o.status === 'pending' || o.status === 'returned' || !o.technician || o.technician === '-' || o.technician === '');
   });
 
+  const getOrderSourceLabel = (order: any) => {
+    const notes = String(order?.admin_notes || '');
+    const source = notes.match(/مصدر التسجيل:\s*([^\]]+)/)?.[1]?.trim();
+    if (source) return source;
+    if (order?.created_by_role === 'admin') return 'مدير النظام';
+    if (order?.created_by_role === 'manager') return 'مدير العمليات';
+    return 'مصدر التسجيل غير محدد';
+  };
   const getOrderActivityTime = (order: any) => {
     const candidates = [
       order.updated_at,
@@ -3762,7 +3777,8 @@ ${trackingUrl}
 	                          <div className="flex items-center gap-1.5">
 	                            <span className="text-[8px] font-black text-slate-500 tracking-tighter uppercase bg-slate-800/80 px-1.5 py-0.5 rounded shadow-inner">#{order.order_number}</span>
                             {shortOrderNumber && shortOrderNumber !== String(order.order_number) && <span className="text-[9px] font-black text-orange-300 bg-orange-500/10 border border-orange-400/20 px-1.5 py-0.5 rounded-md">#{shortOrderNumber}</span>}
-	                            {getWarrantyStatus(order).status !== 'none' && (
+                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md border ${getOrderSourceLabel(order) === 'مصدر التسجيل غير محدد' ? 'text-slate-500 bg-slate-800/60 border-slate-700' : 'text-cyan-300 bg-cyan-500/10 border-cyan-400/20'}`}>سجل بواسطة: {getOrderSourceLabel(order)}</span>
+                            {getWarrantyStatus(order).status !== 'none' && (
 	                              <div className={`px-1.5 py-0.5 rounded-full text-[7px] font-black bg-${getWarrantyStatus(order).color}-500/20 text-${getWarrantyStatus(order).color}-400 border border-${getWarrantyStatus(order).color}-500/30 flex items-center gap-1`}>
 	                                <ShieldCheck size={8} /> {getWarrantyStatus(order).text}
 	                              </div>

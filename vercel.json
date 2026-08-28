@@ -1,4 +1,7 @@
 {
+  "crons": [
+    { "path": "/api/technician-inactivity", "schedule": "*/10 * * * *" }
+  ],
   "headers": [
     {
       "source": "/(login|orders|tech-portal|data-entry|track/.*|index.html)",
