@@ -2533,11 +2533,16 @@ ${trackingUrl}
   });
 
   const getOrderSourceLabel = (order: any) => {
-    const notes = String(order?.admin_notes || '');
-    const source = notes.match(/مصدر التسجيل:\s*([^\]]+)/)?.[1]?.trim();
-    if (source) return source;
+    const noteSources = [order?.admin_notes, order?.notes, order?.registration_notes, order?.source_note]
+      .map(value => String(value || ''))
+      .filter(Boolean);
+    for (const notes of noteSources) {
+      const source = notes.match(/(?:مصدر التسجيل|سجل بواسطة|مسجل بواسطة)\s*:\s*([^\]\n]+)/i)?.[1]?.trim();
+      if (source) return source;
+    }
     if (order?.created_by_role === 'admin') return 'مدير النظام';
     if (order?.created_by_role === 'manager') return 'مدير العمليات';
+    if (order?.created_by_role === 'customer') return 'عميل';
     return 'أوردر قديم — المصدر غير محفوظ';
   };
   const getOrderActivityTime = (order: any) => {
