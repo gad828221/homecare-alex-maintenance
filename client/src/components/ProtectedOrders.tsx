@@ -3759,13 +3759,13 @@ ${trackingUrl}
 		                      aria-label={`تعديل أوردر ${order.customer_name}`}
 		                      onClick={() => { stopUrgentAlert(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); }}
 		                      onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); stopUrgentAlert(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); } }}
-		                      className={`group order-card-3d ${cardTone} ${statusGlow} ${recentlyUpdated ? 'ring-2 ring-emerald-300/70 shadow-[0_0_26px_rgba(52,211,153,0.28)]' : ''} rounded-[1.5rem] border p-4 transition-all hover:shadow-2xl active:scale-[0.98] cursor-pointer relative overflow-hidden ${config.pulse} bg-slate-900/60 backdrop-blur-md border-opacity-30 hover:border-opacity-100`}
+		                      className={`group order-card-3d ${cardTone} ${statusGlow} ${recentlyUpdated ? 'ring-2 ring-emerald-300/70 shadow-[0_0_26px_rgba(52,211,153,0.28)]' : ''} rounded-[1.5rem] border p-3 sm:p-4 transition-all hover:shadow-2xl active:scale-[0.98] cursor-pointer relative overflow-hidden ${config.pulse} bg-slate-900/60 backdrop-blur-md border-opacity-30 hover:border-opacity-100`}
 	                    >
 	                      {collectionPending && <div className="absolute inset-0 pointer-events-none rounded-[1.5rem] border border-amber-300/50 shadow-[0_0_20px_rgba(251,191,36,0.2)]"></div>}
 	                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:bg-white/10 transition-all"></div>
 
 		                      {/* Header Section */}
-		                      <div className="flex justify-between items-start mb-3 relative z-10">
+		                      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start mb-3 relative z-10">
                             {/* Pin Button */}
                             <button 
                               onClick={(e) => togglePinOrder(e, order.id)}
@@ -3774,18 +3774,18 @@ ${trackingUrl}
                               {pinnedOrderIds.has(order.id) ? <Pin size={14} fill="currentColor" /> : <PinOff size={14} />}
                             </button>
 
-	                        <div className="flex flex-col gap-1">
-			                          <div className="flex flex-wrap items-center gap-1.5">
+<div className="flex min-w-0 flex-col gap-1">
+						                  <div className="flex min-w-0 flex-wrap items-center gap-1.5">
 		                            <h3 className="text-lg font-black text-white group-hover:text-orange-400 transition-colors leading-tight">{order.customer_name}</h3>
 		                            <div className="flex gap-1">
 		                              {previousCustomerPhones.has(normalizeCustomerPhone(order.phone)) && <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-1.5 py-0.5 text-[8px] font-black text-emerald-300">✨ عميل سابق</span>}
 		                              {isNewOrder(order) && <span className="inline-flex items-center gap-1 rounded-full border border-blue-400/30 bg-blue-500/20 px-1.5 py-0.5 text-[8px] font-black text-blue-300 animate-pulse">🆕 جديد الآن</span>}
 		                            </div>
 			                          </div>
-	                          <div className="flex items-center gap-1.5">
-	                            <span className="text-[8px] font-black text-slate-500 tracking-tighter uppercase bg-slate-800/80 px-1.5 py-0.5 rounded shadow-inner">#{order.order_number}</span>
+                          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                            <span className="max-w-full truncate text-[8px] font-black text-slate-500 tracking-tighter uppercase bg-slate-800/80 px-1.5 py-0.5 rounded shadow-inner">#{order.order_number}</span>
                             {shortOrderNumber && shortOrderNumber !== String(order.order_number) && <span className="text-[9px] font-black text-orange-300 bg-orange-500/10 border border-orange-400/20 px-1.5 py-0.5 rounded-md">#{shortOrderNumber}</span>}
-                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md border ${getOrderSourceLabel(order) === 'أوردر قديم — المصدر غير محفوظ' ? 'text-slate-500 bg-slate-800/60 border-slate-700' : 'text-cyan-300 bg-cyan-500/10 border-cyan-400/20'}`}>سجل بواسطة: {getOrderSourceLabel(order)}</span>
+                            <span className={`max-w-full truncate text-[9px] font-black px-1.5 py-0.5 rounded-md border ${getOrderSourceLabel(order) === 'أوردر قديم — المصدر غير محفوظ' ? 'text-slate-500 bg-slate-800/60 border-slate-700' : 'text-cyan-300 bg-cyan-500/10 border-cyan-400/20'}`}>سجل بواسطة: {getOrderSourceLabel(order)}</span>
                             {getWarrantyStatus(order).status !== 'none' && (
 	                              <div className={`px-1.5 py-0.5 rounded-full text-[7px] font-black bg-${getWarrantyStatus(order).color}-500/20 text-${getWarrantyStatus(order).color}-400 border border-${getWarrantyStatus(order).color}-500/30 flex items-center gap-1`}>
 	                                <ShieldCheck size={8} /> {getWarrantyStatus(order).text}
@@ -3794,7 +3794,7 @@ ${trackingUrl}
 	                          </div>
 	                        </div>
 	                        
-	                        <div className="flex flex-col items-end gap-1.5">
+                          <div className="flex flex-wrap items-center justify-start gap-1.5 sm:flex-col sm:items-end">
                           <div className="flex items-center gap-1.5">
                             {collectionPending && <span className="px-2 py-1 rounded-lg text-[8px] font-black border border-amber-200/80 bg-amber-300/30 text-amber-100 shadow-sm animate-pulse">تحتاج تأكيد التحصيل</span>}
                             {!transferPending && recentlyUpdated && <span className="px-2 py-1 rounded-lg text-[8px] font-black border border-emerald-300/50 bg-emerald-400/20 text-emerald-200 shadow-sm animate-pulse">تم التحديث الآن</span>}
