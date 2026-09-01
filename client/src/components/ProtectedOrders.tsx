@@ -2774,6 +2774,19 @@ ${trackingUrl}
     active: filteredOrders.filter(order => order.status === 'in-progress' || order.status === 'in_progress').length,
     completed: dateFilteredOrders.filter(order => order.status === 'completed').length,
   }), [filteredOrders, dateFilteredOrders]);
+  const needsAttentionSummary = useMemo(() => {
+    const attention = dateFilteredOrders.filter(order => {
+      if (['completed', 'cancelled', 'canceled'].includes(order.status)) return false;
+      const noTechnician = !order.technician || order.technician === '-' || order.technician === '';
+      return noTechnician || isDelayed(order) || isCollectionPending(order);
+    });
+    return {
+      total: attention.length,
+      unassigned: attention.filter(order => !order.technician || order.technician === '-' || order.technician === '').length,
+      delayed: attention.filter(isDelayed).length,
+      collection: attention.filter(isCollectionPending).length,
+    };
+  }, [dateFilteredOrders]);
   const openCommandCenter = (type: 'unassigned' | 'collection' | 'delayed' | 'active') => {
     setSearchTerm('');
     setFilterTechnician('');
@@ -3663,6 +3676,18 @@ ${trackingUrl}
                 </div>
                 {!showDeleted && !searchTerm && !filterTechnician && (
                   <>
+                  <button type="button" onClick={() => openCommandCenter(needsAttentionSummary.unassigned > 0 ? 'unassigned' : needsAttentionSummary.collection > 0 ? 'collection' : 'delayed')} className="mb-4 flex w-full flex-col gap-3 rounded-3xl border border-orange-400/40 bg-gradient-to-l from-orange-500/15 via-slate-950/60 to-slate-950/40 p-4 text-right shadow-lg shadow-orange-950/10 transition hover:border-orange-300/70 hover:bg-orange-500/20 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 text-sm font-black text-orange-200"><AlertCircle size={17} /> يحتاج تدخلك الآن</div>
+                      <p className="mt-1 text-[10px] font-bold text-slate-400">اضغط لفتح أعلى أولوية مباشرة</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-[10px] font-black">
+                      <span className="rounded-full bg-orange-500/20 px-3 py-1 text-orange-200">{needsAttentionSummary.total} أوردر</span>
+                      {needsAttentionSummary.unassigned > 0 && <span className="rounded-full bg-amber-500/15 px-2.5 py-1 text-amber-200">بدون فني {needsAttentionSummary.unassigned}</span>}
+                      {needsAttentionSummary.delayed > 0 && <span className="rounded-full bg-red-500/15 px-2.5 py-1 text-red-200">متأخر {needsAttentionSummary.delayed}</span>}
+                      {needsAttentionSummary.collection > 0 && <span className="rounded-full bg-rose-500/15 px-2.5 py-1 text-rose-200">تحصيل {needsAttentionSummary.collection}</span>}
+                    </div>
+                  </button>
                   <section className="mb-5 rounded-3xl border border-white/10 bg-slate-950/40 p-4" aria-label="مركز قيادة الأوردرات">
                     <div className="mb-3 flex items-center justify-between">
                       <div><h3 className="text-sm font-black text-white">مركز قيادة الأوردرات</h3><p className="mt-1 text-[10px] font-bold text-slate-500">الأولوية أولًا، ثم توزيع الحمل على الفنيين</p></div>
