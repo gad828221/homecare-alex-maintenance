@@ -388,6 +388,8 @@ export default function ProtectedOrders() {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [trackingShareOrderId, setTrackingShareOrderId] = useState<number | null>(null);
   const [expandedOrderIds, setExpandedOrderIds] = useState<Set<number>>(new Set());
+  const [showWorkAnalysis, setShowWorkAnalysis] = useState(false);
+  const [showTechnicianDistribution, setShowTechnicianDistribution] = useState(false);
   const [filterTechStatus, setFilterTechStatus] = useState<'all' | 'active' | 'inactive'>('active');
   const [cashFilterDate, setCashFilterDate] = useState(() => getEgyptTodayString());
   const [cashForm, setCashForm] = useState({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] });
@@ -3570,13 +3572,15 @@ ${trackingUrl}
 
                   {/* لوحة التقارير البيانية المصغرة */}
                   <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
-                    <div className="flex justify-between items-center mb-4">
+                    <div className="flex justify-between items-center gap-2">
                       <h3 className="text-sm font-bold text-slate-300 flex items-center gap-2">
                         <LayoutDashboard size={16} className="text-orange-500" /> تحليل حالة العمل
                       </h3>
-                      <span className="text-[10px] text-slate-500">تحديث تلقائي</span>
+                      <button type="button" onClick={() => setShowWorkAnalysis((value) => !value)} className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-[10px] font-black text-slate-300 hover:bg-slate-700">
+                        {showWorkAnalysis ? 'إخفاء التحليل' : 'عرض التحليل'}
+                      </button>
                     </div>
-                    <div className="space-y-3">
+                    {showWorkAnalysis && <div className="mt-4 space-y-3">
 	                      {['pending', 'in-progress', 'completed', 'cancelled'].map(status => {
 	                        const count = allFilteredOrders.filter(o => o.status === status).length;
 	                        const percentage = allFilteredOrders.length > 0 ? (count / allFilteredOrders.length) * 100 : 0;
@@ -3606,7 +3610,7 @@ ${trackingUrl}
 	                          </button>
 	                        );
                       })}
-                    </div>
+                    </div>}
                   </div>
 	              </div>
 	            )}
@@ -3680,7 +3684,12 @@ ${trackingUrl}
                       </div>
                       {filterStatus !== 'live' && <span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-[10px] font-bold text-slate-400">حسب الفلتر الحالي</span>}
                     </div>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="mb-4 flex justify-end">
+                      <button type="button" onClick={() => setShowTechnicianDistribution((value) => !value)} className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-[10px] font-black text-slate-300 hover:bg-slate-700">
+                        {showTechnicianDistribution ? 'إخفاء توزيع الفنيين' : 'عرض توزيع الفنيين'}
+                      </button>
+                    </div>
+                    {showTechnicianDistribution && <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                       {technicianOrderCards.unassigned.total > 0 && (
                         <button type="button" onClick={() => setFilterTechnician('__NONE__')} className="rounded-2xl border border-amber-400/60 bg-amber-500/10 p-4 text-right transition hover:-translate-y-0.5 hover:bg-amber-500/20">
                           <div className="flex items-center justify-between"><span className="text-xs font-black text-amber-200">بدون فني</span><AlertCircle size={18} className="text-amber-300" /></div>
@@ -3695,7 +3704,7 @@ ${trackingUrl}
                           <div className="mt-2 flex flex-wrap gap-1.5 text-[9px] font-bold"><span className="rounded-full bg-blue-500/10 px-2 py-1 text-blue-300">تنفيذ {stats.active}</span><span className="rounded-full bg-amber-500/10 px-2 py-1 text-amber-300">انتظار {stats.pending}</span>{stats.collection > 0 && <span className="rounded-full bg-rose-500/10 px-2 py-1 text-rose-300">تحصيل {stats.collection}</span>}</div>
                         </button>
                       ))}
-                    </div>
+                    </div>}
                   </section>
                   </>
                 )}
