@@ -74,7 +74,7 @@ export default function Home() {
             >
               <div className="inline-flex items-center gap-2 bg-orange-500/20 border border-orange-500/30 px-4 py-2 rounded-full mb-8">
                 <Sparkles className="w-5 h-5 text-orange-400" />
-                <span className="text-orange-400 font-black text-sm md:text-base">المركز الأول المعتمد في الإسكندرية 2026</span>
+                <span className="text-orange-400 font-black text-sm md:text-base">خدمة صيانة موثوقة في الإسكندرية</span>
               </div>
 
               <h1 className="text-5xl md:text-8xl font-black text-white leading-[1.1] mb-8">
@@ -103,6 +103,17 @@ export default function Home() {
                 >
                   <Phone className="w-7 h-7 animate-bounce" />
                   01278885772
+                </a>
+
+                <a
+                  href="https://wa.me/201558625259?text=%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%AD%D8%AC%D8%B2%20%D8%AE%D8%AF%D9%85%D8%A9%20%D8%B5%D9%8A%D8%A7%D9%86%D8%A9"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-3 bg-green-600 hover:bg-green-700 text-white text-xl font-black px-8 py-6 rounded-3xl transition-all"
+                  aria-label="التواصل عبر واتساب"
+                >
+                  <MessageCircle className="w-7 h-7" />
+                  واتساب
                 </a>
               </div>
 
