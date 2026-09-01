@@ -3860,6 +3860,14 @@ ${trackingUrl}
 	                        </div>
 	                      </div>
 
+                              <div className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-white/5 bg-slate-950/40 px-3 py-2">
+                                <div className="flex min-w-0 items-center gap-2 text-[10px] text-slate-300">
+                                  <Users size={14} className={noTechnician ? 'text-amber-300' : 'text-emerald-300'} />
+                                  <span className="shrink-0 text-slate-500">الفني:</span>
+                                  <span className={`truncate font-black ${noTechnician ? 'text-amber-300' : 'text-white'}`}>{noTechnician ? 'لم يتم التعيين' : order.technician}</span>
+                                </div>
+                                {noTechnician && order.status === 'pending' && <span className="shrink-0 rounded-lg bg-amber-500/15 px-2 py-1 text-[8px] font-black text-amber-200">يحتاج تعيين</span>}
+                              </div>
                               <div className={isOrderExpanded ? 'space-y-3' : 'hidden'}>
                             <div className="mb-3 relative z-10 flex items-center justify-between gap-2 bg-slate-950/30 px-3 py-1.5 rounded-xl border border-white/5">
                               <div className="flex items-center gap-1.5 overflow-hidden">
