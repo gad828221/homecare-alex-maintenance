@@ -387,6 +387,7 @@ export default function ProtectedOrders() {
   const [userForm, setUserForm] = useState({ name: '', username: '', password: '', role: 'viewer', is_active: true });
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [trackingShareOrderId, setTrackingShareOrderId] = useState<number | null>(null);
+  const [expandedOrderIds, setExpandedOrderIds] = useState<Set<number>>(new Set());
   const [filterTechStatus, setFilterTechStatus] = useState<'all' | 'active' | 'inactive'>('active');
   const [cashFilterDate, setCashFilterDate] = useState(() => getEgyptTodayString());
   const [cashForm, setCashForm] = useState({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] });
@@ -3737,6 +3738,7 @@ ${trackingUrl}
                   const shortOrderNumber = String(order.order_number || '').match(/\d{3,}$/)?.[0] || String(order.order_number || '').slice(-6);
                   const elapsedToneClass = elapsedTone === 'urgent' ? 'text-rose-200 bg-rose-500/20 border-rose-400/50 shadow-lg shadow-rose-500/20 animate-pulse' : elapsedTone === 'warning' ? 'text-amber-200 bg-amber-500/20 border-amber-400/40 shadow-lg shadow-amber-500/10' : 'text-slate-200 bg-slate-950/70 border-slate-700';
                   const cardTone = collectionPending ? 'bg-amber-950/40 border-amber-300 shadow-amber-400/30 animate-pulse' : config.card;
+                  const isOrderExpanded = expandedOrderIds.has(order.id);
                   
                   // تحديد لون التوهج بناءً على الحالة
                   const glowColors: Record<string, string> = {
@@ -3800,6 +3802,15 @@ ${trackingUrl}
                               <StatusIcon size={12} strokeWidth={3} />
                               {config.label}
                             </div>
+                            <button
+                              type="button"
+                              onClick={(event) => { event.stopPropagation(); setExpandedOrderIds((current) => { const next = new Set(current); next.has(order.id) ? next.delete(order.id) : next.add(order.id); return next; }); }}
+                              className="inline-flex items-center gap-1 rounded-lg border border-slate-600/70 bg-slate-800/80 px-2 py-1 text-[8px] font-black text-slate-200 transition hover:bg-slate-700"
+                              aria-expanded={isOrderExpanded}
+                            >
+                              {isOrderExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                              {isOrderExpanded ? 'إخفاء' : 'تفاصيل'}
+                            </button>
                           </div>
 	                          
 	                          {(order.status === 'completed' || order.status === 'returned') && canEditDelete() && (
@@ -3813,7 +3824,7 @@ ${trackingUrl}
 	                        </div>
 	                      </div>
 
-		                      {/* Last Action Insight & Pulse */}
+                              <div className={isOrderExpanded ? 'space-y-3' : 'hidden'}>
                             <div className="mb-3 relative z-10 flex items-center justify-between gap-2 bg-slate-950/30 px-3 py-1.5 rounded-xl border border-white/5">
                               <div className="flex items-center gap-1.5 overflow-hidden">
                                 <History size={10} className="text-blue-400 shrink-0" />
@@ -3978,6 +3989,8 @@ ${trackingUrl}
 	                          </div>
 	                        </div>
 	                      </div>
+
+                              </div>
 
 	                      {/* Modern Icon Actions Section */}
 	                      {!isViewer && (
