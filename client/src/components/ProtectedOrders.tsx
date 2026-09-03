@@ -465,6 +465,8 @@ export default function ProtectedOrders() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
   const orderModalScrollRef = useRef<HTMLDivElement | null>(null);
+  const previousUrgentTaskSignatureRef = useRef<string | null>(null);
+  const lastUrgentTaskAlertRef = useRef<{ signature: string; at: number } | null>(null);
 
   useEffect(() => {
     if (!showOrderModal) return;
@@ -2903,6 +2905,32 @@ ${trackingUrl}
     { key: 'collection' as const, label: 'اعتماد التحصيل', count: commandCenterStats.collection, hint: 'تحتاج مراجعة مالية', className: 'border-rose-400/20 bg-rose-500/5 hover:bg-rose-500/15', badgeClass: 'bg-rose-500/20 text-rose-300' },
     { key: 'active' as const, label: 'الأوردرات النشطة', count: commandCenterStats.active, hint: 'قيد التنفيذ الآن', className: 'border-blue-400/20 bg-blue-500/5 hover:bg-blue-500/15', badgeClass: 'bg-blue-500/20 text-blue-300' },
   ].filter((task) => task.count > 0), [commandCenterStats]);
+  useEffect(() => {
+    const signature = dailyTaskQueue.map((task) => `${task.key}:${task.count}`).join('|');
+    const previousSignature = previousUrgentTaskSignatureRef.current;
+    previousUrgentTaskSignatureRef.current = signature;
+    if (!initialLoadComplete || previousSignature === null || !signature || signature === previousSignature) return;
+
+    const previousCounts = new Map((previousSignature || '').split('|').filter(Boolean).map((item) => {
+      const [key, count] = item.split(':');
+      return [key, Number(count) || 0];
+    }));
+    const increasedTasks = dailyTaskQueue.filter((task) => task.count > (previousCounts.get(task.key) || 0));
+    if (!increasedTasks.length) return;
+
+    const alertSignature = increasedTasks.map((task) => `${task.key}:${task.count}`).join('|');
+    const now = Date.now();
+    const lastAlert = lastUrgentTaskAlertRef.current;
+    if (lastAlert && lastAlert.signature === alertSignature && now - lastAlert.at < 10 * 60 * 1000) return;
+    lastUrgentTaskAlertRef.current = { signature: alertSignature, at: now };
+
+    const summary = increasedTasks.map((task) => `${task.label}: ${task.count}`).join(' · ');
+    startUrgentAlert();
+    showToast(`🚨 مهمة عاجلة جديدة: ${summary}`, 'info');
+    void addNotification('مهمة عاجلة جديدة', `ظهرت مهمة جديدة في مركز القيادة: ${summary}`, currentUser?.name || 'المدير');
+    void sendExternalPush({ event: 'system_alert', title: '🚨 مهمة عاجلة في لوحة المدير', message: summary, targetRoles: ['admin', 'manager'], data: { focus: 'orders', urgent_tasks: increasedTasks.map((task) => task.key) } });
+  }, [dailyTaskQueue, initialLoadComplete, currentUser?.name]);
+
   const openCommandCenter = (type: 'unassigned' | 'collection' | 'delayed' | 'active') => {
     setSearchTerm('');
     setFilterTechnician('');
