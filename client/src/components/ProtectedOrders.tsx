@@ -1356,7 +1356,12 @@ export default function ProtectedOrders() {
       if (!activePartners.length || totalPartnerShares <= 0) return showToast('لا توجد نسب شركاء صالحة للتوزيع', 'error');
 
       const incomeByDate = new Map<string, number>();
-      ledgerEntries.filter((entry: any) => entry.type === 'income' && entry.date && entry.date <= targetDate).forEach((entry: any) => {
+      ledgerEntries.filter((entry: any) => {
+        if (entry.type !== 'income' || !entry.date || entry.date > targetDate) return false;
+        // تصفية الخزنة والدخل اليدوي ليسا ربح أوردر قابلًا للتوزيع.
+        const description = String(entry.description || '');
+        return description.includes('أرباح شركة من أوردر') || description.includes('ربح أوردر');
+      }).forEach((entry: any) => {
         incomeByDate.set(entry.date, (incomeByDate.get(entry.date) || 0) + (Number(entry.amount) || 0));
       });
 
@@ -1378,8 +1383,8 @@ export default function ProtectedOrders() {
         return;
       }
 
-      const daySummary = pendingDays.map((day) => `${day.sourceDate}: ${day.amount.toLocaleString()} ج.م`).join('\\n');
-      if (!confirm(`سيتم توزيع الأرباح المستحقة حتى ${targetDate}:\\n\\n${daySummary}\\n\\nالإجمالي: ${totalPending.toLocaleString()} ج.م\\nالأيام التي لم توزع ستُرحّل الآن مع عملية التوزيع الحالية دون تكرار.\\n\\nهل تريد الاستمرار؟`)) return;
+      const daySummary = pendingDays.map((day) => `${day.sourceDate}: ${day.amount.toLocaleString()} ج.م`).join('\n');
+      if (!confirm(`سيتم توزيع الأرباح المستحقة حتى ${targetDate}:\n\n${daySummary}\n\nالإجمالي: ${totalPending.toLocaleString()} ج.م\nالأيام التي لم توزع ستُرحّل الآن مع عملية التوزيع الحالية دون تكرار.\n\nهل تريد الاستمرار؟`)) return;
 
       for (const day of pendingDays) {
         let distributedForDay = 0;
@@ -1408,7 +1413,7 @@ export default function ProtectedOrders() {
       showToast(`تم توزيع ${totalPending.toLocaleString()} ج.م للأيام المستحقة`, 'success');
       await fetchCashLedger();
       await fetchData();
-      alert(`تم التوزيع بنجاح.\\nالإجمالي: ${totalPending.toLocaleString()} ج.م\\nعدد الأيام المرحلة: ${pendingDays.filter((day) => day.sourceDate !== targetDate).length}`);
+      alert(`تم التوزيع بنجاح.\nالإجمالي: ${totalPending.toLocaleString()} ج.م\nعدد الأيام المرحلة: ${pendingDays.filter((day) => day.sourceDate !== targetDate).length}`);
     } catch (err) {
       console.error('فشل توزيع الأرباح المستحقة:', err);
       showToast('تعذر إكمال توزيع الأرباح، لم يتم اعتماد العملية بالكامل', 'error');
