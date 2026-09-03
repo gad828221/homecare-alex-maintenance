@@ -619,6 +619,40 @@ export default function ProtectedOrders() {
   const [reportLoading, setReportLoading] = useState(false);
   const [reportColumns, setReportColumns] = useState<string[]>([]);
   const [filterTechnicianReport, setFilterTechnicianReport] = useState<string>('');
+  const [reportRangeInitialized, setReportRangeInitialized] = useState(false);
+
+  useEffect(() => {
+    if (reportRangeInitialized || (!orders.length && !archivedOrders.length)) return;
+    const dates = [...orders, ...archivedOrders]
+      .map((order) => getReportingDate(order.created_at || order.createdAt || order.date)?.getTime())
+      .filter((value): value is number => Number.isFinite(value))
+      .sort((a, b) => a - b);
+    if (!dates.length) return;
+    setStartDate(new Date(dates[0]).toISOString().split('T')[0]);
+    setEndDate(new Date().toISOString().split('T')[0]);
+    setReportRangeInitialized(true);
+  }, [orders, archivedOrders, reportRangeInitialized]);
+
+  const reportSnapshot = useMemo(() => {
+    const start = parseOrderDate(startDate);
+    const end = parseOrderDate(`${endDate}T23:59:59`);
+    const uniqueOrders = Array.from(new Map([...orders, ...archivedOrders].map((order) => [String(order.id || order.order_number), order])).values());
+    const rows = uniqueOrders.filter((order) => {
+      const date = parseOrderDate(order.created_at || order.createdAt || order.date);
+      return Boolean(date && start && end && date >= start && date <= end && (!filterTechnicianReport || order.technician === filterTechnicianReport));
+    });
+    const completed = rows.filter((order) => order.status === 'completed');
+    const sum = (field: string) => completed.reduce((total, order) => total + (Number(order[field]) || 0), 0);
+    const income = cashLedger.filter((entry) => entry.type === 'income' && entry.date >= startDate && entry.date <= endDate).reduce((total, entry) => total + (Number(entry.amount) || 0), 0);
+    const expenses = cashLedger.filter((entry) => entry.type === 'expense' && entry.date >= startDate && entry.date <= endDate).reduce((total, entry) => total + (Number(entry.amount) || 0), 0);
+    const profitDistribution = cashLedger.filter((entry) => entry.type === 'profit_distribution' && entry.date >= startDate && entry.date <= endDate).reduce((total, entry) => total + (Number(entry.amount) || 0), 0);
+    const invoiceTotal = sum('total_amount');
+    const parts = sum('parts_cost');
+    const transport = sum('transport_cost');
+    const technicianShare = sum('technician_share');
+    const companyShare = completed.reduce((total, order) => total + (Number(order.company_share) || (Number(order.total_amount) || 0) - (Number(order.parts_cost) || 0) - (Number(order.transport_cost) || 0) - (Number(order.technician_share) || 0)), 0);
+    return { total: rows.length, completed: completed.length, pending: rows.filter((order) => !['completed', 'cancelled', 'canceled'].includes(order.status)).length, cancelled: rows.filter((order) => ['cancelled', 'canceled'].includes(order.status)).length, invoiceTotal, parts, transport, technicianShare, companyShare, income, expenses, profitDistribution, netCash: income - expenses - profitDistribution };
+  }, [orders, archivedOrders, cashLedger, startDate, endDate, filterTechnicianReport]);
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -4380,6 +4414,33 @@ ${trackingUrl}
               <div><label className="block text-sm text-slate-400 mb-1">الفني</label><select value={filterTechnicianReport} onChange={(e) => setFilterTechnicianReport(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-lg p-2 text-white min-w-[150px]"><option value="">الكل</option>{technicians.map(tech => <option key={tech.id} value={tech.name}>{tech.name}</option>)}</select></div>
               <button onClick={generateReport} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-bold">عرض التقرير</button>
               <button onClick={exportToCSV} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold">📎 تصدير CSV</button>
+            </div>
+
+            <div className="rounded-2xl border border-orange-500/20 bg-gradient-to-br from-slate-950/70 to-slate-900/60 p-4 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-base font-black text-white">ملخص الإدارة للفترة</h3>
+                  <p className="mt-1 text-[11px] text-slate-500">من {startDate || 'أول تسجيل'} إلى {endDate || 'اليوم'}{filterTechnicianReport ? ` · الفني: ${filterTechnicianReport}` : ''}</p>
+                </div>
+                <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-black text-emerald-300">بيانات تشغيلية ومالية</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-7">
+                {[
+                  ['إجمالي الأوردرات', reportSnapshot.total, 'text-orange-300'],
+                  ['مكتمل', reportSnapshot.completed, 'text-emerald-300'],
+                  ['قيد المتابعة', reportSnapshot.pending, 'text-blue-300'],
+                  ['إجمالي الفواتير', `${reportSnapshot.invoiceTotal.toLocaleString()} ج.م`, 'text-white'],
+                  ['قطع الغيار', `${reportSnapshot.parts.toLocaleString()} ج.م`, 'text-amber-300'],
+                  ['المواصلات', `${reportSnapshot.transport.toLocaleString()} ج.م`, 'text-cyan-300'],
+                  ['نصيب الفنيين', `${reportSnapshot.technicianShare.toLocaleString()} ج.م`, 'text-purple-300'],
+                ].map(([label, value, color]) => <div key={String(label)} className="rounded-xl border border-slate-800 bg-slate-900/80 p-3"><p className="text-[10px] font-bold text-slate-500">{label}</p><p className={`mt-1 text-lg font-black ${color}`}>{value}</p></div>)}
+              </div>
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3"><p className="text-[10px] font-bold text-slate-500">نصيب الشركة</p><p className="mt-1 text-lg font-black text-emerald-300">{reportSnapshot.companyShare.toLocaleString()} ج.م</p></div>
+                <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-3"><p className="text-[10px] font-bold text-slate-500">دخل الخزنة</p><p className="mt-1 text-lg font-black text-blue-300">{reportSnapshot.income.toLocaleString()} ج.م</p></div>
+                <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-3"><p className="text-[10px] font-bold text-slate-500">مصروفات الخزنة</p><p className="mt-1 text-lg font-black text-rose-300">{reportSnapshot.expenses.toLocaleString()} ج.م</p></div>
+                <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-3"><p className="text-[10px] font-bold text-slate-500">صافي حركة الخزنة</p><p className="mt-1 text-lg font-black text-indigo-300">{reportSnapshot.netCash.toLocaleString()} ج.م</p></div>
+              </div>
             </div>
 
             <div className="rounded-2xl border border-orange-500/20 bg-slate-950/50 p-4 space-y-4">
