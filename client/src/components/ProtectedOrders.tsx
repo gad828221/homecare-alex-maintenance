@@ -1345,6 +1345,76 @@ export default function ProtectedOrders() {
     }
   };
 
+  // توزيع الأرباح المستحقة حتى تاريخ محدد: يرحّل الأيام غير الموزعة ويمنع التكرار عبر ذكر يوم المصدر في الوصف.
+  const distributePendingProfitsThroughDate = async (targetDate: string) => {
+    if (!canEditDelete()) return showToast('ليس لديك صلاحية', 'error');
+    try {
+      const entries = await fetchAPI(`cash_ledger?select=*&date=lte.${targetDate}&order=date.asc,created_at.asc`);
+      const ledgerEntries = Array.isArray(entries) ? entries : [];
+      const activePartners = partners.filter((partner) => partner.is_active === true);
+      const totalPartnerShares = activePartners.reduce((sum, partner) => sum + (Number(partner.share_percentage) || 0), 0);
+      if (!activePartners.length || totalPartnerShares <= 0) return showToast('لا توجد نسب شركاء صالحة للتوزيع', 'error');
+
+      const incomeByDate = new Map<string, number>();
+      ledgerEntries.filter((entry: any) => entry.type === 'income' && entry.date && entry.date <= targetDate).forEach((entry: any) => {
+        incomeByDate.set(entry.date, (incomeByDate.get(entry.date) || 0) + (Number(entry.amount) || 0));
+      });
+
+      const pendingDays = Array.from(incomeByDate.entries()).map(([sourceDate, totalIncome]) => {
+        const distributed = ledgerEntries.filter((entry: any) => {
+          if (entry.type !== 'profit_distribution') return false;
+          const description = String(entry.description || '');
+          const isForSourceDay = description.includes(`أرباح يوم ${sourceDate}`) || description.includes(`عن يوم ${sourceDate}`);
+          const isLegacyDistributionForSourceDay = entry.date === sourceDate && !description.includes('ترحيل عن يوم');
+          return isForSourceDay || isLegacyDistributionForSourceDay;
+        }).reduce((sum: number, entry: any) => sum + (Number(entry.amount) || 0), 0);
+        const shouldDistribute = Number(((totalIncome * totalPartnerShares) / 100).toFixed(2));
+        return { sourceDate, totalIncome, amount: Number((shouldDistribute - distributed).toFixed(2)) };
+      }).filter((day) => day.amount > 0.009);
+
+      const totalPending = pendingDays.reduce((sum, day) => sum + day.amount, 0);
+      if (totalPending <= 0) {
+        alert(`تم توزيع كل الأرباح المستحقة حتى ${targetDate} بالفعل، ولا يوجد توزيع مكرر.`);
+        return;
+      }
+
+      const daySummary = pendingDays.map((day) => `${day.sourceDate}: ${day.amount.toLocaleString()} ج.م`).join('\\n');
+      if (!confirm(`سيتم توزيع الأرباح المستحقة حتى ${targetDate}:\\n\\n${daySummary}\\n\\nالإجمالي: ${totalPending.toLocaleString()} ج.م\\nالأيام التي لم توزع ستُرحّل الآن مع عملية التوزيع الحالية دون تكرار.\\n\\nهل تريد الاستمرار؟`)) return;
+
+      for (const day of pendingDays) {
+        let distributedForDay = 0;
+        for (let index = 0; index < activePartners.length; index += 1) {
+          const partner = activePartners[index];
+          const share = index === activePartners.length - 1
+            ? Number((day.amount - distributedForDay).toFixed(2))
+            : Number(((day.amount * (Number(partner.share_percentage) || 0)) / totalPartnerShares).toFixed(2));
+          distributedForDay += share;
+          if (share > 0) {
+            const isCarryForward = day.sourceDate !== targetDate;
+            await fetchAPI('cash_ledger', {
+              method: 'POST',
+              body: JSON.stringify({
+                type: 'profit_distribution',
+                amount: share,
+                description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%) - ${isCarryForward ? `ترحيل عن يوم ${day.sourceDate} ضمن توزيع ${targetDate}` : `أرباح يوم ${day.sourceDate}`}`,
+                date: targetDate
+              })
+            });
+          }
+        }
+      }
+
+      await addNotification('توزيع أرباح مرحّل', `✅ تم توزيع ${totalPending.toLocaleString()} ج.م حتى ${targetDate} دون تكرار`);
+      showToast(`تم توزيع ${totalPending.toLocaleString()} ج.م للأيام المستحقة`, 'success');
+      await fetchCashLedger();
+      await fetchData();
+      alert(`تم التوزيع بنجاح.\\nالإجمالي: ${totalPending.toLocaleString()} ج.م\\nعدد الأيام المرحلة: ${pendingDays.filter((day) => day.sourceDate !== targetDate).length}`);
+    } catch (err) {
+      console.error('فشل توزيع الأرباح المستحقة:', err);
+      showToast('تعذر إكمال توزيع الأرباح، لم يتم اعتماد العملية بالكامل', 'error');
+    }
+  };
+
   // دالة إرسال التقرير اليومي للشركاء (مع احتساب توزيعات الأرباح بشكل صحيح)
   const sendDailyReportToPartners = async (targetDate: string) => {
     if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
@@ -1406,7 +1476,7 @@ export default function ProtectedOrders() {
       showToast("ليس لديك صلاحية", "error");
       return;
     }
-    await distributeProfitForDate(selectedProfitDate);
+    await distributePendingProfitsThroughDate(selectedProfitDate);
   };
 
   // ========== دالة fetchData الآمنة ==========
@@ -4630,7 +4700,7 @@ ${trackingUrl}
             </div>
             <div className="bg-purple-600/10 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 border border-purple-500/30">
               <div className="flex flex-col gap-1"><p className="text-sm font-semibold text-purple-300">📅 توزيع أرباح الشركاء</p><p className="text-xs text-slate-400">يتم توزيع صافي دخل اليوم على الشركاء حسب النسب، ويبقى ربع الخزنة للمحل وتُخصم المصروفات منه.</p></div>
-              <div className="flex flex-wrap items-center gap-3"><input type="date" value={selectedProfitDate} onChange={e=>setSelectedProfitDate(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"/>{canManageCash && <button onClick={handleDistributeSelectedProfit} className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"><DollarSign size={16}/> توزيع أرباح التاريخ المحدد</button>}</div>
+              <div className="flex flex-wrap items-center gap-3"><input type="date" value={selectedProfitDate} onChange={e=>setSelectedProfitDate(e.target.value)} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"/>{canManageCash && <button onClick={handleDistributeSelectedProfit} className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"><DollarSign size={16}/> توزيع الأرباح المستحقة حتى التاريخ</button>}</div>
             </div>
             <div className="bg-blue-600/10 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 border border-blue-500/30">
               <div className="flex flex-col gap-1"><p className="text-sm font-semibold text-blue-300">📊 إرسال تقرير الخزنة للشركاء</p><p className="text-xs text-slate-400">اختر التاريخ ثم اضغط زر الإرسال ليظهر التقرير داخل البرنامج فقط</p></div>
