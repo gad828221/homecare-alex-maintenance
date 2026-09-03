@@ -1345,7 +1345,8 @@ export default function ProtectedOrders() {
     }
   };
 
-  // توزيع الأرباح المستحقة حتى تاريخ محدد: يرحّل الأيام غير الموزعة ويمنع التكرار عبر ذكر يوم المصدر في الوصف.
+  // يبدأ تتبع الترحيل من تاريخ تفعيل النظام؛ الأرباح التاريخية موزعة خارج النظام الحالي ولا يعاد احتساب فروقات نسبها القديمة.
+  const profitDistributionTrackingStartDate = '2026-09-03';
   const distributePendingProfitsThroughDate = async (targetDate: string) => {
     if (!canEditDelete()) return showToast('ليس لديك صلاحية', 'error');
     try {
@@ -1357,8 +1358,8 @@ export default function ProtectedOrders() {
 
       const incomeByDate = new Map<string, number>();
       ledgerEntries.filter((entry: any) => {
-        if (entry.type !== 'income' || !entry.date || entry.date > targetDate) return false;
-        // تصفية الخزنة والدخل اليدوي ليسا ربح أوردر قابلًا للتوزيع.
+        if (entry.type !== 'income' || !entry.date || entry.date > targetDate || entry.date < profitDistributionTrackingStartDate) return false;
+        // تصفية الخزنة والدخل اليدوي ليسا ربح أوردر قابلًا للتوزيع، كما أن الأيام السابقة لتفعيل النظام مستثناة.
         const description = String(entry.description || '');
         return description.includes('أرباح شركة من أوردر') || description.includes('ربح أوردر');
       }).forEach((entry: any) => {
