@@ -2897,6 +2897,12 @@ ${trackingUrl}
       collection: attention.filter(isCollectionPending).length,
     };
   }, [dateFilteredOrders]);
+  const dailyTaskQueue = useMemo(() => [
+    { key: 'unassigned' as const, label: 'تعيين الفنيين', count: commandCenterStats.unassigned, hint: 'أوردرات بلا فني', className: 'border-amber-400/20 bg-amber-500/5 hover:bg-amber-500/15', badgeClass: 'bg-amber-500/20 text-amber-300' },
+    { key: 'delayed' as const, label: 'متابعة المتأخرات', count: commandCenterStats.delayed, hint: 'تحتاج إجراء أو تحديث', className: 'border-red-400/20 bg-red-500/5 hover:bg-red-500/15', badgeClass: 'bg-red-500/20 text-red-300' },
+    { key: 'collection' as const, label: 'اعتماد التحصيل', count: commandCenterStats.collection, hint: 'تحتاج مراجعة مالية', className: 'border-rose-400/20 bg-rose-500/5 hover:bg-rose-500/15', badgeClass: 'bg-rose-500/20 text-rose-300' },
+    { key: 'active' as const, label: 'الأوردرات النشطة', count: commandCenterStats.active, hint: 'قيد التنفيذ الآن', className: 'border-blue-400/20 bg-blue-500/5 hover:bg-blue-500/15', badgeClass: 'bg-blue-500/20 text-blue-300' },
+  ].filter((task) => task.count > 0), [commandCenterStats]);
   const openCommandCenter = (type: 'unassigned' | 'collection' | 'delayed' | 'active') => {
     setSearchTerm('');
     setFilterTechnician('');
@@ -3798,6 +3804,10 @@ ${trackingUrl}
                       {needsAttentionSummary.collection > 0 && <span className="rounded-full bg-rose-500/15 px-2.5 py-1 text-rose-200">تحصيل {needsAttentionSummary.collection}</span>}
                     </div>
                   </button>
+                  <section className="mb-5 rounded-3xl border border-white/10 bg-slate-950/40 p-4" aria-label="قائمة مهام المدير اليوم">
+                    <div className="mb-3 flex items-center justify-between gap-2"><div><h3 className="text-sm font-black text-white">قائمة مهام اليوم</h3><p className="mt-1 text-[10px] font-bold text-slate-500">كل صف يفتح الإجراء المناسب مباشرة</p></div><span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-[10px] font-black text-slate-400">{dailyTaskQueue.length} مهام</span></div>
+                    {dailyTaskQueue.length === 0 ? <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-center text-xs font-black text-emerald-300">لا توجد مهام عاجلة الآن</div> : <div className="grid gap-2 md:grid-cols-2">{dailyTaskQueue.map((task) => <button key={task.key} type="button" onClick={() => openCommandCenter(task.key)} className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-3 text-right transition ${task.className}`}><span className="min-w-0"><span className="block text-xs font-black text-white">{task.label}</span><span className="mt-1 block text-[10px] font-bold text-slate-500">{task.hint}</span></span><span className={`shrink-0 rounded-full px-3 py-1 text-sm font-black ${task.badgeClass}`}>{task.count}</span></button>)}</div>}
+                  </section>
                   <section className="mb-5 rounded-3xl border border-white/10 bg-slate-950/40 p-4" aria-label="مركز قيادة الأوردرات">
                     <div className="mb-3 flex items-center justify-between">
                       <div><h3 className="text-sm font-black text-white">مركز قيادة الأوردرات</h3><p className="mt-1 text-[10px] font-bold text-slate-500">الأولوية أولًا، ثم توزيع الحمل على الفنيين</p></div>
