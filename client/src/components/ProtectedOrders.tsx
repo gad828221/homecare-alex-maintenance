@@ -3556,7 +3556,7 @@ ${trackingUrl}
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-5"><div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3"><div className="text-lg font-black text-white">{todayOperationSummary.active}</div><div className="text-[10px] font-bold text-slate-500">متبقي نشط</div></div><div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-3"><div className="text-lg font-black text-emerald-300">{todayOperationSummary.completed}</div><div className="text-[10px] font-bold text-slate-500">تم إنجازه</div></div><div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-3"><div className="text-lg font-black text-amber-300">{todayOperationSummary.unassigned}</div><div className="text-[10px] font-bold text-slate-500">بلا فني</div></div><div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-3"><div className="text-lg font-black text-blue-300">{todayOperationSummary.collected}</div><div className="text-[10px] font-bold text-slate-500">تم تحصيله</div></div><div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3"><div className="text-lg font-black text-slate-200">{todayOperationSummary.total - todayOperationSummary.completed}</div><div className="text-[10px] font-bold text-slate-500">يحتاج متابعة</div></div></div>
                 </div>
                 {/* Smart Stats Grid */}
-		                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 mt-8">
+		                <div className="hidden grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 mt-8" aria-hidden="true">
 		                  <button type="button" className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-blue-500/30 transition-all group text-right active:scale-95" onClick={() => { clearFilters(); const today = getEgyptTodayString(); setFilterDateFrom(today); setFilterDateTo(today); }}>
 		                    <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest flex items-center gap-1.5"><Clock size={12}/> أوردرات اليوم</div>
 		                    <div className="text-2xl font-black text-white group-hover:text-blue-400 transition-colors">{orders.filter(isOrderToday).length}</div>
@@ -3582,11 +3582,11 @@ ${trackingUrl}
 		                  <button type="button" className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-indigo-500/30 transition-all group text-right active:scale-95 sm:col-span-2 lg:col-span-1" onClick={() => { clearFilters(); setShowCompletedOrders(true); setFilterWarranty('active'); setFilterStatus('completed'); }}>
 		                    <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest flex items-center gap-1.5"><ShieldCheck size={12}/> ضمان ساري</div>
 		                    <div className="text-2xl font-black text-emerald-400">{[...orders, ...archivedOrders].filter(o => getWarrantyStatus(o).status === 'active').length}</div>
-		                  </button>
-		                </div>
-	              </div>
+                  </button>
+                </div>
+              </div>
 
-	              {showCollectionBanner && pendingCollectionOrders.length > 0 && (
+              {showCollectionBanner && pendingCollectionOrders.length > 0 && (
 	                <div className="relative overflow-hidden rounded-[2rem] border-2 border-amber-300/70 bg-gradient-to-l from-amber-500/25 via-orange-500/10 to-slate-900 p-4 shadow-[0_0_28px_rgba(245,158,11,0.22)] animate-in fade-in slide-in-from-top-2 duration-300">
 	                  <div className="absolute -left-10 -top-10 h-28 w-28 rounded-full bg-amber-300/20 blur-2xl" />
 	                  <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -3639,7 +3639,7 @@ ${trackingUrl}
 	                  </div>
 	                </div>
 
-	                {/* Advanced Filters Panel */}
+                {/* Advanced Filters Panel */}
 	                {showAdvancedFilters && (
 	                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-slate-950/30 rounded-3xl border border-white/5 animate-in fade-in slide-in-from-top-2 duration-300">
 	                    <div className="space-y-1.5">
@@ -4959,7 +4959,7 @@ ${trackingUrl}
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* أفضل الفنيين */}
-              <div className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 shadow-2xl">
+              <div className="hidden bg-slate-900 p-6 rounded-[2rem] border border-slate-800 shadow-2xl" aria-hidden="true">
                 <h3 className="text-lg font-black text-white mb-6 flex items-center gap-3"><Users className="text-blue-500" /> أفضل الفنيين</h3>
                 <div className="space-y-4">
                   <div className="max-h-[780px] overflow-y-auto space-y-4 pr-1">
