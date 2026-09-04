@@ -372,6 +372,7 @@ export default function ProtectedOrders() {
   const [showTechModal, setShowTechModal] = useState(false);
   const [showPartnerModal, setShowPartnerModal] = useState(false);
   const [showManualPushModal, setShowManualPushModal] = useState(false);
+  const [showQuickActions, setShowQuickActions] = useState(false);
   const [manualPushTarget, setManualPushTarget] = useState('all');
   const [manualPushTitle, setManualPushTitle] = useState('رسالة من الإدارة');
   const [manualPushMessage, setManualPushMessage] = useState('');
@@ -2899,6 +2900,16 @@ ${trackingUrl}
       collection: attention.filter(isCollectionPending).length,
     };
   }, [dateFilteredOrders]);
+  const todayOperationSummary = useMemo(() => {
+    const todayOrders = orders.filter(isOrderToday);
+    return {
+      total: todayOrders.length,
+      completed: todayOrders.filter((order) => String(order.status || '').toLowerCase() === 'completed').length,
+      active: todayOrders.filter((order) => String(order.status || '').toLowerCase() !== 'completed' && String(order.status || '').toLowerCase() !== 'cancelled').length,
+      unassigned: todayOrders.filter((order) => !order.technician || order.technician === '-').length,
+      collected: todayOrders.filter((order) => Boolean(order.is_paid)).length,
+    };
+  }, [orders]);
   const dailyTaskQueue = useMemo(() => [
     { key: 'unassigned' as const, label: 'تعيين الفنيين', count: commandCenterStats.unassigned, hint: 'أوردرات بلا فني', className: 'border-amber-400/20 bg-amber-500/5 hover:bg-amber-500/15', badgeClass: 'bg-amber-500/20 text-amber-300' },
     { key: 'delayed' as const, label: 'متابعة المتأخرات', count: commandCenterStats.delayed, hint: 'تحتاج إجراء أو تحديث', className: 'border-red-400/20 bg-red-500/5 hover:bg-red-500/15', badgeClass: 'bg-red-500/20 text-red-300' },
@@ -3509,8 +3520,20 @@ ${trackingUrl}
 	                    </div>
 	                  </div>
 	                  
-	                  <div className="flex flex-wrap gap-2 w-full md:w-auto">
-	                    <button onClick={() => { void sendDailyReportToApp(); }} className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl text-xs font-black flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-900/20 active:scale-95">
+	                                    <div className="relative flex flex-wrap gap-2 w-full md:w-auto">
+                    <button type="button" onClick={() => setShowQuickActions((value) => !value)} className="flex-1 md:flex-none bg-orange-600 hover:bg-orange-500 text-white px-5 py-3 rounded-2xl text-xs font-black flex items-center justify-center gap-2 transition-all shadow-lg shadow-orange-900/20 active:scale-95" aria-expanded={showQuickActions} aria-controls="manager-quick-actions">
+                      <Search size={18} /> وصول سريع
+                    </button>
+                    {showQuickActions && <div id="manager-quick-actions" className="absolute right-0 top-full z-50 mt-2 w-full min-w-[280px] max-w-sm rounded-3xl border border-slate-700 bg-slate-900 p-3 shadow-2xl">
+                      <div className="relative mb-2"><Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} /><input autoFocus value={searchTerm} onChange={(event) => { setSearchTerm(event.target.value); setActiveTab('orders'); }} placeholder="ابحث برقم الأوردر أو الهاتف أو الاسم" className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-10 py-3 text-xs font-bold text-white outline-none focus:border-orange-500" /></div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button type="button" onClick={() => { setEditingOrder(null); setShowOrderModal(true); setShowQuickActions(false); }} className="rounded-2xl bg-orange-600/15 px-3 py-3 text-xs font-black text-orange-200 hover:bg-orange-600/25"><Plus size={15} className="mx-auto mb-1" />تسجيل أوردر</button>
+                        <button type="button" onClick={() => { clearFilters(); setFilterTechnician('__NONE__'); setShowQuickActions(false); }} className="rounded-2xl bg-amber-600/15 px-3 py-3 text-xs font-black text-amber-200 hover:bg-amber-600/25"><UserPlus size={15} className="mx-auto mb-1" />تعيين فني</button>
+                        <button type="button" onClick={() => { setActiveTab('cash'); setShowQuickActions(false); }} className="rounded-2xl bg-emerald-600/15 px-3 py-3 text-xs font-black text-emerald-200 hover:bg-emerald-600/25"><Wallet size={15} className="mx-auto mb-1" />مراجعة الخزنة</button>
+                        <button type="button" onClick={() => { setActiveTab('reports'); setShowQuickActions(false); }} className="rounded-2xl bg-blue-600/15 px-3 py-3 text-xs font-black text-blue-200 hover:bg-blue-600/25"><FileCheck size={15} className="mx-auto mb-1" />التقارير</button>
+                      </div>
+                    </div>}
+                    <button onClick={() => { void sendDailyReportToApp(); }} className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl text-xs font-black flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-900/20 active:scale-95">
 	                      <Send size={18} /> تقرير اليوم
 	                    </button>
 	                    {isAdmin && (
@@ -3527,7 +3550,12 @@ ${trackingUrl}
 	                  </div>
 	                </div>
 
-	                {/* Smart Stats Grid */}
+	                {/* ملف اليوم التشغيلي */}
+                <div className="mt-6 rounded-3xl border border-orange-500/20 bg-slate-950/45 p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="text-sm font-black text-white">ملف اليوم التشغيلي</h3><p className="mt-1 text-[10px] font-bold text-slate-500">ملخص سريع للمنجز والمتبقي اليوم</p></div><span className="rounded-full bg-orange-500/10 px-3 py-1 text-[10px] font-black text-orange-200">{todayOperationSummary.total} أوردر</span></div>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-5"><div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3"><div className="text-lg font-black text-white">{todayOperationSummary.active}</div><div className="text-[10px] font-bold text-slate-500">متبقي نشط</div></div><div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-3"><div className="text-lg font-black text-emerald-300">{todayOperationSummary.completed}</div><div className="text-[10px] font-bold text-slate-500">تم إنجازه</div></div><div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-3"><div className="text-lg font-black text-amber-300">{todayOperationSummary.unassigned}</div><div className="text-[10px] font-bold text-slate-500">بلا فني</div></div><div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-3"><div className="text-lg font-black text-blue-300">{todayOperationSummary.collected}</div><div className="text-[10px] font-bold text-slate-500">تم تحصيله</div></div><div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3"><div className="text-lg font-black text-slate-200">{todayOperationSummary.total - todayOperationSummary.completed}</div><div className="text-[10px] font-bold text-slate-500">يحتاج متابعة</div></div></div>
+                </div>
+                {/* Smart Stats Grid */}
 		                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 mt-8">
 		                  <button type="button" className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-blue-500/30 transition-all group text-right active:scale-95" onClick={() => { clearFilters(); const today = getEgyptTodayString(); setFilterDateFrom(today); setFilterDateTo(today); }}>
 		                    <div className="text-[10px] text-slate-500 font-black mb-1 uppercase tracking-widest flex items-center gap-1.5"><Clock size={12}/> أوردرات اليوم</div>
