@@ -3450,8 +3450,8 @@ ${trackingUrl}
         </div>
       </div>
 
-      {/* Modern Slim Navigation Bar */}
-      <div className="sticky top-[60px] z-30 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-2 py-2 overflow-x-auto no-scrollbar flex gap-1.5 shadow-xl">
+      {/* Compact icon navigation: one section at a time to keep the dashboard short on mobile. */}
+      <div role="tablist" aria-label="أقسام لوحة المدير" className="sticky top-[60px] z-30 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-2 py-2 overflow-x-auto no-scrollbar flex gap-1.5 shadow-xl">
         {[
           { id: 'orders', label: 'الأوردرات', icon: <ClipboardList size={16} />, color: 'orange' },
 	          { id: 'archived', label: `الأرشيف (${archivedOrders.length})`, icon: <LayoutDashboard size={16} />, color: 'indigo' },
@@ -3471,14 +3471,19 @@ ${trackingUrl}
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-black transition-all duration-300 active:scale-90 ${
+            type="button"
+            title={tab.label}
+            aria-label={tab.label}
+            aria-selected={activeTab === tab.id}
+            role="tab"
+            className={`shrink-0 flex items-center justify-center gap-2 w-11 h-11 sm:w-auto sm:h-10 sm:px-3 rounded-2xl text-xs font-black transition-all duration-300 active:scale-90 ${
               activeTab === tab.id 
                 ? `bg-${tab.color}-600 text-white shadow-lg shadow-${tab.color}-900/20` 
                 : 'bg-slate-800/50 text-slate-500 hover:text-slate-300 hover:bg-slate-800 border border-slate-700/50'
             }`}
           >
             {tab.icon}
-            <span className="whitespace-nowrap">{tab.label}</span>
+            <span className="hidden lg:inline whitespace-nowrap">{tab.label}</span>
           </button>
         ))}
       </div>
