@@ -1179,10 +1179,46 @@ export default function ProtectedOrders() {
         else if (entry.type === 'expense' || entry.type === 'profit_distribution') balance -= amount;
       });
       setCashBalance(balance);
-      // نخزن كل القيود في الحالة؛ الفلترة التالية للعرض فقط ولا تمس الرصيد.
       setCashLedger(all);
     } catch (err) { console.error(err); }
   }, [cashFilterDate]);
+
+  const loadedSectionsRef = useRef<Set<string>>(new Set());
+  const loadingSectionsRef = useRef<Set<string>>(new Set());
+  const [loadingSection, setLoadingSection] = useState<string | null>(null);
+  const ensureSectionData = useCallback(async (section: string) => {
+    if (loadedSectionsRef.current.has(section) || loadingSectionsRef.current.has(section)) return;
+    loadingSectionsRef.current.add(section);
+    setLoadingSection(section);
+    try {
+      if (section === 'cash') await fetchCashLedger();
+      if (section === 'partners') await fetchPartners();
+      if (section === 'notifications' || section === 'systemHealth') await fetchNotifications();
+      if (section === 'permissions') {
+        const usersData = await fetchAPI('users?select=*&order=created_at.desc');
+        if (Array.isArray(usersData)) setUsers(usersData);
+      }
+      if (section === 'reports' || section === 'analytics') {
+        await Promise.all([fetchCashLedger(), fetchPartners()]);
+      }
+      if (section === 'technicians' || section === 'performance') {
+        if (!technicians.length) {
+          const techsData = await fetchAPI('technicians?select=*');
+          if (Array.isArray(techsData)) setTechnicians(techsData);
+        }
+      }
+      loadedSectionsRef.current.add(section);
+    } catch (err) {
+      console.error(`فشل تحميل قسم ${section}:`, err);
+    } finally {
+      loadingSectionsRef.current.delete(section);
+      setLoadingSection(null);
+    }
+  }, [fetchCashLedger, fetchNotifications, fetchPartners, technicians.length]);
+
+  useEffect(() => {
+    void ensureSectionData(activeTab);
+  }, [activeTab, ensureSectionData]);
 
   const addCashEntry = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1550,22 +1586,18 @@ export default function ProtectedOrders() {
       setArchivedOrders(archivedOrders);
       setDeletedOrders(deletedOrders);
 
-      // التحديث الدوري يحتاج الأوردرات فقط؛ إعادة تحميل كل الجداول والصور كل 10 ثوانٍ كانت سبب البطء.
-      // عند الفتح اليدوي أو تبديل البيانات، نجلب الجداول المساندة كاملة كما هي.
+      // التحديث الدوري يجلب الأوردرات فقط. البيانات الثقيلة تُحمّل عند فتح تبويبها.
       if (!isAutoRefresh) {
-        const [techsData, notificationsData, partnersData, cashData, usersData] = await Promise.all([
+        const [techsData, notificationsData] = await Promise.all([
           fetchAPIWithRetry('technicians?select=*'),
-          fetchAPIWithRetry('notifications?select=*&action=neq.employee_chat&order=created_at.desc'),
-          fetchAPIWithRetry('partners?select=*&order=created_at.desc'),
-          fetchAPIWithRetry('cash_ledger?select=*&order=date.desc,created_at.desc'),
-          fetchAPIWithRetry('users?select=*&order=created_at.desc')
+          fetchAPIWithRetry('notifications?select=*&action=neq.employee_chat&order=created_at.desc')
         ]);
         if (requestId !== latestFetchRequestRef.current) return;
-        if (!Array.isArray(techsData) || !Array.isArray(notificationsData) || !Array.isArray(partnersData) || !Array.isArray(cashData) || !Array.isArray(usersData)) {
-          throw new Error('لم تكتمل بيانات لوحة المدير بعد');
-        }
+        if (!Array.isArray(techsData) || !Array.isArray(notificationsData)) throw new Error('لم تكتمل بيانات التشغيل الأساسية');
         setTechnicians(techsData);
         setNotifications(notificationsData);
+        loadedSectionsRef.current.add('technicians');
+        loadedSectionsRef.current.add('notifications');
         const nextProfiles: Record<string, any> = {};
         notificationsData.filter((row: any) => row.action === 'technician_profile_updated').forEach((row: any) => {
           const profile = parseTechnicianProfileNotification(row);
@@ -1577,16 +1609,6 @@ export default function ProtectedOrders() {
           });
         });
         setTechnicianProfiles(nextProfiles);
-        setPartners(partnersData);
-        setCashLedger(cashData);
-        setUsers(usersData);
-        let balance = 0;
-        cashData.forEach((entry: any) => {
-          const amount = Number(entry.amount) || 0;
-          if (entry.type === 'income') balance += amount;
-          else if (entry.type === 'expense' || entry.type === 'profit_distribution') balance -= amount;
-        });
-        setCashBalance(balance);
       }
 
       const pending = notDeleted.filter((o: any) => o.status === 'pending').length;
@@ -1761,9 +1783,26 @@ export default function ProtectedOrders() {
     }
   };
 
+  const applyRealtimeOrderUpdate = useCallback((incomingOrder: any, event: 'INSERT' | 'UPDATE' | 'DELETE') => {
+    const incomingId = Number(incomingOrder?.id);
+    if (!Number.isFinite(incomingId)) return;
+    if (event === 'DELETE' || incomingOrder?.deleted_at) {
+      setOrders((current) => current.filter((order) => Number(order.id) !== incomingId));
+      setArchivedOrders((current) => current.filter((order) => Number(order.id) !== incomingId));
+      return;
+    }
+    const isArchived = isOldAndShouldArchive(incomingOrder);
+    if (isArchived) {
+      setOrders((current) => current.filter((order) => Number(order.id) !== incomingId));
+      setArchivedOrders((current) => [incomingOrder, ...current.filter((order) => Number(order.id) !== incomingId)]);
+    } else {
+      setArchivedOrders((current) => current.filter((order) => Number(order.id) !== incomingId));
+      setOrders((current) => [incomingOrder, ...current.filter((order) => Number(order.id) !== incomingId)]);
+    }
+  }, []);
+
   useEffect(() => {
     fetchData();
-    fetchNotifications();
 
     // ربط المدير ومدير العمليات بهوية ثابتة ووسوم OneSignal الموثوقة
     const { user: signedInUser } = readAuthSession();
@@ -1789,13 +1828,20 @@ export default function ProtectedOrders() {
           return;
         }
         console.log("🆕 Recent new order detected via realtime!", payload);
+        applyRealtimeOrderUpdate(insertedOrder, 'INSERT');
         const role = userRole?.toLowerCase() || '';
         if (role === 'admin' || role === 'manager') {
           startUrgentAlert();
         } else {
           playDing();
         }
-        fetchData();
+        // تم تحديث الكارت محليًا؛ نترك التحديث الدوري لجلب أي حقول إضافية.
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, (payload) => {
+        applyRealtimeOrderUpdate(payload.new as any, 'UPDATE');
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'orders' }, (payload) => {
+        applyRealtimeOrderUpdate(payload.old as any, 'DELETE');
       })
       .subscribe((status) => {
         console.log("📡 Realtime status:", status);
@@ -1851,7 +1897,7 @@ export default function ProtectedOrders() {
       supabase.removeChannel(alertChannel);
       supabase.removeChannel(presenceChannel);
     };
-  }, [fetchData, userRole]);
+  }, [applyRealtimeOrderUpdate, fetchData, fetchNotifications, userRole]);
 
   // وميض عنوان الصفحة عند وجود إنذار
   useEffect(() => {
@@ -3534,6 +3580,7 @@ ${trackingUrl}
       </div>
 
 	      <div className="p-4">
+                {loadingSection && activeTab !== 'orders' && <div className="mb-4 rounded-2xl border border-orange-500/20 bg-orange-500/5 px-4 py-3 text-center text-xs font-black text-orange-200">جارٍ تحميل بيانات القسم...</div>}
 		        {/* تبويب الأوردرات */}
 		        {activeTab === 'orders' && (
 		          			          <div className="space-y-6">
