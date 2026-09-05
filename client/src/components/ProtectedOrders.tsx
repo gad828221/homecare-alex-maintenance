@@ -1900,6 +1900,40 @@ export default function ProtectedOrders() {
     return { ...data, net_amount: net, technician_share: technicianShare, company_share: companyShare };
   };
 
+  const handleAutoCancelStaleOrders = async () => {
+    if (!canEditDelete()) return showToast('ليس لديك صلاحية', 'error');
+    const now = Date.now();
+    const staleLimit = 30 * 24 * 60 * 60 * 1000;
+    const eligibleOrders = orders.filter((order: any) => {
+      const status = String(order.status || '').toLowerCase();
+      if (['completed', 'cancelled', 'returned'].includes(status)) return false;
+      const lastActivityValue = order.updated_at || order.status_updated_at || order.last_updated_at || order.created_at || order.date;
+      const lastActivity = new Date(String(lastActivityValue || '')).getTime();
+      if (!Number.isFinite(lastActivity) || now - lastActivity < staleLimit) return false;
+      const orderNumber = String(order.order_number || '').trim();
+      const hasLedgerActivity = orderNumber && cashLedger.some((entry: any) => String(entry.order_number || '').trim() === orderNumber || String(entry.description || '').includes(orderNumber));
+      const hasFinancialActivity = Boolean(order.is_paid) || Number(order.deposit_amount || 0) > 0 || Boolean(order.invoice_approved) || Boolean(order.invoice_date) || Boolean(order.parts_used) || hasLedgerActivity;
+      return !hasFinancialActivity;
+    });
+    if (!eligibleOrders.length) return showToast('لا توجد أوردرات قديمة بلا معاملة مالية', 'info');
+    const confirmed = window.confirm(`سيتم إلغاء ${eligibleOrders.length} أوردر مرّ عليها أكثر من 30 يومًا بلا تحديث أو معاملة مالية. هل تريد الاستمرار؟`);
+    if (!confirmed) return;
+    try {
+      await Promise.all(eligibleOrders.map(async (order: any) => {
+        const previousNote = String(order.technician_note || order.technician_notes || '').trim();
+        const reason = 'إلغاء آلي: أكثر من 30 يومًا بلا تحديث أو معاملة مالية';
+        const note = `${previousNote}${previousNote ? '\\n' : ''}[${reason}]`;
+        await fetchAPI(`orders?id=eq.${order.id}`, { method: 'PATCH', body: JSON.stringify({ status: 'cancelled', technician_note: note, technician_notes: note }) });
+        await addAuditLog('إلغاء أوردر قديم بلا معاملة مالية', 'orders', order.id, order, { ...order, status: 'cancelled', technician_note: note }, user?.name || 'المدير');
+      }));
+      showToast(`تم إلغاء ${eligibleOrders.length} أوردر قديم وتسجيل السبب`, 'success');
+      await fetchData(true);
+    } catch (error) {
+      console.error('فشل إلغاء الأوردرات القديمة:', error);
+      showToast('تعذر إلغاء بعض الأوردرات القديمة', 'error');
+    }
+  };
+
   const handleSettleChange = (field: string, value: string) => {
     const numValue = parseFloat(value) || 0;
     const updated = { ...settleForm, [field]: numValue };
@@ -3520,7 +3554,7 @@ ${trackingUrl}
 	                    </div>
 	                  </div>
 	                  
-	                                    <div className="relative flex flex-wrap gap-2 w-full md:w-auto">
+	                                    <div className="relative grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full md:w-auto">
                     <button type="button" onClick={() => setShowQuickActions((value) => !value)} className="flex-1 md:flex-none bg-orange-600 hover:bg-orange-500 text-white px-5 py-3 rounded-2xl text-xs font-black flex items-center justify-center gap-2 transition-all shadow-lg shadow-orange-900/20 active:scale-95" aria-expanded={showQuickActions} aria-controls="manager-quick-actions">
                       <Search size={18} /> وصول سريع
                     </button>
@@ -3533,26 +3567,27 @@ ${trackingUrl}
                         <button type="button" onClick={() => { setActiveTab('reports'); setShowQuickActions(false); }} className="rounded-2xl bg-blue-600/15 px-3 py-3 text-xs font-black text-blue-200 hover:bg-blue-600/25"><FileCheck size={15} className="mx-auto mb-1" />التقارير</button>
                       </div>
                     </div>}
-                    <button onClick={() => { void sendDailyReportToApp(); }} className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl text-xs font-black flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-900/20 active:scale-95">
+                    <button onClick={() => { void sendDailyReportToApp(); }} className="w-full sm:flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-3 sm:px-5 py-3 rounded-2xl text-[11px] sm:text-xs font-black flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-900/20 active:scale-95">
 	                      <Send size={18} /> تقرير اليوم
 	                    </button>
 	                    {isAdmin && (
-	                      <button type="button" onClick={() => setShowManualPushModal(true)} className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-2xl text-xs font-black flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-900/20 active:scale-95">
+	                      <button type="button" onClick={() => setShowManualPushModal(true)} className="w-full sm:flex-1 md:flex-none bg-blue-600 hover:bg-blue-500 text-white px-3 sm:px-5 py-3 rounded-2xl text-[11px] sm:text-xs font-black flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-900/20 active:scale-95">
 	                        <Bell size={18} /> رسالة للفنيين
 	                      </button>
 	                    )}
-	                    <button onClick={() => setActiveTab('cash')} className="flex-1 md:flex-none bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-3 rounded-2xl text-xs font-black transition-all border border-slate-700 flex items-center justify-center gap-2 active:scale-95">
+	                    <button onClick={() => setActiveTab('cash')} className="w-full sm:flex-1 md:flex-none bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 sm:px-5 py-3 rounded-2xl text-[11px] sm:text-xs font-black transition-all border border-slate-700 flex items-center justify-center gap-2 active:scale-95">
 	                      <Wallet size={18} /> الخزنة
 	                    </button>
-	                    <button onClick={() => { void fetchData(); }} className="bg-slate-800 hover:bg-slate-700 text-white p-3 rounded-2xl border border-slate-700 transition-all active:scale-95" aria-label="تحديث">
+	                    {canEditDelete() && <button type="button" onClick={() => { void handleAutoCancelStaleOrders(); }} className="w-full sm:flex-1 md:flex-none bg-rose-600/15 hover:bg-rose-600/25 text-rose-200 px-3 sm:px-4 py-3 rounded-2xl text-[11px] sm:text-xs font-black flex items-center justify-center gap-2 transition-all border border-rose-500/20 active:scale-95" title="إلغاء الأوردرات الأقدم من 30 يومًا بلا تحديث أو معاملة مالية"><Trash2 size={17} /> تنظيف القديم</button>}
+                    <button onClick={() => { void fetchData(); }} className="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-white p-3 rounded-2xl border border-slate-700 transition-all active:scale-95 flex items-center justify-center" aria-label="تحديث">
 	                      <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
 	                    </button>
 	                  </div>
 	                </div>
 
 	                {/* ملف اليوم التشغيلي */}
-                <div className="mt-6 rounded-3xl border border-orange-500/20 bg-slate-950/45 p-4">
-                  <div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="text-sm font-black text-white">ملف اليوم التشغيلي</h3><p className="mt-1 text-[10px] font-bold text-slate-500">ملخص سريع للمنجز والمتبقي اليوم</p></div><span className="rounded-full bg-orange-500/10 px-3 py-1 text-[10px] font-black text-orange-200">{todayOperationSummary.total} أوردر</span></div>
+                <div className="mt-4 sm:mt-6 rounded-3xl border border-orange-500/20 bg-slate-950/45 p-3 sm:p-4 overflow-hidden">
+                  <div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"><div><h3 className="text-sm font-black text-white">ملف اليوم التشغيلي</h3><p className="mt-1 text-[10px] font-bold text-slate-500">ملخص سريع للمنجز والمتبقي اليوم</p></div><span className="rounded-full bg-orange-500/10 px-3 py-1 text-[10px] font-black text-orange-200">{todayOperationSummary.total} أوردر</span></div>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-5"><div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3"><div className="text-lg font-black text-white">{todayOperationSummary.active}</div><div className="text-[10px] font-bold text-slate-500">متبقي نشط</div></div><div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-3"><div className="text-lg font-black text-emerald-300">{todayOperationSummary.completed}</div><div className="text-[10px] font-bold text-slate-500">تم إنجازه</div></div><div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-3"><div className="text-lg font-black text-amber-300">{todayOperationSummary.unassigned}</div><div className="text-[10px] font-bold text-slate-500">بلا فني</div></div><div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-3"><div className="text-lg font-black text-blue-300">{todayOperationSummary.collected}</div><div className="text-[10px] font-bold text-slate-500">تم تحصيله</div></div><div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3"><div className="text-lg font-black text-slate-200">{todayOperationSummary.total - todayOperationSummary.completed}</div><div className="text-[10px] font-bold text-slate-500">يحتاج متابعة</div></div></div>
                 </div>
                 {/* Smart Stats Grid */}
