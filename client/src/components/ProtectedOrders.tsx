@@ -1183,6 +1183,20 @@ export default function ProtectedOrders() {
     } catch (err) { console.error(err); }
   }, [cashFilterDate]);
 
+  const fetchCashBalance = useCallback(async () => {
+    try {
+      const entries = await fetchAPI('cash_ledger?select=type,amount');
+      if (!Array.isArray(entries)) return;
+      const balance = entries.reduce((total: number, entry: any) => {
+        const amount = Number(entry.amount) || 0;
+        return entry.type === 'income' ? total + amount : (entry.type === 'expense' || entry.type === 'profit_distribution' ? total - amount : total);
+      }, 0);
+      setCashBalance(Number(balance.toFixed(2)));
+    } catch (err) {
+      console.error('فشل تحميل رصيد الخزنة المختصر:', err);
+    }
+  }, []);
+
   const loadedSectionsRef = useRef<Set<string>>(new Set());
   const loadingSectionsRef = useRef<Set<string>>(new Set());
   const [loadingSection, setLoadingSection] = useState<string | null>(null);
@@ -1802,6 +1816,7 @@ export default function ProtectedOrders() {
   }, []);
 
   useEffect(() => {
+    void fetchCashBalance();
     fetchData();
 
     // ربط المدير ومدير العمليات بهوية ثابتة ووسوم OneSignal الموثوقة
@@ -1897,7 +1912,7 @@ export default function ProtectedOrders() {
       supabase.removeChannel(alertChannel);
       supabase.removeChannel(presenceChannel);
     };
-  }, [applyRealtimeOrderUpdate, fetchData, fetchNotifications, userRole]);
+  }, [applyRealtimeOrderUpdate, fetchCashBalance, fetchData, fetchNotifications, userRole]);
 
   // وميض عنوان الصفحة عند وجود إنذار
   useEffect(() => {
