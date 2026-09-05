@@ -436,6 +436,7 @@ export default function ProtectedOrders() {
   });
   const [previousCustomer, setPreviousCustomer] = useState<any>(null);
   const [customerLookupLoading, setCustomerLookupLoading] = useState(false);
+  const [additionalPhones, setAdditionalPhones] = useState<string[]>([]);
 
   useEffect(() => {
     if (editingOrder) {
@@ -477,6 +478,7 @@ export default function ProtectedOrders() {
     if (!showOrderModal) return;
     // v3.8.9: منع إعادة التصفير للخطوة 1 إذا كان الأوردر موجوداً بالفعل (حالة التعديل أو التعيين السريع)
     if (!editingOrder) {
+      setAdditionalPhones([]);
       setFormStep(1);
       setFormData({
         customer_name: '',
@@ -504,6 +506,8 @@ export default function ProtectedOrders() {
       setIsOtherBrand(false);
       setCustomDevice('');
       setCustomBrand('');
+    } else {
+      setAdditionalPhones(getAdditionalCustomerPhones(editingOrder.admin_notes));
     }
     requestAnimationFrame(() => orderModalScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' }));
   }, [showOrderModal, editingOrder]);
@@ -2368,8 +2372,11 @@ ${trackingUrl}
       const activeRole = String(currentUser?.role || localStorage.getItem('userRole') || '').toLowerCase();
       const sourceLabel = activeRole === 'admin' ? 'مدير النظام' : activeRole === 'manager' ? 'مدير العمليات' : 'مدير النظام';
     const sourceMarker = `[مصدر التسجيل: ${editingOrder ? '' : sourceLabel}]`;
-    const existingAdminNotes = String((formData as any).admin_notes || '');
-    const adminNotesWithSource = editingOrder || existingAdminNotes.includes('[مصدر التسجيل:') ? existingAdminNotes : `${existingAdminNotes}${existingAdminNotes ? '\n' : ''}${sourceMarker}`;
+    const existingAdminNotes = String((formData as any).admin_notes || '').replace(/\n?\[أرقام إضافية للعميل:\s*[^\]]+\]/g, '').trim();
+    const cleanAdditionalPhones = additionalPhones.map((phone) => phone.trim()).filter(Boolean).filter((phone, index, phones) => phones.indexOf(phone) === index && phone !== String(formData.phone || '').trim());
+    const additionalPhonesMarker = cleanAdditionalPhones.length ? `\n[أرقام إضافية للعميل: ${cleanAdditionalPhones.join(' | ')}]` : '';
+    const baseNotes = existingAdminNotes || (!editingOrder ? sourceMarker : '');
+    const adminNotesWithSource = `${baseNotes}${additionalPhonesMarker}`.trim();
     const orderToSave: any = { ...formData, device_type: finalDevice, brand: finalBrand, admin_notes: adminNotesWithSource, order_number: editingOrder ? editingOrder.order_number : `MG-${Date.now()}` };
     try {
       if (editingOrder) {
@@ -2440,6 +2447,7 @@ ${trackingUrl}
       }
       setShowOrderModal(false); setEditingOrder(null);
       setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, invoice_approved: false, warranty_period: '6 أشهر', invoice_date: new Date().toISOString().split('T')[0], parts_used: '', date: new Date().toLocaleDateString("ar-EG") });
+      setAdditionalPhones([]);
       setIsOtherDevice(false); setIsOtherBrand(false); setCustomDevice(''); setCustomBrand('');
       fetchData();
     } catch (err) { console.error(err); showToast("حدث خطأ أثناء الحفظ", "error"); } finally { setIsSubmitting(false); }
@@ -5313,6 +5321,17 @@ ${trackingUrl}
                         <div className="relative">
                           <input type="tel" value={formData.phone || ''} onChange={e => handleFormChange('phone', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold focus:border-orange-500 outline-none transition-colors" placeholder="01xxxxxxxxx" required />
                           {customerLookupLoading && <div className="absolute left-3 top-3"><RefreshCw size={16} className="animate-spin text-orange-500" /></div>}
+                        </div>
+                        <div className="mt-2 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[10px] font-black text-slate-500">أرقام بديلة للعميل <span className="font-bold text-slate-600">(اختياري)</span></span>
+                            {additionalPhones.length < 2 && <button type="button" onClick={() => setAdditionalPhones((current) => [...current, ''])} className="inline-flex items-center gap-1 text-[10px] font-black text-orange-400 hover:text-orange-300"><Plus size={13} /> إضافة رقم</button>}
+                          </div>
+                          {additionalPhones.map((phone, index) => <div key={`admin-additional-phone-${index}`} className="flex items-center gap-2">
+                            <Phone size={13} className="shrink-0 text-slate-500" />
+                            <input type="tel" value={phone} onChange={(event) => setAdditionalPhones((current) => current.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} className="min-w-0 flex-1 rounded-xl border border-slate-800 bg-slate-950/50 p-2.5 text-sm font-bold text-white outline-none transition-colors focus:border-orange-500" placeholder={`رقم بديل ${index + 1}`} aria-label={`رقم هاتف بديل ${index + 1}`} />
+                            <button type="button" onClick={() => setAdditionalPhones((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="rounded-lg p-1.5 text-rose-400 hover:bg-rose-500/10" aria-label="حذف الرقم البديل"><Trash2 size={14} /></button>
+                          </div>)}
                         </div>
                         {previousCustomer && (
                           <div className="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 flex items-center justify-between gap-3 animate-in zoom-in-95">
