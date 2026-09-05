@@ -41,6 +41,10 @@ const normalizeCustomerPhone = (phone: any) => {
   const digits = String(phone || '').replace(/\D/g, '');
   return digits.startsWith('20') ? `0${digits.slice(2)}` : digits;
 };
+const getAdditionalCustomerPhones = (adminNotes: any): string[] => {
+  const match = String(adminNotes || '').match(/\[أرقام إضافية للعميل:\s*([^\]]+)\]/);
+  return match?.[1]?.split('|').map((phone) => phone.trim()).filter(Boolean) || [];
+};
 
 // ==================== إدارة المستخدمين والصلاحيات (النسخة المتكاملة) ====================
 function AdminPermissions({ users, onEdit, onDelete, onToggle, canEdit, onSync }: { users: any[], onEdit: (u: any) => void, onDelete: (id: number, name: string) => void, onToggle: (u: any) => void, canEdit: boolean, onSync: () => void }) {
@@ -4489,7 +4493,7 @@ ${trackingUrl}
                         </div>
                       )}
                     </div>
-                    <div className="grid grid-cols-2 gap-1 mt-2 text-sm">{!isViewer && <div className="text-slate-300">📞 {order.phone}</div>}<div className="text-slate-300">🔧 {order.device_type} - {order.brand}</div><div className="col-span-2 text-slate-300">📍 {order.address}</div><div className="col-span-2 text-slate-300">📝 {order.problem_description}</div><div className="text-slate-300">💰 {order.total_amount} ج.م</div><div className="text-slate-300">👨‍🔧 {order.technician || '-'}</div></div>
+                    <div className="grid grid-cols-2 gap-1 mt-2 text-sm">{!isViewer && <div className="text-slate-300">📞 {order.phone}{getAdditionalCustomerPhones(order.admin_notes).map((phone) => <span key={phone} className="block text-[11px] text-slate-400">📞 {phone}</span>)}</div>}<div className="text-slate-300">🔧 {order.device_type} - {order.brand}</div><div className="col-span-2 text-slate-300">📍 {order.address}</div><div className="col-span-2 text-slate-300">📝 {order.problem_description}</div><div className="text-slate-300">💰 {order.total_amount} ج.م</div><div className="text-slate-300">👨‍🔧 {order.technician || '-'}</div></div>
                   </div>
                 ))}
                 </div>

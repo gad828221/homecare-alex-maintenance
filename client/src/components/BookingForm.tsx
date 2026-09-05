@@ -2,7 +2,7 @@ import { useId, useState, useEffect } from "react";
 import { 
   MessageCircle, CheckCircle, User, Phone, Wrench, MapPin, 
   AlertCircle, Star, ShieldCheck, Clock, Users, Award, 
-  Sparkles, ChevronLeft, ChevronRight, Calendar, ArrowRight
+  Sparkles, ChevronLeft, ChevronRight, Calendar, ArrowRight, Plus, Trash2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { sendExternalPush } from "../utils/pushNotifications";
@@ -36,6 +36,7 @@ export default function BookingForm({ defaultService, title, description }: Book
     brand: "",
     problem_description: "",
   });
+  const [additionalPhones, setAdditionalPhones] = useState<string[]>([]);
   
   const [isOtherDevice, setIsOtherDevice] = useState(false);
   const [customDevice, setCustomDevice] = useState("");
@@ -93,6 +94,13 @@ export default function BookingForm({ defaultService, title, description }: Book
     const finalDeviceType = isOtherDevice ? customDevice : formData.device_type;
     const finalBrand = isOtherBrand ? customBrand : formData.brand;
     const orderNumber = `MG-${Date.now()}`;
+    const cleanAdditionalPhones = additionalPhones
+      .map((phone) => phone.trim())
+      .filter(Boolean)
+      .filter((phone, index, phones) => phones.indexOf(phone) === index && phone !== formData.phone.trim());
+    const additionalPhonesNote = cleanAdditionalPhones.length
+      ? `\n[أرقام إضافية للعميل: ${cleanAdditionalPhones.join(' | ')}]`
+      : '';
     const orderToSave = {
       order_number: orderNumber,
       customer_name: formData.customer_name,
@@ -104,7 +112,7 @@ export default function BookingForm({ defaultService, title, description }: Book
       status: 'pending',
       date: new Date().toLocaleDateString("ar-EG"),
       created_at: new Date().toISOString(),
-      admin_notes: '[مصدر التسجيل: عميل]'
+      admin_notes: `[مصدر التسجيل: عميل]${additionalPhonesNote}`
     };
 
     try {
@@ -322,6 +330,17 @@ export default function BookingForm({ defaultService, title, description }: Book
                     placeholder="01xxxxxxxxx" 
                   />
                   {customerLookupLoading && <p className="text-xs text-slate-400 font-bold">جاري التحقق من الرقم...</p>}
+                  <div className="mt-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-black text-slate-600">أرقام إضافية للعميل <span className="font-bold text-slate-400">(اختياري)</span></p>
+                      {additionalPhones.length < 2 && <button type="button" onClick={() => setAdditionalPhones((current) => [...current, ""])} className="inline-flex items-center gap-1 text-xs font-black text-orange-600 hover:text-orange-700"><Plus className="w-4 h-4" /> إضافة رقم</button>}
+                    </div>
+                    {additionalPhones.map((phone, index) => <div key={`additional-phone-${index}`} className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 shrink-0 text-slate-400" />
+                      <input type="tel" value={phone} onChange={(event) => setAdditionalPhones((current) => current.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} className="min-w-0 flex-1 bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 outline-none focus:border-orange-500" placeholder="رقم بديل للتواصل" aria-label={`رقم هاتف إضافي ${index + 1}`} />
+                      <button type="button" onClick={() => setAdditionalPhones((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="rounded-xl p-2 text-rose-500 hover:bg-rose-50" aria-label="حذف الرقم الإضافي"><Trash2 className="w-4 h-4" /></button>
+                    </div>)}
+                  </div>
                   {previousCustomer && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 space-y-2" role="status">
                     <p className="text-sm font-black text-emerald-700">✨ عميل سابق</p>
                     <p className="text-xs text-emerald-700">تم تسجيل هذا الرقم من قبل{previousCustomer.customer_name ? ` باسم ${previousCustomer.customer_name}` : ''}.</p>
