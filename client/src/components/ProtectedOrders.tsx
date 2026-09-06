@@ -45,6 +45,23 @@ const getAdditionalCustomerPhones = (adminNotes: any): string[] => {
   const match = String(adminNotes || '').match(/\[أرقام إضافية للعميل:\s*([^\]]+)\]/);
   return match?.[1]?.split('|').map((phone) => phone.trim()).filter(Boolean) || [];
 };
+const getRelativeEgyptDate = (offsetDays = 0) => {
+  const [year, month, day] = getEgyptTodayString().split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day + offsetDays));
+  return date.toISOString().slice(0, 10);
+};
+const normalizeLedgerDate = (value: any) => {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  const slashMatch = raw.match(/^(\d{1,2})[\\/.-](\d{1,2})[\\/.-](\d{4})$/);
+  if (slashMatch) {
+    const [, day, month, year] = slashMatch;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? raw : parsed.toISOString().slice(0, 10);
+};
 
 // ==================== إدارة المستخدمين والصلاحيات (النسخة المتكاملة) ====================
 function AdminPermissions({ users, onEdit, onDelete, onToggle, canEdit, onSync }: { users: any[], onEdit: (u: any) => void, onDelete: (id: number, name: string) => void, onToggle: (u: any) => void, canEdit: boolean, onSync: () => void }) {
@@ -545,16 +562,8 @@ export default function ProtectedOrders() {
     company_share: 0
   });
 
-  const [selectedProfitDate, setSelectedProfitDate] = useState(() => {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    return yesterday.toISOString().split('T')[0];
-  });
-  const [reportDate, setReportDate] = useState(() => {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    return yesterday.toISOString().split('T')[0];
-  });
+  const [selectedProfitDate, setSelectedProfitDate] = useState(() => getRelativeEgyptDate(-1));
+  const [reportDate, setReportDate] = useState(() => getRelativeEgyptDate(-1));
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [monthlyYear, setMonthlyYear] = useState(new Date().getFullYear());
@@ -1406,25 +1415,28 @@ export default function ProtectedOrders() {
     }
   };
 
-  // يبدأ تتبع الترحيل من تاريخ تفعيل النظام؛ الأرباح التاريخية موزعة خارج النظام الحالي ولا يعاد احتساب فروقات نسبها القديمة.
-  const profitDistributionTrackingStartDate = '2026-09-03';
+  // يتم فحص كل تواريخ دخل الأوردر الموجودة في الخزنة؛ لا نستبعد الأيام القديمة لأن التوزيع المرحّل يعتمد على كشف ما لم يوزع فعليًا.
   const distributePendingProfitsThroughDate = async (targetDate: string) => {
     if (!canEditDelete()) return showToast('ليس لديك صلاحية', 'error');
     try {
-      const entries = await fetchAPI(`cash_ledger?select=*&date=lte.${targetDate}&order=date.asc,created_at.asc`);
+      // نقرأ القيود كاملة هنا لأن بعض القيود القديمة سُجلت بصيغة 6/9/2024 بدل 2024-09-06.
+      const entries = await fetchAPI('cash_ledger?select=*&order=created_at.asc');
       const ledgerEntries = Array.isArray(entries) ? entries : [];
+      const normalizedTargetDate = normalizeLedgerDate(targetDate);
       const activePartners = partners.filter((partner) => partner.is_active === true);
       const totalPartnerShares = activePartners.reduce((sum, partner) => sum + (Number(partner.share_percentage) || 0), 0);
       if (!activePartners.length || totalPartnerShares <= 0) return showToast('لا توجد نسب شركاء صالحة للتوزيع', 'error');
 
       const incomeByDate = new Map<string, number>();
       ledgerEntries.filter((entry: any) => {
-        if (entry.type !== 'income' || !entry.date || entry.date > targetDate || entry.date < profitDistributionTrackingStartDate) return false;
-        // تصفية الخزنة والدخل اليدوي ليسا ربح أوردر قابلًا للتوزيع، كما أن الأيام السابقة لتفعيل النظام مستثناة.
+        const entryDate = normalizeLedgerDate(entry.date);
+        if (entry.type !== 'income' || !entryDate || entryDate > normalizedTargetDate) return false;
+        // تصفية الخزنة والدخل اليدوي ليسا ربح أوردر قابلًا للتوزيع؛ أما أرباح الأوردر القديمة فتظل قابلة للترحيل إذا لم توزع.
         const description = String(entry.description || '');
         return description.includes('أرباح شركة من أوردر') || description.includes('ربح أوردر');
       }).forEach((entry: any) => {
-        incomeByDate.set(entry.date, (incomeByDate.get(entry.date) || 0) + (Number(entry.amount) || 0));
+        const entryDate = normalizeLedgerDate(entry.date);
+        incomeByDate.set(entryDate, (incomeByDate.get(entryDate) || 0) + (Number(entry.amount) || 0));
       });
 
       const pendingDays = Array.from(incomeByDate.entries()).map(([sourceDate, totalIncome]) => {
@@ -1432,7 +1444,7 @@ export default function ProtectedOrders() {
           if (entry.type !== 'profit_distribution') return false;
           const description = String(entry.description || '');
           const isForSourceDay = description.includes(`أرباح يوم ${sourceDate}`) || description.includes(`عن يوم ${sourceDate}`);
-          const isLegacyDistributionForSourceDay = entry.date === sourceDate && !description.includes('ترحيل عن يوم');
+          const isLegacyDistributionForSourceDay = normalizeLedgerDate(entry.date) === sourceDate && !description.includes('ترحيل عن يوم');
           return isForSourceDay || isLegacyDistributionForSourceDay;
         }).reduce((sum: number, entry: any) => sum + (Number(entry.amount) || 0), 0);
         const shouldDistribute = Number(((totalIncome * totalPartnerShares) / 100).toFixed(2));
@@ -1464,7 +1476,7 @@ export default function ProtectedOrders() {
                 type: 'profit_distribution',
                 amount: share,
                 description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%) - ${isCarryForward ? `ترحيل عن يوم ${day.sourceDate} ضمن توزيع ${targetDate}` : `أرباح يوم ${day.sourceDate}`}`,
-                date: targetDate
+                date: normalizedTargetDate
               })
             });
           }
