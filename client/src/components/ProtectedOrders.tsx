@@ -1429,7 +1429,9 @@ export default function ProtectedOrders() {
     }
   };
 
-  // يتم فحص كل تواريخ دخل الأوردر الموجودة في الخزنة؛ لا نستبعد الأيام القديمة لأن التوزيع المرحّل يعتمد على كشف ما لم يوزع فعليًا.
+  // الأيام السابقة لبداية سجل التوزيع الحالي أُغلقت ضمن النظام السابق ولا تعاد إلى الترحيل.
+  // هذا يمنع إعادة توزيع أيام مثل 19/4 و3/7 و16/7 التي سبق إغلاقها فعليًا.
+  const profitDistributionTrackingStartDate = '2026-09-03';
   const distributePendingProfitsThroughDate = async (targetDate: string) => {
     if (!canEditDelete()) return showToast('ليس لديك صلاحية', 'error');
     try {
@@ -1445,8 +1447,8 @@ export default function ProtectedOrders() {
       const incomeByDate = new Map<string, number>();
       ledgerEntries.filter((entry: any) => {
         const entryDate = normalizeLedgerDate(entry.date);
-        if (entry.type !== 'income' || !entryDate || entryDate > normalizedTargetDate) return false;
-        // تصفية الخزنة والدخل اليدوي ليسا ربح أوردر قابلًا للتوزيع؛ أما أرباح الأوردر القديمة فتظل قابلة للترحيل إذا لم توزع.
+        if (entry.type !== 'income' || !entryDate || entryDate < profitDistributionTrackingStartDate || entryDate > normalizedTargetDate) return false;
+        // دخل الأوردر فقط قابل للتوزيع، أما الأيام السابقة لبداية السجل الحالي فهي مغلقة ضمن التوزيعات السابقة.
         const description = String(entry.description || '');
         return description.includes('أرباح شركة من أوردر') || description.includes('ربح أوردر');
       }).forEach((entry: any) => {
