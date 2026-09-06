@@ -65,24 +65,44 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   if (!SUPABASE_KEY) return respond(res, 500, { error: 'Supabase server key is not configured' });
 
   try {
-    const [technicians, orders, recentWarnings] = await Promise.all([
+    const [technicians, orders, recentWarnings, recentCollectionWarnings] = await Promise.all([
       supabase('technicians?select=id,name,username,code,is_active&is_active=eq.true'),
-      supabase('orders?select=id,order_number,customer_name,technician,status,created_at,updated_at,last_action_at,action_date,deleted_at&deleted_at=is.null'),
+      supabase('orders?select=id,order_number,customer_name,technician,status,created_at,updated_at,last_action_at,action_date,deleted_at,total_amount,is_paid&deleted_at=is.null'),
       supabase(`notifications?select=details&action=eq.${encodeURIComponent('تحذير خمول فني')}&created_at=gte.${new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()}`),
+      supabase(`notifications?select=details&action=eq.${encodeURIComponent('تحذير تحصيل فني')}&created_at=gte.${new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()}`),
     ]);
     const warned = new Set<string>();
     for (const row of Array.isArray(recentWarnings) ? recentWarnings : []) {
       try { const parsed = JSON.parse(String(row.details || '{}')); if (parsed.external_id) warned.add(`${parsed.external_id}:${parsed.level}`); } catch { /* سجل قديم نصي */ }
     }
+    const collectionWarned = new Set<string>();
+    for (const row of Array.isArray(recentCollectionWarnings) ? recentCollectionWarnings : []) {
+      try { const parsed = JSON.parse(String(row.details || '{}')); if (parsed.external_id) collectionWarned.add(parsed.external_id); } catch { /* سجل قديم نصي */ }
+    }
     const now = Date.now();
+    const isPaid = (order: any) => order?.is_paid === true || String(order?.is_paid || '').toLowerCase() === 'true';
     const results: any[] = [];
     for (const technician of Array.isArray(technicians) ? technicians : []) {
       const assignedOrders = (Array.isArray(orders) ? orders : []).filter((order: any) => OPEN_STATUSES.has(String(order.status)) && isAssignedTo(order, technician));
       if (!assignedOrders.length) continue;
+      const externalId = `tech:${technician.id}`;
+      const overdueUnpaidOrders = assignedOrders.filter((order: any) => {
+        const createdAt = new Date(order.created_at || 0).getTime();
+        return !isPaid(order) && Number.isFinite(createdAt) && now - createdAt >= 24 * 60 * 60 * 1000;
+      });
+      if (overdueUnpaidOrders.length && !collectionWarned.has(externalId)) {
+        const totalDue = overdueUnpaidOrders.reduce((sum: number, order: any) => sum + (Number(order.total_amount) || 0), 0);
+        const orderNumbers = overdueUnpaidOrders.map((order: any) => order.order_number).filter(Boolean).slice(0, 8).join('، ');
+        const title = '⚠️ تحذير تحصيل متأخر';
+        const message = `لديك ${overdueUnpaidOrders.length} أوردر غير محصل منذ أكثر من يوم. إجمالي المبلغ المطلوب تحصيله: ${totalDue.toLocaleString('ar-EG')} ج.م. أرقام الأوردرات: ${orderNumbers || 'راجع بوابتك الآن'}. يرجى متابعة التحصيل وتحديث الحالة فورًا.`;
+        let pushOk = false;
+        let pushError = '';
+        try { await sendPush(externalId, title, message, { focus: 'collection', technician: String(technician.name || technician.id), order_numbers: orderNumbers, amount_due: String(totalDue) }); pushOk = true; } catch (error) { pushError = error instanceof Error ? error.message : 'Push failed'; }
+        await saveNotification('تحذير تحصيل فني', JSON.stringify({ audit: true, external_id: externalId, technician_id: technician.id, technician: technician.name, level: 'collection', overdue_orders: overdueUnpaidOrders.length, amount_due: totalDue, order_numbers: orderNumbers, push_ok: pushOk, push_error: pushError, created_at: new Date().toISOString() }));
+      }
       const oldestOrder = assignedOrders.reduce((oldest: any, order: any) => !oldest || orderTime(order) < orderTime(oldest) ? order : oldest, null);
       const idleMs = now - orderTime(oldestOrder);
       if (idleMs < WARNING_AFTER_MS) continue;
-      const externalId = `tech:${technician.id}`;
       const level = idleMs >= SUSPEND_AFTER_MS ? 'suspension' : 'warning';
       if (warned.has(`${externalId}:${level}`)) continue;
       const minutes = Math.floor(idleMs / 60000);

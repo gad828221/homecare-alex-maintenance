@@ -4432,8 +4432,21 @@ ${trackingUrl}
 	                            </div>
 	                          )}
 
-	                          {/* Footer Buttons Row */}
-	                          <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+	                                                    {collectionPending && <div className="mb-3 rounded-2xl border border-amber-300/30 bg-amber-500/10 p-3 relative z-10" onClick={(e) => e.stopPropagation()}>
+                            <div className="mb-2 flex items-center justify-between gap-2"><span className="text-[10px] font-black text-amber-200">مراجعة التحصيل قبل الاعتماد</span><span className="text-[9px] font-black text-amber-300">غير محصل</span></div>
+                            <div className="grid grid-cols-2 gap-2 text-[10px]">
+                              <div className="rounded-lg bg-slate-950/40 p-2"><span className="block text-slate-500">مبلغ الفاتورة</span><strong className="text-white">{Number(order.total_amount || 0).toLocaleString('ar-EG')} ج.م</strong></div>
+                              <div className="rounded-lg bg-slate-950/40 p-2"><span className="block text-slate-500">قطع الغيار</span><strong className="text-slate-200">{Number(order.parts_cost || 0).toLocaleString('ar-EG')} ج.م</strong></div>
+                              <div className="rounded-lg bg-slate-950/40 p-2"><span className="block text-slate-500">المواصلات</span><strong className="text-slate-200">{Number(order.transport_cost || 0).toLocaleString('ar-EG')} ج.م</strong></div>
+                              <div className="rounded-lg bg-slate-950/40 p-2"><span className="block text-slate-500">الصافي</span><strong className="text-cyan-300">{Number(order.net_amount || 0).toLocaleString('ar-EG')} ج.م</strong></div>
+                              <div className="rounded-lg bg-slate-950/40 p-2"><span className="block text-slate-500">نصيب الفني</span><strong className="text-emerald-300">{Number(order.technician_share || 0).toLocaleString('ar-EG')} ج.م</strong></div>
+                              <div className="rounded-lg bg-slate-950/40 p-2"><span className="block text-slate-500">نصيب الشركة</span><strong className="text-orange-300">{Number(order.company_share || 0).toLocaleString('ar-EG')} ج.م</strong></div>
+                            </div>
+                            {canEditDelete() && <button type="button" onClick={() => { setSelectedOrder(order); setSettleForm({ total_amount: order.total_amount || 0, parts_cost: order.parts_cost || 0, transport_cost: order.transport_cost || 0, net_amount: order.net_amount || 0, technician_share: order.technician_share || 0, company_share: order.company_share || 0 }); setShowSettleModal(true); }} className="mt-2 w-full rounded-xl bg-amber-500 px-3 py-2 text-[10px] font-black text-slate-950 hover:bg-amber-400">فتح المراجعة وتأكيد التحصيل</button>}
+                          </div>}
+	                      {/* Footer Buttons Row */}
+	                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+
                             {canEditDelete() && (
                               <button type="button" onClick={() => { stopUrgentAlert(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); }} className="flex-1 h-9 bg-orange-600/20 hover:bg-orange-600 text-orange-300 hover:text-white rounded-lg text-[9px] font-black border border-orange-500/30 flex items-center justify-center gap-1.5 transition-all active:scale-95" title="تحويل الأوردر إلى فني آخر"><UserPlus size={14} /> تحويل لفني آخر</button>
                             )}
@@ -5633,7 +5646,7 @@ ${trackingUrl}
                 <div className="flex justify-between"><span className="text-slate-400">نصيب الفني ({technicians.find(t => t.name === selectedOrder?.technician)?.profit_percentage ?? 50}%):</span><span className="text-green-400 font-bold">{settleForm.technician_share} ج.م</span></div>
                 <div className="flex justify-between"><span className="text-slate-400">نصيب الشركة:</span><span className="text-orange-400 font-bold">{settleForm.company_share} ج.م</span></div>
               </div>
-              <button onClick={submitSettlement} className="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 rounded-lg font-bold">تأكيد التصفية</button>
+              <button onClick={() => { if (!window.confirm(`مراجعة نهائية لتحصيل ${Number(settleForm.total_amount || 0).toLocaleString('ar-EG')} ج.م من الأوردر ${selectedOrder.order_number}؟`)) return; void submitSettlement(); }} className="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 rounded-lg font-bold">تأكيد التصفية بعد المراجعة</button>
             </div>
           </div>
         </div>
