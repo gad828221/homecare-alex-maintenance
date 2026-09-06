@@ -62,6 +62,13 @@ const normalizeLedgerDate = (value: any) => {
   const parsed = new Date(raw);
   return Number.isNaN(parsed.getTime()) ? raw : parsed.toISOString().slice(0, 10);
 };
+const getDistributablePartners = (rows: any[]) => rows
+  .filter((partner) => {
+    const activeValue = String(partner?.is_active ?? '').trim().toLowerCase();
+    const isExplicitlyInactive = partner?.is_active === false || activeValue === 'false' || activeValue === '0' || activeValue === 'غير نشط';
+    return !isExplicitlyInactive && Number(partner?.share_percentage) > 0;
+  })
+  .map((partner) => ({ ...partner, share_percentage: Number(partner.share_percentage) }));
 
 // ==================== إدارة المستخدمين والصلاحيات (النسخة المتكاملة) ====================
 function AdminPermissions({ users, onEdit, onDelete, onToggle, canEdit, onSync }: { users: any[], onEdit: (u: any) => void, onDelete: (id: number, name: string) => void, onToggle: (u: any) => void, canEdit: boolean, onSync: () => void }) {
@@ -1222,7 +1229,7 @@ export default function ProtectedOrders() {
     loadingSectionsRef.current.add(section);
     setLoadingSection(section);
     try {
-      if (section === 'cash') await fetchCashLedger();
+      if (section === 'cash') await Promise.all([fetchCashLedger(), fetchPartners()]);
       if (section === 'partners') await fetchPartners();
       if (section === 'notifications' || section === 'systemHealth') await fetchNotifications();
       if (section === 'permissions') {
@@ -1352,17 +1359,18 @@ export default function ProtectedOrders() {
         return;
       }
 
-      const activePartners = partners.filter(p => p.is_active === true);
+            const partnerRows = await fetchAPI('partners?select=*&order=created_at.desc');
+      const activePartners = getDistributablePartners(Array.isArray(partnerRows) ? partnerRows : partners);
       if (activePartners.length === 0) {
-        showToast("ليس لديك صلاحية", "error");
+        showToast('لا توجد نسب شركاء صالحة للتوزيع. تأكد من وجود شريك نشط ونسبته أكبر من صفر.', 'error');
+        return;
+      }
+      const totalPartnerShares = activePartners.reduce((sum, p) => sum + p.share_percentage, 0);
+      if (totalPartnerShares <= 0) {
+        showToast('إجمالي نسب الشركاء يساوي صفرًا؛ راجع نسب الشركاء في قسم الشركاء.', 'error');
         return;
       }
 
-      const totalPartnerShares = activePartners.reduce((sum, p) => sum + (Number(p.share_percentage) || 0), 0);
-      if (totalPartnerShares <= 0) {
-        showToast("ليس لديك صلاحية", "error");
-        return;
-      }
 
       // حساب إجمالي ما يجب توزيعه بناءً على الدخل الكلي
       const totalShouldBeDistributed = Number(((totalIncome * totalPartnerShares) / 100).toFixed(2));
@@ -1423,9 +1431,10 @@ export default function ProtectedOrders() {
       const entries = await fetchAPI('cash_ledger?select=*&order=created_at.asc');
       const ledgerEntries = Array.isArray(entries) ? entries : [];
       const normalizedTargetDate = normalizeLedgerDate(targetDate);
-      const activePartners = partners.filter((partner) => partner.is_active === true);
-      const totalPartnerShares = activePartners.reduce((sum, partner) => sum + (Number(partner.share_percentage) || 0), 0);
-      if (!activePartners.length || totalPartnerShares <= 0) return showToast('لا توجد نسب شركاء صالحة للتوزيع', 'error');
+      const partnerRows = await fetchAPI('partners?select=*&order=created_at.desc');
+      const activePartners = getDistributablePartners(Array.isArray(partnerRows) ? partnerRows : partners);
+      const totalPartnerShares = activePartners.reduce((sum, partner) => sum + partner.share_percentage, 0);
+      if (!activePartners.length || totalPartnerShares <= 0) return showToast('لا توجد نسب شركاء صالحة للتوزيع. تأكد من وجود شريك نشط ونسبته أكبر من صفر.', 'error');
 
       const incomeByDate = new Map<string, number>();
       ledgerEntries.filter((entry: any) => {
