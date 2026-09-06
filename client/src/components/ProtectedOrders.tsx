@@ -69,6 +69,12 @@ const getDistributablePartners = (rows: any[]) => rows
     return !isExplicitlyInactive && Number(partner?.share_percentage) > 0;
   })
   .map((partner) => ({ ...partner, share_percentage: Number(partner.share_percentage) }));
+const descriptionReferencesLedgerDate = (description: any, targetDate: string) => {
+  const text = String(description || '');
+  if (text.includes(targetDate)) return true;
+  const dateTokens = text.match(/\d{1,4}[\\/.-]\d{1,2}[\\/.-]\d{1,4}/g) || [];
+  return dateTokens.some((token) => normalizeLedgerDate(token) === targetDate);
+};
 
 // ==================== إدارة المستخدمين والصلاحيات (النسخة المتكاملة) ====================
 function AdminPermissions({ users, onEdit, onDelete, onToggle, canEdit, onSync }: { users: any[], onEdit: (u: any) => void, onDelete: (id: number, name: string) => void, onToggle: (u: any) => void, canEdit: boolean, onSync: () => void }) {
@@ -1452,7 +1458,7 @@ export default function ProtectedOrders() {
         const distributed = ledgerEntries.filter((entry: any) => {
           if (entry.type !== 'profit_distribution') return false;
           const description = String(entry.description || '');
-          const isForSourceDay = description.includes(`أرباح يوم ${sourceDate}`) || description.includes(`عن يوم ${sourceDate}`);
+          const isForSourceDay = descriptionReferencesLedgerDate(description, sourceDate) || description.includes(`أرباح يوم ${sourceDate}`) || description.includes(`عن يوم ${sourceDate}`);
           const isLegacyDistributionForSourceDay = normalizeLedgerDate(entry.date) === sourceDate && !description.includes('ترحيل عن يوم');
           return isForSourceDay || isLegacyDistributionForSourceDay;
         }).reduce((sum: number, entry: any) => sum + (Number(entry.amount) || 0), 0);
