@@ -1465,7 +1465,9 @@ export default function ProtectedOrders() {
         const distributed = ledgerEntries.filter((entry: any) => {
           if (entry.type !== 'profit_distribution') return false;
           const description = String(entry.description || '');
-          const isForSourceDay = descriptionReferencesLedgerDate(description, sourceDate) || description.includes(`أرباح يوم ${sourceDate}`) || description.includes(`عن يوم ${sourceDate}`);
+          // نطابق تاريخ مصدر الربح فقط، وليس تاريخ تنفيذ الترحيل.
+          // مثال: «ترحيل عن يوم 2026-09-10 ضمن توزيع 2026-09-11» يخص يوم 10 لا يوم 11.
+          const isForSourceDay = description.includes(`أرباح يوم ${sourceDate}`) || description.includes(`عن يوم ${sourceDate}`);
           const isLegacyDistributionForSourceDay = normalizeLedgerDate(entry.date) === sourceDate && !description.includes('ترحيل عن يوم');
           return isForSourceDay || isLegacyDistributionForSourceDay;
         }).reduce((sum: number, entry: any) => sum + (Number(entry.amount) || 0), 0);
