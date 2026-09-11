@@ -558,6 +558,7 @@ export default function ProtectedOrders() {
   const delayedAlertIdsRef = useRef<Set<number>>(new Set());
   const escalationAlertIdsRef = useRef<Set<number>>(new Set());
   const cashProfitLocksRef = useRef<Set<number>>(new Set());
+  const profitDistributionLockRef = useRef(false);
   const expiringWarrantyIdsRef = useRef<Set<number>>(new Set());
   const highExpenseAlertIdsRef = useRef<Set<number>>(new Set());
 
@@ -1347,85 +1348,81 @@ export default function ProtectedOrders() {
     }
   };
 
-  // ✅ توزيع أرباح يوم – يعتمد على الإيرادات اليومية فقط، بدون reserve، ويمنع التكرار
+  // ✅ توزيع آمن ومتعدد في نفس اليوم: يوزع نسبة الشركاء من الدخل غير الموزع فقط.
   const distributeProfitForDate = async (targetDate: string) => {
-    if (!canEditDelete()) return showToast("ليس لديك صلاحية", "error");
+    if (!canEditDelete()) return showToast('ليس لديك صلاحية', 'error');
+    if (profitDistributionLockRef.current) return showToast('يوجد توزيع قيد التنفيذ، يرجى الانتظار', 'info');
+    profitDistributionLockRef.current = true;
     try {
-      const incomeEntries = await fetchAPI(`cash_ledger?select=amount&date=eq.${targetDate}&type=eq.income`);
-      const totalIncome = (incomeEntries || []).reduce((sum: number, entry: any) => sum + (Number(entry.amount) || 0), 0);
-
-      const expenseEntries = await fetchAPI(`cash_ledger?select=amount&date=eq.${targetDate}&type=eq.expense`);
-      const totalExpenses = (expenseEntries || []).reduce((sum: number, entry: any) => sum + (Number(entry.amount) || 0), 0);
-
-      const existingDistributions = await fetchAPI(`cash_ledger?select=amount&date=eq.${targetDate}&type=eq.profit_distribution`);
-      const totalDistributedSoFar = (existingDistributions || []).reduce((sum: number, entry: any) => sum + (Number(entry.amount) || 0), 0);
-
-      if (totalIncome <= 0) {
-        alert(`⚠️ لا توجد أرباح ليوم ${targetDate}.`);
-        return;
-      }
-
-            const partnerRows = await fetchAPI('partners?select=*&order=created_at.desc');
+      const [incomeRows, distributionRows, partnerRows] = await Promise.all([
+        fetchAPI(`cash_ledger?select=id,amount&date=eq.${targetDate}&type=eq.income&order=id.asc`),
+        fetchAPI(`cash_ledger?select=id,amount,description&date=eq.${targetDate}&type=eq.profit_distribution&order=id.asc`),
+        fetchAPI('partners?select=*&order=created_at.desc')
+      ]);
+      const incomes = Array.isArray(incomeRows) ? incomeRows : [];
+      const distributions = Array.isArray(distributionRows) ? distributionRows : [];
       const activePartners = getDistributablePartners(Array.isArray(partnerRows) ? partnerRows : partners);
-      if (activePartners.length === 0) {
-        showToast('لا توجد نسب شركاء صالحة للتوزيع. تأكد من وجود شريك نشط ونسبته أكبر من صفر.', 'error');
-        return;
-      }
-      const totalPartnerShares = activePartners.reduce((sum, p) => sum + p.share_percentage, 0);
-      if (totalPartnerShares <= 0) {
-        showToast('إجمالي نسب الشركاء يساوي صفرًا؛ راجع نسب الشركاء في قسم الشركاء.', 'error');
-        return;
-      }
+      const totalIncome = incomes.reduce((sum: number, row: any) => sum + (Number(row.amount) || 0), 0);
+      const totalDistributedSoFar = distributions.reduce((sum: number, row: any) => sum + (Number(row.amount) || 0), 0);
+      const totalPartnerShares = activePartners.reduce((sum: number, partner: any) => sum + Number(partner.share_percentage || 0), 0);
 
-
-      // حساب إجمالي ما يجب توزيعه بناءً على الدخل الكلي
-      const totalShouldBeDistributed = Number(((totalIncome * totalPartnerShares) / 100).toFixed(2));
-
-      // المبلغ المتبقي للتوزيع (الإجمالي المطلوب - ما تم توزيعه بالفعل)
-      const amountToDistribute = Number((totalShouldBeDistributed - totalDistributedSoFar).toFixed(2));
-
-      if (amountToDistribute <= 0) {
-        alert(`⚠️ تم توزيع كافة أرباح يوم ${targetDate} بالفعل (${totalDistributedSoFar.toLocaleString()} ج.م). لا توجد أرباح جديدة للتوزيع.`);
-        return;
+      if (totalIncome <= 0) return alert(`⚠️ لا يوجد دخل مسجل ليوم ${targetDate}.`);
+      if (!activePartners.length || totalPartnerShares <= 0 || totalPartnerShares > 100) {
+        return showToast(`نسب الشركاء غير صالحة: ${totalPartnerShares}%`, 'error');
       }
 
-      const confirmMsg = totalDistributedSoFar > 0
-        ? `💰 صافي دخل اليوم: ${totalIncome.toLocaleString()} ج.م\n👥 نسبة الشركاء: ${totalPartnerShares}%\n🏦 نسبة الخزنة: ${Math.max(0, 100 - totalPartnerShares)}%\n💸 مصروفات اليوم: ${totalExpenses.toLocaleString()} ج.م (تُخصم من نصيب الخزنة)\n📤 تم توزيع سابقاً: ${totalDistributedSoFar.toLocaleString()} ج.م\n🔄 المتبقي لتوزيعه على الشركاء الآن: ${amountToDistribute.toLocaleString()} ج.م\n\nهل تريد الاستمرار؟`
-        : `💰 صافي دخل يوم ${targetDate}: ${totalIncome.toLocaleString()} ج.م\n👥 نسبة الشركاء: ${totalPartnerShares}%\n🏦 نسبة الخزنة: ${Math.max(0, 100 - totalPartnerShares)}%\n💸 مصروفات اليوم: ${totalExpenses.toLocaleString()} ج.م (تُخصم من نصيب الخزنة)\n💰 سيتم توزيع ${amountToDistribute.toLocaleString()} ج.م على الشركاء\n\nهل تريد الاستمرار؟`;
+      // المعادلة التراكمية: إجمالي نسبة الشركاء من دخل اليوم ناقص ما تم توزيعه سابقاً.
+      // أي دخل جديد في اليوم نفسه سيظهر تلقائياً كرصيد غير موزع في التوزيع التالي.
+      const totalEntitled = Number(((totalIncome * totalPartnerShares) / 100).toFixed(2));
+      const amountToDistribute = Number((totalEntitled - totalDistributedSoFar).toFixed(2));
+      if (amountToDistribute <= 0.009) {
+        return alert(`⚠️ لا يوجد دخل جديد غير موزع ليوم ${targetDate}.`);
+      }
 
+      const incomeFingerprint = incomes.map((row: any) => `${row.id}:${Number(row.amount) || 0}`).join('|');
+      const partnerFingerprint = activePartners.map((partner: any) => `${partner.id}:${partner.share_percentage}`).join('|');
+      const batchMarker = `batch:${targetDate}:${incomeFingerprint}:${partnerFingerprint}`;
+      if (distributions.some((row: any) => String(row.description || '').includes(batchMarker))) {
+        return alert('⚠️ تم تنفيذ هذه الدفعة بالفعل.');
+      }
+
+      const confirmMsg = `💰 دخل اليوم: ${totalIncome.toLocaleString()} ج.م\n📤 تم توزيعه سابقاً: ${totalDistributedSoFar.toLocaleString()} ج.م\n🔄 الدخل الجديد غير الموزع: ${amountToDistribute.toLocaleString()} ج.م\n🏦 المتبقي للخزنة من هذه الدفعة: ${Number((amountToDistribute * (100 - totalPartnerShares) / totalPartnerShares).toFixed(2)).toLocaleString()} ج.م\n\nهل تريد تنفيذ التوزيع؟`;
       if (!confirm(confirmMsg)) return;
 
-      let distributedSum = 0;
-      for (let i = 0; i < activePartners.length; i++) {
-        const partner = activePartners[i];
-        let share;
-        if (i === activePartners.length - 1) {
-          share = Number((amountToDistribute - distributedSum).toFixed(2));
-        } else {
-          share = Math.floor((amountToDistribute * partner.share_percentage) / totalPartnerShares);
-        }
-        distributedSum += share;
-        if (share > 0) {
-          await fetchAPI('cash_ledger', {
-            method: 'POST',
-            body: JSON.stringify({
-              type: 'profit_distribution',
-              amount: share,
-              description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%) - أرباح يوم ${targetDate}`,
-              date: targetDate
-            })
-          });
-        }
+      const rows: any[] = [];
+      let allocated = 0;
+      activePartners.forEach((partner: any, index: number) => {
+        const share = index === activePartners.length - 1
+          ? Number((amountToDistribute - allocated).toFixed(2))
+          : Number(((amountToDistribute * Number(partner.share_percentage)) / totalPartnerShares).toFixed(2));
+        allocated = Number((allocated + share).toFixed(2));
+        if (share > 0) rows.push({
+          type: 'profit_distribution',
+          amount: share,
+          description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%) - أرباح يوم ${targetDate} - ${batchMarker}`,
+          date: targetDate
+        });
+      });
+
+      // إدخال كل قيود الدفعة مرة واحدة؛ في حال فشل الطلب لا تُعرض العملية كناجحة.
+      const { data: createdRows, error: insertError } = await supabase
+        .from('cash_ledger')
+        .insert(rows)
+        .select('id,amount,description,date');
+      if (insertError || !createdRows || createdRows.length !== rows.length) {
+        throw insertError || new Error('تعذر حفظ جميع قيود التوزيع');
       }
 
-      await addNotification('توزيع أرباح', `✅ تم توزيع ${amountToDistribute.toLocaleString()} ج.م`);
-      showToast(`تم توزيع ${amountToDistribute.toLocaleString()} ج.م`, 'success');
+      await addNotification('توزيع أرباح', `✅ تم توزيع ${amountToDistribute.toLocaleString()} ج.م لليوم ${targetDate}`);
+      showToast(`تم توزيع ${amountToDistribute.toLocaleString()} ج.م بنجاح`, 'success');
       await fetchCashLedger();
       await fetchData();
-      alert(`✅ تم التوزيع بنجاح.\n💰 تم توزيع ${amountToDistribute.toLocaleString()} ج.م`);
+      alert(`✅ تم التوزيع بنجاح.\n💰 إجمالي التوزيع: ${amountToDistribute.toLocaleString()} ج.م`);
     } catch (err) {
-      console.error(err);
-      showToast("ليس لديك صلاحية", "error");
+      console.error('Profit distribution failed:', err);
+      showToast('فشل التوزيع؛ لم يتم اعتماد العملية', 'error');
+    } finally {
+      profitDistributionLockRef.current = false;
     }
   };
 
