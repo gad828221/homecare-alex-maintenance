@@ -1356,11 +1356,19 @@ export default function ProtectedOrders() {
     try {
       const [incomeRows, distributionRows, partnerRows] = await Promise.all([
         fetchAPI(`cash_ledger?select=id,amount&date=eq.${targetDate}&type=eq.income&order=id.asc`),
-        fetchAPI(`cash_ledger?select=id,amount,description&date=eq.${targetDate}&type=eq.profit_distribution&order=id.asc`),
+        fetchAPI(`cash_ledger?select=id,amount,description,date&date=eq.${targetDate}&type=eq.profit_distribution&order=id.asc`),
         fetchAPI('partners?select=*&order=created_at.desc')
       ]);
       const incomes = Array.isArray(incomeRows) ? incomeRows : [];
-      const distributions = Array.isArray(distributionRows) ? distributionRows : [];
+      const allDateDistributions = Array.isArray(distributionRows) ? distributionRows : [];
+      // بعض قيود الترحيل تُحفظ بتاريخ التنفيذ، لا بتاريخ مصدر الربح.
+      // لذلك لا يجوز طرحها من يوم 11 إلا إذا كان وصفها يذكر أن مصدرها هو يوم 11.
+      const distributions = allDateDistributions.filter((row: any) => {
+        const description = String(row.description || '');
+        const isForSelectedSourceDay = description.includes(`أرباح يوم ${targetDate}`) || description.includes(`عن يوم ${targetDate}`);
+        const isLegacySameDayDistribution = normalizeLedgerDate(row.date) === targetDate && !description.includes('ترحيل عن يوم');
+        return isForSelectedSourceDay || isLegacySameDayDistribution;
+      });
       const activePartners = getDistributablePartners(Array.isArray(partnerRows) ? partnerRows : partners);
       const totalIncome = incomes.reduce((sum: number, row: any) => sum + (Number(row.amount) || 0), 0);
       const totalDistributedSoFar = distributions.reduce((sum: number, row: any) => sum + (Number(row.amount) || 0), 0);
