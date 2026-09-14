@@ -2676,12 +2676,8 @@ ${trackingUrl}
   const isManualCollectionClosed = (order: any) => String(order.technician_note || '').includes(MANUAL_COLLECTION_CLOSED_MARKER);
   // الكشف يعني زيارة وتشخيصاً مدفوعاً عند رفض الإصلاح، ولذلك يخضع للتحصيل مثل المكتمل دون اعتباره إصلاحاً منفذاً.
   const isCollectionPending = (order: any) => ['completed', 'inspected'].includes(order.status) && !order.is_paid && !isManualCollectionClosed(order);
-  const isOlderThan30Days = (order: any) => {
-    const createdAt = new Date(order.created_at || order.createdAt || order.date).getTime();
-    return Number.isFinite(createdAt) && Date.now() - createdAt > 30 * 24 * 60 * 60 * 1000;
-  };
-
-  const dateFilteredOrders = [...orders, ...archivedOrders].filter(o => {
+  // الأوردرات النشطة فقط تدخل دورة العرض والترتيب؛ الأرشيف له تبويب وقائمة مستقلة.
+  const dateFilteredOrders = [...orders].filter(o => {
     if (deferredSearchTerm) {
       const searchLower = deferredSearchTerm.toLowerCase();
       const matchesName = o.customer_name?.toLowerCase().includes(searchLower);
@@ -2720,19 +2716,7 @@ ${trackingUrl}
   });
 
   const allFilteredOrders = dateFilteredOrders.filter(o => {
-    // ✅ أرشفة تلقائية: إخفاء أي أوردر مر عليه أكثر من 30 يوماً من العرض العام (Live/All)
-    // إلا إذا كان هناك بحث نشط أو فلترة يدوية بالتاريخ أو الفني
-    const isManualFilterActive = deferredSearchTerm || filterTechnician || filterDateFrom || filterDateTo || filterDeviceType || filterDelay !== 'all' || filterWarranty !== 'all';
-    
-    if ((filterStatus === 'live' || filterStatus === 'all') && !isManualFilterActive) {
-      const orderDate = new Date(o.created_at || o.createdAt);
-      const today = new Date();
-      const diffDays = Math.ceil(Math.abs(today.getTime() - orderDate.getTime()) / (1000 * 60 * 60 * 24));
-      
-      // إذا مر أكثر من 30 يوم، يعتبر مؤرشفاً تلقائياً
-      if (diffDays > 30) return false;
-    }
-
+    // الأرشفة تُحسم قبل هذه المرحلة في fetchData و realtime، لذلك لا يوجد فلتر زمني ثانٍ يغيّر ترتيب العرض.
     // ✅ إخفاء الملغي تماماً من العرض العام (Live/All) إلا إذا تم اختياره صراحة
     if ((filterStatus === 'live' || filterStatus === 'all') && (o.status === 'cancelled' || o.status === 'canceled')) return false;
 
@@ -4562,7 +4546,7 @@ ${trackingUrl}
                 <h2 className="text-xl font-black text-white flex items-center gap-2">
                   <Plus className="rotate-45 text-indigo-400" /> أرشيف الأوردرات القديمة
                 </h2>
-                <p className="text-xs text-slate-400 mt-1">الأوردرات التي مر عليها أكثر من 30 يوماً ولم تكتمل بعد.</p>
+                <p className="text-xs text-slate-400 mt-1">كل الأوردرات التي مر على إنشائها أكثر من 15 يومًا، مهما كانت حالتها.</p>
               </div>
               <div className="bg-indigo-600 text-white px-4 py-1 rounded-full text-xs font-bold">
                 {archivedOrders.length} أوردر
