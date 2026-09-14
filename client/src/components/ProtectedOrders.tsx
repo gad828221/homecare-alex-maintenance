@@ -31,6 +31,17 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const DEVICE_TYPES = ['غسالة', 'ثلاجة', 'بوتاجاز', 'سخان', 'تكييف', 'ميكروويف', 'غسالة أطباق'];
 const BRANDS = ['سامسونج', 'LG', 'شارب', 'توشيبا', 'زانوسي', 'يونيون إير', 'فريش', 'وايت ويل', 'أريستون', 'بيكو', 'هوفر', 'إنديست', 'كريازي'];
 const REPORT_TIME_OFFSET_MS = 8 * 60 * 60 * 1000;
+const ORDER_ARCHIVE_AFTER_DAYS = 15;
+const getCashClosingDate = (notification: any) => {
+  if (notification?.action !== 'إغلاق يومي للخزنة') return null;
+  try {
+    const parsed = JSON.parse(String(notification.details || '{}'));
+    return parsed?.close_date ? String(parsed.close_date) : null;
+  } catch {
+    const match = String(notification?.details || '').match(/(?:\"|\\\")close_date(?:\"|\\\")\s*:\s*(?:\"|\\\")([^\"\\]+)(?:\"|\\\")/);
+    return match?.[1] || null;
+  }
+};
 const getReportingDate = (timestamp: any) => {
   if (!timestamp) return null;
   const date = new Date(String(timestamp));
@@ -558,6 +569,7 @@ export default function ProtectedOrders() {
   const delayedAlertIdsRef = useRef<Set<number>>(new Set());
   const escalationAlertIdsRef = useRef<Set<number>>(new Set());
   const cashProfitLocksRef = useRef<Set<number>>(new Set());
+  const cashClosingLocksRef = useRef<Set<string>>(new Set());
   const profitDistributionLockRef = useRef(false);
   const expiringWarrantyIdsRef = useRef<Set<number>>(new Set());
   const highExpenseAlertIdsRef = useRef<Set<number>>(new Set());
@@ -1059,14 +1071,19 @@ export default function ProtectedOrders() {
       .sort((a: any, b: any) => b.ageDays - a.ageDays);
 
   const isOldAndShouldArchive = (order: any) => {
-    // 1. الحالات النهائية تظهر في الأرشيف فوراً للحفاظ على نظافة لوحة التشغيل
-    // ملاحظة: الأوردر المكتمل يذهب للأرشيف فقط إذا تم تحصيله (is_paid) ليبقى ظاهراً للمدير للمتابعة المالية إذا لم يُحصل بعد.
-    if (order.status === 'cancelled' || order.status === 'inspected') return true;
-    // المكتمل غير المحصل يظل في التشغيل حتى يتم اعتماد التحصيل، ولا يخضع لحد 30 يوماً.
-    if (order.status === 'completed') return Boolean(order.is_paid);
+    // الأرشفة تعتمد على تاريخ إنشاء الأوردر لجميع الحالات بلا استثناء.
+    // إذا تجاوز الأوردر 15 يوماً، يظهر في الأرشيف حتى لو ظل غير مكتمل أو غير محصل.
+    const referenceDate = parseOrderDate(getOrderReferenceDate(order));
+    const ageDays = referenceDate
+      ? Math.floor((Date.now() - referenceDate.getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+    if (ageDays > ORDER_ARCHIVE_AFTER_DAYS) return true;
 
-    // 2. الأوردرات القديمة المفتوحة جداً (أكثر من 30 يوم) تُنقل للأرشيف تلقائياً لتخفيف اللوحة
-    return getDaysDifference(getOrderReferenceDate(order), order.status) > 30;
+    // الحالات النهائية المحسومة تنظّم لوحة التشغيل فوراً.
+    if (order.status === 'cancelled' || order.status === 'inspected') return true;
+    // الأوردر المكتمل المحصل مؤهل للأرشفة الفورية، بينما غير المحصل يبقى للمتابعة المالية حتى يبلغ 15 يوماً.
+    if (order.status === 'completed') return Boolean(order.is_paid);
+    return false;
   };
 
   const isNewOrder = (order: any) => {
@@ -1265,9 +1282,49 @@ export default function ProtectedOrders() {
     void ensureSectionData(activeTab);
   }, [activeTab, ensureSectionData]);
 
+  const isCashDateClosed = (date: string) => Boolean(date && notifications.some((notification: any) => getCashClosingDate(notification) === date));
+
+  const closeCashDay = async () => {
+    if (!isAdmin) return showToast('إغلاق الخزنة متاح لمدير النظام فقط', 'error');
+    const closeDate = cashFilterDate || getEgyptTodayString();
+    if (cashClosingLocksRef.current.has(closeDate)) return showToast(`جارٍ اعتماد إغلاق يوم ${closeDate}`, 'info');
+    cashClosingLocksRef.current.add(closeDate);
+
+    try {
+      // إعادة القراءة قبل الاعتماد تمنع التكرار إذا كانت اللوحة مفتوحة في أكثر من تبويب أو حدث ضغط مزدوج.
+      const latestNotifications = await fetchAPIWithRetry('notifications?select=action,details&order=created_at.desc');
+      if (Array.isArray(latestNotifications)) {
+        if (latestNotifications.some((notification: any) => getCashClosingDate(notification) === closeDate)) {
+          showToast(`يوم ${closeDate} مغلق بالفعل ولا يمكن إغلاقه مرة أخرى`, 'info');
+          return;
+        }
+      } else if (isCashDateClosed(closeDate)) {
+        return showToast(`يوم ${closeDate} مغلق بالفعل ولا يمكن إغلاقه مرة أخرى`, 'info');
+      }
+
+      const entries = cashLedger.filter((entry: any) => entry.date === closeDate);
+      const income = entries.filter((entry: any) => entry.type === 'income').reduce((sum: number, entry: any) => sum + (Number(entry.amount) || 0), 0);
+      const expenses = entries.filter((entry: any) => entry.type === 'expense').reduce((sum: number, entry: any) => sum + (Number(entry.amount) || 0), 0);
+      const distributions = entries.filter((entry: any) => entry.type === 'profit_distribution').reduce((sum: number, entry: any) => sum + (Number(entry.amount) || 0), 0);
+      const closing = Number((income - expenses - distributions).toFixed(2));
+      const details = JSON.stringify({ audit: true, close_date: closeDate, income, expenses, distributions, closing, entry_count: entries.length, closed_by: currentUser?.name || 'مدير النظام', closed_at: new Date().toISOString() });
+
+      await addNotification('إغلاق يومي للخزنة', details);
+      await addAuditLog('إغلاق يومي للخزنة', 'cash_ledger', `closing:${closeDate}`, {}, { close_date: closeDate, income, expenses, distributions, closing, entry_count: entries.length }, currentUser?.name || 'مدير النظام');
+      showToast(`تم إغلاق خزنة يوم ${closeDate} بصافي حركة ${closing.toLocaleString()} ج.م`, 'success');
+      await fetchNotifications();
+    } catch (error) {
+      console.error('فشل إغلاق الخزنة:', error);
+      showToast('تعذر إغلاق اليوم، لم يتم اعتماد العملية', 'error');
+    } finally {
+      cashClosingLocksRef.current.delete(closeDate);
+    }
+  };
+
   const addCashEntry = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canManageCash) return showToast("مدير العمليات لا يملك صلاحية إضافة حركات للخزنة", "error");
+    if (isCashDateClosed(String(cashForm.date || '')) && !isAdmin) return showToast('هذا اليوم مغلق ولا يمكن إضافة حركة إلا بواسطة مدير النظام', 'error');
     try {
       const amount = Number(Number(cashForm.amount).toFixed(2));
       const entryData = { ...cashForm, amount };
@@ -1282,7 +1339,9 @@ export default function ProtectedOrders() {
   };
 
   const deleteCashEntry = async (id: number) => {
-    if (!canManageCash) return showToast("مدير العمليات لا يملك صلاحية تعديل الخزنة", "error");
+    if (!isAdmin) return showToast("حذف قيود الخزنة متاح لمدير النظام فقط", "error");
+    const entryToDelete = cashLedger.find((entry: any) => entry.id === id);
+    if (entryToDelete && isCashDateClosed(String(entryToDelete.date || '')) && !isAdmin) return showToast('هذا اليوم مغلق ولا يمكن تعديل قيوده', 'error');
     if (confirm('هل تريد حذف هذا القيد نهائياً؟')) {
       const deletedCash = cashLedger.find((entry: any) => entry.id === id);
       await fetchAPI(`cash_ledger?id=eq.${id}`, { method: 'DELETE' });
@@ -1348,97 +1407,13 @@ export default function ProtectedOrders() {
     }
   };
 
-  // ✅ توزيع آمن ومتعدد في نفس اليوم: يوزع نسبة الشركاء من الدخل غير الموزع فقط.
-  const distributeProfitForDate = async (targetDate: string) => {
-    if (!canEditDelete()) return showToast('ليس لديك صلاحية', 'error');
-    if (profitDistributionLockRef.current) return showToast('يوجد توزيع قيد التنفيذ، يرجى الانتظار', 'info');
-    profitDistributionLockRef.current = true;
-    try {
-      const [incomeRows, distributionRows, partnerRows] = await Promise.all([
-        fetchAPI(`cash_ledger?select=id,amount&date=eq.${targetDate}&type=eq.income&order=id.asc`),
-        fetchAPI(`cash_ledger?select=id,amount,description,date&date=eq.${targetDate}&type=eq.profit_distribution&order=id.asc`),
-        fetchAPI('partners?select=*&order=created_at.desc')
-      ]);
-      const incomes = Array.isArray(incomeRows) ? incomeRows : [];
-      const allDateDistributions = Array.isArray(distributionRows) ? distributionRows : [];
-      // بعض قيود الترحيل تُحفظ بتاريخ التنفيذ، لا بتاريخ مصدر الربح.
-      // لذلك لا يجوز طرحها من يوم 11 إلا إذا كان وصفها يذكر أن مصدرها هو يوم 11.
-      const distributions = allDateDistributions.filter((row: any) => {
-        const description = String(row.description || '');
-        const isForSelectedSourceDay = description.includes(`أرباح يوم ${targetDate}`) || description.includes(`عن يوم ${targetDate}`);
-        const isLegacySameDayDistribution = normalizeLedgerDate(row.date) === targetDate && !description.includes('ترحيل عن يوم');
-        return isForSelectedSourceDay || isLegacySameDayDistribution;
-      });
-      const activePartners = getDistributablePartners(Array.isArray(partnerRows) ? partnerRows : partners);
-      const totalIncome = incomes.reduce((sum: number, row: any) => sum + (Number(row.amount) || 0), 0);
-      const totalDistributedSoFar = distributions.reduce((sum: number, row: any) => sum + (Number(row.amount) || 0), 0);
-      const totalPartnerShares = activePartners.reduce((sum: number, partner: any) => sum + Number(partner.share_percentage || 0), 0);
-
-      if (totalIncome <= 0) return alert(`⚠️ لا يوجد دخل مسجل ليوم ${targetDate}.`);
-      if (!activePartners.length || totalPartnerShares <= 0 || totalPartnerShares > 100) {
-        return showToast(`نسب الشركاء غير صالحة: ${totalPartnerShares}%`, 'error');
-      }
-
-      // المعادلة التراكمية: إجمالي نسبة الشركاء من دخل اليوم ناقص ما تم توزيعه سابقاً.
-      // أي دخل جديد في اليوم نفسه سيظهر تلقائياً كرصيد غير موزع في التوزيع التالي.
-      const totalEntitled = Number(((totalIncome * totalPartnerShares) / 100).toFixed(2));
-      const amountToDistribute = Number((totalEntitled - totalDistributedSoFar).toFixed(2));
-      if (amountToDistribute <= 0.009) {
-        return alert(`⚠️ لا يوجد دخل جديد غير موزع ليوم ${targetDate}.`);
-      }
-
-      const incomeFingerprint = incomes.map((row: any) => `${row.id}:${Number(row.amount) || 0}`).join('|');
-      const partnerFingerprint = activePartners.map((partner: any) => `${partner.id}:${partner.share_percentage}`).join('|');
-      const batchMarker = `batch:${targetDate}:${incomeFingerprint}:${partnerFingerprint}`;
-      if (distributions.some((row: any) => String(row.description || '').includes(batchMarker))) {
-        return alert('⚠️ تم تنفيذ هذه الدفعة بالفعل.');
-      }
-
-      const confirmMsg = `💰 دخل اليوم: ${totalIncome.toLocaleString()} ج.م\n📤 تم توزيعه سابقاً: ${totalDistributedSoFar.toLocaleString()} ج.م\n🔄 الدخل الجديد غير الموزع: ${amountToDistribute.toLocaleString()} ج.م\n🏦 المتبقي للخزنة من هذه الدفعة: ${Number((amountToDistribute * (100 - totalPartnerShares) / totalPartnerShares).toFixed(2)).toLocaleString()} ج.م\n\nهل تريد تنفيذ التوزيع؟`;
-      if (!confirm(confirmMsg)) return;
-
-      const rows: any[] = [];
-      let allocated = 0;
-      activePartners.forEach((partner: any, index: number) => {
-        const share = index === activePartners.length - 1
-          ? Number((amountToDistribute - allocated).toFixed(2))
-          : Number(((amountToDistribute * Number(partner.share_percentage)) / totalPartnerShares).toFixed(2));
-        allocated = Number((allocated + share).toFixed(2));
-        if (share > 0) rows.push({
-          type: 'profit_distribution',
-          amount: share,
-          description: `📤 توزيع أرباح: ${partner.name} (${partner.share_percentage}%) - أرباح يوم ${targetDate} - ${batchMarker}`,
-          date: targetDate
-        });
-      });
-
-      // إدخال كل قيود الدفعة مرة واحدة؛ في حال فشل الطلب لا تُعرض العملية كناجحة.
-      const { data: createdRows, error: insertError } = await supabase
-        .from('cash_ledger')
-        .insert(rows)
-        .select('id,amount,description,date');
-      if (insertError || !createdRows || createdRows.length !== rows.length) {
-        throw insertError || new Error('تعذر حفظ جميع قيود التوزيع');
-      }
-
-      await addNotification('توزيع أرباح', `✅ تم توزيع ${amountToDistribute.toLocaleString()} ج.م لليوم ${targetDate}`);
-      showToast(`تم توزيع ${amountToDistribute.toLocaleString()} ج.م بنجاح`, 'success');
-      await fetchCashLedger();
-      await fetchData();
-      alert(`✅ تم التوزيع بنجاح.\n💰 إجمالي التوزيع: ${amountToDistribute.toLocaleString()} ج.م`);
-    } catch (err) {
-      console.error('Profit distribution failed:', err);
-      showToast('فشل التوزيع؛ لم يتم اعتماد العملية', 'error');
-    } finally {
-      profitDistributionLockRef.current = false;
-    }
-  };
-
   // الأيام السابقة لبداية سجل التوزيع الحالي أُغلقت ضمن النظام السابق ولا تعاد إلى الترحيل.
   // هذا يمنع إعادة توزيع أيام مثل 19/4 و3/7 و16/7 التي سبق إغلاقها فعليًا.
   const profitDistributionTrackingStartDate = '2026-09-03';
   const distributePendingProfitsThroughDate = async (targetDate: string) => {
-    if (!canEditDelete()) return showToast('ليس لديك صلاحية', 'error');
+    if (!canManageCash) return showToast('توزيع الأرباح متاح لمدير النظام فقط', 'error');
+    if (profitDistributionLockRef.current) return showToast('يوجد توزيع قيد التنفيذ، يرجى الانتظار', 'info');
+    profitDistributionLockRef.current = true;
     try {
       // نقرأ القيود كاملة هنا لأن بعض القيود القديمة سُجلت بصيغة 6/9/2024 بدل 2024-09-06.
       const entries = await fetchAPI('cash_ledger?select=*&order=created_at.asc');
@@ -1494,7 +1469,7 @@ export default function ProtectedOrders() {
           distributedForDay += share;
           if (share > 0) {
             const isCarryForward = day.sourceDate !== targetDate;
-            await fetchAPI('cash_ledger', {
+            const inserted = await fetchAPI('cash_ledger', {
               method: 'POST',
               body: JSON.stringify({
                 type: 'profit_distribution',
@@ -1503,6 +1478,7 @@ export default function ProtectedOrders() {
                 date: normalizedTargetDate
               })
             });
+            if (inserted === null) throw new Error('تعذر حفظ قيد توزيع الأرباح');
           }
         }
       }
@@ -1515,6 +1491,8 @@ export default function ProtectedOrders() {
     } catch (err) {
       console.error('فشل توزيع الأرباح المستحقة:', err);
       showToast('تعذر إكمال توزيع الأرباح، لم يتم اعتماد العملية بالكامل', 'error');
+    } finally {
+      profitDistributionLockRef.current = false;
     }
   };
 
@@ -2029,7 +2007,7 @@ export default function ProtectedOrders() {
         const reason = 'إلغاء آلي: أكثر من 30 يومًا بلا تحديث أو معاملة مالية';
         const note = `${previousNote}${previousNote ? '\\n' : ''}[${reason}]`;
         await fetchAPI(`orders?id=eq.${order.id}`, { method: 'PATCH', body: JSON.stringify({ status: 'cancelled', technician_note: note, technician_notes: note }) });
-        await addAuditLog('إلغاء أوردر قديم بلا معاملة مالية', 'orders', order.id, order, { ...order, status: 'cancelled', technician_note: note }, user?.name || 'المدير');
+        await addAuditLog('إلغاء أوردر قديم بلا معاملة مالية', 'orders', order.id, order, { ...order, status: 'cancelled', technician_note: note }, currentUser?.name || 'المدير');
       }));
       showToast(`تم إلغاء ${eligibleOrders.length} أوردر قديم وتسجيل السبب`, 'success');
       await fetchData(true);
@@ -2814,7 +2792,6 @@ ${trackingUrl}
       order.createdAt,
       order.date,
     ];
-
     for (const value of candidates) {
       if (!value) continue;
       const parsed = parseOrderDate(value)?.getTime() ?? new Date(value).getTime();
@@ -2822,8 +2799,13 @@ ${trackingUrl}
     }
     return 0;
   };
-
+  const getOrderCreatedTime = (order: any) => {
+    const value = getOrderReferenceDate(order);
+    const parsed = parseOrderDate(value)?.getTime() ?? new Date(value).getTime();
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  };
   const filteredOrders = useMemo(() => {
+
     // ترتيب الإدارة: المتأخر أولاً، ثم بلا فني، ثم التحصيل المعلق، ثم المثبت، ثم الأحدث.
     const needsCollectionConfirmation = isCollectionPending;
     const isUnassigned = (order: any) => !order.technician || order.technician === '-' || order.technician === '';
@@ -2844,9 +2826,14 @@ ${trackingUrl}
       const bPinned = pinnedOrderIds.has(b.id);
       if (aPinned !== bPinned) return aPinned ? -1 : 1;
 
+      // الترتيب الأخير هو تاريخ إنشاء الأوردر، وليس آخر تعديل، حتى لا يقفز أوردر قديم لمجرد تحديث ملاحظته.
+      const createdDiff = getOrderCreatedTime(b) - getOrderCreatedTime(a);
+      if (createdDiff !== 0) return createdDiff;
       const activityDiff = getOrderActivityTime(b) - getOrderActivityTime(a);
       if (activityDiff !== 0) return activityDiff;
-      return Number(b.id || 0) - Number(a.id || 0);
+      const idDiff = Number(b.id || 0) - Number(a.id || 0);
+      if (idDiff !== 0) return idDiff;
+      return String(b.order_number || '').localeCompare(String(a.order_number || ''), 'ar');
     };
 
     const sorted = [...allFilteredOrders].sort(sortByPriority);
@@ -3091,7 +3078,7 @@ ${trackingUrl}
     startUrgentAlert();
     showToast(`🚨 مهمة عاجلة جديدة: ${summary}`, 'info');
     void addNotification('مهمة عاجلة جديدة', `ظهرت مهمة جديدة في مركز القيادة: ${summary}`, currentUser?.name || 'المدير');
-    void sendExternalPush({ event: 'system_alert', title: '🚨 مهمة عاجلة في لوحة المدير', message: summary, targetRoles: ['admin', 'manager'], data: { focus: 'orders', urgent_tasks: increasedTasks.map((task) => task.key) } });
+    void sendExternalPush({ event: 'system_alert', title: '🚨 مهمة عاجلة في لوحة المدير', message: summary, targetRoles: ['admin', 'manager'], data: { focus: 'orders', urgent_tasks: increasedTasks.map((task) => task.key).join(',') } });
   }, [dailyTaskQueue, initialLoadComplete, currentUser?.name]);
 
   const openCommandCenter = (type: 'unassigned' | 'collection' | 'delayed' | 'active') => {
@@ -4940,6 +4927,7 @@ ${trackingUrl}
                 <button onClick={()=>setCashFilterDate(getEgyptTodayString())} className="bg-emerald-700/70 text-white px-3 py-2 rounded-lg text-sm">اليوم</button>
                 <button onClick={()=>setCashFilterDate('')} className="bg-slate-700 text-white px-3 py-2 rounded-lg text-sm">كل السجل</button>
                 {canManageCash && <button onClick={()=>{setEditingCash(null); setCashForm({type:'expense',amount:0,description:'',date:new Date().toISOString().split('T')[0]}); setShowCashModal(true);}} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus size={16}/> حركة جديدة</button>}
+                {isAdmin && <button onClick={closeCashDay} disabled={!cashFilterDate || isCashDateClosed(cashFilterDate)} className="bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"><CheckCircle2 size={16}/> {isCashDateClosed(cashFilterDate) ? 'اليوم مغلق' : 'إغلاق اليوم'}</button>}
               </div>
             </div>
             <div className="bg-purple-600/10 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 border border-purple-500/30">
@@ -4959,7 +4947,7 @@ ${trackingUrl}
                   <td className={entry.type==='income'?'text-green-400':'text-red-400'}>{entry.amount} ج.م</td>
                   <td className="whitespace-nowrap text-orange-300 font-black">{getCashEntryTechnician(entry) || '—'}</td>
                   <td className="max-w-xs break-words text-slate-300">{entry.description}</td>
-                  <td>{canManageCash && <button onClick={()=>deleteCashEntry(entry.id)} className="text-red-400"><Trash2 size={16}/></button>}</td>
+                  <td>{isAdmin && <button onClick={()=>deleteCashEntry(entry.id)} className="text-red-400" aria-label="حذف قيد الخزنة"><Trash2 size={16}/></button>}</td>
                 </tr>
               ))}</tbody></table>
             </div>
