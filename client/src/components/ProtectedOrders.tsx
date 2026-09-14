@@ -2824,9 +2824,18 @@ ${trackingUrl}
   };
 
   const filteredOrders = useMemo(() => {
-    // أوردرات انتظار تأكيد التحصيل أولاً، ثم المثبتة، ثم الأحدث تحديثاً.
+    // ترتيب الإدارة: المتأخر أولاً، ثم بلا فني، ثم التحصيل المعلق، ثم المثبت، ثم الأحدث.
     const needsCollectionConfirmation = isCollectionPending;
+    const isUnassigned = (order: any) => !order.technician || order.technician === '-' || order.technician === '';
     const sortByPriority = (a: any, b: any) => {
+      const aDelayed = isDelayed(a);
+      const bDelayed = isDelayed(b);
+      if (aDelayed !== bDelayed) return aDelayed ? -1 : 1;
+
+      const aUnassigned = isUnassigned(a);
+      const bUnassigned = isUnassigned(b);
+      if (aUnassigned !== bUnassigned) return aUnassigned ? -1 : 1;
+
       const aNeedsCollection = needsCollectionConfirmation(a);
       const bNeedsCollection = needsCollectionConfirmation(b);
       if (aNeedsCollection !== bNeedsCollection) return aNeedsCollection ? -1 : 1;

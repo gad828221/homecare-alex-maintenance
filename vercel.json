@@ -1,6 +1,7 @@
 {
   "crons": [
-    { "path": "/api/technician-inactivity", "schedule": "0 3 * * *" }
+    { "path": "/api/technician-inactivity", "schedule": "0 3 * * *" },
+    { "path": "/api/weekly-financial-report", "schedule": "0 17 * * 4" }
   ],
   "headers": [
     {
