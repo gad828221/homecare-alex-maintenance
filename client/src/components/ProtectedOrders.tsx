@@ -1077,7 +1077,7 @@ export default function ProtectedOrders() {
     const ageDays = referenceDate
       ? Math.floor((Date.now() - referenceDate.getTime()) / (1000 * 60 * 60 * 24))
       : 0;
-    if (ageDays > ORDER_ARCHIVE_AFTER_DAYS) return true;
+    if (ageDays >= ORDER_ARCHIVE_AFTER_DAYS) return true;
 
     // الحالات النهائية المحسومة تنظّم لوحة التشغيل فوراً.
     if (order.status === 'cancelled' || order.status === 'inspected') return true;
@@ -2790,27 +2790,13 @@ ${trackingUrl}
   };
   const filteredOrders = useMemo(() => {
 
-    // ترتيب الإدارة: المتأخر أولاً، ثم بلا فني، ثم التحصيل المعلق، ثم المثبت، ثم الأحدث.
-    const needsCollectionConfirmation = isCollectionPending;
-    const isUnassigned = (order: any) => !order.technician || order.technician === '-' || order.technician === '';
+    // ترتيب التشغيل الأساسي: الأحدث أولاً دائماً، مع إبقاء علامات التأخير والأولوية داخل البطاقة.
+    // لا نعيد ترتيب أوردر قديم فوق أوردر حديث لمجرد أنه متأخر، حتى تبقى الشاشة اليومية سهلة القراءة.
     const sortByPriority = (a: any, b: any) => {
-      const aDelayed = isDelayed(a);
-      const bDelayed = isDelayed(b);
-      if (aDelayed !== bDelayed) return aDelayed ? -1 : 1;
-
-      const aUnassigned = isUnassigned(a);
-      const bUnassigned = isUnassigned(b);
-      if (aUnassigned !== bUnassigned) return aUnassigned ? -1 : 1;
-
-      const aNeedsCollection = needsCollectionConfirmation(a);
-      const bNeedsCollection = needsCollectionConfirmation(b);
-      if (aNeedsCollection !== bNeedsCollection) return aNeedsCollection ? -1 : 1;
-
       const aPinned = pinnedOrderIds.has(a.id);
       const bPinned = pinnedOrderIds.has(b.id);
       if (aPinned !== bPinned) return aPinned ? -1 : 1;
 
-      // الترتيب الأخير هو تاريخ إنشاء الأوردر، وليس آخر تعديل، حتى لا يقفز أوردر قديم لمجرد تحديث ملاحظته.
       const createdDiff = getOrderCreatedTime(b) - getOrderCreatedTime(a);
       if (createdDiff !== 0) return createdDiff;
       const activityDiff = getOrderActivityTime(b) - getOrderActivityTime(a);
