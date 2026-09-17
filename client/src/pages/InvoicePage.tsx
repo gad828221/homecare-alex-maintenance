@@ -15,7 +15,7 @@ export default function InvoicePageNew() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isManagerEditing, setIsManagerEditing] = useState(false);
   const [managerSaving, setManagerSaving] = useState(false);
-  const [managerForm, setManagerForm] = useState({ warranty_period: '', status: 'completed', technician: '', admin_notes: '' });
+  const [managerForm, setManagerForm] = useState({ warranty_period: '', status: 'completed', technician: '', admin_notes: '', total_amount: 0, parts_used: '', invoice_date: '', invoice_approved: false });
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,7 +45,11 @@ export default function InvoicePageNew() {
             warranty_period: data[0].warranty_period || '6 أشهر',
             status: data[0].status || 'completed',
             technician: data[0].technician || '',
-            admin_notes: data[0].admin_notes || ''
+            admin_notes: data[0].admin_notes || '',
+            total_amount: Number(data[0].total_amount || 0),
+            parts_used: data[0].parts_used || '',
+            invoice_date: data[0].invoice_date || String(data[0].created_at || '').slice(0, 10),
+            invoice_approved: Boolean(data[0].invoice_approved)
           });
         } else {
           setError("الفاتورة غير موجودة");
@@ -79,6 +83,10 @@ export default function InvoicePageNew() {
         status: managerForm.status,
         technician: managerForm.technician.trim(),
         admin_notes: managerForm.admin_notes.trim(),
+        total_amount: Math.max(0, Number(managerForm.total_amount) || 0),
+        parts_used: managerForm.parts_used.trim(),
+        invoice_date: managerForm.invoice_date || new Date().toISOString().slice(0, 10),
+        invoice_approved: Boolean(managerForm.invoice_approved),
         receipt_updated_by: currentUser?.name || currentUser?.username || 'المدير',
         receipt_updated_at: new Date().toISOString()
       };
@@ -225,7 +233,7 @@ export default function InvoicePageNew() {
       yPosition += 5;
       pdf.text(`تاريخ انتهاء الضمان: ${calculateWarrantyEndDate(invoice?.warranty_period).toLocaleDateString('ar-EG')}`, 20, yPosition);
       yPosition += 5;
-      pdf.text(`المتبقي من الضمان: ${getWarrantyRemaining()}`, 20, yPosition);
+      pdf.text(`المتبقي من الضمان: ${getWarrantyRemaining().text}`, 20, yPosition);
       yPosition += 10;
 
       pdf.setFont("helvetica", "bold");
@@ -490,6 +498,12 @@ export default function InvoicePageNew() {
             </div>
             {isManagerEditing && (
               <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
+                <label className="text-sm font-bold text-slate-700">المبلغ الإجمالي
+                  <input type="number" min="0" value={managerForm.total_amount} onChange={(e) => setManagerForm({ ...managerForm, total_amount: Number(e.target.value) || 0 })} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
+                </label>
+                <label className="text-sm font-bold text-slate-700">تاريخ الفاتورة
+                  <input type="date" value={managerForm.invoice_date} onChange={(e) => setManagerForm({ ...managerForm, invoice_date: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
+                </label>
                 <label className="text-sm font-bold text-slate-700">مدة الضمان
                   <input value={managerForm.warranty_period} onChange={(e) => setManagerForm({ ...managerForm, warranty_period: e.target.value })} placeholder="مثال: 6 أشهر أو بدون ضمان" className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
                 </label>
@@ -506,6 +520,10 @@ export default function InvoicePageNew() {
                 <label className="text-sm font-bold text-slate-700">الفني الظاهر للعميل
                   <input value={managerForm.technician} onChange={(e) => setManagerForm({ ...managerForm, technician: e.target.value })} placeholder="اسم الفني" className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
                 </label>
+                <label className="text-sm font-bold text-slate-700 md:col-span-3">قطع الغيار المستخدمة
+                  <textarea value={managerForm.parts_used} onChange={(e) => setManagerForm({ ...managerForm, parts_used: e.target.value })} placeholder="مثال: طلمبة، سير، حساس..." rows={2} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
+                </label>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-700 md:col-span-3"><input type="checkbox" checked={managerForm.invoice_approved} onChange={(e) => setManagerForm({ ...managerForm, invoice_approved: e.target.checked })} className="h-4 w-4 accent-orange-600" /> اعتماد الفاتورة بعد التعديل</label>
                 <label className="text-sm font-bold text-slate-700 md:col-span-3">ملاحظة أو حالة تُعرض للعميل
                   <textarea value={managerForm.admin_notes} onChange={(e) => setManagerForm({ ...managerForm, admin_notes: e.target.value })} placeholder="مثال: في انتظار قطعة غيار، سيتم التواصل غدًا..." rows={3} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
                 </label>

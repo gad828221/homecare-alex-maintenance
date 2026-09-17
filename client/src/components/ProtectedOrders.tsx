@@ -56,6 +56,39 @@ const getAdditionalCustomerPhones = (adminNotes: any): string[] => {
   const match = String(adminNotes || '').match(/\[أرقام إضافية للعميل:\s*([^\]]+)\]/);
   return match?.[1]?.split('|').map((phone) => phone.trim()).filter(Boolean) || [];
 };
+
+type FollowUpData = {
+  nextAction: string;
+  followUpDate: string;
+  blocker: string;
+  owner: string;
+};
+const EMPTY_FOLLOW_UP: FollowUpData = { nextAction: '', followUpDate: '', blocker: '', owner: '' };
+const FOLLOW_UP_MARKER = 'بيانات المتابعة:';
+const getFollowUpData = (adminNotes: any): FollowUpData => {
+  const text = String(adminNotes || '');
+  const match = text.match(/\[بيانات المتابعة:\s*(\{.*?\})\]/);
+  if (!match) return { ...EMPTY_FOLLOW_UP };
+  try {
+    const parsed = JSON.parse(match[1]);
+    return {
+      nextAction: String(parsed?.nextAction || ''),
+      followUpDate: String(parsed?.followUpDate || ''),
+      blocker: String(parsed?.blocker || ''),
+      owner: String(parsed?.owner || '')
+    };
+  } catch {
+    return { ...EMPTY_FOLLOW_UP };
+  }
+};
+const removeFollowUpMarker = (adminNotes: any) => String(adminNotes || '')
+  .replace(/\n?\[بيانات المتابعة:\s*\{.*?\}\]/g, '')
+  .trim();
+const buildFollowUpMarker = (data: FollowUpData) => {
+  const cleaned = Object.fromEntries(Object.entries(data).map(([key, value]) => [key, String(value || '').trim()]));
+  const hasData = Object.values(cleaned).some(Boolean);
+  return hasData ? `\n[${FOLLOW_UP_MARKER} ${JSON.stringify(cleaned)}]` : '';
+};
 const getRelativeEgyptDate = (offsetDays = 0) => {
   const [year, month, day] = getEgyptTodayString().split('-').map(Number);
   const date = new Date(Date.UTC(year, month - 1, day + offsetDays));
@@ -478,6 +511,7 @@ export default function ProtectedOrders() {
   const [previousCustomer, setPreviousCustomer] = useState<any>(null);
   const [customerLookupLoading, setCustomerLookupLoading] = useState(false);
   const [additionalPhones, setAdditionalPhones] = useState<string[]>([]);
+  const [followUpForm, setFollowUpForm] = useState<FollowUpData>({ ...EMPTY_FOLLOW_UP });
 
   useEffect(() => {
     if (editingOrder) {
@@ -520,6 +554,7 @@ export default function ProtectedOrders() {
     // v3.8.9: منع إعادة التصفير للخطوة 1 إذا كان الأوردر موجوداً بالفعل (حالة التعديل أو التعيين السريع)
     if (!editingOrder) {
       setAdditionalPhones([]);
+      setFollowUpForm({ ...EMPTY_FOLLOW_UP });
       setFormStep(1);
       setFormData({
         customer_name: '',
@@ -549,6 +584,7 @@ export default function ProtectedOrders() {
       setCustomBrand('');
     } else {
       setAdditionalPhones(getAdditionalCustomerPhones(editingOrder.admin_notes));
+      setFollowUpForm(getFollowUpData(editingOrder.admin_notes));
     }
     requestAnimationFrame(() => orderModalScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' }));
   }, [showOrderModal, editingOrder]);
@@ -2386,11 +2422,11 @@ ${trackingUrl}
       const activeRole = String(currentUser?.role || localStorage.getItem('userRole') || '').toLowerCase();
       const sourceLabel = activeRole === 'admin' ? 'مدير النظام' : activeRole === 'manager' ? 'مدير العمليات' : 'مدير النظام';
     const sourceMarker = `[مصدر التسجيل: ${editingOrder ? '' : sourceLabel}]`;
-    const existingAdminNotes = String((formData as any).admin_notes || '').replace(/\n?\[أرقام إضافية للعميل:\s*[^\]]+\]/g, '').trim();
+    const existingAdminNotes = removeFollowUpMarker(String((formData as any).admin_notes || '').replace(/\n?\[أرقام إضافية للعميل:\s*[^\]]+\]/g, '').trim());
     const cleanAdditionalPhones = additionalPhones.map((phone) => phone.trim()).filter(Boolean).filter((phone, index, phones) => phones.indexOf(phone) === index && phone !== String(formData.phone || '').trim());
     const additionalPhonesMarker = cleanAdditionalPhones.length ? `\n[أرقام إضافية للعميل: ${cleanAdditionalPhones.join(' | ')}]` : '';
     const baseNotes = existingAdminNotes || (!editingOrder ? sourceMarker : '');
-    const adminNotesWithSource = `${baseNotes}${additionalPhonesMarker}`.trim();
+    const adminNotesWithSource = `${baseNotes}${additionalPhonesMarker}${buildFollowUpMarker(followUpForm)}`.trim();
     const orderToSave: any = { ...formData, device_type: finalDevice, brand: finalBrand, admin_notes: adminNotesWithSource, order_number: editingOrder ? editingOrder.order_number : `MG-${Date.now()}` };
     try {
       if (editingOrder) {
@@ -2462,6 +2498,7 @@ ${trackingUrl}
       setShowOrderModal(false); setEditingOrder(null);
       setFormData({ customer_name: '', phone: '', device_type: '', address: '', brand: '', problem_description: '', technician: '', status: 'pending', total_amount: 0, parts_cost: 0, transport_cost: 0, net_amount: 0, company_share: 0, technician_share: 0, is_paid: false, invoice_approved: false, warranty_period: '6 أشهر', invoice_date: new Date().toISOString().split('T')[0], parts_used: '', date: new Date().toLocaleDateString("ar-EG") });
       setAdditionalPhones([]);
+      setFollowUpForm({ ...EMPTY_FOLLOW_UP });
       setIsOtherDevice(false); setIsOtherBrand(false); setCustomDevice(''); setCustomBrand('');
       fetchData();
     } catch (err) { console.error(err); showToast("حدث خطأ أثناء الحفظ", "error"); } finally { setIsSubmitting(false); }
@@ -4424,7 +4461,7 @@ ${trackingUrl}
                               <button type="button" onClick={() => { stopUrgentAlert(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); }} className="flex-1 h-9 bg-orange-600/20 hover:bg-orange-600 text-orange-300 hover:text-white rounded-lg text-[9px] font-black border border-orange-500/30 flex items-center justify-center gap-1.5 transition-all active:scale-95" title="تحويل الأوردر إلى فني آخر"><UserPlus size={14} /> تحويل لفني آخر</button>
                             )}
 	                            {order.status === 'completed' ? (
-	                              <button onClick={() => window.open(`/invoice?id=${order.id}`, '_blank')} className="flex-1 h-9 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white rounded-lg text-[9px] font-black border border-blue-500/20 flex items-center justify-center gap-1.5 transition-all active:scale-95"><FileCheck size={14} /> فاتورة</button>
+	                              <button onClick={() => window.open(`/invoice?id=${order.id}`, '_blank')} className="flex-1 h-9 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white rounded-lg text-[9px] font-black border border-blue-500/20 flex items-center justify-center gap-1.5 transition-all active:scale-95"><FileCheck size={14} /> فاتورة وتعديل</button>
 	                            ) : (
 	                              <button onClick={() => { void openManagerPickupReceipt(order); }} className="flex-1 h-9 bg-purple-600/20 hover:bg-purple-700 text-purple-400 hover:text-white rounded-lg text-[9px] font-black border border-purple-500/20 flex items-center justify-center gap-1.5 transition-all active:scale-95"><ClipboardList size={14} /> إيصال</button>
 	                            )}
@@ -4602,7 +4639,8 @@ ${trackingUrl}
                     </div>
                     <div className="mt-4 pt-4 border-t border-slate-800 flex gap-2">
                       {!isViewer && <a href={`tel:${order.phone}`} className="flex-1 bg-slate-800 text-white py-2 rounded-xl text-center text-[10px] font-bold">اتصال</a>}
-	                      {canEditDelete() && (
+                      <a href={`/invoice?id=${encodeURIComponent(String(order.id))}`} target="_blank" rel="noreferrer" className="flex-1 bg-orange-600/20 border border-orange-500/30 text-orange-300 py-2 rounded-xl text-center text-[10px] font-black hover:bg-orange-600 hover:text-white">فاتورة وتعديل</a>
+		                      {canEditDelete() && (
 	                        <button
 	                          onClick={() => { stopUrgentAlert(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); }}
 	                          className="px-3 bg-slate-800 text-blue-400 rounded-xl"
