@@ -42,6 +42,27 @@ const OPERATION_STAGES = [
   { value: 'closed', label: 'مغلق' }
 ] as const;
 const getOperationStageLabel = (value: any) => OPERATION_STAGES.find((stage) => stage.value === value)?.label || 'غير محدد';
+const playNavigationClick = () => {
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const context = new AudioContextClass();
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(520, context.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(760, context.currentTime + 0.045);
+    gain.gain.setValueAtTime(0.0001, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.035, context.currentTime + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.07);
+    oscillator.connect(gain).connect(context.destination);
+    oscillator.start();
+    oscillator.stop(context.currentTime + 0.075);
+    window.setTimeout(() => void context.close(), 120);
+  } catch {
+    // بعض المتصفحات تمنع Web Audio؛ الحركة البصرية تعمل بدون صوت.
+  }
+};
 const getCashClosingDate = (notification: any) => {
   if (notification?.action !== 'إغلاق يومي للخزنة') return null;
   try {
@@ -3653,13 +3674,13 @@ ${trackingUrl}
         ].filter(tab => !tab.hide).map(tab => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => { playNavigationClick(); setActiveTab(tab.id as any); }}
             type="button"
             title={tab.label}
             aria-label={tab.label}
             aria-selected={activeTab === tab.id}
             role="tab"
-            className={`group relative shrink-0 flex items-center justify-center gap-2 w-[3.7rem] h-[3.7rem] rounded-[1.35rem] border text-xs font-black transition-all duration-300 active:scale-90 ${
+            className={`group relative shrink-0 flex items-center justify-center gap-2 w-[3.7rem] h-[3.7rem] rounded-[1.35rem] border text-xs font-black transition-all duration-300 active:scale-90 active:rotate-2 ${
               activeTab === tab.id 
                 ? `border-orange-300/70 bg-gradient-to-br from-orange-500 to-orange-700 text-white shadow-[0_0_24px_rgba(249,115,22,0.38)]` 
                 : 'border-slate-700/80 bg-gradient-to-br from-[#18243a] to-[#111b2e] text-slate-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:-translate-y-0.5 hover:border-slate-500 hover:text-white hover:shadow-[0_0_18px_rgba(59,130,246,0.15)]'
