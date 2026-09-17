@@ -32,6 +32,17 @@ const normalizeCustomerPhone = (phone: any) => {
   const digits = String(phone || '').replace(/\D/g, '');
   return digits.startsWith('20') ? `0${digits.slice(2)}` : digits;
 };
+const getTechnicianFollowUp = (adminNotes: any) => {
+  const match = String(adminNotes || '').match(/\[بيانات المتابعة:\s*(\{.*?\})\]/);
+  if (!match) return { stage: 'غير محدد', nextAction: '', followUpDate: '', blocker: '', owner: '' };
+  try {
+    const parsed = JSON.parse(match[1]);
+    const stages: Record<string, string> = { new: 'جديد', contact: 'بانتظار التواصل', scheduled: 'تم تحديد الموعد', in_progress: 'قيد التنفيذ', blocked: 'بانتظار العميل أو قطعة', ready_collection: 'جاهز للتحصيل', closed: 'مغلق' };
+    return { stage: stages[String(parsed?.stage || '')] || 'غير محدد', nextAction: String(parsed?.nextAction || ''), followUpDate: String(parsed?.followUpDate || ''), blocker: String(parsed?.blocker || ''), owner: String(parsed?.owner || '') };
+  } catch {
+    return { stage: 'غير محدد', nextAction: '', followUpDate: '', blocker: '', owner: '' };
+  }
+};
 
 const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   const res = await fetch(`${supabaseUrl}/rest/v1/${endpoint}`, {
@@ -1571,6 +1582,7 @@ export default function TechnicianPortal() {
                   'inspected': 'group-hover:shadow-cyan-500/20 border-cyan-500/20'
                 };
                 const statusGlow = delayed ? 'shadow-red-900/40 border-red-500/40' : glowColors[order.status] || 'border-slate-700/30';
+                const followUp = getTechnicianFollowUp(order.admin_notes);
 
                 return (
                     <div key={order.id} className={`group ${config.card} ${statusGlow} rounded-[1.5rem] border-2 p-5 transition-all hover:shadow-2xl relative overflow-hidden ${config.pulse} ${isNew ? "ring-4 ring-blue-500/50" : ""}`}>
@@ -1589,6 +1601,15 @@ export default function TechnicianPortal() {
                         </div>
                         <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black border flex items-center gap-1.5 ${config.badge}`}><StatusIcon size={13} strokeWidth={2.5} />{config.label}</div>
                       </div>
+
+                      {(followUp.stage !== 'غير محدد' || followUp.nextAction || followUp.followUpDate || followUp.blocker) && (
+                        <div className="mb-4 rounded-2xl border border-orange-400/20 bg-orange-500/5 p-3 relative z-10">
+                          <div className="flex flex-wrap items-center justify-between gap-2"><span className="text-[10px] font-black text-orange-200">مرحلة التشغيل: {followUp.stage}</span>{followUp.followUpDate && <span className="text-[10px] font-black text-slate-400">المتابعة: {followUp.followUpDate}</span>}</div>
+                          {followUp.nextAction && <p className="mt-1 text-[11px] font-black text-white">الإجراء التالي: {followUp.nextAction}</p>}
+                          {followUp.blocker && <p className="mt-1 text-[10px] font-bold text-amber-200">سبب التعطيل: {followUp.blocker}</p>}
+                          {followUp.owner && <p className="mt-1 text-[10px] font-bold text-slate-500">مسؤول المتابعة: {followUp.owner}</p>}
+                        </div>
+                      )}
 
                       {order.status === 'returned' && (
                         <div className="mb-4 bg-rose-600/20 border-2 border-rose-500/40 rounded-2xl p-3 animate-pulse relative z-10">

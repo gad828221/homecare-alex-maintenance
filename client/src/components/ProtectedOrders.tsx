@@ -79,11 +79,11 @@ const FOLLOW_UP_MARKER = 'بيانات المتابعة:';
 const getFollowUpData = (adminNotes: any): FollowUpData => {
   const text = String(adminNotes || '');
   const match = text.match(/\[بيانات المتابعة:\s*(\{.*?\})\]/);
-  if (!match) return { ...EMPTY_FOLLOW_UP };
+  if (!match) return { ...EMPTY_FOLLOW_UP, stage: '' };
   try {
     const parsed = JSON.parse(match[1]);
     return {
-      stage: String(parsed?.stage || 'new'),
+      stage: String(parsed?.stage || ''),
       nextAction: String(parsed?.nextAction || ''),
       followUpDate: String(parsed?.followUpDate || ''),
       blocker: String(parsed?.blocker || ''),
@@ -3063,6 +3063,7 @@ ${trackingUrl}
     const today = getEgyptTodayString();
     return {
       stages: OPERATION_STAGES.map(stage => ({ ...stage, count: activeOrders.filter(order => getFollowUpData(order.admin_notes).stage === stage.value).length })),
+      unclassified: activeOrders.filter(order => !getFollowUpData(order.admin_notes).stage).length,
       due: activeOrders.filter(order => { const date = getFollowUpData(order.admin_notes).followUpDate; return Boolean(date && date <= today); }).length,
       blocked: activeOrders.filter(order => Boolean(getFollowUpData(order.admin_notes).blocker)).length
     };
@@ -4022,7 +4023,7 @@ ${trackingUrl}
                 </div>
                 {!showDeleted && !searchTerm && !filterTechnician && (
                   <>
-                  <button type="button" onClick={() => openCommandCenter(needsAttentionSummary.unassigned > 0 ? 'unassigned' : needsAttentionSummary.collection > 0 ? 'collection' : 'delayed')} className="mb-4 flex w-full flex-col gap-3 rounded-3xl border border-orange-400/40 bg-gradient-to-l from-orange-500/15 via-slate-950/60 to-slate-950/40 p-4 text-right shadow-lg shadow-orange-950/10 transition hover:border-orange-300/70 hover:bg-orange-500/20 sm:flex-row sm:items-center sm:justify-between">
+                  <button type="button" onClick={() => openCommandCenter(needsAttentionSummary.unassigned > 0 ? 'unassigned' : needsAttentionSummary.collection > 0 ? 'collection' : 'delayed')} className="hidden mb-4 flex w-full flex-col gap-3 rounded-3xl border border-orange-400/40 bg-gradient-to-l from-orange-500/15 via-slate-950/60 to-slate-950/40 p-4 text-right shadow-lg shadow-orange-950/10 transition hover:border-orange-300/70 hover:bg-orange-500/20 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <div className="flex items-center gap-2 text-sm font-black text-orange-200"><AlertCircle size={17} /> يحتاج تدخلك الآن</div>
                       <p className="mt-1 text-[10px] font-bold text-slate-400">اضغط لفتح أعلى أولوية مباشرة</p>
@@ -4036,9 +4037,9 @@ ${trackingUrl}
                   </button>
                    <section className="mb-5 rounded-3xl border border-orange-500/20 bg-orange-500/5 p-4" aria-label="مراحل تشغيل الأوردرات">
                      <div className="mb-3 flex items-center justify-between gap-2"><div><h3 className="text-sm font-black text-white">مراحل تشغيل الأوردرات</h3><p className="mt-1 text-[10px] font-bold text-slate-500">توزيع الحالات المفتوحة بدون خلطها مع الأرشيف</p></div><div className="flex gap-2 text-[10px] font-black"><span className="rounded-full bg-red-500/15 px-2.5 py-1 text-red-200">متابعة اليوم {operationStageSummary.due}</span><span className="rounded-full bg-amber-500/15 px-2.5 py-1 text-amber-200">متعطل {operationStageSummary.blocked}</span></div></div>
-                     <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-7">{operationStageSummary.stages.map(stage => <div key={stage.value} className="rounded-xl border border-white/5 bg-slate-950/50 p-3 text-right"><div className="text-[10px] font-black text-slate-400">{stage.label}</div><div className="mt-1 text-xl font-black text-orange-300">{stage.count}</div></div>)}</div>
+                     <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-8">{operationStageSummary.stages.map(stage => <div key={stage.value} className="rounded-xl border border-white/5 bg-slate-950/50 p-3 text-right"><div className="text-[10px] font-black text-slate-400">{stage.label}</div><div className="mt-1 text-xl font-black text-orange-300">{stage.count}</div></div>)}<div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-right"><div className="text-[10px] font-black text-amber-200">غير مصنف</div><div className="mt-1 text-xl font-black text-amber-300">{operationStageSummary.unclassified}</div></div></div>
                    </section>
-                   <section className="mb-5 rounded-3xl border border-white/10 bg-slate-950/40 p-4" aria-label="قائمة مهام المدير اليوم">
+                   <section className="hidden mb-5 rounded-3xl border border-white/10 bg-slate-950/40 p-4" aria-label="قائمة مهام المدير اليوم">
                     <div className="mb-3 flex items-center justify-between gap-2"><div><h3 className="text-sm font-black text-white">قائمة مهام اليوم</h3><p className="mt-1 text-[10px] font-bold text-slate-500">كل صف يفتح الإجراء المناسب مباشرة</p></div><span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-[10px] font-black text-slate-400">{dailyTaskQueue.length} مهام</span></div>
                     {dailyTaskQueue.length === 0 ? <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-center text-xs font-black text-emerald-300">لا توجد مهام عاجلة الآن</div> : <div className="grid gap-2 md:grid-cols-2">{dailyTaskQueue.map((task) => <button key={task.key} type="button" onClick={() => openCommandCenter(task.key)} className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-3 text-right transition ${task.className}`}><span className="min-w-0"><span className="block text-xs font-black text-white">{task.label}</span><span className="mt-1 block text-[10px] font-bold text-slate-500">{task.hint}</span></span><span className={`shrink-0 rounded-full px-3 py-1 text-sm font-black ${task.badgeClass}`}>{task.count}</span></button>)}</div>}
                   </section>
