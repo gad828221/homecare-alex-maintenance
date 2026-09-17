@@ -1063,7 +1063,8 @@ export default function ProtectedOrders() {
     .replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '')
     .trim();
 
-  const getOrderReferenceDate = (order: any) => order?.created_at || order?.createdAt || order?.date || '';
+  // آخر نشاط هو المرجع الصحيح للأرشفة؛ تعديل الطلب أو تحديث حالته يمدد فترة المتابعة.
+  const getOrderReferenceDate = (order: any) => order?.updated_at || order?.status_updated_at || order?.last_updated_at || order?.created_at || order?.createdAt || order?.date || '';
 
   const getDaysDifference = (dateStr: string, status: string) => {
     if (status === 'inspected') return 0;
@@ -1119,8 +1120,8 @@ export default function ProtectedOrders() {
       .sort((a: any, b: any) => b.ageDays - a.ageDays);
 
   const isOldAndShouldArchive = (order: any) => {
-    // الأرشفة تعتمد على تاريخ إنشاء الأوردر لجميع الحالات بلا استثناء.
-    // إذا تجاوز الأوردر 15 يوماً، يظهر في الأرشيف حتى لو ظل غير مكتمل أو غير محصل.
+    // الأرشفة تعتمد على آخر نشاط معروف لجميع الحالات بلا استثناء.
+    // إذا لم يحدث نشاط للطلب لمدة 15 يوماً، يظهر في الأرشيف حتى لو ظل غير مكتمل أو غير محصل.
     const referenceDate = parseOrderDate(getOrderReferenceDate(order));
     const ageDays = referenceDate
       ? Math.floor((Date.now() - referenceDate.getTime()) / (1000 * 60 * 60 * 24))
@@ -1626,7 +1627,7 @@ export default function ProtectedOrders() {
     let loadedAllDashboardData = false;
     try {
       const orderFields = isViewer
-        ? 'id,order_number,customer_name,device_type,address,brand,problem_description,technician,status,total_amount,parts_cost,transport_cost,net_amount,company_share,technician_share,is_paid,created_at,date,deleted_at,technician_note,warranty_period,invoice_approved,invoice_date,parts_used,completed_at'
+        ? 'id,order_number,customer_name,device_type,address,brand,problem_description,technician,status,total_amount,parts_cost,transport_cost,net_amount,company_share,technician_share,is_paid,created_at,updated_at,status_updated_at,last_updated_at,date,deleted_at,technician_note,warranty_period,invoice_approved,invoice_date,parts_used,completed_at'
         : '*';
       const allOrders = await fetchAPIWithRetry(`orders?select=${orderFields}&order=created_at.desc`);
       if (requestId !== latestFetchRequestRef.current) return;
