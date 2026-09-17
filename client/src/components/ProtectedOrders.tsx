@@ -481,6 +481,9 @@ export default function ProtectedOrders() {
   const [expandedOrderIds, setExpandedOrderIds] = useState<Set<number>>(new Set());
   const [showWorkAnalysis, setShowWorkAnalysis] = useState(false);
   const [showTechnicianDistribution, setShowTechnicianDistribution] = useState(false);
+  const [showQuickAnalysis, setShowQuickAnalysis] = useState(false);
+  const [showStageSummary, setShowStageSummary] = useState(false);
+  const [showCommandCenter, setShowCommandCenter] = useState(false);
   const [filterTechStatus, setFilterTechStatus] = useState<'all' | 'active' | 'inactive'>('active');
   const [cashFilterDate, setCashFilterDate] = useState(() => getEgyptTodayString());
   const [cashForm, setCashForm] = useState({ type: 'expense', amount: 0, description: '', date: new Date().toISOString().split('T')[0] });
@@ -3910,9 +3913,23 @@ ${trackingUrl}
 	            )}
 
 		            {!showDeleted && filteredOrders.length > 0 && (
-		              <div className="space-y-6 mb-10">
-	                  {/* Quick Analysis Grid */}
-		                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="space-y-6 mb-10">
+                          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-slate-950/50 p-2">
+                            <button type="button" onClick={() => setShowQuickAnalysis((value) => !value)} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-[10px] font-black transition ${showQuickAnalysis ? 'border-orange-400/50 bg-orange-500/15 text-orange-200' : 'border-slate-700 bg-slate-900 text-slate-300 hover:border-orange-400/40'}`} title="عدادات الأداء">
+                              <LayoutDashboard size={15} /><span>العدادات</span><span className="rounded-full bg-slate-800 px-2 py-0.5 text-[9px] text-orange-200">{allFilteredOrders.length}</span>
+                            </button>
+                            <button type="button" onClick={() => setShowStageSummary((value) => !value)} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-[10px] font-black transition ${showStageSummary ? 'border-cyan-400/50 bg-cyan-500/15 text-cyan-200' : 'border-slate-700 bg-slate-900 text-slate-300 hover:border-cyan-400/40'}`} title="مراحل التشغيل">
+                              <ClipboardList size={15} /><span>المراحل</span><span className="rounded-full bg-slate-800 px-2 py-0.5 text-[9px] text-cyan-200">{operationStageSummary.due + operationStageSummary.blocked}</span>
+                            </button>
+                            <button type="button" onClick={() => setShowCommandCenter((value) => !value)} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-[10px] font-black transition ${showCommandCenter ? 'border-rose-400/50 bg-rose-500/15 text-rose-200' : 'border-slate-700 bg-slate-900 text-slate-300 hover:border-rose-400/40'}`} title="مركز القيادة">
+                              <AlertCircle size={15} /><span>القيادة</span><span className="rounded-full bg-slate-800 px-2 py-0.5 text-[9px] text-rose-200">{needsAttentionSummary.total}</span>
+                            </button>
+                            <button type="button" onClick={() => setShowTechnicianDistribution((value) => !value)} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-[10px] font-black transition ${showTechnicianDistribution ? 'border-emerald-400/50 bg-emerald-500/15 text-emerald-200' : 'border-slate-700 bg-slate-900 text-slate-300 hover:border-emerald-400/40'}`} title="توزيع الفنيين">
+                              <Users size={15} /><span>الفنيون</span><span className="rounded-full bg-slate-800 px-2 py-0.5 text-[9px] text-emerald-200">{technicians.length}</span>
+                            </button>
+                          </div>
+                          {/* Quick Analysis Grid */}
+                        <div className={`${showQuickAnalysis ? 'grid' : 'hidden'} grid-cols-2 md:grid-cols-4 gap-4`}>
 			                  <button type="button" onClick={() => setFilterStatus('in-progress')} className="bg-blue-600/10 border border-blue-600/20 rounded-[2rem] p-5 text-center hover:bg-blue-600/20 transition-all group shadow-lg shadow-blue-900/5 active:scale-95">
 			                    <div className="text-4xl font-black text-blue-400 group-hover:scale-110 transition-transform tabular-nums">{filteredOrders.filter(o => o.status === 'in-progress').length}</div>
 			                    <div className="text-[10px] font-black text-blue-300/60 mt-2 uppercase tracking-widest flex items-center justify-center gap-1.5"><Wrench size={12}/> قيد التنفيذ</div>
@@ -4036,7 +4053,7 @@ ${trackingUrl}
                       {needsAttentionSummary.collection > 0 && <span className="rounded-full bg-rose-500/15 px-2.5 py-1 text-rose-200">تحصيل {needsAttentionSummary.collection}</span>}
                     </div>
                   </button>
-                   <section className="mb-5 rounded-3xl border border-orange-500/20 bg-orange-500/5 p-4" aria-label="مراحل تشغيل الأوردرات">
+                   <section className={`${showStageSummary ? 'mb-5' : 'hidden'} rounded-3xl border border-orange-500/20 bg-orange-500/5 p-4`} aria-label="مراحل تشغيل الأوردرات">
                      <div className="mb-3 flex items-center justify-between gap-2"><div><h3 className="text-sm font-black text-white">مراحل تشغيل الأوردرات</h3><p className="mt-1 text-[10px] font-bold text-slate-500">توزيع الحالات المفتوحة بدون خلطها مع الأرشيف</p></div><div className="flex gap-2 text-[10px] font-black"><span className="rounded-full bg-red-500/15 px-2.5 py-1 text-red-200">متابعة اليوم {operationStageSummary.due}</span><span className="rounded-full bg-amber-500/15 px-2.5 py-1 text-amber-200">متعطل {operationStageSummary.blocked}</span></div></div>
                      <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-8">{operationStageSummary.stages.map(stage => <div key={stage.value} className="rounded-xl border border-white/5 bg-slate-950/50 p-3 text-right"><div className="text-[10px] font-black text-slate-400">{stage.label}</div><div className="mt-1 text-xl font-black text-orange-300">{stage.count}</div></div>)}<div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-right"><div className="text-[10px] font-black text-amber-200">غير مصنف</div><div className="mt-1 text-xl font-black text-amber-300">{operationStageSummary.unclassified}</div></div></div>
                    </section>
@@ -4044,7 +4061,7 @@ ${trackingUrl}
                     <div className="mb-3 flex items-center justify-between gap-2"><div><h3 className="text-sm font-black text-white">قائمة مهام اليوم</h3><p className="mt-1 text-[10px] font-bold text-slate-500">كل صف يفتح الإجراء المناسب مباشرة</p></div><span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-[10px] font-black text-slate-400">{dailyTaskQueue.length} مهام</span></div>
                     {dailyTaskQueue.length === 0 ? <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-center text-xs font-black text-emerald-300">لا توجد مهام عاجلة الآن</div> : <div className="grid gap-2 md:grid-cols-2">{dailyTaskQueue.map((task) => <button key={task.key} type="button" onClick={() => openCommandCenter(task.key)} className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-3 text-right transition ${task.className}`}><span className="min-w-0"><span className="block text-xs font-black text-white">{task.label}</span><span className="mt-1 block text-[10px] font-bold text-slate-500">{task.hint}</span></span><span className={`shrink-0 rounded-full px-3 py-1 text-sm font-black ${task.badgeClass}`}>{task.count}</span></button>)}</div>}
                   </section>
-                  <section className="mb-5 rounded-3xl border border-white/10 bg-slate-950/40 p-4" aria-label="مركز قيادة الأوردرات">
+                  <section className={`${showCommandCenter ? 'mb-5' : 'hidden'} rounded-3xl border border-white/10 bg-slate-950/40 p-4`} aria-label="مركز قيادة الأوردرات">
                     <div className="mb-3 flex items-center justify-between">
                       <div><h3 className="text-sm font-black text-white">مركز قيادة الأوردرات</h3><p className="mt-1 text-[10px] font-bold text-slate-500">الأولوية أولًا، ثم توزيع الحمل على الفنيين</p></div>
                       <span className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-black text-slate-500">تحديث مباشر</span>
@@ -4057,7 +4074,7 @@ ${trackingUrl}
                       <button type="button" onClick={() => { setSearchTerm(''); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); setFilterWarranty('all'); setShowCompletedOrders(true); setFilterStatus('completed'); }} className="rounded-2xl border border-emerald-400/50 bg-emerald-500/10 p-3 text-right transition hover:-translate-y-0.5 hover:bg-emerald-500/20"><div className="flex items-center justify-between text-[10px] font-black text-emerald-200"><span>مكتمل</span><CheckCircle2 size={15} /></div><div className="mt-2 text-2xl font-black text-emerald-300">{commandCenterStats.completed}</div><div className="text-[9px] font-bold text-emerald-200/60">مخفي افتراضيًا</div></button>
                     </div>
                   </section>
-                  <section className="mb-6 rounded-3xl border border-white/10 bg-slate-950/40 p-4" aria-label="ملخص أوردرات الفنيين">
+                  <section className={`${showTechnicianDistribution ? 'mb-6' : 'hidden'} rounded-3xl border border-white/10 bg-slate-950/40 p-4`} aria-label="ملخص أوردرات الفنيين">
                     <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <h3 className="flex items-center gap-2 text-sm font-black text-white"><Users size={17} className="text-orange-400" /> توزيع الأوردرات على الفنيين</h3>
