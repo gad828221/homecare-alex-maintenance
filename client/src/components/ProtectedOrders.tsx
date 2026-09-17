@@ -4131,6 +4131,10 @@ ${trackingUrl}
                   const elapsedToneClass = elapsedTone === 'urgent' ? 'text-rose-200 bg-rose-500/20 border-rose-400/50 shadow-lg shadow-rose-500/20 animate-pulse' : elapsedTone === 'warning' ? 'text-amber-200 bg-amber-500/20 border-amber-400/40 shadow-lg shadow-amber-500/10' : 'text-slate-200 bg-slate-950/70 border-slate-700';
                   const cardTone = collectionPending ? 'bg-amber-950/40 border-amber-300 shadow-amber-400/30 animate-pulse' : config.card;
                   const isOrderExpanded = expandedOrderIds.has(order.id);
+                  const followUp = getFollowUpData(order.admin_notes);
+                  const followUpDue = Boolean(followUp.followUpDate && followUp.followUpDate <= getEgyptTodayString());
+                  const followUpLabel = followUp.nextAction || (noTechnician ? 'تعيين فني مسؤول' : delayed ? 'مراجعة الطلب المتأخر' : 'تحديد الإجراء التالي');
+                  const followUpTone = followUpDue || delayed ? 'border-rose-400/40 bg-rose-500/10 text-rose-100' : followUp.nextAction ? 'border-cyan-400/30 bg-cyan-500/10 text-cyan-100' : 'border-amber-400/30 bg-amber-500/10 text-amber-100';
                   
                   // تحديد لون التوهج بناءً على الحالة
                   const glowColors: Record<string, string> = {
@@ -4223,6 +4227,28 @@ ${trackingUrl}
                                   <span className={`truncate font-black ${noTechnician ? 'text-amber-300' : 'text-white'}`}>{noTechnician ? 'لم يتم التعيين' : order.technician}</span>
                                 </div>
                                 {noTechnician && order.status === 'pending' && <span className="shrink-0 rounded-lg bg-amber-500/15 px-2 py-1 text-[8px] font-black text-amber-200">يحتاج تعيين</span>}
+                              </div>
+                              <div className={`relative mb-3 overflow-hidden rounded-2xl border px-3 py-2.5 ${followUpTone}`}>
+                                <div className="absolute -left-6 -top-8 h-20 w-20 rounded-full bg-white/10 blur-2xl" />
+                                <div className="relative flex items-center justify-between gap-3">
+                                  <div className="flex min-w-0 items-center gap-2">
+                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-slate-950/50 shadow-inner">
+                                      <Navigation size={14} />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="text-[8px] font-black uppercase tracking-[0.16em] opacity-70">الإجراء التالي</p>
+                                      <p className="truncate text-[11px] font-black">{followUpLabel}</p>
+                                    </div>
+                                  </div>
+                                  <div className="shrink-0 text-left">
+                                    <p className="text-[8px] font-black opacity-70">الموعد</p>
+                                    <p className="text-[10px] font-black">{followUp.followUpDate || 'غير محدد'}</p>
+                                  </div>
+                                </div>
+                                {(followUp.owner || followUp.blocker) && <div className="relative mt-2 flex flex-wrap gap-1.5 text-[8px] font-bold opacity-80">
+                                  {followUp.owner && <span className="rounded-full border border-white/10 bg-slate-950/40 px-2 py-1">المسؤول: {followUp.owner}</span>}
+                                  {followUp.blocker && <span className="rounded-full border border-rose-300/20 bg-rose-500/10 px-2 py-1">تعطيل: {followUp.blocker}</span>}
+                                </div>}
                               </div>
                               <div className={isOrderExpanded ? 'space-y-3' : 'hidden'}>
                             <div className="mb-3 relative z-10 flex items-center justify-between gap-2 bg-slate-950/30 px-3 py-1.5 rounded-xl border border-white/5">
