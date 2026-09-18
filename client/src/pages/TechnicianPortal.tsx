@@ -32,16 +32,58 @@ const normalizeCustomerPhone = (phone: any) => {
   const digits = String(phone || '').replace(/\D/g, '');
   return digits.startsWith('20') ? `0${digits.slice(2)}` : digits;
 };
-const getTechnicianFollowUp = (adminNotes: any) => {
+type TechnicianFollowUp = {
+  stage: string;
+  nextAction: string;
+  followUpDate: string;
+  blocker: string;
+  owner: string;
+};
+
+const FOLLOW_UP_STAGES = [
+  { value: 'new', label: 'جديد' },
+  { value: 'contact', label: 'بانتظار التواصل' },
+  { value: 'scheduled', label: 'تم تحديد الموعد' },
+  { value: 'in_progress', label: 'قيد التنفيذ' },
+  { value: 'blocked', label: 'بانتظار العميل أو قطعة' },
+  { value: 'ready_collection', label: 'جاهز للتحصيل' },
+  { value: 'closed', label: 'مغلق' }
+] as const;
+
+const FOLLOW_UP_ACTIONS = ['اتصل بالعميل', 'حدد موعداً', 'تابع قطعة غيار', 'اطلب تدخل المدير', 'اعتمد التحصيل', 'أغلق الأوردر'];
+const FOLLOW_UP_MARKER = 'بيانات المتابعة:';
+const EMPTY_TECHNICIAN_FOLLOW_UP: TechnicianFollowUp = { stage: '', nextAction: '', followUpDate: '', blocker: '', owner: '' };
+
+const parseTechnicianFollowUp = (adminNotes: any): TechnicianFollowUp => {
   const match = String(adminNotes || '').match(/\[بيانات المتابعة:\s*(\{.*?\})\]/);
-  if (!match) return { stage: 'غير محدد', nextAction: '', followUpDate: '', blocker: '', owner: '' };
+  if (!match) return { ...EMPTY_TECHNICIAN_FOLLOW_UP };
   try {
     const parsed = JSON.parse(match[1]);
-    const stages: Record<string, string> = { new: 'جديد', contact: 'بانتظار التواصل', scheduled: 'تم تحديد الموعد', in_progress: 'قيد التنفيذ', blocked: 'بانتظار العميل أو قطعة', ready_collection: 'جاهز للتحصيل', closed: 'مغلق' };
-    return { stage: stages[String(parsed?.stage || '')] || 'غير محدد', nextAction: String(parsed?.nextAction || ''), followUpDate: String(parsed?.followUpDate || ''), blocker: String(parsed?.blocker || ''), owner: String(parsed?.owner || '') };
+    return {
+      stage: String(parsed?.stage || ''),
+      nextAction: String(parsed?.nextAction || ''),
+      followUpDate: String(parsed?.followUpDate || ''),
+      blocker: String(parsed?.blocker || ''),
+      owner: String(parsed?.owner || '')
+    };
   } catch {
-    return { stage: 'غير محدد', nextAction: '', followUpDate: '', blocker: '', owner: '' };
+    return { ...EMPTY_TECHNICIAN_FOLLOW_UP };
   }
+};
+
+const getTechnicianFollowUp = (adminNotes: any) => {
+  const parsed = parseTechnicianFollowUp(adminNotes);
+  const stage = FOLLOW_UP_STAGES.find((item) => item.value === parsed.stage)?.label || 'غير محدد';
+  return { ...parsed, stage };
+};
+
+const removeTechnicianFollowUpMarker = (adminNotes: any) => String(adminNotes || '')
+  .replace(/\n?\[بيانات المتابعة:\s*\{.*?\}\]/g, '')
+  .trim();
+
+const buildTechnicianFollowUpMarker = (data: TechnicianFollowUp) => {
+  const cleaned = Object.fromEntries(Object.entries(data).map(([key, value]) => [key, String(value || '').trim()]));
+  return Object.values(cleaned).some(Boolean) ? `\n[${FOLLOW_UP_MARKER} ${JSON.stringify(cleaned)}]` : '';
 };
 
 const fetchAPI = async (endpoint: string, options?: RequestInit) => {
@@ -106,6 +148,10 @@ export default function TechnicianPortal() {
   const [showActionModal, setShowActionModal] = useState(false);
   const [showActionsModal, setShowActionsModal] = useState(false);
   const [selectedOrderForActions, setSelectedOrderForActions] = useState<any>(null);
+  const [showFollowUpModal, setShowFollowUpModal] = useState(false);
+  const [followUpOrder, setFollowUpOrder] = useState<any>(null);
+  const [followUpForm, setFollowUpForm] = useState<TechnicianFollowUp>({ ...EMPTY_TECHNICIAN_FOLLOW_UP });
+  const [isSavingFollowUp, setIsSavingFollowUp] = useState(false);
   const [actionType, setActionType] = useState<'cancel' | 'inspect' | 'defer' | 'note' | 'pickup'>('note');
   const [actionValue, setActionValue] = useState("");
   const [currentOrder, setCurrentOrder] = useState<any>(null);
@@ -637,6 +683,52 @@ export default function TechnicianPortal() {
   const handleDefer = (order: any, reason: string) => {
     updateStatus(order.id, 'deferred', { technician_note: `تأجيل: ${reason}`, action_date: new Date().toISOString() });
     notifyAdmin("⏰ تأجيل الطلب", order, `السبب: ${reason}`);
+  };
+
+  const openFollowUpModal = (order: any, preset?: Partial<TechnicianFollowUp>) => {
+    const existing = parseTechnicianFollowUp(order.admin_notes);
+    setFollowUpOrder(order);
+    setFollowUpForm({ ...EMPTY_TECHNICIAN_FOLLOW_UP, ...existing, ...preset });
+    setShowFollowUpModal(true);
+  };
+
+  const saveFollowUp = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!followUpOrder || isSavingFollowUp) return;
+    if (!followUpForm.stage || !followUpForm.nextAction) {
+      addNotification({ type: 'error', title: '⚠️ بيانات المتابعة ناقصة', message: 'اختر مرحلة التشغيل والإجراء التالي أولاً.', duration: 5000 });
+      return;
+    }
+    if (followUpForm.stage === 'blocked' && !followUpForm.blocker.trim()) {
+      addNotification({ type: 'error', title: '⚠️ سبب التعطيل مطلوب', message: 'اكتب سبب التعطيل حتى يظهر بوضوح في مركز القيادة.', duration: 5000 });
+      return;
+    }
+    setIsSavingFollowUp(true);
+    try {
+      const baseNotes = removeTechnicianFollowUpMarker(followUpOrder.admin_notes);
+      const adminNotes = `${baseNotes}${buildTechnicianFollowUpMarker(followUpForm)}`.trim();
+      await fetchAPI(`orders?id=eq.${followUpOrder.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ admin_notes: adminNotes })
+      });
+      await notifyAdmin('تحديث متابعة من الفني', followUpOrder, `المرحلة: ${FOLLOW_UP_STAGES.find((item) => item.value === followUpForm.stage)?.label || followUpForm.stage}\nالإجراء التالي: ${followUpForm.nextAction}${followUpForm.blocker ? `\nسبب التعطيل: ${followUpForm.blocker}` : ''}`);
+      await sendExternalPush({
+        event: 'system_alert',
+        title: '📌 تحديث متابعة من الفني',
+        message: `الفني ${techName} حدّث متابعة الأوردر #${followUpOrder.order_number}: ${followUpForm.nextAction}`,
+        targetRoles: ['admin', 'manager'],
+        data: { order_id: followUpOrder.id, order_number: followUpOrder.order_number, action: 'follow_up_update', stage: followUpForm.stage, technician: techName }
+      });
+      await fetchData();
+      setShowFollowUpModal(false);
+      setFollowUpOrder(null);
+      addNotification({ type: 'success', title: '✅ تم حفظ المتابعة', message: 'تم تحديث المرحلة والإجراء التالي وإبلاغ الإدارة مرة واحدة.', duration: 4000 });
+    } catch (error) {
+      console.error('Follow-up save error:', error);
+      addNotification({ type: 'error', title: '❌ تعذر حفظ المتابعة', message: 'لم يتم تغيير بيانات الأوردر. حاول مرة أخرى.', duration: 5000 });
+    } finally {
+      setIsSavingFollowUp(false);
+    }
   };
 
   const handleNote = async (order: any, note: string) => {
@@ -1172,6 +1264,15 @@ export default function TechnicianPortal() {
     return allFilteredOrders;
   }, [allFilteredOrders, filterStatus, searchTerm, visibleCompletedCount]);
 
+  const followUpOrders = useMemo(() => operationalOrders
+    .map((order) => ({ order, followUp: parseTechnicianFollowUp(order.admin_notes) }))
+    .filter(({ followUp }) => Boolean(followUp.nextAction || followUp.blocker || followUp.followUpDate))
+    .sort((a, b) => {
+      const aDate = a.followUp.followUpDate || '9999-12-31';
+      const bDate = b.followUp.followUpDate || '9999-12-31';
+      return aDate.localeCompare(bDate);
+    }), [operationalOrders]);
+
   const oldOpenOrders = orders
     .filter((order: any) => ['pending', 'in-progress', 'in_progress', 'deferred'].includes(String(order.status || '').toLowerCase()))
     .map((order: any) => ({ ...order, ageDays: getDaysDifference(order.created_at || order.createdAt || order.date, order.status) }))
@@ -1477,6 +1578,23 @@ export default function TechnicianPortal() {
               )}
             </div>
 
+            {followUpOrders.length > 0 && (
+              <section className="rounded-2xl border border-orange-400/30 bg-gradient-to-l from-orange-500/10 via-slate-900 to-slate-900 p-4 shadow-lg" aria-label="المطلوب الآن">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div><h2 className="flex items-center gap-2 text-sm font-black text-orange-100"><ClipboardList size={17} className="text-orange-300" /> المطلوب الآن</h2><p className="mt-1 text-[10px] font-bold text-slate-400">نفّذ الإجراء التالي ثم حدّث الإدارة من نفس الأوردر.</p></div>
+                  <span className="rounded-full bg-orange-500/20 px-2.5 py-1 text-[10px] font-black text-orange-200">{followUpOrders.length}</span>
+                </div>
+                <div className="space-y-2">
+                  {followUpOrders.slice(0, 4).map(({ order, followUp }) => (
+                    <button key={`follow-up-${order.id}`} type="button" onClick={() => openFollowUpModal(order)} className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-950/50 p-3 text-right transition hover:border-orange-300/50 hover:bg-orange-500/10 active:scale-[0.99]">
+                      <span className="min-w-0"><span className="block truncate text-xs font-black text-white">#{order.order_number} — {order.customer_name}</span><span className="mt-1 block truncate text-[10px] font-bold text-orange-200">{followUp.nextAction || 'راجع المتابعة'}{followUp.blocker ? ` — ${followUp.blocker}` : ''}</span></span>
+                      <span className="shrink-0 rounded-lg bg-orange-500/15 px-2 py-1 text-[9px] font-black text-orange-200">تحديث</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* ✅ شريط الفلتر */}
             <div className="bg-slate-800 rounded-xl p-3 flex flex-wrap gap-2 items-center">
               <div className="relative flex-1 min-w-[180px]">
@@ -1694,6 +1812,9 @@ export default function TechnicianPortal() {
                               </a>
                             </div>
                           )}
+                          <button onClick={() => openFollowUpModal(order)} className="h-10 px-3 bg-orange-500/15 text-orange-200 border border-orange-400/30 hover:bg-orange-500/25 rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 text-[10px] font-black" title="تحديث مرحلة التشغيل والمتابعة">
+                            <ClipboardList size={15} /> متابعة
+                          </button>
                           <button onClick={() => { setSelectedOrderForActions(order); setShowActionsModal(true); }} className="h-10 w-10 bg-slate-800 text-slate-300 hover:bg-slate-700 rounded-xl flex items-center justify-center transition-all active:scale-95">
                             <Eye size={16} />
                           </button>
@@ -1747,6 +1868,19 @@ export default function TechnicianPortal() {
           <TechnicianPerformance technicians={[{ name: techName }]} orders={orders} />
         )}
       </main>
+
+      {showFollowUpModal && followUpOrder && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4">
+          <form onSubmit={saveFollowUp} className="w-full max-w-md space-y-4 rounded-2xl border border-orange-400/30 bg-slate-900 p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-3"><div><h3 className="text-lg font-black text-white">تحديث متابعة الأوردر</h3><p className="mt-1 text-[10px] font-bold text-slate-400">#{followUpOrder.order_number} — {followUpOrder.customer_name}</p></div><button type="button" onClick={() => setShowFollowUpModal(false)} className="text-slate-400 hover:text-white" aria-label="إغلاق"><X className="h-5 w-5" /></button></div>
+            <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 p-3 text-[10px] font-bold leading-5 text-orange-100">استخدم نفس مراحل مركز القيادة. عند اختيار «بانتظار العميل أو قطعة» يجب كتابة سبب التعطيل وموعد المتابعة.</div>
+            <div className="grid grid-cols-2 gap-3"><label className="text-[10px] font-black text-slate-400">مرحلة التشغيل<select required value={followUpForm.stage} onChange={(e) => setFollowUpForm((prev) => ({ ...prev, stage: e.target.value }))} className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm font-bold text-white outline-none focus:border-orange-400"><option value="">اختر المرحلة</option>{FOLLOW_UP_STAGES.map((stage) => <option key={stage.value} value={stage.value}>{stage.label}</option>)}</select></label><label className="text-[10px] font-black text-slate-400">الإجراء التالي<select required value={followUpForm.nextAction} onChange={(e) => setFollowUpForm((prev) => ({ ...prev, nextAction: e.target.value }))} className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm font-bold text-white outline-none focus:border-orange-400"><option value="">اختر الإجراء</option>{FOLLOW_UP_ACTIONS.map((action) => <option key={action} value={action}>{action}</option>)}</select></label></div>
+            <div className="grid grid-cols-2 gap-3"><label className="text-[10px] font-black text-slate-400">موعد المتابعة<input type="date" value={followUpForm.followUpDate} onChange={(e) => setFollowUpForm((prev) => ({ ...prev, followUpDate: e.target.value }))} className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm font-bold text-white outline-none focus:border-orange-400" /></label><label className="text-[10px] font-black text-slate-400">مسؤول المتابعة<input value={followUpForm.owner || techName} onChange={(e) => setFollowUpForm((prev) => ({ ...prev, owner: e.target.value }))} className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm font-bold text-white outline-none focus:border-orange-400" /></label></div>
+            <label className="block text-[10px] font-black text-slate-400">سبب التعطيل إن وجد<textarea rows={3} value={followUpForm.blocker} onChange={(e) => setFollowUpForm((prev) => ({ ...prev, blocker: e.target.value }))} placeholder="مثال: في انتظار قطعة أو عدم رد العميل" className="mt-1 w-full resize-none rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm font-bold text-white outline-none focus:border-orange-400" /></label>
+            <button type="submit" disabled={isSavingFollowUp} className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600 py-3 text-sm font-black text-white transition hover:bg-orange-500 disabled:cursor-not-allowed disabled:opacity-50">{isSavingFollowUp ? <RefreshCw size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} {isSavingFollowUp ? 'جاري الحفظ...' : 'حفظ التعديلات وإبلاغ الإدارة'}</button>
+          </form>
+        </div>
+      )}
 
       {showActionsModal && selectedOrderForActions && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
