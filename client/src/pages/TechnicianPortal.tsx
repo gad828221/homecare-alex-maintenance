@@ -50,7 +50,7 @@ const FOLLOW_UP_STAGES = [
   { value: 'closed', label: 'مغلق' }
 ] as const;
 
-const FOLLOW_UP_ACTIONS = ['اتصل بالعميل', 'حدد موعداً', 'تابع قطعة غيار', 'اطلب تدخل المدير', 'اعتمد التحصيل', 'أغلق الأوردر'];
+const FOLLOW_UP_ACTIONS = ['اتصل بالعميل', 'حدد موعداً', 'ابدأ التنفيذ', 'تابع قطعة غيار', 'اطلب تدخل المدير', 'اعتمد التحصيل', 'أغلق الأوردر'];
 const TECHNICIAN_WORKFLOW = [
   { value: 'contact', label: 'اتصال بالعميل', action: 'اتصل بالعميل' },
   { value: 'scheduled', label: 'تحديد الموعد', action: 'حدد موعداً' },
@@ -679,10 +679,12 @@ export default function TechnicianPortal() {
     const companyShare = Math.round(total * (100 - technicianPercentage) / 100);
     const techShare = total - companyShare;
     const statusChanged = order.status !== 'inspected';
+    const inspectionFollowUp = { stage: 'ready_collection', nextAction: 'اعتمد التحصيل', followUpDate: '', blocker: '', owner: techName };
+    const inspectionNotes = `${removeTechnicianFollowUpMarker(order.admin_notes)}${buildTechnicianFollowUpMarker(inspectionFollowUp)}`.trim();
     void updateStatus(order.id, 'inspected', {
       total_amount: total, parts_cost: 0, transport_cost: 0, net_amount: total,
       company_share: companyShare, technician_share: techShare,
-      technician_note: `كشف بقيمة ${total} ج.م`, action_date: new Date().toLocaleString("ar-EG"), invoice_approved: false
+      technician_note: `كشف بقيمة ${total} ج.م`, admin_notes: inspectionNotes, action_date: new Date().toLocaleString("ar-EG"), invoice_approved: false
     });
     notifyAdmin("💰 كشف جديد", order, `المبلغ: ${total} ج.م`);
     if (!statusChanged) {
@@ -750,6 +752,12 @@ export default function TechnicianPortal() {
     } finally {
       setIsSavingFollowUp(false);
     }
+  };
+
+  const startExecutionFromWorkflow = async (order: any) => {
+    const followUp = { stage: 'in_progress', nextAction: 'اعتمد التحصيل', followUpDate: '', blocker: '', owner: techName };
+    const adminNotes = `${removeTechnicianFollowUpMarker(order.admin_notes)}${buildTechnicianFollowUpMarker(followUp)}`.trim();
+    await updateStatus(order.id, 'in-progress', { admin_notes: adminNotes });
   };
 
   const handleNote = async (order: any, note: string) => {
@@ -1018,8 +1026,11 @@ export default function TechnicianPortal() {
     });
 
     const isInspectionVisit = selectedOrder.status === 'inspected';
+    const settlementFollowUp = { stage: 'closed', nextAction: '', followUpDate: '', blocker: '', owner: techName };
+    const settlementAdminNotes = `${removeTechnicianFollowUpMarker(selectedOrder.admin_notes)}${buildTechnicianFollowUpMarker(settlementFollowUp)}`.trim();
     const settlementData = {
       ...settleForm,
+      admin_notes: settlementAdminNotes,
       status: isInspectionVisit ? 'inspected' : 'completed',
       warranty_period: isInspectionVisit ? 'بدون ضمان' : settleForm.warranty_period,
       parts_cost: isInspectionVisit ? 0 : settleForm.parts_cost,
@@ -1817,63 +1828,32 @@ export default function TechnicianPortal() {
                         )}
                       </div>
 
-                      {/* Actions */}
+                      {/* إجراءات المرحلة الحالية */}
                       <div className="space-y-3 relative z-10 pt-4 border-t border-slate-800/50">
-                        <div className="flex gap-2">
-                          {isPhoneHidden(order) ? (
-                            <div className="flex-1 h-10 bg-slate-800/50 text-slate-500 rounded-xl flex items-center justify-center gap-2 border border-slate-700/30">
-                              <Ban size={14} /> <span className="text-[10px] font-black italic tracking-tighter">الرقم مخفي بعد الإتمام</span>
+                        {(workflowStage === 'contact' || order.status === 'pending' || order.status === 'returned') && !isPhoneHidden(order) && (
+                          <div className="space-y-2">
+                            <div className="grid grid-cols-2 gap-2">
+                              <a href={`tel:${order.phone}`} onClick={() => notifyCustomerContact(order, 'phone')} className="h-11 bg-blue-600 hover:bg-blue-500 text-white rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 font-black text-xs"><Phone size={17} /> اتصال بالعميل</a>
+                              <a href={`https://wa.me/20${order.phone?.replace(/^0/, '')}?text=${encodeURIComponent(`📢 *تحديث من مركز الصيانة*\nرقم الطلب: ${order.order_number}\nالعميل: ${order.customer_name}`)}`} onClick={() => notifyCustomerContact(order, 'whatsapp')} target="_blank" className="h-11 bg-green-600 hover:bg-green-500 text-white rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 font-black text-xs"><MessageCircle size={17} /> واتساب</a>
                             </div>
-                          ) : (
-                            <div className="flex-1 flex gap-2">
-                              <a 
-                                href={`tel:${order.phone}`} 
-                                onClick={() => notifyCustomerContact(order, 'phone')}
-                                className="flex-1 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95"
-                              >
-                                <Phone size={14} /> <span className="text-[10px] font-black">اتصال</span>
-                              </a>
-                              <a 
-                                href={`https://wa.me/20${order.phone?.replace(/^0/, '')}?text=${encodeURIComponent(`📢 *تحديث من مركز الصيانة*\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الطلب:* ${order.order_number}\n👤 *عزيزنا العميل:* ${order.customer_name}\n\n📍 *يمكنك تتبع حالة طلبك مباشرة من هنا:*\nhttps://www.maintenanceguide.life/track/${order.order_number}\n\n🌟 *شكراً لثقتكم في HomeCare Maintenance.*`)}`}
-                                onClick={() => notifyCustomerContact(order, 'whatsapp')}
-                                target="_blank"
-                                className="flex-1 h-10 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95"
-                              >
-                                <MessageCircle size={14} /> <span className="text-[10px] font-black">واتساب</span>
-                              </a>
-                            </div>
-                          )}
-                          <button onClick={() => openFollowUpModal(order)} className="h-10 px-3 bg-orange-500/15 text-orange-200 border border-orange-400/30 hover:bg-orange-500/25 rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 text-[10px] font-black" title="تحديث مرحلة التشغيل والمتابعة">
-                            <ClipboardList size={15} /> متابعة
-                          </button>
-                          <button onClick={() => { setSelectedOrderForActions(order); setShowActionsModal(true); }} className="h-10 w-10 bg-slate-800 text-slate-300 hover:bg-slate-700 rounded-xl flex items-center justify-center transition-all active:scale-95">
-                            <Eye size={16} />
-                          </button>
-                        </div>
-
+                            <button type="button" onClick={() => openFollowUpModal(order, { stage: 'scheduled', nextAction: 'حدد موعداً', owner: techName })} className="w-full h-10 rounded-xl border border-orange-400/40 bg-orange-500/15 text-orange-100 hover:bg-orange-500/25 text-[10px] font-black transition-all active:scale-95">✅ تم التواصل — انتقل لتحديد الموعد</button>
+                          </div>
+                        )}
+                        {workflowStage === 'scheduled' && (
+                          <button type="button" onClick={() => openFollowUpModal(order, { stage: 'in_progress', nextAction: 'ابدأ التنفيذ', owner: techName })} className="w-full h-11 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-black transition-all shadow-lg active:scale-95">📅 تم تحديد الموعد — ابدأ التنفيذ</button>
+                        )}
+                        {workflowStage === 'in_progress' && (
+                          <button type="button" onClick={() => openSettleModal(order)} className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all shadow-lg active:scale-95">💰 فتح التصفية والتحصيل</button>
+                        )}
+                        {workflowStage === 'ready_collection' && (
+                          <button type="button" onClick={() => openSettleModal(order)} className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all shadow-lg active:scale-95">💰 إتمام التصفية وإغلاق الأوردر</button>
+                        )}
+                        {workflowStage === 'closed' && <div className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 py-3 text-center text-xs font-black text-emerald-200">✅ تم إغلاق الأوردر بعد التصفية</div>}
                         <div className="flex gap-2">
-                          {(order.status === 'pending' || order.status === 'returned') && (
-                            <button onClick={() => updateStatus(order.id, 'in-progress')} className="w-full h-10 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-[10px] font-black transition-all active:scale-95">
-                              {order.status === 'returned' ? '🛠️ إعادة الفحص' : '🚀 بدء العمل'}
-                            </button>
-                          )}
-                          {order.status === 'in-progress' && (
-                            <button onClick={() => openSettleModal(order)} className="w-full h-10 bg-green-600 hover:bg-green-700 text-white rounded-xl text-[10px] font-black transition-all active:scale-95">
-                              💰 تصفية الأوردر
-                            </button>
-                          )}
-                          {(order.status === 'inspected' || order.status === 'deferred') && (
-                            <button onClick={() => openSettleModal(order)} className="w-full h-10 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-[10px] font-black transition-all active:scale-95">
-                              {order.status === 'inspected' ? '🔍 تصفية الكشف/الزيارة' : '📝 تحديث التصفية'}
-                            </button>
-                          )}
-                        </div>
-
-                        <div className="flex gap-2">
-                           <button onClick={() => openActionModal(order, 'inspect')} className="flex-1 py-2 bg-slate-800/50 hover:bg-slate-800 text-slate-400 rounded-lg text-[9px] font-bold transition-all">🔍 كشف</button>
-                           <button onClick={() => openActionModal(order, 'defer')} className="flex-1 py-2 bg-slate-800/50 hover:bg-slate-800 text-slate-400 rounded-lg text-[9px] font-bold transition-all">⏰ تأجيل</button>
-                           <button onClick={() => openActionModal(order, 'cancel')} className="flex-1 py-2 bg-slate-800/50 hover:bg-slate-800 text-rose-500/50 hover:text-rose-500 rounded-lg text-[9px] font-bold transition-all">❌ إلغاء</button>
-                           <button onClick={() => openActionModal(order, 'pickup')} className="flex-1 py-2 bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 rounded-lg text-[9px] font-black transition-all border border-purple-500/20">📋 إيصال سحب</button>
+                          <button onClick={() => openActionModal(order, 'inspect')} className="flex-1 py-2 bg-slate-800/50 hover:bg-slate-800 text-slate-400 rounded-lg text-[9px] font-bold transition-all">🔍 كشف</button>
+                          <button onClick={() => openActionModal(order, 'defer')} className="flex-1 py-2 bg-slate-800/50 hover:bg-slate-800 text-slate-400 rounded-lg text-[9px] font-bold transition-all">⏰ تأجيل</button>
+                          <button onClick={() => openActionModal(order, 'cancel')} className="flex-1 py-2 bg-slate-800/50 hover:bg-slate-800 text-rose-500/50 hover:text-rose-500 rounded-lg text-[9px] font-bold transition-all">❌ إلغاء</button>
+                          <button onClick={() => openActionModal(order, 'pickup')} className="flex-1 py-2 bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 rounded-lg text-[9px] font-black transition-all border border-purple-500/20">📋 إيصال سحب</button>
                         </div>
                       </div>
                     </div>
