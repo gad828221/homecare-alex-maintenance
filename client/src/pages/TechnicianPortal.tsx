@@ -51,6 +51,13 @@ const FOLLOW_UP_STAGES = [
 ] as const;
 
 const FOLLOW_UP_ACTIONS = ['اتصل بالعميل', 'حدد موعداً', 'تابع قطعة غيار', 'اطلب تدخل المدير', 'اعتمد التحصيل', 'أغلق الأوردر'];
+const TECHNICIAN_WORKFLOW = [
+  { value: 'contact', label: 'اتصال بالعميل', action: 'اتصل بالعميل' },
+  { value: 'scheduled', label: 'تحديد الموعد', action: 'حدد موعداً' },
+  { value: 'in_progress', label: 'تنفيذ الخدمة', action: 'ابدأ التنفيذ' },
+  { value: 'ready_collection', label: 'التصفية والتحصيل', action: 'اعتمد التحصيل' },
+  { value: 'closed', label: 'إغلاق الأوردر', action: 'أغلق الأوردر' }
+] as const;
 const FOLLOW_UP_MARKER = 'بيانات المتابعة:';
 const EMPTY_TECHNICIAN_FOLLOW_UP: TechnicianFollowUp = { stage: '', nextAction: '', followUpDate: '', blocker: '', owner: '' };
 
@@ -75,6 +82,20 @@ const getTechnicianFollowUp = (adminNotes: any) => {
   const parsed = parseTechnicianFollowUp(adminNotes);
   const stage = FOLLOW_UP_STAGES.find((item) => item.value === parsed.stage)?.label || 'غير محدد';
   return { ...parsed, stage };
+};
+
+const getWorkflowStage = (order: any) => {
+  const savedStage = parseTechnicianFollowUp(order?.admin_notes).stage;
+  if (order?.status === 'completed' || savedStage === 'closed') return 'closed';
+  if (order?.status === 'in-progress' || order?.status === 'in_progress') return 'in_progress';
+  if (order?.status === 'inspected') return 'ready_collection';
+  return savedStage === 'contact' || savedStage === 'scheduled' || savedStage === 'blocked' ? savedStage : 'contact';
+};
+
+const getWorkflowNext = (order: any) => {
+  const current = getWorkflowStage(order);
+  const index = TECHNICIAN_WORKFLOW.findIndex((step) => step.value === current);
+  return index >= 0 && index < TECHNICIAN_WORKFLOW.length - 1 ? TECHNICIAN_WORKFLOW[index + 1] : null;
 };
 
 const removeTechnicianFollowUpMarker = (adminNotes: any) => String(adminNotes || '')
@@ -1701,6 +1722,9 @@ export default function TechnicianPortal() {
                 };
                 const statusGlow = delayed ? 'shadow-red-900/40 border-red-500/40' : glowColors[order.status] || 'border-slate-700/30';
                 const followUp = getTechnicianFollowUp(order.admin_notes);
+                const workflowStage = getWorkflowStage(order);
+                const workflowIndex = TECHNICIAN_WORKFLOW.findIndex((step) => step.value === workflowStage);
+                const nextWorkflow = getWorkflowNext(order);
 
                 return (
                     <div key={order.id} className={`group ${config.card} ${statusGlow} rounded-[1.5rem] border-2 p-5 transition-all hover:shadow-2xl relative overflow-hidden ${config.pulse} ${isNew ? "ring-4 ring-blue-500/50" : ""}`}>
@@ -1718,6 +1742,13 @@ export default function TechnicianPortal() {
                           <span className="text-[10px] font-bold text-slate-500 tracking-widest uppercase">#{order.order_number}</span>
                         </div>
                         <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black border flex items-center gap-1.5 ${config.badge}`}><StatusIcon size={13} strokeWidth={2.5} />{config.label}</div>
+                      </div>
+
+                      <div className="mb-4 rounded-2xl border border-slate-700/80 bg-slate-950/40 p-3 relative z-10">
+                        <div className="mb-3 flex items-center justify-between gap-2"><span className="text-[10px] font-black text-slate-300">مسار الأوردر</span><span className="rounded-full bg-orange-500/15 px-2 py-1 text-[9px] font-black text-orange-200">{workflowStage === 'closed' ? 'مغلق' : `الخطوة ${Math.max(1, workflowIndex + 1)} من ${TECHNICIAN_WORKFLOW.length}`}</span></div>
+                        <div className="grid grid-cols-5 gap-1">{TECHNICIAN_WORKFLOW.map((step, index) => { const done = workflowStage === 'closed' || index < workflowIndex; const current = index === workflowIndex && workflowStage !== 'closed'; return <div key={step.value} className="min-w-0 text-center"><div className={`mx-auto h-2 rounded-full transition-colors ${done ? 'bg-emerald-500' : current ? 'bg-orange-500 animate-pulse' : 'bg-slate-700'}`} /><span className={`mt-1 block truncate text-[8px] font-black ${done ? 'text-emerald-300' : current ? 'text-orange-200' : 'text-slate-500'}`}>{step.label}</span></div>; })}</div>
+                        {workflowStage !== 'closed' && nextWorkflow && <button type="button" onClick={() => openFollowUpModal(order, { stage: nextWorkflow.value, nextAction: nextWorkflow.action, owner: techName })} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600/20 py-2.5 text-[10px] font-black text-orange-100 border border-orange-400/30 transition hover:bg-orange-600/35 active:scale-[0.99]">المرحلة التالية: {nextWorkflow.label} <ChevronDown size={14} /></button>}
+                        {workflowStage === 'closed' && <div className="mt-3 rounded-xl bg-emerald-500/10 px-3 py-2 text-center text-[10px] font-black text-emerald-200">تمت التصفية وإغلاق الأوردر</div>}
                       </div>
 
                       {(followUp.stage !== 'غير محدد' || followUp.nextAction || followUp.followUpDate || followUp.blocker) && (
