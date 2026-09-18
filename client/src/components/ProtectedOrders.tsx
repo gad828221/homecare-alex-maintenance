@@ -3099,10 +3099,23 @@ ${trackingUrl}
       total: todayOrders.length,
       completed: todayOrders.filter((order) => String(order.status || '').toLowerCase() === 'completed').length,
       active: todayOrders.filter((order) => String(order.status || '').toLowerCase() !== 'completed' && String(order.status || '').toLowerCase() !== 'cancelled').length,
-      unassigned: todayOrders.filter((order) => !order.technician || order.technician === '-').length,
+      unassigned: todayOrders.filter((order) => !order.technician || order.technician === '-' || order.technician === '').length,
       collected: todayOrders.filter((order) => Boolean(order.is_paid)).length,
     };
   }, [orders]);
+  const managerPriorityQueue = useMemo(() => {
+    const today = getEgyptTodayString();
+    return dateFilteredOrders.filter((order) => !['completed', 'cancelled', 'canceled'].includes(String(order.status || '').toLowerCase())).map((order) => {
+      const noTechnician = !order.technician || order.technician === '-' || order.technician === '';
+      const collection = isCollectionPending(order); const delayed = isDelayed(order); const followUp = getFollowUpData(order.admin_notes);
+      const due = Boolean(followUp.followUpDate && followUp.followUpDate <= today);
+      const priority = noTechnician ? 0 : collection ? 1 : delayed ? 2 : due ? 3 : 4;
+      const action = noTechnician ? 'تعيين فني مسؤول' : collection ? 'مراجعة التحصيل' : delayed ? 'مراجعة الطلب المتأخر' : due ? (followUp.nextAction || 'تنفيذ المتابعة') : 'متابعة حالة الأوردر';
+      const tone = noTechnician ? 'amber' : collection ? 'rose' : delayed ? 'red' : 'orange';
+      return { order, priority, action, tone };
+    }).sort((a, b) => a.priority - b.priority || getOrderActivityTime(a.order) - getOrderActivityTime(b.order));
+  }, [dateFilteredOrders]);
+
   const dailyTaskQueue = useMemo(() => [
     { key: 'unassigned' as const, label: 'تعيين الفنيين', count: commandCenterStats.unassigned, hint: 'أوردرات بلا فني', className: 'border-amber-400/20 bg-amber-500/5 hover:bg-amber-500/15', badgeClass: 'bg-amber-500/20 text-amber-300' },
     { key: 'delayed' as const, label: 'متابعة المتأخرات', count: commandCenterStats.delayed, hint: 'تحتاج إجراء أو تحديث', className: 'border-red-400/20 bg-red-500/5 hover:bg-red-500/15', badgeClass: 'bg-red-500/20 text-red-300' },
@@ -3752,6 +3765,11 @@ ${trackingUrl}
                   <div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"><div><h3 className="text-sm font-black text-white">ملف اليوم التشغيلي</h3><p className="mt-1 text-[10px] font-bold text-slate-500">ملخص سريع للمنجز والمتبقي اليوم</p></div><span className="rounded-full bg-orange-500/10 px-3 py-1 text-[10px] font-black text-orange-200">{todayOperationSummary.total} أوردر</span></div>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-5"><div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3"><div className="text-lg font-black text-white">{todayOperationSummary.active}</div><div className="text-[10px] font-bold text-slate-500">متبقي نشط</div></div><div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-3"><div className="text-lg font-black text-emerald-300">{todayOperationSummary.completed}</div><div className="text-[10px] font-bold text-slate-500">تم إنجازه</div></div><div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-3"><div className="text-lg font-black text-amber-300">{todayOperationSummary.unassigned}</div><div className="text-[10px] font-bold text-slate-500">بلا فني</div></div><div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-3"><div className="text-lg font-black text-blue-300">{todayOperationSummary.collected}</div><div className="text-[10px] font-bold text-slate-500">تم تحصيله</div></div><div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3"><div className="text-lg font-black text-slate-200">{todayOperationSummary.total - todayOperationSummary.completed}</div><div className="text-[10px] font-bold text-slate-500">يحتاج متابعة</div></div></div>
                 </div>
+                {!showDeleted && !searchTerm && !filterTechnician && managerPriorityQueue.length > 0 && <section className="mt-4 rounded-[1.5rem] border border-orange-400/30 bg-slate-950/45 p-4 shadow-lg" aria-label="مطلوب الآن للمدير">
+                  <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><h3 className="flex items-center gap-2 text-sm font-black text-white"><AlertCircle size={17} className="text-orange-300" /> مطلوب الآن</h3><p className="mt-1 text-[10px] font-bold text-slate-500">الأرشيف منفصل؛ هذه القائمة تعرض الأوردرات المفتوحة فقط مرتبة حسب الأولوية.</p></div><span className="rounded-full bg-orange-500/15 px-3 py-1 text-[10px] font-black text-orange-200">{managerPriorityQueue.length} أوردر</span></div>
+                  <div className="grid gap-2 md:grid-cols-2">{managerPriorityQueue.slice(0, 6).map(({ order, action, tone }) => { const toneClass = tone === 'amber' ? 'border-amber-400/40 bg-amber-500/10 text-amber-200' : tone === 'rose' ? 'border-rose-400/40 bg-rose-500/10 text-rose-200' : tone === 'red' ? 'border-red-400/40 bg-red-500/10 text-red-200' : 'border-orange-400/30 bg-orange-500/10 text-orange-200'; const command = tone === 'amber' ? 'unassigned' : tone === 'rose' ? 'collection' : tone === 'red' ? 'delayed' : 'active'; return <button key={`manager-priority-${order.id}`} type="button" onClick={() => openCommandCenter(command)} className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-3 text-right transition hover:-translate-y-0.5 ${toneClass}`}><span className="min-w-0"><span className="block truncate text-xs font-black text-white">#{order.order_number} — {order.customer_name}</span><span className="mt-1 block truncate text-[10px] font-black">{action}</span></span><span className="shrink-0 rounded-lg bg-slate-950/40 px-2 py-1 text-[9px] font-black">فتح</span></button>; })}</div>
+                  {managerPriorityQueue.length > 6 && <p className="mt-3 text-center text-[10px] font-bold text-slate-500">{managerPriorityQueue.length - 6} أوردرات أخرى في القائمة</p>}
+                </section>}
                 {/* Smart Stats Grid */}
 		                <div className="hidden grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 mt-8" aria-hidden="true">
 		                  <button type="button" className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-blue-500/30 transition-all group text-right active:scale-95" onClick={() => { clearFilters(); const today = getEgyptTodayString(); setFilterDateFrom(today); setFilterDateTo(today); }}>
