@@ -1727,12 +1727,12 @@ export default function TechnicianPortal() {
                 const nextWorkflow = getWorkflowNext(order);
 
                 return (
-                    <div key={order.id} className={`group ${config.card} ${statusGlow} rounded-[1.5rem] border-2 p-5 transition-all hover:shadow-2xl relative overflow-hidden ${config.pulse} ${isNew ? "ring-4 ring-blue-500/50" : ""}`}>
+                    <div key={order.id} className={`group order-card-3d ${config.card} ${statusGlow} rounded-[1.5rem] border p-3 sm:p-4 transition-all hover:shadow-2xl active:scale-[0.98] relative overflow-hidden ${config.pulse} bg-slate-900/60 backdrop-blur-md border-opacity-30 hover:border-opacity-100 ${isNew ? "ring-2 ring-blue-300/70 shadow-[0_0_26px_rgba(96,165,250,0.28)]" : ""}`}>
                       {/* Status Background */}
                       <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:bg-white/10 transition-all"></div>
 
                       {/* Header */}
-                      <div className="flex justify-between items-start mb-4 relative z-10">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start mb-3 relative z-10">
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
                             <h3 className="text-lg font-black text-white group-hover:text-orange-400 transition-colors">{order.customer_name}</h3>
@@ -1741,7 +1741,7 @@ export default function TechnicianPortal() {
                           </div>
                           <span className="text-[10px] font-bold text-slate-500 tracking-widest uppercase">#{order.order_number}</span>
                         </div>
-                        <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black border flex items-center gap-1.5 ${config.badge}`}><StatusIcon size={13} strokeWidth={2.5} />{config.label}</div>
+                        <div className={`px-2 py-1 rounded-lg text-[9px] font-black border flex items-center gap-1 shadow-sm ${config.badge}`}><StatusIcon size={12} strokeWidth={3} />{config.label}</div>
                       </div>
 
                       <div className="mb-4 rounded-2xl border border-slate-700/80 bg-slate-950/40 p-3 relative z-10">
