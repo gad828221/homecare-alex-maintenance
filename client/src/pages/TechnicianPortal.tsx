@@ -127,6 +127,7 @@ export default function TechnicianPortal() {
   const { isInstalled, installCompleted, canInstall, isIos, isFirefox, install } = usePwaInstall();
   const [, setLocation] = useLocation();
   const [orders, setOrders] = useState<any[]>([]);
+  const ordersRef = useRef<any[]>([]);
   const [clockNow, setClockNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = window.setInterval(() => setClockNow(Date.now()), 60_000);
@@ -146,6 +147,9 @@ export default function TechnicianPortal() {
   const [isUploadingProfilePhoto, setIsUploadingProfilePhoto] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [isUrgentAlert, setIsUrgentAlert] = useState(false);
+  const [stageNotice, setStageNotice] = useState<{ orderNumber: string; customerName: string; stage: string; action: string } | null>(null);
+  const stageNoticeTimerRef = useRef<number | null>(null);
+  const alertedStageKeysRef = useRef<Set<string>>(new Set());
   const [audioEnabled, setAudioEnabled] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const alertInterval = useRef<any>(null);
@@ -425,6 +429,24 @@ export default function TechnicianPortal() {
     setIsUrgentAlert(false);
   };
 
+  const showStageTransitionAlert = (order: any, nextStage: string) => {
+    const workflow = TECHNICIAN_WORKFLOW.find((step) => step.value === nextStage);
+    if (!workflow) return;
+    const key = `${order.id}:${nextStage}:${String(order.updated_at || order.status_updated_at || '')}`;
+    if (alertedStageKeysRef.current.has(key)) return;
+    alertedStageKeysRef.current.add(key);
+    setStageNotice({ orderNumber: String(order.order_number || order.id), customerName: String(order.customer_name || 'العميل'), stage: workflow.label, action: workflow.action });
+    void playDing(true);
+    navigator.vibrate?.([220, 100, 220]);
+    addNotification({ type: 'success', title: `🔔 انتقل الأوردر إلى: ${workflow.label}`, message: `الأوردر #${order.order_number || order.id} — المطلوب الآن: ${workflow.action}`, duration: 9000 });
+    if (stageNoticeTimerRef.current) window.clearTimeout(stageNoticeTimerRef.current);
+    stageNoticeTimerRef.current = window.setTimeout(() => setStageNotice(null), 9000);
+  };
+
+  useEffect(() => () => {
+    if (stageNoticeTimerRef.current) window.clearTimeout(stageNoticeTimerRef.current);
+  }, []);
+
   const fetchAdminWarnings = useCallback(async () => {
     if (!techName) return;
     try {
@@ -450,7 +472,9 @@ export default function TechnicianPortal() {
         return !['cancelled', 'canceled', 'inspected'].includes(status) || status === 'returned';
       });
       // نحتفظ بالسجل الكامل للأداء والنتائج، بينما تُفلتر قائمة العمل أسفل الصفحة فقط.
-      setOrders(Array.isArray(data) ? data : []);
+      const nextOrders = Array.isArray(data) ? data : [];
+      ordersRef.current = nextOrders;
+      setOrders(nextOrders);
       const active = visibleOrders.filter((o: any) => ['pending', 'in-progress', 'deferred'].includes(String(o.status || '').toLowerCase())).length;
       const completed = data.filter((o: any) => String(o.status || '').toLowerCase() === 'completed').length;
       const cancelled = data.filter((o: any) => ['cancelled', 'canceled'].includes(String(o.status || '').toLowerCase())).length;
@@ -528,6 +552,13 @@ export default function TechnicianPortal() {
         },
         (payload) => {
           console.log('تغيير في الأوردرات:', payload);
+          const changedOrder = payload.new as any;
+          const previousOrder = ordersRef.current.find((item) => String(item.id) === String(changedOrder?.id || (payload.old as any)?.id));
+          if (payload.eventType === 'UPDATE') {
+            const oldStage = getWorkflowStage({ ...(previousOrder || {}), ...(payload.old as any) });
+            const newStage = getWorkflowStage(changedOrder);
+            if (newStage !== oldStage) showStageTransitionAlert(changedOrder, newStage);
+          }
           fetchData();
           if (payload.eventType === 'INSERT') {
             startUrgentAlert();
@@ -1453,6 +1484,13 @@ export default function TechnicianPortal() {
         </div>
       )}
 
+      {stageNotice && (
+        <div className="fixed inset-x-3 top-16 z-[110] flex justify-center pointer-events-none" role="status" aria-live="assertive">
+          <div className="pointer-events-auto w-full max-w-md rounded-2xl border-2 border-orange-300/70 bg-slate-900/95 p-4 shadow-[0_0_30px_rgba(249,115,22,0.3)] backdrop-blur-md">
+            <div className="flex items-start gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-500/20 text-orange-200"><Bell size={22} className="animate-bounce" /></div><div className="min-w-0 flex-1"><p className="text-sm font-black text-orange-100">انتقال مرحلة الأوردر</p><p className="mt-1 text-xs font-bold text-white">#{stageNotice.orderNumber} — {stageNotice.customerName}</p><p className="mt-2 rounded-xl bg-orange-500/10 px-3 py-2 text-xs font-black text-orange-200">المرحلة التالية: {stageNotice.stage}<br /><span className="text-white">المطلوب الآن: {stageNotice.action}</span></p></div><button type="button" onClick={() => setStageNotice(null)} className="text-slate-400 hover:text-white" aria-label="إغلاق التنبيه"><X size={18} /></button></div>
+          </div>
+        </div>
+      )}
       {isUrgentAlert && (
         <div className="fixed top-0 left-0 w-full z-[100] animate-bounce pt-4 flex justify-center pointer-events-none">
           <button 
