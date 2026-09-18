@@ -98,6 +98,16 @@ const getWorkflowNext = (order: any) => {
   return index >= 0 && index < TECHNICIAN_WORKFLOW.length - 1 ? TECHNICIAN_WORKFLOW[index + 1] : null;
 };
 
+const getTechnicianPrimaryAction = (order: any) => {
+  const stage = getWorkflowStage(order);
+  if (stage === 'contact') return { stage, label: 'اتصل بالعميل', tone: 'blue', icon: 'phone' };
+  if (stage === 'scheduled') return { stage, label: 'تأكيد الموعد وبدء التنفيذ', tone: 'orange', icon: 'schedule' };
+  if (stage === 'in_progress') return { stage, label: 'فتح التصفية', tone: 'emerald', icon: 'settle' };
+  if (stage === 'ready_collection') return { stage, label: 'إتمام التصفية والإغلاق', tone: 'emerald', icon: 'settle' };
+  if (stage === 'blocked') return { stage, label: 'تحديث سبب التعطيل', tone: 'amber', icon: 'blocked' };
+  return { stage, label: 'تم الإغلاق', tone: 'slate', icon: 'closed' };
+};
+
 const removeTechnicianFollowUpMarker = (adminNotes: any) => String(adminNotes || '')
   .replace(/\n?\[بيانات المتابعة:\s*\{.*?\}\]/g, '')
   .trim();
@@ -1327,10 +1337,19 @@ export default function TechnicianPortal() {
     return allFilteredOrders;
   }, [allFilteredOrders, filterStatus, searchTerm, visibleCompletedCount]);
 
-  const followUpOrders = useMemo(() => operationalOrders
-    .map((order) => ({ order, followUp: parseTechnicianFollowUp(order.admin_notes) }))
-    .filter(({ followUp }) => Boolean(followUp.nextAction || followUp.blocker || followUp.followUpDate))
+  const priorityOrders = useMemo(() => operationalOrders
+    .map((order) => ({ order, followUp: parseTechnicianFollowUp(order.admin_notes), primaryAction: getTechnicianPrimaryAction(order) }))
+    .filter(({ primaryAction }) => primaryAction.stage !== 'closed')
     .sort((a, b) => {
+      const priority = (item: typeof a) => {
+        if (isDelayed(item.order)) return 0;
+        if (item.primaryAction.stage === 'ready_collection') return 1;
+        if (item.primaryAction.stage === 'scheduled') return 2;
+        if (item.primaryAction.stage === 'contact') return 3;
+        return 4;
+      };
+      const rankDifference = priority(a) - priority(b);
+      if (rankDifference !== 0) return rankDifference;
       const aDate = a.followUp.followUpDate || '9999-12-31';
       const bDate = b.followUp.followUpDate || '9999-12-31';
       return aDate.localeCompare(bDate);
@@ -1648,20 +1667,20 @@ export default function TechnicianPortal() {
               )}
             </div>
 
-            {followUpOrders.length > 0 && (
-              <section className="rounded-2xl border border-orange-400/30 bg-gradient-to-l from-orange-500/10 via-slate-900 to-slate-900 p-4 shadow-lg" aria-label="المطلوب الآن">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div><h2 className="flex items-center gap-2 text-sm font-black text-orange-100"><ClipboardList size={17} className="text-orange-300" /> المطلوب الآن</h2><p className="mt-1 text-[10px] font-bold text-slate-400">نفّذ الإجراء التالي ثم حدّث الإدارة من نفس الأوردر.</p></div>
-                  <span className="rounded-full bg-orange-500/20 px-2.5 py-1 text-[10px] font-black text-orange-200">{followUpOrders.length}</span>
-                </div>
+            {priorityOrders.length > 0 && (
+              <section className="rounded-[1.5rem] border border-orange-400/30 bg-slate-900/70 p-4 shadow-xl backdrop-blur-md" aria-label="المطلوب الآن">
+                <div className="mb-4 flex items-center justify-between gap-3"><div><h2 className="flex items-center gap-2 text-base font-black text-white"><AlertCircle size={18} className="text-orange-300" /> المطلوب الآن</h2><p className="mt-1 text-[10px] font-bold text-slate-400">ابدأ من الأعلى؛ الأوردرات مرتبة حسب الأولوية والتأخير.</p></div><span className="rounded-full bg-orange-500/20 px-3 py-1 text-[10px] font-black text-orange-200">{priorityOrders.length} مهمة</span></div>
                 <div className="space-y-2">
-                  {followUpOrders.slice(0, 4).map(({ order, followUp }) => (
-                    <button key={`follow-up-${order.id}`} type="button" onClick={() => openFollowUpModal(order)} className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-950/50 p-3 text-right transition hover:border-orange-300/50 hover:bg-orange-500/10 active:scale-[0.99]">
-                      <span className="min-w-0"><span className="block truncate text-xs font-black text-white">#{order.order_number} — {order.customer_name}</span><span className="mt-1 block truncate text-[10px] font-bold text-orange-200">{followUp.nextAction || 'راجع المتابعة'}{followUp.blocker ? ` — ${followUp.blocker}` : ''}</span></span>
-                      <span className="shrink-0 rounded-lg bg-orange-500/15 px-2 py-1 text-[9px] font-black text-orange-200">تحديث</span>
-                    </button>
-                  ))}
+                  {priorityOrders.slice(0, 6).map(({ order, followUp, primaryAction }) => {
+                    const delayedOrder = isDelayed(order);
+                    const actionClass = primaryAction.tone === 'blue' ? 'border-blue-400/40 bg-blue-500/15 text-blue-100 hover:bg-blue-500/25' : primaryAction.tone === 'emerald' ? 'border-emerald-400/40 bg-emerald-500/15 text-emerald-100 hover:bg-emerald-500/25' : primaryAction.tone === 'amber' ? 'border-amber-400/40 bg-amber-500/15 text-amber-100 hover:bg-amber-500/25' : 'border-orange-400/40 bg-orange-500/15 text-orange-100 hover:bg-orange-500/25';
+                    return <div key={`priority-${order.id}`} className={`flex flex-col gap-3 rounded-2xl border p-3 sm:flex-row sm:items-center sm:justify-between ${delayedOrder ? 'border-rose-400/40 bg-rose-500/10' : 'border-white/10 bg-slate-950/45'}`}>
+                      <button type="button" onClick={() => openFollowUpModal(order)} className="min-w-0 text-right"><span className="block truncate text-xs font-black text-white">#{order.order_number} — {order.customer_name}</span><span className={`mt-1 block truncate text-[10px] font-black ${delayedOrder ? 'text-rose-200' : 'text-orange-200'}`}>{delayedOrder ? 'متأخر — ' : ''}{primaryAction.label}{followUp.followUpDate ? ` · ${followUp.followUpDate}` : ''}</span></button>
+                      {primaryAction.icon === 'phone' && !isPhoneHidden(order) ? <a href={`tel:${order.phone}`} onClick={() => notifyCustomerContact(order, 'phone')} className={`flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border px-4 text-[10px] font-black transition active:scale-95 ${actionClass}`}><Phone size={15} /> اتصل الآن</a> : primaryAction.icon === 'settle' ? <button type="button" onClick={() => openSettleModal(order)} className={`flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border px-4 text-[10px] font-black transition active:scale-95 ${actionClass}`}><Wallet size={15} /> {primaryAction.label}</button> : <button type="button" onClick={() => openFollowUpModal(order, primaryAction.stage === 'blocked' ? { stage: 'blocked', nextAction: 'اطلب تدخل المدير', owner: techName } : { stage: primaryAction.stage === 'scheduled' ? 'in_progress' : primaryAction.stage, nextAction: primaryAction.stage === 'scheduled' ? 'ابدأ التنفيذ' : primaryAction.label, owner: techName })} className={`flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border px-4 text-[10px] font-black transition active:scale-95 ${actionClass}`}><ClipboardList size={15} /> تنفيذ</button>}
+                    </div>;
+                  })}
                 </div>
+                {priorityOrders.length > 6 && <p className="mt-3 text-center text-[10px] font-bold text-slate-500">توجد {priorityOrders.length - 6} مهام أخرى أسفل القائمة</p>}
               </section>
             )}
 
