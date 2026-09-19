@@ -515,6 +515,7 @@ export default function ProtectedOrders() {
   const [archiveSearchTerm, setArchiveSearchTerm] = useState('');
   const [archiveDateFilter, setArchiveDateFilter] = useState('');
   const [filterStatus, setFilterStatus] = useState('live');
+  const [filterOperationStage, setFilterOperationStage] = useState('');
   const [filterTechnician, setFilterTechnician] = useState('');
   const [filterDeviceType, setFilterDeviceType] = useState('');
   const [filterDateFrom, setFilterDateFrom] = useState('');
@@ -2790,6 +2791,11 @@ ${trackingUrl}
   });
 
   const allFilteredOrders = dateFilteredOrders.filter(o => {
+    // الضغط على رقم المرحلة يعرض الأوردرات المفتوحة التابعة لها فقط؛ الأرشيف لا يدخل هنا.
+    if (filterOperationStage) {
+      if (['completed', 'cancelled', 'canceled'].includes(String(o.status || '').toLowerCase())) return false;
+      return filterOperationStage === '__unclassified__' ? !getFollowUpData(o.admin_notes).stage : getFollowUpData(o.admin_notes).stage === filterOperationStage;
+    }
     // الأرشفة تُحسم قبل هذه المرحلة في fetchData و realtime، لذلك لا يوجد فلتر زمني ثانٍ يغيّر ترتيب العرض.
     // ✅ إخفاء الملغي تماماً من العرض العام (Live/All) إلا إذا تم اختياره صراحة
     if ((filterStatus === 'live' || filterStatus === 'all') && (o.status === 'cancelled' || o.status === 'canceled')) return false;
@@ -3148,7 +3154,23 @@ ${trackingUrl}
     void sendExternalPush({ event: 'system_alert', title: '🚨 مهمة عاجلة في لوحة المدير', message: summary, targetRoles: ['admin', 'manager'], data: { focus: 'orders', urgent_tasks: increasedTasks.map((task) => task.key).join(',') } });
   }, [dailyTaskQueue, initialLoadComplete, currentUser?.name]);
 
+  const openOperationStage = (stage: string) => {
+    setSearchTerm('');
+    setFilterTechnician('');
+    setFilterDeviceType('');
+    setFilterDateFrom('');
+    setFilterDateTo('');
+    setFilterDelay('all');
+    setFilterWarranty('all');
+    setFilterOperationStage(stage);
+    setFilterStatus('all');
+    setShowCompletedOrders(false);
+  };
+
+  const clearOperationStage = () => setFilterOperationStage('');
+
   const openCommandCenter = (type: 'unassigned' | 'collection' | 'delayed' | 'active') => {
+    setFilterOperationStage('');
     setSearchTerm('');
     setFilterTechnician('');
     setFilterDeviceType('');
@@ -4099,7 +4121,7 @@ ${trackingUrl}
                   </button>
                    <section className={`${showStageSummary ? 'mb-5' : 'hidden'} rounded-3xl border border-orange-500/20 bg-orange-500/5 p-4`} aria-label="مراحل تشغيل الأوردرات">
                      <div className="mb-3 flex items-center justify-between gap-2"><div><h3 className="text-sm font-black text-white">مراحل تشغيل الأوردرات</h3><p className="mt-1 text-[10px] font-bold text-slate-500">توزيع الحالات المفتوحة بدون خلطها مع الأرشيف</p></div><div className="flex gap-2 text-[10px] font-black"><span className="rounded-full bg-red-500/15 px-2.5 py-1 text-red-200">متابعة اليوم {operationStageSummary.due}</span><span className="rounded-full bg-amber-500/15 px-2.5 py-1 text-amber-200">متعطل {operationStageSummary.blocked}</span></div></div>
-                     <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-8">{operationStageSummary.stages.map(stage => <div key={stage.value} className="rounded-xl border border-white/5 bg-slate-950/50 p-3 text-right"><div className="text-[10px] font-black text-slate-400">{stage.label}</div><div className="mt-1 text-xl font-black text-orange-300">{stage.count}</div></div>)}<div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-right"><div className="text-[10px] font-black text-amber-200">غير مصنف</div><div className="mt-1 text-xl font-black text-amber-300">{operationStageSummary.unclassified}</div></div></div>
+                     <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-8">{operationStageSummary.stages.map(stage => <button type="button" key={stage.value} onClick={() => openOperationStage(stage.value)} className={`rounded-xl border p-3 text-right transition hover:-translate-y-0.5 hover:border-orange-400/60 ${filterOperationStage === stage.value ? 'border-orange-300 bg-orange-500/20 shadow-lg shadow-orange-900/20' : 'border-white/5 bg-slate-950/50'}`}><div className="text-[10px] font-black text-slate-400">{stage.label}</div><div className="mt-1 text-xl font-black text-orange-300">{stage.count}</div><div className="mt-1 text-[8px] font-black text-orange-200/60">اضغط للفتح</div></button>)}<button type="button" onClick={() => openOperationStage('__unclassified__')} className={`rounded-xl border p-3 text-right transition hover:-translate-y-0.5 hover:border-amber-300/60 ${filterOperationStage === '__unclassified__' ? 'border-amber-300 bg-amber-500/20 shadow-lg shadow-amber-900/20' : 'border-amber-500/20 bg-amber-500/5'}`}><div className="text-[10px] font-black text-amber-200">غير مصنف</div><div className="mt-1 text-xl font-black text-amber-300">{operationStageSummary.unclassified}</div><div className="mt-1 text-[8px] font-black text-amber-200/60">اضغط للفتح</div></button></div>{filterOperationStage && <button type="button" onClick={clearOperationStage} className="mt-3 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-[10px] font-black text-slate-300 hover:bg-slate-800">عرض كل الأوردرات المفتوحة ×</button>}
                    </section>
                    <section className="hidden mb-5 rounded-3xl border border-white/10 bg-slate-950/40 p-4" aria-label="قائمة مهام المدير اليوم">
                     <div className="mb-3 flex items-center justify-between gap-2"><div><h3 className="text-sm font-black text-white">قائمة مهام اليوم</h3><p className="mt-1 text-[10px] font-bold text-slate-500">كل صف يفتح الإجراء المناسب مباشرة</p></div><span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-[10px] font-black text-slate-400">{dailyTaskQueue.length} مهام</span></div>
