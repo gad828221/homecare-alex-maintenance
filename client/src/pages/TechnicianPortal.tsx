@@ -1330,7 +1330,8 @@ export default function TechnicianPortal() {
 
   const operationalOrders = orders.filter((order) => {
     const status = String(order.status || '').trim().toLowerCase();
-    return !['cancelled', 'canceled', 'inspected'].includes(status) && (showCompletedOrders || status !== 'completed');
+    const specialStatusSelected = (filterStatus === 'cancelled' && ['cancelled', 'canceled'].includes(status)) || (filterStatus === 'inspected' && status === 'inspected');
+    return (specialStatusSelected || !['cancelled', 'canceled', 'inspected'].includes(status)) && (showCompletedOrders || status !== 'completed');
   });
 
   const searchFilteredOrders = operationalOrders.filter(order => {
@@ -1650,26 +1651,11 @@ export default function TechnicianPortal() {
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                <div className="bg-slate-950/40 p-3 rounded-xl border border-slate-800/50 text-center">
-                  <div className="text-2xl font-black text-blue-400">{stats.active}</div>
-                  <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mt-1">أوردرات نشطة</div>
-                </div>
-                <div className="bg-slate-950/40 p-3 rounded-xl border border-slate-800/50 text-center">
-                  <div className="text-2xl font-black text-green-400">{stats.completed}</div>
-                  <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mt-1">تم إنجازه</div>
-                </div>
-                <div className="bg-slate-950/40 p-3 rounded-xl border border-slate-800/50 text-center">
-                  <div className="text-lg font-black text-emerald-400">{stats.earnings.toLocaleString()}</div>
-                  <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mt-1">أرباحي (ج.م)</div>
-                </div>
-                <div className="bg-rose-950/30 p-3 rounded-xl border border-rose-500/20 text-center">
-                  <div className="text-2xl font-black text-rose-300">{stats.cancelled}</div>
-                  <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mt-1">ملغي محسوب</div>
-                </div>
-                <div className="bg-yellow-950/30 p-3 rounded-xl border border-yellow-500/20 text-center">
-                  <div className="text-2xl font-black text-yellow-300">{stats.inspected}</div>
-                  <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mt-1">كشف محسوب</div>
-                </div>
+                <button type="button" onClick={() => { setFilterStatus('all'); setShowCompletedOrders(false); }} className="group bg-slate-950/40 p-3 rounded-2xl border border-blue-500/20 text-center transition hover:-translate-y-0.5 hover:border-blue-400/60 active:scale-95"><div className="text-2xl font-black text-blue-400 group-hover:text-blue-300">{stats.active}</div><div className="text-[9px] font-bold text-slate-500 mt-1">أوردرات نشطة</div><div className="mt-2 h-1 rounded-full bg-blue-500/20"><div className="h-full rounded-full bg-blue-400" style={{ width: `${Math.min(100, stats.active * 10)}%` }} /></div></button>
+                <button type="button" onClick={() => { setFilterStatus('completed'); setShowCompletedOrders(true); }} className="group bg-slate-950/40 p-3 rounded-2xl border border-emerald-500/20 text-center transition hover:-translate-y-0.5 hover:border-emerald-400/60 active:scale-95"><div className="text-2xl font-black text-emerald-400 group-hover:text-emerald-300">{stats.completed}</div><div className="text-[9px] font-bold text-slate-500 mt-1">تم إنجازه</div><div className="mt-2 h-1 rounded-full bg-emerald-500/20"><div className="h-full rounded-full bg-emerald-400" style={{ width: `${stats.totalOrders ? (stats.completed / stats.totalOrders) * 100 : 0}%` }} /></div></button>
+                <button type="button" onClick={() => setActiveTab('performance')} className="group bg-slate-950/40 p-3 rounded-2xl border border-purple-500/20 text-center transition hover:-translate-y-0.5 hover:border-purple-400/60 active:scale-95"><div className="text-lg font-black text-purple-300 group-hover:text-purple-200">{stats.earnings.toLocaleString()}</div><div className="text-[9px] font-bold text-slate-500 mt-1">مستحقاتي (ج.م)</div><div className="mt-2 text-[8px] font-black text-purple-300/60">فتح الأداء ←</div></button>
+                <button type="button" onClick={() => { setFilterStatus('cancelled'); setShowCompletedOrders(true); }} className="group bg-rose-950/30 p-3 rounded-2xl border border-rose-500/20 text-center transition hover:-translate-y-0.5 hover:border-rose-400/60 active:scale-95"><div className="text-2xl font-black text-rose-300 group-hover:text-rose-200">{stats.cancelled}</div><div className="text-[9px] font-bold text-slate-500 mt-1">ملغي محسوب</div><div className="mt-2 text-[8px] font-black text-rose-300/60">عرض القائمة ←</div></button>
+                <button type="button" onClick={() => { setFilterStatus('inspected'); setShowCompletedOrders(true); }} className="group bg-yellow-950/30 p-3 rounded-2xl border border-yellow-500/20 text-center transition hover:-translate-y-0.5 hover:border-yellow-400/60 active:scale-95"><div className="text-2xl font-black text-yellow-300 group-hover:text-yellow-200">{stats.inspected}</div><div className="text-[9px] font-bold text-slate-500 mt-1">كشف محسوب</div><div className="mt-2 text-[8px] font-black text-yellow-300/60">عرض القائمة ←</div></button>
               </div>
 
               {stats.active > 0 && (
@@ -2182,7 +2168,8 @@ export default function TechnicianPortal() {
           </div>
         </div>
       )}
-      <div className="text-center pb-8">
+      <nav className="fixed bottom-3 left-3 right-3 z-[80] mx-auto flex max-w-md items-center justify-around rounded-2xl border border-white/10 bg-slate-950/90 p-2 shadow-2xl shadow-black/40 backdrop-blur-xl md:hidden" aria-label="تنقل الفني"><button type="button" onClick={() => { setActiveTab('orders'); setFilterStatus('all'); }} className={`flex min-w-[4.5rem] flex-col items-center gap-1 rounded-xl px-3 py-2 text-[9px] font-black transition ${activeTab === 'orders' && filterStatus === 'all' ? 'bg-orange-500/20 text-orange-200' : 'text-slate-400 hover:bg-white/5'}`}><ClipboardList size={17} />الأوردرات</button><button type="button" onClick={() => { setActiveTab('orders'); setFilterStatus('all'); setShowCompletedOrders(false); }} className="flex min-w-[4.5rem] flex-col items-center gap-1 rounded-xl px-3 py-2 text-[9px] font-black text-slate-400 transition hover:bg-white/5"><Bell size={17} />التنبيهات<span className="-mt-1 rounded-full bg-rose-500 px-1.5 text-[8px] text-white">{technicianWarnings.length + (isUrgentAlert ? 1 : 0)}</span></button><button type="button" onClick={() => setActiveTab('performance')} className={`flex min-w-[4.5rem] flex-col items-center gap-1 rounded-xl px-3 py-2 text-[9px] font-black transition ${activeTab === 'performance' ? 'bg-orange-500/20 text-orange-200' : 'text-slate-400 hover:bg-white/5'}`}><TrendingUp size={17} />أدائي</button><button type="button" onClick={() => { setActiveTab('orders'); setFilterStatus('all'); }} className="flex min-w-[4.5rem] flex-col items-center gap-1 rounded-xl px-3 py-2 text-[9px] font-black text-slate-400 transition hover:bg-white/5"><UserCircle size={17} />حسابي</button></nav>
+      <div className="pb-24 text-center md:pb-8">
         <div className="text-[11px] text-white font-black opacity-90 mt-4 tracking-widest bg-slate-800/50 px-3 py-1 rounded-full inline-block border border-white/10">v4.3.3-technician-inspection-share</div>
       </div>
       <ScrollButtons />
