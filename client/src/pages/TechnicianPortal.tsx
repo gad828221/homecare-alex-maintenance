@@ -160,6 +160,7 @@ export default function TechnicianPortal() {
   const [stageNotice, setStageNotice] = useState<{ orderNumber: string; customerName: string; stage: string; action: string } | null>(null);
   const stageNoticeTimerRef = useRef<number | null>(null);
   const alertedStageKeysRef = useRef<Set<string>>(new Set());
+  const stageSnapshotRef = useRef<Map<string, string>>(new Map());
   const [audioEnabled, setAudioEnabled] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const alertInterval = useRef<any>(null);
@@ -367,6 +368,7 @@ export default function TechnicianPortal() {
       source.start(0);
 
       setAudioEnabled(true);
+      if ('Notification' in window && Notification.permission === 'default') void Notification.requestPermission();
       sessionStorage.setItem('audio_forced_enabled', 'true');
       
       // Play a confirmation sound
@@ -449,6 +451,7 @@ export default function TechnicianPortal() {
     void playDing(true);
     navigator.vibrate?.([220, 100, 220]);
     addNotification({ type: 'success', title: `🔔 انتقل الأوردر إلى: ${workflow.label}`, message: `الأوردر #${order.order_number || order.id} — المطلوب الآن: ${workflow.action}`, duration: 9000 });
+    if ('Notification' in window && Notification.permission === 'granted') new Notification(`انتقال الأوردر #${order.order_number || order.id}`, { body: `المرحلة التالية: ${workflow.label} — ${workflow.action}`, tag: `stage-${order.id}-${nextStage}`, requireInteraction: true });
     if (stageNoticeTimerRef.current) window.clearTimeout(stageNoticeTimerRef.current);
     stageNoticeTimerRef.current = window.setTimeout(() => setStageNotice(null), 9000);
   };
@@ -483,6 +486,16 @@ export default function TechnicianPortal() {
       });
       // نحتفظ بالسجل الكامل للأداء والنتائج، بينما تُفلتر قائمة العمل أسفل الصفحة فقط.
       const nextOrders = Array.isArray(data) ? data : [];
+      // احتياط للتحديث الدوري: اكتشاف انتقال المرحلة حتى لو لم يصل حدث Realtime.
+      if (alertBaselineReadyRef.current) {
+        nextOrders.forEach((order: any) => {
+          const orderKey = String(order.id || order.order_number);
+          const nextStage = getWorkflowStage(order);
+          const previousStage = stageSnapshotRef.current.get(orderKey);
+          if (previousStage && previousStage !== nextStage) showStageTransitionAlert(order, nextStage);
+        });
+      }
+      stageSnapshotRef.current = new Map(nextOrders.map((order: any) => [String(order.id || order.order_number), getWorkflowStage(order)]));
       ordersRef.current = nextOrders;
       setOrders(nextOrders);
       const active = visibleOrders.filter((o: any) => ['pending', 'in-progress', 'deferred'].includes(String(o.status || '').toLowerCase())).length;
