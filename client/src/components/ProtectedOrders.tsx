@@ -4204,6 +4204,9 @@ ${trackingUrl}
                   const baseConfig = statusConfig[order.status] || { label: order.status, Icon: AlertCircle, card: 'bg-slate-900 border-slate-700 hover:border-slate-500 hover:shadow-slate-500/10', badge: 'bg-slate-500/15 text-slate-300 border-slate-500/40', icon: 'bg-slate-500/20 text-slate-300', pulse: '' };
                   const config = delayed ? statusConfig.delayed : baseConfig;
                   const StatusIcon = config.Icon;
+                  const statusRailClass = delayed
+                    ? 'bg-red-400 shadow-[0_0_16px_rgba(248,113,113,0.7)]'
+                    : ({ pending: 'bg-amber-400', 'in-progress': 'bg-blue-400', in_progress: 'bg-blue-400', inspected: 'bg-cyan-400', completed: 'bg-emerald-400', deferred: 'bg-violet-400', cancelled: 'bg-slate-500', returned: 'bg-rose-500 shadow-[0_0_16px_rgba(244,63,94,0.55)]' } as Record<string, string>)[order.status] || 'bg-slate-500';
                   const orderCreatedValue = getOrderCreatedValue(order);
                   const activityTime = getOrderActivityTime(order);
                   const activityAge = clockNow - activityTime;
@@ -4225,7 +4228,7 @@ ${trackingUrl}
                     : Math.max(0, orderWorkflow.findIndex((step) => step.key === normalizedStatus));
                   const shortOrderNumber = String(order.order_number || '').match(/\d{3,}$/)?.[0] || String(order.order_number || '').slice(-6);
                   const elapsedToneClass = elapsedTone === 'urgent' ? 'text-rose-200 bg-rose-500/20 border-rose-400/50 shadow-lg shadow-rose-500/20 animate-pulse' : elapsedTone === 'warning' ? 'text-amber-200 bg-amber-500/20 border-amber-400/40 shadow-lg shadow-amber-500/10' : 'text-slate-200 bg-slate-950/70 border-slate-700';
-                  const cardTone = collectionPending ? 'bg-amber-950/40 border-amber-300 shadow-amber-400/30 animate-pulse' : config.card;
+                  const cardTone = collectionPending ? 'bg-slate-900/90 border-amber-300/70 shadow-amber-400/20' : delayed ? 'bg-slate-900/90 border-red-400/60 shadow-red-900/20' : 'bg-slate-900/80 border-slate-700/70';
                   const isOrderExpanded = expandedOrderIds.has(order.id);
                   const followUp = getFollowUpData(order.admin_notes);
                   const followUpDue = Boolean(followUp.followUpDate && followUp.followUpDate <= getEgyptTodayString());
@@ -4253,7 +4256,8 @@ ${trackingUrl}
 		                      onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); stopUrgentAlert(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); } }}
 		                      className={`group order-card-3d ${cardTone} ${statusGlow} ${recentlyUpdated ? 'ring-2 ring-emerald-300/70 shadow-[0_0_26px_rgba(52,211,153,0.28)]' : ''} rounded-[1.35rem] border p-2.5 sm:p-3 transition-all hover:shadow-2xl active:scale-[0.98] cursor-pointer relative overflow-hidden ${config.pulse} bg-slate-900/60 backdrop-blur-md border-opacity-30 hover:border-opacity-100`}
 	                    >
-	                      {collectionPending && <div className="absolute inset-0 pointer-events-none rounded-[1.5rem] border border-amber-300/50 shadow-[0_0_20px_rgba(251,191,36,0.2)]"></div>}
+	                      <div className={`absolute inset-y-3 right-0 z-20 w-1 rounded-full ${statusRailClass}`} aria-label={`لون حالة الأوردر: ${config.label}`}></div>
+                              {collectionPending && <div className="absolute inset-0 pointer-events-none rounded-[1.35rem] border border-amber-300/50 shadow-[0_0_20px_rgba(251,191,36,0.16)]"></div>}
 	                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:bg-white/10 transition-all"></div>
 
 		                      {/* Header Section */}
@@ -4290,10 +4294,11 @@ ${trackingUrl}
                           <div className="flex items-center gap-1.5">
                             {collectionPending && <span className="px-2 py-1 rounded-lg text-[8px] font-black border border-amber-200/80 bg-amber-300/30 text-amber-100 shadow-sm animate-pulse">تحتاج تأكيد التحصيل</span>}
                             {!transferPending && recentlyUpdated && <span className="px-2 py-1 rounded-lg text-[8px] font-black border border-emerald-300/50 bg-emerald-400/20 text-emerald-200 shadow-sm animate-pulse">تم التحديث الآن</span>}
-                            <div className={`px-2 py-1 rounded-lg text-[9px] font-black border flex items-center gap-1 shadow-sm ${config.badge}`}>
+                            <div className={`px-2.5 py-1 rounded-full text-[9px] font-black border flex items-center gap-1 shadow-sm ${config.badge}`}>
                               <StatusIcon size={12} strokeWidth={3} />
                               {config.label}
                             </div>
+                            {order.is_paid ? <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-500/10 px-2 py-1 text-[8px] font-black text-emerald-200">● محصل</span> : order.status === 'completed' ? <span className="inline-flex items-center gap-1 rounded-full border border-orange-400/35 bg-orange-500/10 px-2 py-1 text-[8px] font-black text-orange-200">● يحتاج تحصيل</span> : null}
                             <button
                               type="button"
                               onClick={(event) => { event.stopPropagation(); setExpandedOrderIds((current) => { const next = new Set(current); next.has(order.id) ? next.delete(order.id) : next.add(order.id); return next; }); }}
@@ -4345,6 +4350,21 @@ ${trackingUrl}
                                   {followUp.owner && <span className="rounded-full border border-white/10 bg-slate-950/40 px-2 py-1">المسؤول: {followUp.owner}</span>}
                                   {followUp.blocker && <span className="rounded-full border border-rose-300/20 bg-rose-500/10 px-2 py-1">تعطيل: {followUp.blocker}</span>}
                                 </div>}
+                              </div>
+                              <div className="mb-2 rounded-xl border border-white/5 bg-slate-950/35 px-2.5 py-2" aria-label="مراحل الأوردر">
+                                <div className="flex items-center gap-1">
+                                  {orderWorkflow.map((step, index) => {
+                                    const complete = index < workflowIndex;
+                                    const current = index === workflowIndex;
+                                    return (<React.Fragment key={`compact-${step.key}`}>
+                                      <button type="button" onClick={(event) => { event.stopPropagation(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); }} className="flex min-w-0 flex-1 flex-col items-center gap-1" title={`فتح مرحلة ${step.label}`}>
+                                        <span className={`h-2 w-2 rounded-full border ${current ? 'border-orange-200 bg-orange-400 shadow-[0_0_9px_rgba(251,146,60,0.9)]' : complete ? 'border-emerald-300 bg-emerald-400' : 'border-slate-700 bg-slate-800'}`} />
+                                        <span className={`truncate text-[7px] font-black ${current ? 'text-orange-200' : complete ? 'text-emerald-300' : 'text-slate-600'}`}>{step.label}</span>
+                                      </button>
+                                      {index < orderWorkflow.length - 1 && <span className={`h-px flex-1 ${index < workflowIndex ? 'bg-emerald-400/70' : 'bg-slate-700'}`} />}
+                                    </React.Fragment>);
+                                  })}
+                                </div>
                               </div>
                               <div className={isOrderExpanded ? 'space-y-3' : 'hidden'}>
                             <div className="mb-3 relative z-10 flex items-center justify-between gap-2 bg-slate-950/30 px-3 py-1.5 rounded-xl border border-white/5">
@@ -4426,7 +4446,7 @@ ${trackingUrl}
 
 	                      {/* Main Info Grid */}
 	                      <div className="grid grid-cols-2 gap-2 mb-4 relative z-10">
-	                        <div className="bg-slate-950/60 p-2.5 rounded-2xl border border-white/5 flex items-center gap-2.5 shadow-inner group/info hover:border-orange-500/30 transition-colors">
+	                        <div className="bg-slate-950/55 p-2.5 rounded-2xl border border-white/5 flex items-center gap-2.5 shadow-inner group/info hover:border-white/20 transition-colors">
 	                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center border border-white/5 ${config.icon} shadow-md shadow-black/20`}><Cpu size={16} /></div>
 	                          <div className="min-w-0">
 	                            <p className="text-[8px] font-black text-slate-500 mb-0.5 uppercase tracking-tighter">الجهاز</p>
