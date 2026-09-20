@@ -1100,8 +1100,8 @@ export default function ProtectedOrders() {
     .replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '')
     .trim();
 
-  // آخر نشاط هو المرجع الصحيح للأرشفة؛ تعديل الطلب أو تحديث حالته يمدد فترة المتابعة.
-  const getOrderReferenceDate = (order: any) => order?.updated_at || order?.status_updated_at || order?.last_updated_at || order?.created_at || order?.createdAt || order?.date || '';
+  // للأوردر المكتمل نستخدم وقت الإتمام حتى لا يُؤرشف قبل مراجعة المدير.
+  const getOrderReferenceDate = (order: any) => (order?.status === 'completed' && order?.completed_at) || order?.updated_at || order?.status_updated_at || order?.last_updated_at || order?.created_at || order?.createdAt || order?.date || '';
 
   const getDaysDifference = (dateStr: string, status: string) => {
     if (status === 'inspected') return 0;
