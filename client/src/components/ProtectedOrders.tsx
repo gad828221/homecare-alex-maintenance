@@ -4217,20 +4217,24 @@ ${trackingUrl}
                   const collectionPending = isCollectionPending(order);
                   const transferPending = collectionPending && companyTransfer?.status === 'pending';
                   const orderWorkflow = [
-                    { key: 'pending', label: 'جديد' },
+                    { key: 'contact', label: 'تواصل' },
+                    { key: 'scheduled', label: 'موعد' },
                     { key: 'in-progress', label: 'تنفيذ' },
-                    { key: 'inspected', label: 'كشف' },
-                    { key: 'completed', label: 'مكتمل' }
+                    { key: 'ready_collection', label: 'تحصيل' },
+                    { key: 'completed', label: 'إغلاق' }
                   ];
                   const normalizedStatus = order.status === 'in_progress' ? 'in-progress' : order.status;
-                  const workflowIndex = normalizedStatus === 'returned' || normalizedStatus === 'deferred'
-                    ? 1
-                    : Math.max(0, orderWorkflow.findIndex((step) => step.key === normalizedStatus));
+                  const followUp = getFollowUpData(order.admin_notes);
+                  const savedStageIndex: Record<string, number> = { contact: 0, scheduled: 1, in_progress: 2, 'in-progress': 2, ready_collection: 3, closed: 4 };
+                  const workflowIndex = followUp.stage && savedStageIndex[followUp.stage] !== undefined
+                    ? savedStageIndex[followUp.stage]
+                    : normalizedStatus === 'completed' ? 4
+                      : normalizedStatus === 'in-progress' || normalizedStatus === 'inspected' ? 2
+                        : normalizedStatus === 'deferred' || normalizedStatus === 'returned' ? 1 : 0;
                   const shortOrderNumber = String(order.order_number || '').match(/\d{3,}$/)?.[0] || String(order.order_number || '').slice(-6);
                   const elapsedToneClass = elapsedTone === 'urgent' ? 'text-rose-200 bg-rose-500/20 border-rose-400/50 shadow-lg shadow-rose-500/20 animate-pulse' : elapsedTone === 'warning' ? 'text-amber-200 bg-amber-500/20 border-amber-400/40 shadow-lg shadow-amber-500/10' : 'text-slate-200 bg-slate-950/70 border-slate-700';
                   const cardTone = collectionPending ? 'bg-slate-900/90 border-amber-300/70 shadow-amber-400/20' : delayed ? 'bg-slate-900/90 border-red-400/60 shadow-red-900/20' : 'bg-slate-900/80 border-slate-700/70';
                   const isOrderExpanded = expandedOrderIds.has(order.id);
-                  const followUp = getFollowUpData(order.admin_notes);
                   const followUpDue = Boolean(followUp.followUpDate && followUp.followUpDate <= getEgyptTodayString());
                   const followUpLabel = followUp.nextAction || (noTechnician ? 'تعيين فني مسؤول' : delayed ? 'مراجعة الطلب المتأخر' : 'تحديد الإجراء التالي');
                   const followUpTone = followUpDue || delayed ? 'border-rose-400/40 bg-rose-500/10 text-rose-100' : followUp.nextAction ? 'border-cyan-400/30 bg-cyan-500/10 text-cyan-100' : 'border-amber-400/30 bg-amber-500/10 text-amber-100';
@@ -4625,7 +4629,7 @@ ${trackingUrl}
                             </div>
                             {canEditDelete() && <button type="button" onClick={() => { setSelectedOrder(order); setSettleForm({ total_amount: order.total_amount || 0, parts_cost: order.parts_cost || 0, transport_cost: order.transport_cost || 0, net_amount: order.net_amount || 0, technician_share: order.technician_share || 0, company_share: order.company_share || 0 }); setShowSettleModal(true); }} className="mt-2 w-full rounded-xl bg-amber-500 px-3 py-2 text-[10px] font-black text-slate-950 hover:bg-amber-400">فتح المراجعة وتأكيد التحصيل</button>}
                           </div>}
-                        <div className="rounded-2xl border border-slate-700/70 bg-slate-950/45 p-3"><div className="mb-3 flex items-center justify-between"><span className="flex items-center gap-1.5 text-[10px] font-black text-slate-200"><History size={13} className="text-blue-300" /> سجل مراحل الأوردر</span><span className="text-[9px] font-bold text-slate-500">آخر تحديث: {formatOrderDateTime(order.completed_at || order.updated_at || order.created_at)}</span></div><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{[ { label: 'إنشاء الأوردر', done: Boolean(order.created_at), time: order.created_at }, { label: 'تعيين الفني', done: Boolean(order.technician && order.technician !== '-'), time: order.created_at }, { label: 'تنفيذ الخدمة', done: ['in-progress', 'in_progress', 'completed'].includes(String(order.status || '').toLowerCase()), time: order.completed_at || order.created_at }, { label: 'التحصيل والأرشفة', done: Boolean(order.is_paid), time: order.is_paid ? (order.completed_at || order.created_at) : null } ].map((step) => <div key={step.label} className={`rounded-xl border px-2.5 py-2 ${step.done ? 'border-emerald-400/25 bg-emerald-500/10' : 'border-slate-800 bg-slate-900/60'}`}><div className={`flex items-center gap-1.5 text-[9px] font-black ${step.done ? 'text-emerald-200' : 'text-slate-500'}`}><span className={`h-2 w-2 rounded-full ${step.done ? 'bg-emerald-400' : 'bg-slate-700'}`} />{step.label}</div><p className="mt-1 text-[8px] font-bold text-slate-500">{step.done && step.time ? formatOrderDateTime(step.time) : 'لم تكتمل بعد'}</p></div>)}</div></div>
+                        <div className="rounded-2xl border border-slate-700/70 bg-slate-950/45 p-3"><div className="mb-3 flex items-center justify-between"><span className="flex items-center gap-1.5 text-[10px] font-black text-slate-200"><History size={13} className="text-blue-300" /> سجل مراحل الأوردر</span><span className="text-[9px] font-bold text-slate-500">آخر تحديث: {formatOrderDateTime(order.completed_at || order.updated_at || order.created_at)}</span></div><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{[ { label: 'تواصل', done: Boolean(order.created_at), time: order.created_at }, { label: 'موعد', done: Boolean(order.technician && order.technician !== '-'), time: order.created_at }, { label: 'تنفيذ', done: ['in-progress', 'in_progress', 'completed'].includes(String(order.status || '').toLowerCase()), time: order.completed_at || order.created_at }, { label: 'التحصيل والإغلاق', done: Boolean(order.is_paid), time: order.is_paid ? (order.completed_at || order.created_at) : null } ].map((step) => <div key={step.label} className={`rounded-xl border px-2.5 py-2 ${step.done ? 'border-emerald-400/25 bg-emerald-500/10' : 'border-slate-800 bg-slate-900/60'}`}><div className={`flex items-center gap-1.5 text-[9px] font-black ${step.done ? 'text-emerald-200' : 'text-slate-500'}`}><span className={`h-2 w-2 rounded-full ${step.done ? 'bg-emerald-400' : 'bg-slate-700'}`} />{step.label}</div><p className="mt-1 text-[8px] font-bold text-slate-500">{step.done && step.time ? formatOrderDateTime(step.time) : 'لم تكتمل بعد'}</p></div>)}</div></div>
 	                      {/* Footer Buttons Row */}
 	                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
 
