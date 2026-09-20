@@ -1100,8 +1100,14 @@ export default function ProtectedOrders() {
     .replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '')
     .trim();
 
-  // للأوردر المكتمل نستخدم وقت الإتمام حتى لا يُؤرشف قبل مراجعة المدير.
-  const getOrderReferenceDate = (order: any) => (order?.status === 'completed' && order?.completed_at) || order?.updated_at || order?.status_updated_at || order?.last_updated_at || order?.created_at || order?.createdAt || order?.date || '';
+  // نعتمد على أعمدة موجودة فعلياً في Supabase. لا نستخدم updated_at لأنها غير موجودة
+  // في جدول orders وقد تجعل الأرشيف يبدو فارغاً أو تفشل استعلامات بعض الأدوار.
+  const getOrderReferenceDate = (order: any) => {
+    if (order?.status === 'completed') {
+      return order?.completed_at || order?.actual_completion_date || order?.created_at || order?.date || '';
+    }
+    return order?.created_at || order?.date || order?.action_date || order?.createdAt || '';
+  };
 
   const getDaysDifference = (dateStr: string, status: string) => {
     if (status === 'inspected') return 0;
@@ -1665,7 +1671,7 @@ export default function ProtectedOrders() {
     let loadedAllDashboardData = false;
     try {
       const orderFields = isViewer
-        ? 'id,order_number,customer_name,device_type,address,brand,problem_description,technician,status,total_amount,parts_cost,transport_cost,net_amount,company_share,technician_share,is_paid,created_at,updated_at,status_updated_at,last_updated_at,date,deleted_at,technician_note,warranty_period,invoice_approved,invoice_date,parts_used,completed_at'
+        ? 'id,order_number,customer_name,device_type,address,brand,problem_description,technician,status,total_amount,parts_cost,transport_cost,net_amount,company_share,technician_share,is_paid,created_at,date,action_date,actual_completion_date,deleted_at,technician_note,warranty_period,invoice_approved,invoice_date,parts_used,completed_at'
         : '*';
       const allOrders = await fetchAPIWithRetry(`orders?select=${orderFields}&order=created_at.desc`);
       if (requestId !== latestFetchRequestRef.current) return;
@@ -3722,7 +3728,7 @@ ${trackingUrl}
         ].filter(tab => !tab.hide).map(tab => (
           <button
             key={tab.id}
-            onClick={() => { playNavigationClick(); setActiveTab(tab.id as any); }}
+            onClick={() => { playNavigationClick(); if (tab.id === 'archived') { setFilterStatus('all'); setFilterTechnician(''); setArchiveDateFilter(''); setArchiveSearchTerm(''); setVisibleArchivedCount(15); } setActiveTab(tab.id as any); }}
             type="button"
             title={tab.label}
             aria-label={tab.label}
