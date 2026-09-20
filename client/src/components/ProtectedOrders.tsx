@@ -4186,7 +4186,7 @@ ${trackingUrl}
                   </>
                 )}
                 {!showDeleted && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {filteredOrders.map(order => {
                   const delayed = isDelayed(order);
                   const noTechnician = !order.technician || order.technician === '-' || order.technician === '';
@@ -4251,7 +4251,7 @@ ${trackingUrl}
 		                      aria-label={`تعديل أوردر ${order.customer_name}`}
 		                      onClick={() => { stopUrgentAlert(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); }}
 		                      onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); stopUrgentAlert(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); } }}
-		                      className={`group order-card-3d ${cardTone} ${statusGlow} ${recentlyUpdated ? 'ring-2 ring-emerald-300/70 shadow-[0_0_26px_rgba(52,211,153,0.28)]' : ''} rounded-[1.5rem] border p-3 sm:p-4 transition-all hover:shadow-2xl active:scale-[0.98] cursor-pointer relative overflow-hidden ${config.pulse} bg-slate-900/60 backdrop-blur-md border-opacity-30 hover:border-opacity-100`}
+		                      className={`group order-card-3d ${cardTone} ${statusGlow} ${recentlyUpdated ? 'ring-2 ring-emerald-300/70 shadow-[0_0_26px_rgba(52,211,153,0.28)]' : ''} rounded-[1.35rem] border p-2.5 sm:p-3 transition-all hover:shadow-2xl active:scale-[0.98] cursor-pointer relative overflow-hidden ${config.pulse} bg-slate-900/60 backdrop-blur-md border-opacity-30 hover:border-opacity-100`}
 	                    >
 	                      {collectionPending && <div className="absolute inset-0 pointer-events-none rounded-[1.5rem] border border-amber-300/50 shadow-[0_0_20px_rgba(251,191,36,0.2)]"></div>}
 	                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:bg-white/10 transition-all"></div>
@@ -4268,7 +4268,7 @@ ${trackingUrl}
 
 <div className="flex min-w-0 flex-col gap-1">
 						                  <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-		                            <h3 className="text-lg font-black text-white group-hover:text-orange-400 transition-colors leading-tight">{order.customer_name}</h3>
+		                            <h3 className="text-sm sm:text-base font-black text-white group-hover:text-orange-400 transition-colors leading-tight">{order.customer_name}</h3>
 		                            <div className="flex gap-1">
 		                              {previousCustomerPhones.has(normalizeCustomerPhone(order.phone)) && <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-1.5 py-0.5 text-[8px] font-black text-emerald-300">✨ عميل سابق</span>}
 		                              {isNewOrder(order) && <span className="inline-flex items-center gap-1 rounded-full border border-blue-400/30 bg-blue-500/20 px-1.5 py-0.5 text-[8px] font-black text-blue-300 animate-pulse">🆕 جديد الآن</span>}
@@ -4324,7 +4324,7 @@ ${trackingUrl}
                                 </div>
                                 {noTechnician && order.status === 'pending' && <span className="shrink-0 rounded-lg bg-amber-500/15 px-2 py-1 text-[8px] font-black text-amber-200">يحتاج تعيين</span>}
                               </div>
-                              <div className={`relative mb-3 overflow-hidden rounded-2xl border px-3 py-2.5 ${followUpTone}`}>
+                              <div className={`relative mb-2 overflow-hidden rounded-xl border px-2.5 py-2 ${followUpTone}`}>
                                 <div className="absolute -left-6 -top-8 h-20 w-20 rounded-full bg-white/10 blur-2xl" />
                                 <div className="relative flex items-center justify-between gap-3">
                                   <div className="flex min-w-0 items-center gap-2">
@@ -4341,7 +4341,7 @@ ${trackingUrl}
                                     <p className="text-[10px] font-black">{followUp.followUpDate || 'غير محدد'}</p>
                                   </div>
                                 </div>
-                                {(followUp.owner || followUp.blocker) && <div className="relative mt-2 flex flex-wrap gap-1.5 text-[8px] font-bold opacity-80">
+                                {isOrderExpanded && (followUp.owner || followUp.blocker) && <div className="relative mt-2 flex flex-wrap gap-1.5 text-[8px] font-bold opacity-80">
                                   {followUp.owner && <span className="rounded-full border border-white/10 bg-slate-950/40 px-2 py-1">المسؤول: {followUp.owner}</span>}
                                   {followUp.blocker && <span className="rounded-full border border-rose-300/20 bg-rose-500/10 px-2 py-1">تعطيل: {followUp.blocker}</span>}
                                 </div>}
@@ -4443,7 +4443,8 @@ ${trackingUrl}
 	                        </div>
 	                      </div>
 
-	                      {/* Photos Section */}
+	                      {isOrderExpanded && (<div className="space-y-3">
+                      {/* Photos Section */}
 	                      {(getPhotoUrl(order.technician_note, 'OLD') || getPhotoUrl(order.technician_note, 'NEW')) && (
 	                        <div className="grid grid-cols-2 gap-2 mb-4 relative z-10">
 	                          {getPhotoUrl(order.technician_note, 'OLD') && (
@@ -4512,6 +4513,7 @@ ${trackingUrl}
 	                        </div>
 	                      </div>
 
+                      </div>)}
                               </div>
 
 	                      {/* Modern Icon Actions Section */}
@@ -4753,7 +4755,7 @@ ${trackingUrl}
               <p className="text-[10px] text-slate-500">يمكنك كتابة جزء من الاسم أو آخر أرقام الهاتف أو اسم الفني للوصول إلى الأوردر بسرعة، أو اختر تاريخًا لاستدعاء أرشيف يوم محدد.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               {filteredArchivedOrders.length === 0 && (
                 <div className="col-span-full text-center py-20 bg-slate-900/50 rounded-[2rem] border-2 border-dashed border-slate-800">
                   <Plus className="w-12 h-12 text-slate-700 mx-auto mb-4 rotate-45" />
@@ -4773,7 +4775,7 @@ ${trackingUrl}
                 const cardColor = config.color;
 
                 return (
-                  <div key={order.id} className="bg-slate-900/40 rounded-[1.5rem] border border-slate-800 p-5 opacity-80 hover:opacity-100 transition-all hover:border-indigo-500/50">
+                  <div key={order.id} className="bg-slate-900/50 rounded-[1.25rem] border border-slate-800 p-3 opacity-90 hover:opacity-100 transition-all hover:border-indigo-500/50">
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <h3 className="text-md font-bold text-white">{order.customer_name}</h3>

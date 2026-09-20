@@ -15,7 +15,12 @@ export default function InvoicePageNew() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isManagerEditing, setIsManagerEditing] = useState(false);
   const [managerSaving, setManagerSaving] = useState(false);
-  const [managerForm, setManagerForm] = useState({ warranty_period: '', status: 'completed', technician: '', admin_notes: '', total_amount: 0, parts_used: '', invoice_date: '', invoice_approved: false });
+  const [managerForm, setManagerForm] = useState({
+    customer_name: '', phone: '', address: '', device_type: '', brand: '', problem_description: '',
+    warranty_period: '', status: 'completed', technician: '', admin_notes: '', parts_used: '',
+    total_amount: '', parts_cost: '', transport_cost: '', net_amount: '', technician_share: '', company_share: '',
+    is_paid: false, invoice_date: '', invoice_approved: false,
+  });
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -42,13 +47,14 @@ export default function InvoicePageNew() {
         if (data && data.length > 0) {
           setInvoice(data[0]);
           setManagerForm({
-            warranty_period: data[0].warranty_period || '6 أشهر',
-            status: data[0].status || 'completed',
-            technician: data[0].technician || '',
-            admin_notes: data[0].admin_notes || '',
-            total_amount: Number(data[0].total_amount || 0),
-            parts_used: data[0].parts_used || '',
-            invoice_date: data[0].invoice_date || String(data[0].created_at || '').slice(0, 10),
+            customer_name: data[0].customer_name || '', phone: data[0].phone || '', address: data[0].address || '',
+            device_type: data[0].device_type || data[0].device || '', brand: data[0].brand || '',
+            problem_description: data[0].problem_description || data[0].problem || '',
+            warranty_period: data[0].warranty_period || '6 أشهر', status: data[0].status || 'completed',
+            technician: data[0].technician || '', admin_notes: data[0].admin_notes || '', parts_used: data[0].parts_used || '',
+            total_amount: data[0].total_amount ?? '', parts_cost: data[0].parts_cost ?? '', transport_cost: data[0].transport_cost ?? '',
+            net_amount: data[0].net_amount ?? '', technician_share: data[0].technician_share ?? '', company_share: data[0].company_share ?? '',
+            is_paid: Boolean(data[0].is_paid), invoice_date: data[0].invoice_date || String(data[0].created_at || '').slice(0, 10),
             invoice_approved: Boolean(data[0].invoice_approved)
           });
         } else {
@@ -78,14 +84,16 @@ export default function InvoicePageNew() {
     if (!invoice || !canManagerEdit) return;
     setManagerSaving(true);
     try {
+      const numericOrNull = (value: string | number) => value === '' ? null : Math.max(0, Number(value) || 0);
       const updatedFields = {
-        warranty_period: managerForm.warranty_period.trim() || 'بدون ضمان',
-        status: managerForm.status,
-        technician: managerForm.technician.trim(),
-        admin_notes: managerForm.admin_notes.trim(),
-        total_amount: Math.max(0, Number(managerForm.total_amount) || 0),
-        parts_used: managerForm.parts_used.trim(),
-        invoice_date: managerForm.invoice_date || new Date().toISOString().slice(0, 10),
+        customer_name: managerForm.customer_name.trim(), phone: managerForm.phone.trim(), address: managerForm.address.trim(),
+        device_type: managerForm.device_type.trim(), brand: managerForm.brand.trim(), problem_description: managerForm.problem_description.trim(),
+        warranty_period: managerForm.warranty_period.trim() || 'بدون ضمان', status: managerForm.status,
+        technician: managerForm.technician.trim(), admin_notes: managerForm.admin_notes.trim(), parts_used: managerForm.parts_used.trim(),
+        total_amount: numericOrNull(managerForm.total_amount), parts_cost: numericOrNull(managerForm.parts_cost),
+        transport_cost: numericOrNull(managerForm.transport_cost), net_amount: numericOrNull(managerForm.net_amount),
+        technician_share: numericOrNull(managerForm.technician_share), company_share: numericOrNull(managerForm.company_share),
+        is_paid: Boolean(managerForm.is_paid), invoice_date: managerForm.invoice_date || new Date().toISOString().slice(0, 10),
         invoice_approved: Boolean(managerForm.invoice_approved),
         receipt_updated_by: currentUser?.name || currentUser?.username || 'المدير',
         receipt_updated_at: new Date().toISOString()
@@ -498,11 +506,42 @@ export default function InvoicePageNew() {
             </div>
             {isManagerEditing && (
               <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
-                <label className="text-sm font-bold text-slate-700">المبلغ الإجمالي
-                  <input type="number" min="0" value={managerForm.total_amount} onChange={(e) => setManagerForm({ ...managerForm, total_amount: Number(e.target.value) || 0 })} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
+                <div className="md:col-span-3 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-800">تعديل الفاتورة لا يغيّر تاريخ إنشاء الأوردر أو حالته الأرشيفية.</div>
+                <label className="text-sm font-bold text-slate-700">اسم العميل
+                  <input value={managerForm.customer_name} onChange={(e) => setManagerForm({ ...managerForm, customer_name: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
+                </label>
+                <label className="text-sm font-bold text-slate-700">الهاتف
+                  <input value={managerForm.phone} onChange={(e) => setManagerForm({ ...managerForm, phone: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
+                </label>
+                <label className="text-sm font-bold text-slate-700">العنوان
+                  <input value={managerForm.address} onChange={(e) => setManagerForm({ ...managerForm, address: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
+                </label>
+                <label className="text-sm font-bold text-slate-700">نوع الجهاز
+                  <input value={managerForm.device_type} onChange={(e) => setManagerForm({ ...managerForm, device_type: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
+                </label>
+                <label className="text-sm font-bold text-slate-700">الماركة
+                  <input value={managerForm.brand} onChange={(e) => setManagerForm({ ...managerForm, brand: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
                 </label>
                 <label className="text-sm font-bold text-slate-700">تاريخ الفاتورة
                   <input type="date" value={managerForm.invoice_date} onChange={(e) => setManagerForm({ ...managerForm, invoice_date: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
+                </label>
+                <label className="text-sm font-bold text-slate-700">المبلغ الإجمالي
+                  <input type="number" min="0" step="0.01" value={managerForm.total_amount} onChange={(e) => setManagerForm({ ...managerForm, total_amount: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
+                </label>
+                <label className="text-sm font-bold text-slate-700">تكلفة قطع الغيار
+                  <input type="number" min="0" step="0.01" value={managerForm.parts_cost} onChange={(e) => setManagerForm({ ...managerForm, parts_cost: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
+                </label>
+                <label className="text-sm font-bold text-slate-700">المواصلات
+                  <input type="number" min="0" step="0.01" value={managerForm.transport_cost} onChange={(e) => setManagerForm({ ...managerForm, transport_cost: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
+                </label>
+                <label className="text-sm font-bold text-slate-700">صافي المبلغ
+                  <input type="number" min="0" step="0.01" value={managerForm.net_amount} onChange={(e) => setManagerForm({ ...managerForm, net_amount: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
+                </label>
+                <label className="text-sm font-bold text-slate-700">نصيب الفني
+                  <input type="number" min="0" step="0.01" value={managerForm.technician_share} onChange={(e) => setManagerForm({ ...managerForm, technician_share: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
+                </label>
+                <label className="text-sm font-bold text-slate-700">نصيب الشركة
+                  <input type="number" min="0" step="0.01" value={managerForm.company_share} onChange={(e) => setManagerForm({ ...managerForm, company_share: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
                 </label>
                 <label className="text-sm font-bold text-slate-700">مدة الضمان
                   <input value={managerForm.warranty_period} onChange={(e) => setManagerForm({ ...managerForm, warranty_period: e.target.value })} placeholder="مثال: 6 أشهر أو بدون ضمان" className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
@@ -523,6 +562,10 @@ export default function InvoicePageNew() {
                 <label className="text-sm font-bold text-slate-700 md:col-span-3">قطع الغيار المستخدمة
                   <textarea value={managerForm.parts_used} onChange={(e) => setManagerForm({ ...managerForm, parts_used: e.target.value })} placeholder="مثال: طلمبة، سير، حساس..." rows={2} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
                 </label>
+                <label className="text-sm font-bold text-slate-700 md:col-span-3">وصف المشكلة
+                  <textarea value={managerForm.problem_description} onChange={(e) => setManagerForm({ ...managerForm, problem_description: e.target.value })} rows={2} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
+                </label>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-700"><input type="checkbox" checked={managerForm.is_paid} onChange={(e) => setManagerForm({ ...managerForm, is_paid: e.target.checked })} className="h-5 w-5 accent-orange-600" /> تم التحصيل</label>
                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 md:col-span-3"><input type="checkbox" checked={managerForm.invoice_approved} onChange={(e) => setManagerForm({ ...managerForm, invoice_approved: e.target.checked })} className="h-4 w-4 accent-orange-600" /> اعتماد الفاتورة بعد التعديل</label>
                 <label className="text-sm font-bold text-slate-700 md:col-span-3">ملاحظة أو حالة تُعرض للعميل
                   <textarea value={managerForm.admin_notes} onChange={(e) => setManagerForm({ ...managerForm, admin_notes: e.target.value })} placeholder="مثال: في انتظار قطعة غيار، سيتم التواصل غدًا..." rows={3} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-orange-500" />
