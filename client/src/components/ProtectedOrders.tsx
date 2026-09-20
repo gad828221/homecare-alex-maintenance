@@ -1167,8 +1167,9 @@ export default function ProtectedOrders() {
 
     // الحالات النهائية المحسومة تنظّم لوحة التشغيل فوراً.
     if (order.status === 'cancelled' || order.status === 'inspected') return true;
-    // الأوردر المكتمل المحصل مؤهل للأرشفة الفورية، بينما غير المحصل يبقى للمتابعة المالية حتى يبلغ 15 يوماً.
-    if (order.status === 'completed') return Boolean(order.is_paid);
+    // الأوردر المكتمل يظل ظاهرًا في لوحة المدير بعد انتقاله من الفني.
+    // ينتقل للأرشيف فقط بعد مرور 15 يومًا من آخر تحديث، حتى لا يختفي فور اعتماد التصفية.
+    if (order.status === 'completed') return false;
     return false;
   };
 
