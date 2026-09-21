@@ -1,10 +1,7 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
 import { TableSkeleton } from "@/components/SkeletonLoader";
 import { Bell, RefreshCw } from "lucide-react";
-
-// استدعاء ملف تنسيق المدير هنا فقط ليطبق على لوحة التحكم حصراً
-import "./manager-theme.css";
 
 /**
  * Enhanced ProtectedOrders component with Real-time updates
@@ -45,7 +42,7 @@ export function ProtectedOrdersEnhanced() {
 
   if (error) {
     return (
-      <div className="manager-dashboard bg-red-50 border border-red-200 p-6 rounded-lg text-red-800">
+      <div className="manager-light-theme p-6 rounded-lg bg-red-50 text-red-800">
         <h3 className="font-bold mb-2">خطأ في تحميل البيانات</h3>
         <p>{error}</p>
         <button 
@@ -59,10 +56,10 @@ export function ProtectedOrdersEnhanced() {
   }
 
   return (
-    <div className="manager-dashboard">
+    <div className="manager-light-theme min-h-screen p-4 sm:p-6">
       {/* Real-time Notification Badge */}
       {showNotification && (
-        <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 z-50 animate-pulse">
+        <div className="fixed top-4 right-4 bg-emerald-600 text-white px-6 py-4 rounded-xl shadow-lg flex items-center gap-3 z-50 animate-pulse">
           <Bell className="w-5 h-5" />
           <span className="font-bold">{newOrdersCount} أوردر جديد!</span>
         </div>
@@ -70,7 +67,7 @@ export function ProtectedOrdersEnhanced() {
 
       {/* Header with refresh button */}
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-slate-900">الأوردرات ({orders.length})</h2>
+        <h2 className="text-2xl font-extrabold text-slate-900">الأوردرات ({orders.length})</h2>
         <button 
           onClick={refetch}
           disabled={loading}
@@ -81,14 +78,14 @@ export function ProtectedOrdersEnhanced() {
         </button>
       </div>
 
-      {/* Loading state */}
+      {/* Loading state / Table */}
       {loading && orders.length === 0 ? (
         <TableSkeleton />
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="order-card-3d overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-right border-collapse">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-700">
+              <thead className="border-b border-slate-200 bg-slate-50 text-slate-700">
                 <tr>
                   <th className="px-6 py-3.5 font-extrabold text-sm">رقم الأوردر</th>
                   <th className="px-6 py-3.5 font-extrabold text-sm">العميل</th>
@@ -97,12 +94,12 @@ export function ProtectedOrdersEnhanced() {
                   <th className="px-6 py-3.5 font-extrabold text-sm">التاريخ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-800">
+              <tbody className="divide-y divide-slate-100">
                 {orders.map((order) => (
                   <tr key={order.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="px-6 py-4 font-mono font-bold text-sm text-slate-900">{order.order_number}</td>
-                    <td className="px-6 py-4 font-bold text-sm">{order.customer_name}</td>
-                    <td className="px-6 py-4 text-sm font-semibold">{order.device_type}</td>
+                    <td className="px-6 py-4 font-bold text-sm text-slate-800">{order.customer_name}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-slate-700">{order.device_type}</td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-lg text-xs font-bold inline-block ${
                         order.status === 'completed' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
@@ -124,7 +121,7 @@ export function ProtectedOrdersEnhanced() {
 
       {/* Empty state */}
       {!loading && orders.length === 0 && (
-        <div className="text-center py-12 bg-slate-50 rounded-2xl border border-slate-200">
+        <div className="order-card-3d text-center py-12">
           <p className="text-slate-600 font-bold text-lg">لا توجد أوردرات حالياً</p>
         </div>
       )}
