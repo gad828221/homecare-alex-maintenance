@@ -519,3 +519,33 @@
 .animate-fadeIn {
   animation: fadeInSlide 0.2s ease-out forwards;
 }
+/* ==========================================================
+   إصلاح الخلفية السوداء لإظهار اسم الفني والمراحل + التحكم بالتفاصيل
+   ========================================================== */
+
+/* 1. إصلاح الخانات السوداء (اسم الفني وشريط المراحل) وتوضيح النص */
+.manager-light-theme .order-card-3d [class*="bg-slate-"],
+.operations-light-theme .order-card-3d [class*="bg-slate-"],
+.manager-light-theme .order-card-3d .bg-black,
+.operations-light-theme .order-card-3d .bg-black,
+.manager-light-theme .order-card-3d [class*="bg-slate-900"],
+.operations-light-theme .order-card-3d [class*="bg-slate-900"] {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* 2. إظهار نص اسم الفني "الفني: منصور" بشرائط تباين عالية */
+.manager-light-theme .order-card-3d span,
+.operations-light-theme .order-card-3d span,
+.manager-light-theme .order-card-3d div,
+.operations-light-theme .order-card-3d div {
+  color: inherit;
+}
+
+/* 3. إخفاء "سجل مراحل الأوردر" والأجزاء المتقدمة تلقائياً إذا لم تكن التفاصيل مفتوحة */
+.order-card-3d:not(.details-open) .order-details-content,
+.order-card-3d:not(.details-open) .order-timeline-section,
+.order-card-3d:not(.details-open) [data-details-section="true"] {
+  display: none !important;
+}
