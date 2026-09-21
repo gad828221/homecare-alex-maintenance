@@ -347,9 +347,10 @@
 #manager-dashboard select,
 #manager-dashboard textarea {
   background-color: #ffffff !important;
-  border: 1px solid var(--ops-border) !important;
+  border: 1px solid #cbd5e1 !important;
   color: #0b1220 !important;
   border-radius: 8px !important;
+  font-weight: 700 !important;
 }
 
 .operations-light-theme input:focus,
@@ -378,7 +379,7 @@
 .operations-light-theme [class*="bg-amber-"],
 #manager-dashboard [class*="text-amber-"] {
   background-color: #fef3c7 !important;
-  color: #78350f !important; /* بني غامق جداً ومقروء بوضوح */
+  color: #78350f !important;
   border: 1px solid #fde68a !important;
   font-weight: 800 !important;
 }
@@ -386,26 +387,38 @@
 /* الشارة الخضراء (تواصل / موعد / تم) */
 .manager-light-theme [class*="bg-emerald-"],
 .operations-light-theme [class*="bg-emerald-"],
-#manager-dashboard [class*="text-emerald-"] {
+#manager-dashboard [class*="text-emerald-"],
+.order-timeline-section [class*="bg-emerald-"],
+div[class*="bg-emerald-100"] {
   background-color: #d1fae5 !important;
-  color: #064e3b !important; /* أخضر داكن واضح */
-  border: 1px solid #a7f3d0 !important;
-  font-weight: 700 !important;
+  color: #064e3b !important;
+  border: 1px solid #059669 !important;
+  font-weight: 800 !important;
+}
+
+.order-timeline-section [class*="bg-emerald-"] *,
+div[class*="bg-emerald-100"] * {
+  color: #064e3b !important;
+  font-weight: 800 !important;
 }
 
 /* الشارات الرمادية (لم تكتمل بعد / البيانات العامة) */
 .manager-light-theme [class*="bg-slate-100"],
 .operations-light-theme [class*="bg-slate-100"],
 #manager-dashboard [class*="text-slate-400"],
-#manager-dashboard [class*="text-slate-500"] {
-  color: #334155 !important; /* نص رمادي غامق صريح للقراءة */
+#manager-dashboard [class*="text-slate-500"],
+.order-timeline-section [class*="bg-slate-"],
+div[class*="bg-slate-100"] {
+  background-color: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
   font-weight: 700 !important;
 }
 
 /* ===== تحسين شكل سجل مراحل الأوردر ===== */
 .order-timeline-section,
 [class*="order-timeline"] {
-  background: #f8fafc !important;
+  background: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
   border-radius: 12px !important;
   padding: 12px !important;
@@ -424,21 +437,33 @@
   #manager-dashboard [role="tablist"] { scrollbar-width: none; }
   #manager-dashboard [role="tablist"]::-webkit-scrollbar { display: none; }
 }
-/* =========================================================
-   تعديلات بصرية شريط التنبيهات والأزرار العائمة
-   ========================================================= */
 
-/* 1. إصلاح شريط زر التنبيه الوردي ومنحه تباين قوي ومقروء */
+/* =========================================================
+   إخفاء المكونات والشريط الداكن المكرر
+   ========================================================= */
+.order-card-3d [class*="bg-gray-"],
+.order-card-3d [class*="bg-slate-700"],
+div[class*="rounded-full bg-slate-600"] {
+  display: none !important;
+}
+
+/* =========================================================
+   تعديلات بصرية شريط التنبيهات والأزرار الوردیة
+   ========================================================= */
 .manager-light-theme [class*="bg-rose-"],
 .manager-light-theme [class*="bg-red-100"],
 .operations-light-theme [class*="bg-rose-"],
-div[class*="bg-rose-"] {
+div[class*="bg-rose-"],
+button[class*="bg-rose-"],
+button[class*="bg-pink-"],
+.bg-rose-100 button,
+.bg-pink-100 button {
   background-color: #fef2f2 !important;
-  border: 1px solid #fca5a5 !important;
-  color: #991b1b !important; /* أحمر داكن جداً واضح ومقروء */
+  border: 1px solid #f87171 !important;
+  color: #991b1b !important;
+  font-weight: 800 !important;
 }
 
-/* إصلاح الزر الصغير (فتح 12) داخل التنبيه */
 .manager-light-theme [class*="bg-rose-"] button,
 div[class*="bg-rose-"] button,
 .manager-light-theme [class*="bg-rose-"] span {
@@ -449,88 +474,37 @@ div[class*="bg-rose-"] button,
   padding: 4px 12px !important;
 }
 
-/* 2. تحسين زري الأسهم العائمة (لأعلى ولأسفل) حتى لا تُغطي على الكروت */
+/* =========================================================
+   ضبط موقع وحجم أزرار الأسهم العائمة (لأعلى ولأسفل)
+   ========================================================= */
 .floating-scroll-buttons,
 button[aria-label*="scroll"],
 div[class*="fixed bottom-"] {
+  left: 8px !important;
+  bottom: 16px !important;
   z-index: 50 !important;
   opacity: 0.85;
   transition: opacity 0.2s ease-in-out;
 }
 
-/* تصغير الحجم وإزاحتها للطرف الأيسر قليلاً */
-.floating-scroll-buttons button {
-  width: 36px !important;
-  height: 36px !important;
-  background: #ffffff !important;
-  border: 1px solid #cbd5e1 !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-  border-radius: 50% !important;
-}
-
-.floating-scroll-buttons:hover {
-  opacity: 1;
-  }
-/* =========================================================
-   تنسيقات شاملة لكارت الأوردر وسجل المراحل والأزرار العائمة
-   ========================================================= */
-
-/* 1. إصلاح تباين وألوان سجل مراحل الأوردر (تواصل / موعد) */
-.order-timeline-section .bg-emerald-100,
-div[class*="bg-green-"],
-div[class*="bg-emerald-"] {
-  background-color: #d1fae5 !important;
-  border: 1px solid #059669 !important;
-  color: #064e3b !important; /* لون أخضر داكن حاد جداً ومقروء */
-}
-
-.order-timeline-section .bg-emerald-100 *,
-div[class*="bg-emerald-"] * {
-  color: #064e3b !important;
-  font-weight: 800 !important;
-}
-
-/* 2. إصلاح زر التحصيل الوردي */
-button:contains("تحصيل"),
-div[class*="bg-rose-"] button,
-button[class*="bg-pink-"] {
-  background-color: #fef2f2 !important;
-  border: 1px solid #f87171 !important;
-  color: #991b1b !important;
-  font-weight: 800 !important;
-}
-
-/* 3. إزاحة وتصغير أزرار التنقل العائمة كي لا تغطي على الكارت */
-div[class*="fixed bottom-"],
-.floating-scroll-buttons {
-  left: 8px !important;
-  bottom: 20px !important;
-  z-index: 40 !important;
-}
-
-div[class*="fixed bottom-"] button,
-.floating-scroll-buttons button {
+.floating-scroll-buttons button,
+div[class*="fixed bottom-"] button {
   width: 32px !important;
   height: 32px !important;
   background-color: #ffffff !important;
   border: 1px solid #cbd5e1 !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
   border-radius: 50% !important;
-  opacity: 0.75;
 }
 
-div[class*="fixed bottom-"] button:hover {
-  opacity: 1;
+.floating-scroll-buttons:hover,
+div[class*="fixed bottom-"]:hover {
+  opacity: 1 !important;
 }
 
-/* 4. إعطاء القوائم المنسدلة وأزرار الإجراءات حدوداً واضحة */
-select, 
-.order-card-3d input {
-  border: 1px solid #cbd5e1 !important;
-  color: #0f172a !important;
-  font-weight: 700 !important;
-}
-/* إخفاء سجل مراحل الأوردر الافتراضي وإظهاره فقط عند تفعيل التفاصيل */
+/* =========================================================
+   إخفاء سجل مراحل الأوردر تلقائياً في حالة عدم فتح التفاصيل
+   ========================================================= */
 .order-card-3d:not(.details-open) .order-timeline-section {
   display: none !important;
 }
