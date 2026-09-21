@@ -330,3 +330,80 @@
   #manager-dashboard [role="tablist"] { scrollbar-width: none; }
   #manager-dashboard [role="tablist"]::-webkit-scrollbar { display: none; }
 }
+/* ===== Neo Operations Light Theme Override ===== */
+.operations-light-theme,
+.manager-light-theme,
+#manager-dashboard {
+  --ops-bg: #f5f7fb;
+  --ops-surface: #ffffff;
+  --ops-surface-soft: #f8fafc;
+  --ops-ink: #0b1220;
+  --ops-muted: #64748b;
+  --ops-border: #e5eaf1;
+  --ops-blue: #2563eb;
+  
+  background-color: var(--ops-bg) !important;
+  color: var(--ops-ink) !important;
+  direction: rtl;
+}
+
+/* تحسين البطاقات والكروت */
+.operations-light-theme .order-card-3d,
+.manager-light-theme .order-card-3d,
+#manager-dashboard .order-card-3d {
+  background: var(--ops-surface) !important;
+  border: 1px solid var(--ops-border) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05) !important;
+  color: #1e293b !important;
+}
+
+.operations-light-theme .order-card-3d:hover,
+.manager-light-theme .order-card-3d:hover,
+#manager-dashboard .order-card-3d:hover {
+  border-color: #bfdbfe !important;
+  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.12) !important;
+}
+
+/* ضبط حقول الإدخال والتركيز */
+.operations-light-theme input,
+.operations-light-theme select,
+.operations-light-theme textarea,
+.manager-light-theme input,
+.manager-light-theme select,
+.manager-light-theme textarea,
+#manager-dashboard input,
+#manager-dashboard select,
+#manager-dashboard textarea {
+  background-color: #ffffff !important;
+  border: 1px solid var(--ops-border) !important;
+  color: #0b1220 !important;
+  border-radius: 8px !important;
+}
+
+.operations-light-theme input:focus,
+.operations-light-theme select:focus,
+.operations-light-theme textarea:focus,
+.manager-light-theme input:focus,
+.manager-light-theme select:focus,
+.manager-light-theme textarea:focus,
+#manager-dashboard input:focus,
+#manager-dashboard select:focus,
+#manager-dashboard textarea:focus {
+  border-color: var(--ops-blue) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+  outline: none !important;
+}
+
+/* أزرار الإجراءات */
+.manager-light-theme button,
+.operations-light-theme button {
+  border-radius: 8px !important;
+}
+
+@media (max-width: 640px) {
+  .order-card-3d {
+    border-radius: 12px !important;
+    padding: 12px !important;
+  }
+    }
