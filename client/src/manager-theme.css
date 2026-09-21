@@ -331,3 +331,129 @@
   .order-summary-item svg { width: 14px; height: 14px; }
   .order-summary-item strong { font-size: 10px; }
 }
+
+/* Digital icon system: consistent stroke, compact icon capsules, and calm action buttons. */
+.operations-light-theme svg,
+.manager-light-theme svg {
+  stroke-width: 2.25;
+  flex-shrink: 0;
+}
+
+.operations-light-theme button > svg,
+.manager-light-theme button > svg {
+  width: 20px;
+  height: 20px;
+  padding: 4px;
+  box-sizing: content-box;
+  border-radius: 8px;
+  background: #eef4ff;
+  color: #2563eb;
+  filter: none;
+}
+
+.operations-light-theme button:hover > svg,
+.manager-light-theme button:hover > svg {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.manager-light-theme [role="tab"] {
+  min-width: 3.35rem !important;
+  width: 3.35rem !important;
+  height: 3.15rem !important;
+  padding: 0.35rem !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06) !important;
+}
+
+.manager-light-theme [role="tab"] > span {
+  width: 2.2rem !important;
+  height: 2.2rem !important;
+  border-radius: 10px !important;
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+}
+
+.manager-light-theme [role="tab"] > span svg {
+  width: 19px !important;
+  height: 19px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  color: currentColor !important;
+}
+
+.manager-light-theme [role="tab"][aria-selected="true"] > span {
+  background: rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+}
+
+.manager-light-theme > .sticky.top-0 .text-orange-500,
+.manager-light-theme > .sticky.top-0 svg {
+  color: #2563eb !important;
+}
+
+.manager-light-theme .order-card-3d button > svg {
+  width: 18px;
+  height: 18px;
+  padding: 3px;
+  border-radius: 7px;
+}
+
+.manager-light-theme .order-card-3d .order-details-toggle > svg {
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  background: transparent;
+  color: currentColor;
+}
+
+/* The main control row uses one primary blue action and restrained secondary actions. */
+.manager-light-theme > div:not([role="tablist"]) button {
+  border-radius: 10px;
+}
+
+.manager-light-theme > div:not([role="tablist"]) button > svg {
+  border-radius: 7px;
+}
+
+.manager-light-theme .bg-orange-600,
+.manager-light-theme .bg-orange-500 {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+}
+
+.manager-light-theme .bg-orange-600:hover,
+.manager-light-theme .bg-orange-500:hover {
+  background-color: #1d4ed8 !important;
+}
+
+.manager-light-theme .bg-emerald-600 {
+  background-color: #0f766e !important;
+  border-color: #0f766e !important;
+}
+
+.manager-light-theme .bg-blue-600 {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+}
+
+.manager-light-theme .bg-slate-800 {
+  color: #334155 !important;
+}
+
+@media (max-width: 640px) {
+  .manager-light-theme [role="tab"] {
+    min-width: 3rem !important;
+    width: 3rem !important;
+    height: 2.85rem !important;
+  }
+  .manager-light-theme [role="tab"] > span {
+    width: 2rem !important;
+    height: 2rem !important;
+  }
+  .operations-light-theme button > svg,
+  .manager-light-theme button > svg {
+    width: 18px;
+    height: 18px;
+  }
+}
