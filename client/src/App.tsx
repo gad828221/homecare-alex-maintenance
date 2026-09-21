@@ -110,14 +110,21 @@ function FloatingButtons() {
   );
 }
 
-// PwaInstallBanner removed as per user request (v3.2.6)
-
 function AppContent() {
   const currentPath = window.location.pathname;
 
+  // التحقق مما إذا كان المسار يتبع الإدارة/الموظفين
+  const isStaffPath = ['/login', '/orders', '/tech-portal', '/data-entry'].some((path) => currentPath.startsWith(path));
+
+  // تحميل ملف manager-theme.css ديناميكيًا وحصريًا لمسارات الإدارة والعمل فقط
+  useEffect(() => {
+    if (isStaffPath) {
+      import("./manager-theme.css");
+    }
+  }, [isStaffPath]);
+
   // كل مسار له هوية تثبيت مستقلة: الزوار لا يرثون تطبيق الموظفين والعكس صحيح.
   useEffect(() => {
-    const isStaffPath = ['/login', '/orders', '/tech-portal', '/data-entry'].some((path) => currentPath.startsWith(path));
     const manifestLink = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
     if (manifestLink) {
       if (isStaffPath) manifestLink.setAttribute('href', '/staff-manifest.webmanifest');
@@ -125,7 +132,6 @@ function AppContent() {
     }
 
     // تنظيف أي Service Worker قديم من إعداد Netlify/OneSignal قبل استخدام العامل الموحد.
-    // لا نلمس sw.js الحالي؛ فهو العامل المشترك لـPWA وOneSignal.
     if (isStaffPath && 'serviceWorker' in navigator) {
       void navigator.serviceWorker.getRegistrations().then(async (registrations) => {
         const legacyWorkers = registrations.filter((registration) => {
@@ -141,14 +147,12 @@ function AppContent() {
       const { user, role } = readAuthSession();
       if (user) syncOneSignalIdentity(user, role || user.role);
     }
-  }, [currentPath]);
+  }, [currentPath, isStaffPath]);
 
   // إخفاء أزرار الاتصال في صفحات الإدارة والعمل
   const hideFloatingButtons = [
     "/orders", "/tech-portal", "/data-entry", "/login"
   ].includes(currentPath);
-  // EmployeeChat paths and logic removed (v3.2.8)
-  // يتم تشغيل التنبيه الداخلي من ProtectedOrders عبر Realtime؛ أُلغي الفحص الدوري المكرر لتقليل طلبات الشبكة ومنع الصوت المزدوج.
 
   return (
     <>
@@ -158,8 +162,6 @@ function AppContent() {
       {!hideFloatingButtons && <FloatingButtons />}
 
       <PresenceManager />
-      {/* PwaInstallBanner removed */}
-      {/* EmployeeChat removed */}
     </>
   );
 }
@@ -171,7 +173,6 @@ function App() {
     const checkAuth = () => {
       const { role } = readAuthSession();
       
-      // v3.1.8: تحويل سلس وموحد لمنع "الرعشة"
       if (role && (currentPath === '/login' || currentPath === '/')) {
         const params = new URLSearchParams(window.location.search);
         const redirectPath = params.get('redirect');
@@ -186,7 +187,6 @@ function App() {
         return;
       }
 
-      // تم إلغاء التحويل التلقائي ليبقى الموقع الخاص بالزوار منفصلاً تماماً عن لوحة التحكم
       if (currentPath === '/') return;
 
       if ((PUBLIC_PATHS.has(currentPath) || currentPath.startsWith('/track/')) && !window.location.search.includes('source=pwa')) return;
