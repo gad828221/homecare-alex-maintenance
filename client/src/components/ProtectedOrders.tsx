@@ -4211,8 +4211,8 @@ ${trackingUrl}
                   const config = delayed ? statusConfig.delayed : baseConfig;
                   const StatusIcon = config.Icon;
                   const statusRailClass = delayed
-                    ? 'bg-red-400 shadow-[0_0_16px_rgba(248,113,113,0.7)]'
-                    : ({ pending: 'bg-amber-400', 'in-progress': 'bg-blue-400', in_progress: 'bg-blue-400', inspected: 'bg-cyan-400', completed: 'bg-emerald-400', deferred: 'bg-violet-400', cancelled: 'bg-slate-500', returned: 'bg-rose-500 shadow-[0_0_16px_rgba(244,63,94,0.55)]' } as Record<string, string>)[order.status] || 'bg-slate-500';
+                    ? 'bg-rose-400 shadow-[0_0_16px_rgba(248,113,113,0.7)]'
+                    : ({ pending: 'bg-cyan-400', 'in-progress': 'bg-blue-400', in_progress: 'bg-blue-400', inspected: 'bg-violet-400', completed: 'bg-emerald-400', deferred: 'bg-violet-400', cancelled: 'bg-slate-500', returned: 'bg-rose-500 shadow-[0_0_16px_rgba(244,63,94,0.55)]' } as Record<string, string>)[order.status] || 'bg-slate-500';
                   const orderCreatedValue = getOrderCreatedValue(order);
                   const activityTime = getOrderActivityTime(order);
                   const activityAge = clockNow - activityTime;
@@ -4239,7 +4239,7 @@ ${trackingUrl}
                         : normalizedStatus === 'deferred' || normalizedStatus === 'returned' ? 1 : 0;
                   const shortOrderNumber = String(order.order_number || '').match(/\d{3,}$/)?.[0] || String(order.order_number || '').slice(-6);
                   const elapsedToneClass = elapsedTone === 'urgent' ? 'text-rose-200 bg-rose-500/20 border-rose-400/50 shadow-lg shadow-rose-500/20 animate-pulse' : elapsedTone === 'warning' ? 'text-amber-200 bg-amber-500/20 border-amber-400/40 shadow-lg shadow-amber-500/10' : 'text-slate-200 bg-slate-950/70 border-slate-700';
-                  const cardTone = collectionPending ? 'bg-slate-900/90 border-amber-300/70 shadow-amber-400/20' : delayed ? 'bg-slate-900/90 border-red-400/60 shadow-red-900/20' : 'bg-slate-900/80 border-slate-700/70';
+                  const cardTone = collectionPending ? 'bg-[#0D1426] border-yellow-300/70 shadow-yellow-400/20' : delayed ? 'bg-[#0D1426] border-rose-400/60 shadow-rose-900/20' : 'bg-[#0D1426] border-[#263653]/80';
                   const isOrderExpanded = expandedOrderIds.has(order.id);
                   const followUpDue = Boolean(followUp.followUpDate && followUp.followUpDate <= getEgyptTodayString());
                   const followUpLabel = followUp.nextAction || (noTechnician ? 'تعيين فني مسؤول' : delayed ? 'مراجعة الطلب المتأخر' : 'تحديد الإجراء التالي');
@@ -4247,12 +4247,12 @@ ${trackingUrl}
                   
                   // تحديد لون التوهج بناءً على الحالة
                   const glowColors: Record<string, string> = {
-                    'pending': 'group-hover:shadow-blue-500/20 border-blue-500/20',
-                    'in-progress': 'group-hover:shadow-orange-500/20 border-orange-500/20',
+                    'pending': 'group-hover:shadow-cyan-400/25 border-cyan-400/25',
+                    'in-progress': 'group-hover:shadow-blue-400/25 border-blue-400/25',
                     'completed': 'group-hover:shadow-emerald-500/20 border-emerald-500/20',
                     'cancelled': 'group-hover:shadow-rose-500/20 border-rose-500/20',
                     'returned': 'group-hover:shadow-rose-600/30 border-rose-600/30 shadow-rose-900/20',
-                    'inspected': 'group-hover:shadow-cyan-500/20 border-cyan-500/20'
+                    'inspected': 'group-hover:shadow-violet-400/25 border-violet-400/25',
                   };
                   const statusGlow = delayed ? 'shadow-red-900/40 border-red-500/40' : glowColors[order.status] || 'border-slate-700/30';
 
@@ -4264,7 +4264,7 @@ ${trackingUrl}
 		                      aria-label={`تعديل أوردر ${order.customer_name}`}
 		                      onClick={() => { stopUrgentAlert(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); }}
 		                      onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); stopUrgentAlert(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); } }}
-		                      className={`group order-card-3d ${cardTone} ${statusGlow} ${recentlyUpdated ? 'ring-2 ring-emerald-300/70 shadow-[0_0_26px_rgba(52,211,153,0.28)]' : ''} rounded-[1.35rem] border p-2.5 sm:p-3 transition-all hover:shadow-2xl active:scale-[0.98] cursor-pointer relative overflow-hidden ${config.pulse} bg-slate-900/60 backdrop-blur-md border-opacity-30 hover:border-opacity-100`}
+		                      className={`group order-card-3d ${cardTone} ${statusGlow} ${recentlyUpdated ? 'ring-2 ring-emerald-300/70 shadow-[0_0_26px_rgba(52,211,153,0.28)]' : ''} rounded-[1.35rem] border p-2.5 sm:p-3 transition-all hover:shadow-2xl active:scale-[0.98] cursor-pointer relative overflow-hidden ${config.pulse} bg-[#0D1426] backdrop-blur-md border-opacity-30 hover:border-opacity-100`}
 	                    >
 	                      <div className={`absolute inset-y-3 right-0 z-20 w-1 rounded-full ${statusRailClass}`} aria-label={`لون حالة الأوردر: ${config.label}`}></div>
                               {collectionPending && <div className="absolute inset-0 pointer-events-none rounded-[1.35rem] border border-amber-300/50 shadow-[0_0_20px_rgba(251,191,36,0.16)]"></div>}
@@ -4275,14 +4275,14 @@ ${trackingUrl}
                             {/* Pin Button */}
                             <button 
                               onClick={(e) => togglePinOrder(e, order.id)}
-                              className={`absolute -left-2 -top-2 w-8 h-8 rounded-full flex items-center justify-center transition-all z-20 ${pinnedOrderIds.has(order.id) ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/40 scale-110' : 'bg-slate-800/50 text-slate-500 opacity-0 group-hover:opacity-100 hover:bg-slate-700'}`}
+                              className={`absolute -left-2 -top-2 w-8 h-8 rounded-full flex items-center justify-center transition-all z-20 ${pinnedOrderIds.has(order.id) ? 'bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/40 scale-110' : 'bg-slate-800/50 text-slate-500 opacity-0 group-hover:opacity-100 hover:bg-slate-700'}`}
                             >
                               {pinnedOrderIds.has(order.id) ? <Pin size={14} fill="currentColor" /> : <PinOff size={14} />}
                             </button>
 
 <div className="flex min-w-0 flex-col gap-1">
 						                  <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-		                            <h3 className="text-sm sm:text-base font-black text-white group-hover:text-orange-400 transition-colors leading-tight">{order.customer_name}</h3>
+		                            <h3 className="text-sm sm:text-base font-black text-white group-hover:text-cyan-300 transition-colors leading-tight">{order.customer_name}</h3>
 		                            <div className="flex gap-1">
 		                              {previousCustomerPhones.has(normalizeCustomerPhone(order.phone)) && <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-1.5 py-0.5 text-[8px] font-black text-emerald-300">✨ عميل سابق</span>}
 		                              {isNewOrder(order) && <span className="inline-flex items-center gap-1 rounded-full border border-blue-400/30 bg-blue-500/20 px-1.5 py-0.5 text-[8px] font-black text-blue-300 animate-pulse">🆕 جديد الآن</span>}
