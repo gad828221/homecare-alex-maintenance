@@ -230,66 +230,20 @@
   isolation: isolate;
   transform: translateZ(0);
   box-shadow:
-    0 14px 28px rgba(0, 0, 0, 0.26),
-    0 3px 8px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.28);
+    0 4px 12px rgba(0, 0, 0, 0.05),
+    0 1px 3px rgba(0, 0, 0, 0.08);
   transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
 }
 
-.order-card-3d::before {
-  content: "";
-  position: absolute;
-  inset: 1px;
-  z-index: -1;
-  border-radius: inherit;
-  pointer-events: none;
-  background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent 28%, transparent 72%, rgba(0,0,0,0.16));
-  opacity: 0.72;
-}
-
-.order-card-3d::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 14%;
-  right: 14%;
-  height: 1px;
-  border-radius: 999px;
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.38), transparent);
-  opacity: 0.8;
-}
-
 .order-card-3d:hover {
-  transform: translateY(-4px) translateZ(0);
+  transform: translateY(-3px) translateZ(0);
   box-shadow:
-    0 22px 38px rgba(0, 0, 0, 0.34),
-    0 8px 14px rgba(0, 0, 0, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+    0 12px 24px rgba(0, 0, 0, 0.09),
+    0 4px 8px rgba(0, 0, 0, 0.04);
 }
 
 .order-card-3d:active {
-  transform: translateY(-1px) scale(0.992) translateZ(0);
-  box-shadow:
-    0 8px 16px rgba(0, 0, 0, 0.28),
-    inset 0 2px 5px rgba(0, 0, 0, 0.22),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.08);
-}
-
-@media (max-width: 640px) {
-  .order-card-3d {
-    box-shadow:
-      0 9px 18px rgba(0, 0, 0, 0.24),
-      0 2px 6px rgba(0, 0, 0, 0.18),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.24);
-  }
-
-  .order-card-3d:hover {
-    transform: translateY(-2px) translateZ(0);
-  }
+  transform: translateY(-1px) scale(0.995) translateZ(0);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -301,39 +255,35 @@
   }
 }
 
-/* ===== Neo Operations & Manager Light Theme Override ===== */
+/* ===== Neo Operations & Manager Light Theme ===== */
 .operations-light-theme,
 .manager-light-theme,
 #manager-dashboard {
-  --ops-bg: #f5f7fb;
+  --ops-bg: #f8fafc;
   --ops-surface: #ffffff;
-  --ops-surface-soft: #f8fafc;
-  --ops-ink: #0b1220;
+  --ops-ink: #0f172a;
   --ops-muted: #64748b;
-  --ops-border: #e5eaf1;
+  --ops-border: #e2e8f0;
   --ops-blue: #2563eb;
   
-  background-color: var(--ops-bg) !important;
-  color: var(--ops-ink) !important;
+  background-color: var(--ops-bg);
+  color: var(--ops-ink);
   direction: rtl;
 }
 
-/* تحسين البطاقات والكروت الداكنة وتحويلها لأبيض ناصع */
+/* تحسين بطاقات الطلبات */
 .operations-light-theme .order-card-3d,
 .manager-light-theme .order-card-3d,
 #manager-dashboard .order-card-3d {
-  background: var(--ops-surface) !important;
-  border: 1px solid var(--ops-border) !important;
-  border-radius: 16px !important;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05) !important;
-  color: #1e293b !important;
+  background: var(--ops-surface);
+  border: 1px solid var(--ops-border);
+  border-radius: 1rem;
 }
 
 .operations-light-theme .order-card-3d:hover,
 .manager-light-theme .order-card-3d:hover,
 #manager-dashboard .order-card-3d:hover {
-  border-color: #bfdbfe !important;
-  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.12) !important;
+  border-color: #cbd5e1;
 }
 
 /* ضبط حقول الإدخال والتركيز */
@@ -346,11 +296,10 @@
 #manager-dashboard input,
 #manager-dashboard select,
 #manager-dashboard textarea {
-  background-color: #ffffff !important;
-  border: 1px solid #cbd5e1 !important;
-  color: #0b1220 !important;
-  border-radius: 8px !important;
-  font-weight: 700 !important;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  border-radius: 0.5rem;
 }
 
 .operations-light-theme input:focus,
@@ -362,67 +311,15 @@
 #manager-dashboard input:focus,
 #manager-dashboard select:focus,
 #manager-dashboard textarea:focus {
-  border-color: var(--ops-blue) !important;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
-  outline: none !important;
-}
-
-/* أزرار الإجراءات */
-.manager-light-theme button,
-.operations-light-theme button {
-  border-radius: 8px !important;
-}
-
-/* ===== إصلاح وضوح الخطوط والنصوص البنية والرمادية ===== */
-.manager-light-theme [class*="bg-amber-"],
-.manager-light-theme [class*="text-amber-"],
-.operations-light-theme [class*="bg-amber-"],
-#manager-dashboard [class*="text-amber-"] {
-  background-color: #fef3c7 !important;
-  color: #78350f !important;
-  border: 1px solid #fde68a !important;
-  font-weight: 800 !important;
-}
-
-/* الشارة الخضراء (تواصل / موعد / تم) */
-.manager-light-theme [class*="bg-emerald-"],
-.operations-light-theme [class*="bg-emerald-"],
-#manager-dashboard [class*="text-emerald-"],
-.order-timeline-section [class*="bg-emerald-"],
-div[class*="bg-emerald-100"] {
-  background-color: #d1fae5 !important;
-  color: #064e3b !important;
-  border: 1px solid #059669 !important;
-  font-weight: 800 !important;
-}
-
-.order-timeline-section [class*="bg-emerald-"] *,
-div[class*="bg-emerald-100"] * {
-  color: #064e3b !important;
-  font-weight: 800 !important;
-}
-
-/* الشارات الرمادية (لم تكتمل بعد / البيانات العامة) */
-.manager-light-theme [class*="bg-slate-100"],
-.operations-light-theme [class*="bg-slate-100"],
-#manager-dashboard [class*="text-slate-400"],
-#manager-dashboard [class*="text-slate-500"],
-.order-timeline-section [class*="bg-slate-"],
-div[class*="bg-slate-100"] {
-  background-color: #f1f5f9 !important;
-  border: 1px solid #cbd5e1 !important;
-  color: #334155 !important;
-  font-weight: 700 !important;
+  border-color: var(--ops-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  outline: none;
 }
 
 /* ===== تحسين شكل سجل مراحل الأوردر ===== */
-.order-timeline-section,
-[class*="order-timeline"] {
-  background: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 12px !important;
-  padding: 12px !important;
-  margin-top: 10px !important;
+.order-timeline-section {
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
 }
 
 @media (max-width: 640px) {
@@ -431,80 +328,31 @@ div[class*="bg-slate-100"] {
   .order-card-3d {
     width: 100%;
     max-width: 100%;
-    border-radius: 12px !important;
-    padding: 12px !important;
   }
   #manager-dashboard [role="tablist"] { scrollbar-width: none; }
   #manager-dashboard [role="tablist"]::-webkit-scrollbar { display: none; }
 }
 
 /* =========================================================
-   إخفاء المكونات والشريط الداكن المكرر
+   ضبط موقع وحجم أزرار الأسهم العائمة
    ========================================================= */
-.order-card-3d [class*="bg-gray-"],
-.order-card-3d [class*="bg-slate-700"],
-div[class*="rounded-full bg-slate-600"] {
-  display: none !important;
-}
-
-/* =========================================================
-   تعديلات بصرية شريط التنبيهات والأزرار الوردیة
-   ========================================================= */
-.manager-light-theme [class*="bg-rose-"],
-.manager-light-theme [class*="bg-red-100"],
-.operations-light-theme [class*="bg-rose-"],
-div[class*="bg-rose-"],
-button[class*="bg-rose-"],
-button[class*="bg-pink-"],
-.bg-rose-100 button,
-.bg-pink-100 button {
-  background-color: #fef2f2 !important;
-  border: 1px solid #f87171 !important;
-  color: #991b1b !important;
-  font-weight: 800 !important;
-}
-
-.manager-light-theme [class*="bg-rose-"] button,
-div[class*="bg-rose-"] button,
-.manager-light-theme [class*="bg-rose-"] span {
-  background-color: #ef4444 !important;
-  color: #ffffff !important;
-  font-weight: 800 !important;
-  border-radius: 8px !important;
-  padding: 4px 12px !important;
-}
-
-/* =========================================================
-   ضبط موقع وحجم أزرار الأسهم العائمة (لأعلى ولأسفل)
-   ========================================================= */
-.floating-scroll-buttons,
-button[aria-label*="scroll"],
-div[class*="fixed bottom-"] {
-  left: 8px !important;
-  bottom: 16px !important;
-  z-index: 50 !important;
-  opacity: 0.85;
+.floating-scroll-buttons {
+  left: 16px;
+  bottom: 16px;
+  z-index: 50;
+  opacity: 0.9;
   transition: opacity 0.2s ease-in-out;
 }
 
-.floating-scroll-buttons button,
-div[class*="fixed bottom-"] button {
-  width: 32px !important;
-  height: 32px !important;
-  background-color: #ffffff !important;
-  border: 1px solid #cbd5e1 !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
-  border-radius: 50% !important;
+.floating-scroll-buttons button {
+  width: 36px;
+  height: 36px;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
 }
 
-.floating-scroll-buttons:hover,
-div[class*="fixed bottom-"]:hover {
-  opacity: 1 !important;
-}
-
-/* =========================================================
-   إخفاء سجل مراحل الأوردر تلقائياً في حالة عدم فتح التفاصيل
-   ========================================================= */
-.order-card-3d:not(.details-open) .order-timeline-section {
-  display: none !important;
+.floating-scroll-buttons:hover {
+  opacity: 1;
 }
