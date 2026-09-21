@@ -4239,7 +4239,7 @@ ${trackingUrl}
                         : normalizedStatus === 'deferred' || normalizedStatus === 'returned' ? 1 : 0;
                   const shortOrderNumber = String(order.order_number || '').match(/\d{3,}$/)?.[0] || String(order.order_number || '').slice(-6);
                   const elapsedToneClass = elapsedTone === 'urgent' ? 'text-rose-200 bg-rose-500/20 border-rose-400/50 shadow-lg shadow-rose-500/20 animate-pulse' : elapsedTone === 'warning' ? 'text-amber-200 bg-amber-500/20 border-amber-400/40 shadow-lg shadow-amber-500/10' : 'text-slate-200 bg-slate-950/70 border-slate-700';
-                  const cardTone = collectionPending ? 'bg-[#0D1426] border-yellow-300/70 shadow-yellow-400/20' : delayed ? 'bg-[#0D1426] border-rose-400/60 shadow-rose-900/20' : 'bg-[#0D1426] border-[#263653]/80';
+                  const cardTone = collectionPending ? 'bg-[#2B2926] border-yellow-300/70 shadow-yellow-400/20' : delayed ? 'bg-[#2B2926] border-rose-400/60 shadow-rose-900/20' : 'bg-[#2A2926] border-[#514B40]/80';
                   const isOrderExpanded = expandedOrderIds.has(order.id);
                   const followUpDue = Boolean(followUp.followUpDate && followUp.followUpDate <= getEgyptTodayString());
                   const followUpLabel = followUp.nextAction || (noTechnician ? 'تعيين فني مسؤول' : delayed ? 'مراجعة الطلب المتأخر' : 'تحديد الإجراء التالي');
@@ -4264,7 +4264,7 @@ ${trackingUrl}
 		                      aria-label={`تعديل أوردر ${order.customer_name}`}
 		                      onClick={() => { stopUrgentAlert(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); }}
 		                      onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); stopUrgentAlert(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); } }}
-		                      className={`group order-card-3d ${cardTone} ${statusGlow} ${recentlyUpdated ? 'ring-2 ring-emerald-300/70 shadow-[0_0_26px_rgba(52,211,153,0.28)]' : ''} rounded-[1.35rem] border p-2.5 sm:p-3 transition-all hover:shadow-2xl active:scale-[0.98] cursor-pointer relative overflow-hidden ${config.pulse} bg-[#0D1426] backdrop-blur-md border-opacity-30 hover:border-opacity-100`}
+		                      className={`group order-card-3d ${cardTone} ${statusGlow} ${recentlyUpdated ? 'ring-2 ring-emerald-300/70 shadow-[0_0_26px_rgba(52,211,153,0.28)]' : ''} rounded-[1.1rem] border p-2.5 sm:p-3 transition-all hover:shadow-2xl active:scale-[0.98] cursor-pointer relative overflow-hidden ${config.pulse} bg-[#2A2926] backdrop-blur-md border-opacity-30 hover:border-opacity-100`}
 	                    >
 	                      <div className={`absolute inset-y-3 right-0 z-20 w-1 rounded-full ${statusRailClass}`} aria-label={`لون حالة الأوردر: ${config.label}`}></div>
                               {collectionPending && <div className="absolute inset-0 pointer-events-none rounded-[1.35rem] border border-amber-300/50 shadow-[0_0_20px_rgba(251,191,36,0.16)]"></div>}
@@ -4331,7 +4331,8 @@ ${trackingUrl}
 	                        </div>
 	                      </div>
 
-                              <div className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-white/5 bg-slate-950/40 px-3 py-2">
+                              <div className="mb-2 flex items-center justify-between gap-2 rounded-xl border border-[#514B40]/60 bg-[#201F1D] px-2.5 py-1.5"><div className="flex min-w-0 items-center gap-2 text-[9px] font-black text-[#F4F1EA]"><span className="truncate">{order.device_type || 'جهاز غير محدد'} · {order.brand || 'بدون ماركة'}</span><span className="h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-400" /></div><span className={`max-w-[48%] truncate rounded-full border px-2 py-1 text-[8px] font-black ${noTechnician ? 'border-amber-300/30 bg-amber-400/10 text-amber-200' : 'border-emerald-300/25 bg-emerald-400/10 text-emerald-200'}`}>{noTechnician ? 'بدون فني' : order.technician}</span></div>
+                              {isOrderExpanded && (<div className="mb-2 flex items-center justify-between gap-2 rounded-xl border border-[#514B40]/60 bg-[#201F1D] px-2.5 py-1.5">
                                 <div className="flex min-w-0 items-center gap-2 text-[10px] text-slate-300">
                                   <Users size={14} className={noTechnician ? 'text-amber-300' : 'text-emerald-300'} />
                                   <span className="shrink-0 text-slate-500">الفني:</span>
@@ -4339,7 +4340,8 @@ ${trackingUrl}
                                 </div>
                                 {noTechnician && order.status === 'pending' && <span className="shrink-0 rounded-lg bg-amber-500/15 px-2 py-1 text-[8px] font-black text-amber-200">يحتاج تعيين</span>}
                               </div>
-                              <div className={`relative mb-2 overflow-hidden rounded-xl border px-2.5 py-2 ${followUpTone}`}>
+                              )}
+{isOrderExpanded && (<div className={`relative mb-2 overflow-hidden rounded-xl border px-2.5 py-2 ${followUpTone}`}>
                                 <div className="absolute -left-6 -top-8 h-20 w-20 rounded-full bg-white/10 blur-2xl" />
                                 <div className="relative flex items-center justify-between gap-3">
                                   <div className="flex min-w-0 items-center gap-2">
@@ -4361,7 +4363,8 @@ ${trackingUrl}
                                   {followUp.blocker && <span className="rounded-full border border-rose-300/20 bg-rose-500/10 px-2 py-1">تعطيل: {followUp.blocker}</span>}
                                 </div>}
                               </div>
-                              <div className="mb-2 rounded-xl border border-white/5 bg-slate-950/35 px-2.5 py-2" aria-label="مراحل الأوردر">
+                              )}
+{isOrderExpanded && (<div className="mb-2 rounded-xl border border-white/5 bg-[#201F1D] px-2.5 py-2" aria-label="مراحل الأوردر">
                                 <div className="flex items-center gap-1">
                                   {orderWorkflow.map((step, index) => {
                                     const complete = index < workflowIndex;
@@ -4376,7 +4379,8 @@ ${trackingUrl}
                                   })}
                                 </div>
                               </div>
-                              <div className={isOrderExpanded ? 'space-y-3' : 'hidden'}>
+                              )}
+<div className={isOrderExpanded ? 'space-y-3' : 'hidden'}>
                             <div className="mb-3 relative z-10 flex items-center justify-between gap-2 bg-slate-950/30 px-3 py-1.5 rounded-xl border border-white/5">
                               <div className="flex items-center gap-1.5 overflow-hidden">
                                 <History size={10} className="text-blue-400 shrink-0" />
