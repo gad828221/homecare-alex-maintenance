@@ -11,8 +11,8 @@ interface OrderCardProps {
 }
 
 export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCardProps) {
-  // حالة إظهار وإخفاء التفاصيل وسجل المراحل
-  const [showDetails, setShowDetails] = useState(true);
+  // حالة إظهار وإخفاء سجل المراحل والأزرار (افتراضياً مخفي false)
+  const [showDetails, setShowDetails] = useState(false);
 
   // التحقق مما إذا كان الأوردر جديداً (أقل من 5 دقائق)
   const isNew = () => {
@@ -22,9 +22,6 @@ export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCard
     const diffMinutes = (now - createdTime) / (1000 * 60);
     return diffMinutes >= 0 && diffMinutes < 5;
   };
-
-  // التحقق من تعيين الفني
-  const noTechAssigned = !order.technician || order.technician === '';
 
   // خيارات الحالة
   const getStatusStyle = (status: string) => {
@@ -50,7 +47,7 @@ export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCard
         showDetails ? 'details-open' : ''
       }`}
     >
-      {/* Header الكارت */}
+      {/* 1. Header الكارت */}
       <div className="bg-slate-50/80 px-4 py-3 border-b border-slate-200/80">
         <div className="flex items-center justify-between gap-2">
           <div>
@@ -84,9 +81,11 @@ export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCard
               <span>{statusStyle.label}</span>
             </div>
 
+            {/* زر فتح وإغلاق باقي التفاصيل */}
             <button
               onClick={() => setShowDetails(!showDetails)}
-              className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 rounded-lg transition-colors"
+              className="order-details-toggle p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 rounded-lg transition-colors flex items-center gap-1"
+              title={showDetails ? "إخفاء التفاصيل" : "عرض التفاصيل"}
             >
               {showDetails ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
@@ -94,7 +93,59 @@ export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCard
         </div>
       </div>
 
-      {/* تفاصيل الكارت */}
+      {/* 2. الجزء الظاهر دائماً (معلومات العميل والجهاز + التواصل) */}
+      <div className="p-4 space-y-3.5">
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
+            <p className="text-[10px] text-slate-500 font-bold mb-0.5">العميل</p>
+            <p className="font-extrabold text-slate-900 truncate">{order.customer_name}</p>
+          </div>
+
+          <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
+            <p className="text-[10px] text-slate-500 font-bold mb-0.5">الفني</p>
+            <p className="font-extrabold text-slate-900 truncate">
+              {order.technician || <span className="text-amber-600">غير محدد</span>}
+            </p>
+          </div>
+
+          <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
+            <p className="text-[10px] text-slate-500 font-bold mb-0.5">الجهاز</p>
+            <p className="font-extrabold text-slate-900 truncate">
+              {order.device_type} {order.brand ? `· ${order.brand}` : ''}
+            </p>
+          </div>
+
+          <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
+            <p className="text-[10px] text-slate-500 font-bold mb-0.5">التاريخ والوقت</p>
+            <p className="font-bold text-slate-800 text-[11px] truncate">
+              {formatOrderDateTime(order.created_at)}
+            </p>
+          </div>
+        </div>
+
+        {/* أزرار التواصل السريعة الظاهرة دائماً */}
+        <div className="flex items-center gap-2 pt-1">
+          <button className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl border border-blue-200/60 transition-colors">
+            <Phone className="w-4 h-4" />
+          </button>
+          <button className="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-xl border border-emerald-200/60 transition-colors">
+            <Send className="w-4 h-4" />
+          </button>
+          <button className="p-2 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-xl border border-purple-200/60 transition-colors">
+            <Share2 className="w-4 h-4" />
+          </button>
+          {onDelete && (
+            <button 
+              onClick={() => onDelete(order)}
+              className="p-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl border border-rose-200/60 transition-colors mr-auto"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 3. الجزء المخفي (ينزل ويتوسع فقط عند الضغط على زر التفاصيل) */}
       <AnimatePresence>
         {showDetails && (
           <motion.div
@@ -102,62 +153,11 @@ export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCard
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
+            className="overflow-hidden border-t border-slate-200/80"
           >
-            <div className="p-4 space-y-3.5">
-              {/* شبكة معلومات العميل والجهاز */}
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
-                  <p className="text-[10px] text-slate-500 font-bold mb-0.5">العميل</p>
-                  <p className="font-extrabold text-slate-900 truncate">{order.customer_name}</p>
-                </div>
-
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
-                  <p className="text-[10px] text-slate-500 font-bold mb-0.5">الفني</p>
-                  <p className="font-extrabold text-slate-900 truncate">
-                    {order.technician || <span className="text-amber-600">غير محدد</span>}
-                  </p>
-                </div>
-
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
-                  <p className="text-[10px] text-slate-500 font-bold mb-0.5">الجهاز</p>
-                  <p className="font-extrabold text-slate-900 truncate">
-                    {order.device_type} {order.brand ? `· ${order.brand}` : ''}
-                  </p>
-                </div>
-
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
-                  <p className="text-[10px] text-slate-500 font-bold mb-0.5">التاريخ والوقت</p>
-                  <p className="font-bold text-slate-800 text-[11px] truncate">
-                    {formatOrderDateTime(order.created_at)}
-                  </p>
-                </div>
-              </div>
-
-              {/* أزرار الإجراءات السريعة */}
-              <div className="flex items-center gap-2 pt-1">
-                <button className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl border border-blue-200/60 transition-colors">
-                  <Phone className="w-4 h-4" />
-                </button>
-                <button className="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-xl border border-emerald-200/60 transition-colors">
-                  <Send className="w-4 h-4" />
-                </button>
-                <button className="p-2 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-xl border border-purple-200/60 transition-colors">
-                  <Share2 className="w-4 h-4" />
-                </button>
-                {onDelete && (
-                  <button 
-                    onClick={() => onDelete(order)}
-                    className="p-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl border border-rose-200/60 transition-colors mr-auto"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-
-              {/* =========================================
-                  سجل مراحل الأوردر (Timeline المحسّن)
-                 ========================================= */}
-              <div className="bg-slate-50/60 rounded-xl p-3 border border-slate-200/80 space-y-2.5">
+            <div className="p-4 space-y-3.5 bg-slate-50/30">
+              {/* سجل مراحل الأوردر (الموجود بالصورة) */}
+              <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-200/80 space-y-2.5">
                 <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
                     <History className="w-4 h-4 text-slate-600" />
@@ -222,30 +222,30 @@ export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCard
                   </div>
                 </div>
               </div>
+
+              {/* أزرار "تحويل لفني آخر" و "إيصال" */}
+              <div className="flex gap-2 pt-1">
+                {onAssignTech && (
+                  <button
+                    onClick={() => onAssignTech(order)}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition-all text-xs flex items-center justify-center gap-1.5 shadow-sm"
+                  >
+                    <User className="w-4 h-4" />
+                    <span>تحويل لفني آخر</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => onSelect?.(order)}
+                  className="flex-1 bg-purple-100 hover:bg-purple-200 text-purple-700 border border-purple-200 font-bold py-2.5 rounded-xl transition-all text-xs flex items-center justify-center gap-1.5"
+                >
+                  <Badge className="w-4 h-4" />
+                  <span>إيصال</span>
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* أزرار الإجراءات السفلية */}
-      <div className="bg-slate-50/80 px-4 py-2.5 border-t border-slate-200/80 flex gap-2">
-        {onAssignTech && (
-          <button
-            onClick={() => onAssignTech(order)}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl transition-all text-xs flex items-center justify-center gap-1 shadow-sm"
-          >
-            <User className="w-3.5 h-3.5" />
-            <span>تحويل لفني آخر</span>
-          </button>
-        )}
-        <button
-          onClick={() => onSelect?.(order)}
-          className="flex-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 font-bold py-2 rounded-xl transition-all text-xs flex items-center justify-center gap-1"
-        >
-          <Badge className="w-3.5 h-3.5" />
-          <span>إيصال</span>
-        </button>
-      </div>
     </motion.div>
   );
 }
