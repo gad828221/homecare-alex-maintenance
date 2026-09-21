@@ -4294,7 +4294,7 @@ ${trackingUrl}
                             <button
                               type="button"
                               onClick={(event) => { event.stopPropagation(); setExpandedOrderIds((current) => { const next = new Set(current); next.has(order.id) ? next.delete(order.id) : next.add(order.id); return next; }); }}
-                              className="inline-flex items-center gap-1 rounded-lg border border-slate-600/70 bg-slate-800/80 px-2 py-1 text-[8px] font-black text-slate-200 transition hover:bg-slate-700"
+                              className="order-details-toggle inline-flex items-center gap-1 rounded-lg border border-slate-600/70 bg-slate-800/80 px-2 py-1 text-[8px] font-black text-slate-200 transition hover:bg-slate-700"
                               aria-expanded={isOrderExpanded}
                             >
                               {isOrderExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
@@ -4313,7 +4313,12 @@ ${trackingUrl}
 	                        </div>
 	                      </div>
 
-                              <div className="mb-2 flex items-center justify-between gap-2 rounded-xl border border-[#514B40]/60 bg-[#201F1D] px-2.5 py-1.5"><div className="flex min-w-0 items-center gap-2 text-[9px] font-black text-[#F4F1EA]"><span className="truncate">{order.device_type || 'جهاز غير محدد'} · {order.brand || 'بدون ماركة'}</span><span className="h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-400" /></div><span className={`max-w-[48%] truncate rounded-full border px-2 py-1 text-[8px] font-black ${noTechnician ? 'border-amber-300/30 bg-amber-400/10 text-amber-200' : 'border-emerald-300/25 bg-emerald-400/10 text-emerald-200'}`}>{noTechnician ? 'بدون فني' : order.technician}</span></div>
+                              <div className="order-card-summary mb-3" aria-label="البيانات الأساسية للأوردر">
+                                <div className="order-summary-item"><UserCircle size={16} /><div><span>العميل</span><strong>{order.customer_name || 'بدون اسم'}</strong></div></div>
+                                <div className={`order-summary-item ${noTechnician ? 'order-summary-warning' : ''}`}><Users size={16} /><div><span>الفني</span><strong>{noTechnician ? 'لم يتم التعيين' : order.technician}</strong></div></div>
+                                <div className="order-summary-item"><Cpu size={16} /><div><span>الجهاز</span><strong>{order.device_type || 'غير محدد'}{order.brand ? ` · ${order.brand}` : ''}</strong></div></div>
+                                <div className="order-summary-item"><Clock size={16} /><div><span>التاريخ والوقت</span><strong>{formatOrderDateTime(orderCreatedValue)}</strong></div></div>
+                              </div>
                               {isOrderExpanded && (<div className="mb-2 flex items-center justify-between gap-2 rounded-xl border border-[#514B40]/60 bg-[#201F1D] px-2.5 py-1.5">
                                 <div className="flex min-w-0 items-center gap-2 text-[10px] text-slate-300">
                                   <Users size={14} className={noTechnician ? 'text-amber-300' : 'text-emerald-300'} />
