@@ -11,10 +11,9 @@ interface OrderCardProps {
 }
 
 export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCardProps) {
-  // حالة إظهار وإخفاء سجل المراحل والأزرار (افتراضياً مخفي false)
+  // الحالة تكون false افتراضياً حتى يكون سجل المراحل مخفي عند الفتح
   const [showDetails, setShowDetails] = useState(false);
 
-  // التحقق مما إذا كان الأوردر جديداً (أقل من 5 دقائق)
   const isNew = () => {
     const createdTime = parseOrderDate(order.created_at)?.getTime();
     if (!createdTime) return false;
@@ -23,7 +22,6 @@ export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCard
     return diffMinutes >= 0 && diffMinutes < 5;
   };
 
-  // خيارات الحالة
   const getStatusStyle = (status: string) => {
     const styles: Record<string, any> = {
       pending: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-900', icon: AlertCircle, label: 'قيد الانتظار' },
@@ -47,7 +45,7 @@ export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCard
         showDetails ? 'details-open' : ''
       }`}
     >
-      {/* 1. Header الكارت */}
+      {/* 1. رأس الكارت (الهيدر) */}
       <div className="bg-slate-50/80 px-4 py-3 border-b border-slate-200/80">
         <div className="flex items-center justify-between gap-2">
           <div>
@@ -81,19 +79,20 @@ export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCard
               <span>{statusStyle.label}</span>
             </div>
 
-            {/* زر فتح وإغلاق باقي التفاصيل */}
+            {/* زر فتح/إغلاق التفاصيل وسجل المراحل */}
             <button
+              type="button"
               onClick={() => setShowDetails(!showDetails)}
-              className="order-details-toggle p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 rounded-lg transition-colors flex items-center gap-1"
-              title={showDetails ? "إخفاء التفاصيل" : "عرض التفاصيل"}
+              className="order-details-toggle p-1.5 text-blue-600 hover:bg-blue-50 bg-blue-50/50 border border-blue-200 rounded-lg transition-colors flex items-center gap-1"
             >
+              <span className="text-xs font-bold">{showDetails ? "إخفاء" : "تفاصيل"}</span>
               {showDetails ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* 2. الجزء الظاهر دائماً (معلومات العميل والجهاز + التواصل) */}
+      {/* 2. الجزء الثابت المعروض دائماً */}
       <div className="p-4 space-y-3.5">
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
@@ -101,9 +100,10 @@ export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCard
             <p className="font-extrabold text-slate-900 truncate">{order.customer_name}</p>
           </div>
 
+          {/* خانة الفني - تم إصلاح الألوان لتعمل في الوضع الفاتح والداكن */}
           <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
             <p className="text-[10px] text-slate-500 font-bold mb-0.5">الفني</p>
-            <p className="font-extrabold text-slate-900 truncate">
+            <p className="font-extrabold text-blue-700 truncate">
               {order.technician || <span className="text-amber-600">غير محدد</span>}
             </p>
           </div>
@@ -123,7 +123,7 @@ export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCard
           </div>
         </div>
 
-        {/* أزرار التواصل السريعة الظاهرة دائماً */}
+        {/* أزرار الاتصال والواتساب السريعة */}
         <div className="flex items-center gap-2 pt-1">
           <button className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl border border-blue-200/60 transition-colors">
             <Phone className="w-4 h-4" />
@@ -145,7 +145,7 @@ export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCard
         </div>
       </div>
 
-      {/* 3. الجزء المخفي (ينزل ويتوسع فقط عند الضغط على زر التفاصيل) */}
+      {/* 3. الجزء الذي ينزل فقط عند الضغط على "تفاصيل" */}
       <AnimatePresence>
         {showDetails && (
           <motion.div
@@ -155,9 +155,17 @@ export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCard
             transition={{ duration: 0.2 }}
             className="overflow-hidden border-t border-slate-200/80"
           >
-            <div className="p-4 space-y-3.5 bg-slate-50/30">
-              {/* سجل مراحل الأوردر (الموجود بالصورة) */}
-              <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-200/80 space-y-2.5">
+            <div className="p-4 space-y-3.5 bg-slate-50/40">
+              {/* شريط الفني المائل للوضوح */}
+              {order.technician && (
+                <div className="bg-blue-50 border border-blue-200 p-2.5 rounded-xl flex items-center gap-2 text-xs font-extrabold text-blue-900">
+                  <User className="w-4 h-4 text-blue-600" />
+                  <span>الفني المكلّف: {order.technician}</span>
+                </div>
+              )}
+
+              {/* سجل مراحل الأوردر */}
+              <div className="bg-white rounded-xl p-3 border border-slate-200/80 space-y-2.5">
                 <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
                     <History className="w-4 h-4 text-slate-600" />
@@ -169,7 +177,6 @@ export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCard
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  {/* مرحلة التواصل */}
                   <div className="p-2 bg-emerald-50 border border-emerald-200/80 rounded-xl text-center">
                     <div className="flex items-center justify-center gap-1 font-extrabold text-emerald-900">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
@@ -180,7 +187,6 @@ export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCard
                     </p>
                   </div>
 
-                  {/* مرحلة الموعد */}
                   <div className="p-2 bg-emerald-50 border border-emerald-200/80 rounded-xl text-center">
                     <div className="flex items-center justify-center gap-1 font-extrabold text-emerald-900">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
@@ -191,39 +197,37 @@ export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCard
                     </p>
                   </div>
 
-                  {/* مرحلة التنفيذ */}
                   <div className={`p-2 rounded-xl text-center border ${
                     order.status === 'completed' || order.status === 'inProgress'
-                      ? 'bg-emerald-50 border-emerald-200/80' 
-                      : 'bg-white border-slate-200/80'
+                      ? 'bg-emerald-50 border-emerald-200/80 text-emerald-900' 
+                      : 'bg-slate-50 border-slate-200/80 text-slate-700'
                   }`}>
-                    <div className="flex items-center justify-center gap-1 font-bold text-slate-800">
+                    <div className="flex items-center justify-center gap-1 font-bold">
                       <span className={`w-1.5 h-1.5 rounded-full ${order.status === 'completed' ? 'bg-emerald-600' : 'bg-slate-400'}`}></span>
                       <span>تنفيذ</span>
                     </div>
-                    <p className="text-[10px] font-semibold text-slate-500 mt-0.5">
+                    <p className="text-[10px] font-semibold mt-0.5">
                       {order.status === 'completed' ? formatOrderDateTime(order.updated_at) : 'لم تكتمل بعد'}
                     </p>
                   </div>
 
-                  {/* مرحلة التحصيل والإغلاق */}
                   <div className={`p-2 rounded-xl text-center border ${
                     order.is_paid 
-                      ? 'bg-emerald-50 border-emerald-200/80' 
-                      : 'bg-white border-slate-200/80'
+                      ? 'bg-emerald-50 border-emerald-200/80 text-emerald-900' 
+                      : 'bg-slate-50 border-slate-200/80 text-slate-700'
                   }`}>
-                    <div className="flex items-center justify-center gap-1 font-bold text-slate-800">
+                    <div className="flex items-center justify-center gap-1 font-bold">
                       <span className={`w-1.5 h-1.5 rounded-full ${order.is_paid ? 'bg-emerald-600' : 'bg-slate-400'}`}></span>
                       <span>التحصيل والإغلاق</span>
                     </div>
-                    <p className="text-[10px] font-semibold text-slate-500 mt-0.5">
+                    <p className="text-[10px] font-semibold mt-0.5">
                       {order.is_paid ? 'تم التحصيل' : 'لم تكتمل بعد'}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* أزرار "تحويل لفني آخر" و "إيصال" */}
+              {/* أزرار الإجراءات السفلية */}
               <div className="flex gap-2 pt-1">
                 {onAssignTech && (
                   <button
@@ -236,7 +240,7 @@ export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCard
                 )}
                 <button
                   onClick={() => onSelect?.(order)}
-                  className="flex-1 bg-purple-100 hover:bg-purple-200 text-purple-700 border border-purple-200 font-bold py-2.5 rounded-xl transition-all text-xs flex items-center justify-center gap-1.5"
+                  className="flex-1 bg-purple-100 hover:bg-purple-200 text-purple-800 border border-purple-200 font-bold py-2.5 rounded-xl transition-all text-xs flex items-center justify-center gap-1.5"
                 >
                   <Badge className="w-4 h-4" />
                   <span>إيصال</span>
