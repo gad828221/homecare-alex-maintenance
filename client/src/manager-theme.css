@@ -1,0 +1,188 @@
+/* Manager light digital theme: scoped to the admin dashboard only. */
+#manager-dashboard.manager-light-theme {
+  --manager-ink: #0f172a;
+  --manager-muted: #64748b;
+  --manager-border: #dbe3ed;
+  --manager-surface: #ffffff;
+  --manager-surface-soft: #f8fafc;
+  --manager-primary: #ea580c;
+  --manager-primary-dark: #c2410c;
+  background: #f1f5f9 !important;
+  color: var(--manager-ink) !important;
+}
+
+#manager-dashboard.manager-light-theme .bg-slate-900,
+#manager-dashboard.manager-light-theme .bg-slate-950,
+#manager-dashboard.manager-light-theme [class*="bg-slate-900/"],
+#manager-dashboard.manager-light-theme [class*="bg-slate-950/"] {
+  background-color: var(--manager-surface) !important;
+}
+
+#manager-dashboard.manager-light-theme .bg-slate-800,
+#manager-dashboard.manager-light-theme [class*="bg-slate-800/"] {
+  background-color: var(--manager-surface-soft) !important;
+}
+
+#manager-dashboard.manager-light-theme [class*="border-slate-"],
+#manager-dashboard.manager-light-theme [class*="border-white/"] {
+  border-color: var(--manager-border) !important;
+}
+
+#manager-dashboard.manager-light-theme .text-white,
+#manager-dashboard.manager-light-theme .text-slate-200,
+#manager-dashboard.manager-light-theme .text-slate-300 {
+  color: var(--manager-ink) !important;
+}
+
+#manager-dashboard.manager-light-theme .text-slate-400,
+#manager-dashboard.manager-light-theme .text-slate-500,
+#manager-dashboard.manager-light-theme .text-slate-600 {
+  color: var(--manager-muted) !important;
+}
+
+#manager-dashboard.manager-light-theme .shadow-2xl,
+#manager-dashboard.manager-light-theme .shadow-xl,
+#manager-dashboard.manager-light-theme .shadow-lg {
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08) !important;
+}
+
+#manager-dashboard.manager-light-theme [class*="bg-blue-950"],
+#manager-dashboard.manager-light-theme [class*="bg-cyan-950"],
+#manager-dashboard.manager-light-theme [class*="bg-amber-950"],
+#manager-dashboard.manager-light-theme [class*="bg-purple-950"],
+#manager-dashboard.manager-light-theme [class*="bg-red-950"],
+#manager-dashboard.manager-light-theme [class*="bg-rose-950"] {
+  background-color: #ffffff !important;
+}
+
+#manager-dashboard.manager-light-theme [class*="bg-gradient-to-br"],
+#manager-dashboard.manager-light-theme [class*="bg-gradient-to-r"] {
+  background-image: none !important;
+  background-color: #ffffff !important;
+}
+
+#manager-dashboard.manager-light-theme > .sticky.top-0 {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border-color: var(--manager-border) !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.07);
+  backdrop-filter: blur(16px);
+}
+
+#manager-dashboard.manager-light-theme > .sticky.top-0 h1 {
+  color: var(--manager-ink) !important;
+  letter-spacing: -0.02em;
+}
+
+#manager-dashboard.manager-light-theme [role="tablist"] {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-color: var(--manager-border) !important;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08) !important;
+}
+
+#manager-dashboard.manager-light-theme [role="tab"] {
+  width: auto !important;
+  min-width: 4.25rem;
+  height: 3.25rem !important;
+  border-radius: 1rem !important;
+  border-color: var(--manager-border) !important;
+  background: #ffffff !important;
+  color: #64748b !important;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.05) !important;
+}
+
+#manager-dashboard.manager-light-theme [role="tab"]:hover {
+  border-color: #fb923c !important;
+  color: var(--manager-primary) !important;
+  transform: translateY(-2px);
+}
+
+#manager-dashboard.manager-light-theme [role="tab"][aria-selected="true"] {
+  border-color: #fb923c !important;
+  background: linear-gradient(135deg, #f97316, #ea580c) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 18px rgba(234, 88, 12, 0.25) !important;
+}
+
+#manager-dashboard.manager-light-theme [role="tab"] > span {
+  background: rgba(15, 23, 42, 0.05) !important;
+  color: currentColor !important;
+}
+
+#manager-dashboard.manager-light-theme [role="tab"][aria-selected="true"] > span {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+#manager-dashboard.manager-light-theme input,
+#manager-dashboard.manager-light-theme select,
+#manager-dashboard.manager-light-theme textarea {
+  background-color: #ffffff !important;
+  border-color: var(--manager-border) !important;
+  color: var(--manager-ink) !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+#manager-dashboard.manager-light-theme input::placeholder,
+#manager-dashboard.manager-light-theme textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+#manager-dashboard.manager-light-theme button {
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+
+#manager-dashboard.manager-light-theme button:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+#manager-dashboard.manager-light-theme button svg {
+  filter: drop-shadow(0 1px 1px rgba(15, 23, 42, 0.12));
+}
+
+#manager-dashboard.manager-light-theme .order-card-3d {
+  background: #ffffff !important;
+  border-color: #dbe3ed !important;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.07) !important;
+}
+
+#manager-dashboard.manager-light-theme .order-card-3d:hover {
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12) !important;
+  transform: translateY(-2px);
+}
+
+#manager-dashboard.manager-light-theme [class*="bg-orange-600"]:not([class*="/" ]),
+#manager-dashboard.manager-light-theme [class*="bg-orange-500"]:not([class*="/" ]) {
+  box-shadow: 0 6px 16px rgba(234, 88, 12, 0.2);
+}
+
+#manager-dashboard.manager-light-theme .text-orange-300,
+#manager-dashboard.manager-light-theme .text-orange-400,
+#manager-dashboard.manager-light-theme .text-orange-500 {
+  color: #c2410c !important;
+}
+
+#manager-dashboard.manager-light-theme .text-amber-300,
+#manager-dashboard.manager-light-theme .text-amber-400,
+#manager-dashboard.manager-light-theme .text-amber-500 {
+  color: #b45309 !important;
+}
+
+#manager-dashboard.manager-light-theme .text-emerald-300,
+#manager-dashboard.manager-light-theme .text-emerald-400 {
+  color: #047857 !important;
+}
+
+#manager-dashboard.manager-light-theme .text-red-300,
+#manager-dashboard.manager-light-theme .text-rose-300 {
+  color: #be123c !important;
+}
+
+@media (max-width: 640px) {
+  #manager-dashboard.manager-light-theme [role="tablist"] {
+    padding: 0.6rem !important;
+  }
+  #manager-dashboard.manager-light-theme [role="tab"] {
+    min-width: 3.8rem;
+    height: 3rem !important;
+    padding-inline: 0.65rem !important;
+  }
+}

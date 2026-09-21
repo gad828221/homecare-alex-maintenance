@@ -3602,7 +3602,7 @@ ${trackingUrl}
       return <div className="min-h-screen bg-[#F4F6F8] flex items-center justify-center text-slate-700" dir="rtl"><div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-5 text-sm font-black shadow-2xl">جاري تحميل بيانات لوحة المدير…</div></div>;
     }
     return (
-    <div id="manager-dashboard" className={`min-h-screen overflow-x-hidden bg-[#F4F6F8] text-slate-700 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`}>
+    <div id="manager-dashboard" className={`manager-light-theme min-h-screen overflow-x-hidden bg-[#F4F6F8] text-slate-700 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`}>
       {loading && (
         <div className="fixed top-2 left-1/2 -translate-x-1/2 z-[210] rounded-full border border-blue-400/40 bg-slate-900/95 px-4 py-2 text-xs font-black text-blue-200 shadow-xl" role="status">
           جاري تحديث البيانات…
