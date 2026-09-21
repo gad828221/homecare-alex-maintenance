@@ -457,3 +457,51 @@
     height: 18px;
   }
 }
+/* ==========================================
+   إصلاح وإعادة إظهار زر تفاصيل الأوردر
+   ========================================== */
+
+.operations-light-theme .order-details-toggle,
+.manager-light-theme .order-details-toggle,
+.operations-light-theme button[aria-expanded],
+.manager-light-theme button[aria-expanded] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  min-height: 32px !important;
+  padding: 4px 12px !important;
+  border: 1px solid #bfdbfe !important;
+  border-radius: 8px !important;
+  background-color: #eff6ff !important;
+  color: #1d4ed8 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.operations-light-theme .order-details-toggle svg,
+.manager-light-theme .order-details-toggle svg,
+.operations-light-theme button[aria-expanded] svg,
+.manager-light-theme button[aria-expanded] svg {
+  width: 14px !important;
+  height: 14px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  color: currentColor !important;
+  filter: none !important;
+}
+
+.operations-light-theme .order-details-toggle:hover,
+.manager-light-theme .order-details-toggle:hover,
+.operations-light-theme button[aria-expanded]:hover,
+.manager-light-theme button[aria-expanded]:hover {
+  background-color: #dbeafe !important;
+  border-color: #2563eb !important;
+  color: #1e40af !important;
+}
+
