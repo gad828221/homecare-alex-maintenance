@@ -3599,10 +3599,10 @@ ${trackingUrl}
   };
 
     if (!initialLoadComplete) {
-      return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-300" dir="rtl"><div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-5 text-sm font-black shadow-2xl">جاري تحميل بيانات لوحة المدير…</div></div>;
+      return <div className="min-h-screen bg-[#17191F] flex items-center justify-center text-slate-300" dir="rtl"><div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-5 text-sm font-black shadow-2xl">جاري تحميل بيانات لوحة المدير…</div></div>;
     }
     return (
-    <div className={`min-h-screen bg-slate-950 text-slate-200 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`}>
+    <div className={`min-h-screen bg-[#17191F] text-slate-200 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`}>
       {loading && (
         <div className="fixed top-2 left-1/2 -translate-x-1/2 z-[210] rounded-full border border-blue-400/40 bg-slate-900/95 px-4 py-2 text-xs font-black text-blue-200 shadow-xl" role="status">
           جاري تحديث البيانات…
@@ -3610,8 +3610,8 @@ ${trackingUrl}
       )}
       {/* ✅ قفل الشاشة الإجباري للمدير لتفعيل الصوت */}
       {!audioEnabled && (
-        <div className="fixed inset-0 z-[200] bg-slate-950 flex items-center justify-center p-6 text-center backdrop-blur-xl">
-          <div className="max-w-md w-full bg-slate-900 border border-orange-500/30 p-8 rounded-[2.5rem] shadow-2xl animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-[200] bg-[#17191F] flex items-center justify-center p-4 sm:p-6 text-center backdrop-blur-xl">
+          <div className="max-w-md w-full bg-[#2A2926] border border-orange-500/30 p-6 sm:p-8 rounded-[2rem] shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="w-24 h-24 bg-orange-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-orange-900/40 animate-pulse">
               <LayoutDashboard className="text-white w-10 h-10" />
             </div>
@@ -3709,7 +3709,7 @@ ${trackingUrl}
       </div>
 
       {/* Compact icon navigation: one section at a time to keep the dashboard short on mobile. */}
-      <div role="tablist" aria-label="أقسام لوحة المدير" className="sticky top-[60px] z-30 border-b border-slate-800/80 bg-[#0b1425]/95 px-3 py-3 shadow-[0_12px_35px_rgba(2,8,23,0.45)] backdrop-blur-xl overflow-x-auto no-scrollbar flex gap-2">
+      <div role="tablist" aria-label="أقسام لوحة المدير" className="sticky top-[60px] z-30 border-b border-[#514B40]/70 bg-[#201F1D]/95 px-2.5 py-2.5 shadow-[0_12px_35px_rgba(2,8,23,0.45)] backdrop-blur-xl overflow-x-auto no-scrollbar flex gap-2">
         {[
           { id: 'orders', label: 'الأوردرات', icon: <ClipboardList size={16} />, color: 'orange' },
 	          { id: 'archived', label: `الأرشيف (${archivedOrders.length})`, icon: <LayoutDashboard size={16} />, color: 'indigo' },
@@ -3748,14 +3748,14 @@ ${trackingUrl}
         ))}
       </div>
 
-	      <div className="p-4">
+	      <div className="mx-auto w-full max-w-[1600px] p-3 sm:p-4">
                 {loadingSection && activeTab !== 'orders' && <div className="mb-4 rounded-2xl border border-orange-500/20 bg-orange-500/5 px-4 py-3 text-center text-xs font-black text-orange-200">جارٍ تحميل بيانات القسم...</div>}
 		        {/* تبويب الأوردرات */}
 		        {activeTab === 'orders' && (
-		          			          <div className="space-y-6">
+                  <div className="space-y-4">
 	              {/* Operations Center Header */}
-	              <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-[2.5rem] p-6 sm:p-8 border border-slate-700 shadow-2xl relative overflow-hidden">
-	                <div className="absolute top-0 left-0 w-3 h-full bg-orange-600"></div>
+	              <div className="bg-gradient-to-br from-[#2A2926] to-[#35322D] rounded-[1.75rem] p-4 sm:p-6 border border-[#514B40]/80 shadow-2xl relative overflow-hidden">
+	                <div className="absolute top-0 left-0 w-1.5 h-full bg-cyan-500"></div>
 	                <div className="absolute -top-24 -right-24 w-64 h-64 bg-orange-600/10 rounded-full blur-3xl"></div>
 	                
 	                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
