@@ -36,9 +36,19 @@ export function OrderTimeline({ events }: OrderTimelineProps) {
     }
   };
 
+  const uniqueEvents = Array.from(new Map(
+    [...events]
+      .filter((event) => event && event.action)
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .map((event) => [
+        event.id || `${event.action}|${event.user}|${event.timestamp}|${event.details || ''}`,
+        event,
+      ])
+  ).values());
+
   return (
     <div className="space-y-4">
-      {events.map((event, idx) => {
+      {uniqueEvents.map((event, idx) => {
         const { dateStr, timeStr } = formatDateTime(event.timestamp);
         const isCompleted = event.action.includes('مكتمل') || event.action.includes('completed') || event.action.includes('تم');
         const isAlert = event.action.includes('خطأ') || event.action.includes('error') || event.action.includes('ملغى');

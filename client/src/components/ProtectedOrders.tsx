@@ -368,6 +368,25 @@ const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   }
 };
 
+const calculateCashLedgerBalance = (entries: any[]) => entries.reduce((total: number, entry: any) => {
+  const amount = Number(entry.amount) || 0;
+  if (entry.type === 'income') return total + amount;
+  if (entry.type === 'expense' || entry.type === 'profit_distribution') return total - amount;
+  return total;
+}, 0);
+
+const fetchAllCashLedgerEntries = async () => {
+  const pageSize = 1000;
+  const allEntries: any[] = [];
+  for (let offset = 0; offset < 100000; offset += pageSize) {
+    const page = await fetchAPI(`cash_ledger?select=*&order=date.desc,created_at.desc&limit=${pageSize}&offset=${offset}`);
+    if (!Array.isArray(page)) return allEntries;
+    allEntries.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return allEntries;
+};
+
 const fetchAPIWithRetry = async (endpoint: string, attempts = 3) => {
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     const result = await fetchAPI(endpoint);
@@ -1304,33 +1323,19 @@ export default function ProtectedOrders() {
 
   const fetchCashLedger = useCallback(async () => {
     try {
-      const allData = await fetchAPI('cash_ledger?select=*&order=date.desc,created_at.desc');
-      const all = allData || [];
-      let balance = 0;
-      all.forEach((entry: any) => {
-        const amount = Number(entry.amount) || 0;
-        if (entry.type === 'income') balance += amount;
-        else if (entry.type === 'expense' || entry.type === 'profit_distribution') balance -= amount;
-      });
-      setCashBalance(balance);
+      const all = await fetchAllCashLedgerEntries();
+      setCashBalance(Number(calculateCashLedgerBalance(all).toFixed(2)));
       setCashLedger(all);
     } catch (err) { console.error(err); }
   }, [cashFilterDate]);
-
   const fetchCashBalance = useCallback(async () => {
     try {
-      const entries = await fetchAPI('cash_ledger?select=type,amount');
-      if (!Array.isArray(entries)) return;
-      const balance = entries.reduce((total: number, entry: any) => {
-        const amount = Number(entry.amount) || 0;
-        return entry.type === 'income' ? total + amount : (entry.type === 'expense' || entry.type === 'profit_distribution' ? total - amount : total);
-      }, 0);
-      setCashBalance(Number(balance.toFixed(2)));
+      const entries = await fetchAllCashLedgerEntries();
+      setCashBalance(Number(calculateCashLedgerBalance(entries).toFixed(2)));
     } catch (err) {
       console.error('فشل تحميل رصيد الخزنة المختصر:', err);
     }
   }, []);
-
   const loadedSectionsRef = useRef<Set<string>>(new Set());
   const loadingSectionsRef = useRef<Set<string>>(new Set());
   const [loadingSection, setLoadingSection] = useState<string | null>(null);
@@ -4423,8 +4428,8 @@ ${trackingUrl}
                             <div className="mb-4 relative z-10 rounded-xl border border-white/5 bg-slate-950/40 px-3 py-2.5">
                               <div className="flex items-center justify-between gap-1">
                                 {orderWorkflow.map((step, index) => {
-                                  const completedStep = index <= workflowIndex;
-                                  const currentStep = index === workflowIndex;
+                                  const completedStep = index < workflowIndex || workflowStage === 'closed';
+                                  const currentStep = index === workflowIndex && workflowStage !== 'closed';
                                   return (
                                     <React.Fragment key={step.key}>
                                       <button type="button" onClick={(event) => { event.stopPropagation(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); }} className={`flex min-w-0 flex-col items-center gap-1 transition-colors ${currentStep ? 'text-orange-300' : completedStep ? 'text-emerald-300' : 'text-slate-600'}`} title="فتح تفاصيل المرحلة">

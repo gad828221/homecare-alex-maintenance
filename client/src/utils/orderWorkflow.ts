@@ -1,11 +1,11 @@
 export type OrderWorkflowStage = 'new' | 'scheduled' | 'in_progress' | 'blocked' | 'ready_collection' | 'closed';
 
 export const ORDER_WORKFLOW_STAGES = [
-  { value: 'new', label: 'جديد', shortLabel: 'جديد', tone: 'blue', description: 'لم يبدأ التواصل مع العميل بعد', nextAction: 'اتصل بالعميل' },
-  { value: 'scheduled', label: 'تواصل وموعد', shortLabel: 'موعد', tone: 'violet', description: 'تم التواصل أو تحديد موعد الزيارة', nextAction: 'حدد الموعد' },
-  { value: 'in_progress', label: 'قيد التنفيذ', shortLabel: 'تنفيذ', tone: 'teal', description: 'الفني بدأ الكشف أو الإصلاح', nextAction: 'حدّث نتيجة الخدمة' },
-  { value: 'blocked', label: 'متوقف مؤقتًا', shortLabel: 'متوقف', tone: 'amber', description: 'توقف يحتاج سببًا وموعد متابعة', nextAction: 'حدّث سبب التوقف' },
-  { value: 'ready_collection', label: 'جاهز للتحصيل', shortLabel: 'تحصيل', tone: 'emerald', description: 'الخدمة انتهت وتحتاج اعتماد التصفية', nextAction: 'اعتمد التحصيل' },
+  { value: 'new', label: 'اتصال بالعميل', shortLabel: 'اتصال', tone: 'blue', description: 'لم يتم التواصل مع العميل بعد', nextAction: 'اتصل بالعميل' },
+  { value: 'scheduled', label: 'تم التواصل والموعد', shortLabel: 'موعد', tone: 'violet', description: 'تم التواصل وتحديد موعد الزيارة', nextAction: 'حدد الموعد' },
+  { value: 'in_progress', label: 'جاري التنفيذ', shortLabel: 'تنفيذ', tone: 'teal', description: 'الفني ينفذ الزيارة أو الإصلاح', nextAction: 'حدّث نتيجة الخدمة' },
+  { value: 'blocked', label: 'رفض الإصلاح أو تأجيل بسبب', shortLabel: 'رفض/تأجيل', tone: 'amber', description: 'توقف مع تسجيل سبب الرفض أو التأجيل', nextAction: 'سجّل السبب وموعد المتابعة' },
+  { value: 'ready_collection', label: 'تصفية أوردر أو قيمة زيارة', shortLabel: 'تصفية', tone: 'emerald', description: 'الخدمة انتهت وتحتاج اعتماد التصفية أو قيمة الزيارة', nextAction: 'اعتمد التصفية' },
   { value: 'closed', label: 'مغلق', shortLabel: 'مغلق', tone: 'slate', description: 'تمت التصفية والإغلاق النهائي', nextAction: 'لا يوجد' }
 ] as const;
 

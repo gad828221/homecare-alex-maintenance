@@ -43,13 +43,11 @@ type TechnicianFollowUp = {
 
 const FOLLOW_UP_STAGES = ORDER_WORKFLOW_STAGES;
 const FOLLOW_UP_ACTIONS = ORDER_WORKFLOW_ACTIONS;
-const TECHNICIAN_WORKFLOW = [
-  { value: 'new', label: 'جديد', action: 'اتصل بالعميل' },
-  { value: 'scheduled', label: 'موعد', action: 'حدد الموعد' },
-  { value: 'in_progress', label: 'تنفيذ', action: 'ابدأ التنفيذ' },
-  { value: 'ready_collection', label: 'تحصيل', action: 'اعتمد التحصيل' },
-  { value: 'closed', label: 'إغلاق', action: 'أغلق الأوردر' }
-] as const;
+const TECHNICIAN_WORKFLOW = ORDER_WORKFLOW_STAGES.map((stage) => ({
+  value: stage.value,
+  label: stage.shortLabel,
+  action: stage.nextAction
+}));
 const FOLLOW_UP_MARKER = 'بيانات المتابعة:';
 const EMPTY_TECHNICIAN_FOLLOW_UP: TechnicianFollowUp = { stage: '', nextAction: '', followUpDate: '', blocker: '', owner: '' };
 
@@ -1810,7 +1808,7 @@ export default function TechnicianPortal() {
 
                       <div className="mb-4 rounded-2xl border border-slate-700/80 bg-slate-950/40 p-3 relative z-10">
                         <div className="mb-3 flex items-center justify-between gap-2"><span className="text-[10px] font-black text-slate-300">خطوات الأوردر</span><span className="rounded-full bg-orange-500/15 px-2 py-1 text-[9px] font-black text-orange-200">{workflowStage === 'closed' ? 'مغلق' : `الخطوة ${Math.max(1, workflowIndex + 1)} من ${TECHNICIAN_WORKFLOW.length}`}</span></div>
-                        <div className="grid grid-cols-5 gap-1">{TECHNICIAN_WORKFLOW.map((step, index) => { const done = workflowStage === 'closed' || index < workflowIndex; const current = index === workflowIndex && workflowStage !== 'closed'; return <div key={step.value} className="min-w-0 text-center"><div className={`mx-auto h-2 rounded-full transition-colors ${done ? 'bg-emerald-500' : current ? 'bg-orange-500 animate-pulse' : 'bg-slate-700'}`} /><span className={`mt-1 block truncate text-[8px] font-black ${done ? 'text-emerald-300' : current ? 'text-orange-200' : 'text-slate-500'}`}>{step.label}</span></div>; })}</div>
+                        <div className="grid grid-cols-6 gap-1">{TECHNICIAN_WORKFLOW.map((step, index) => { const done = workflowStage === 'closed' || index < workflowIndex; const current = index === workflowIndex && workflowStage !== 'closed'; return <div key={step.value} className="min-w-0 text-center"><div className={`mx-auto h-2 rounded-full transition-colors ${done ? 'bg-emerald-500' : current ? 'bg-orange-500 animate-pulse' : 'bg-slate-700'}`} /><span className={`mt-1 block truncate text-[8px] font-black ${done ? 'text-emerald-300' : current ? 'text-orange-200' : 'text-slate-500'}`}>{step.label}</span></div>; })}</div>
                         {workflowStage !== 'closed' && nextWorkflow && <p className="mt-2 text-center text-[9px] font-bold text-slate-400">المطلوب منك الآن: <span className="text-orange-200">{nextWorkflow.action}</span></p>}
                         {workflowStage !== 'closed' && nextWorkflow && <button type="button" onClick={() => workflowStage === 'in_progress' || workflowStage === 'ready_collection' ? openSettleModal(order) : openFollowUpModal(order, { stage: nextWorkflow.value, nextAction: nextWorkflow.action, owner: techName })} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600/20 py-2.5 text-[10px] font-black text-orange-100 border border-orange-400/30 transition hover:bg-orange-600/35 active:scale-[0.99]">الخطوة التالية: {nextWorkflow.label} <ChevronDown size={14} /></button>}
                         {workflowStage === 'closed' && <div className="mt-3 rounded-xl bg-emerald-500/10 px-3 py-2 text-center text-[10px] font-black text-emerald-200">اكتمل المسار: تم التحصيل والإغلاق</div>}
