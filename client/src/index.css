@@ -139,24 +139,11 @@
 }
 
 @layer components {
-  /**
-   * Custom container utility that centers content and adds responsive padding.
-   *
-   * This overrides Tailwind's default container behavior to:
-   * - Auto-center content (mx-auto)
-   * - Add responsive horizontal padding
-   * - Set max-width for large screens
-   *
-   * Usage: <div className="container">...</div>
-   *
-   * For custom widths, use max-w-* utilities directly:
-   * <div className="max-w-6xl mx-auto px-4">...</div>
-   */
   .container {
     width: 100%;
     margin-left: auto;
     margin-right: auto;
-    padding-left: 1rem; /* 16px - mobile padding */
+    padding-left: 1rem;
     padding-right: 1rem;
   }
 
@@ -167,19 +154,20 @@
 
   @media (min-width: 640px) {
     .container {
-      padding-left: 1.5rem; /* 24px - tablet padding */
+      padding-left: 1.5rem;
       padding-right: 1.5rem;
     }
   }
 
   @media (min-width: 1024px) {
     .container {
-      padding-left: 2rem; /* 32px - desktop padding */
+      padding-left: 2rem;
       padding-right: 2rem;
-      max-width: 1280px; /* Standard content width */
+      max-width: 1280px;
     }
   }
 }
+
 /* ===== شريط الماركات ===== */
 .brands-strip {
   display: flex !important;
@@ -313,24 +301,7 @@
   }
 }
 
-
-/* ===== Manager light professional theme ===== */
-#manager-dashboard { background: #f4f6f8 !important; color: #334155; }
-#manager-dashboard [class*="bg-slate-950"] { background-color: #ffffff !important; }
-#manager-dashboard [class*="bg-slate-900"] { background-color: #ffffff !important; }
-#manager-dashboard [class*="bg-slate-800"] { background-color: #eef1f4 !important; }
-#manager-dashboard [class*="text-white"] { color: #1f2937 !important; }
-#manager-dashboard [class*="text-slate-200"], #manager-dashboard [class*="text-slate-300"] { color: #475569 !important; }
-#manager-dashboard [class*="text-slate-400"], #manager-dashboard [class*="text-slate-500"] { color: #64748b !important; }
-#manager-dashboard [class*="border-slate-"] { border-color: #d8dee6 !important; }
-#manager-dashboard input, #manager-dashboard select, #manager-dashboard textarea { color-scheme: light; }
-@media (max-width: 639px) {
-  #manager-dashboard { font-size: 14px; }
-  #manager-dashboard .order-card-3d { width: 100%; max-width: 100%; }
-  #manager-dashboard [role="tablist"] { scrollbar-width: none; }
-  #manager-dashboard [role="tablist"]::-webkit-scrollbar { display: none; }
-}
-/* ===== Neo Operations Light Theme Override ===== */
+/* ===== Neo Operations & Manager Light Theme Override ===== */
 .operations-light-theme,
 .manager-light-theme,
 #manager-dashboard {
@@ -347,7 +318,7 @@
   direction: rtl;
 }
 
-/* تحسين البطاقات والكروت */
+/* تحسين البطاقات والكروت الداكنة وتحويلها لأبيض ناصع */
 .operations-light-theme .order-card-3d,
 .manager-light-theme .order-card-3d,
 #manager-dashboard .order-card-3d {
@@ -401,9 +372,55 @@
   border-radius: 8px !important;
 }
 
+/* ===== إصلاح وضوح الخطوط والنصوص البنية والرمادية ===== */
+.manager-light-theme [class*="bg-amber-"],
+.manager-light-theme [class*="text-amber-"],
+.operations-light-theme [class*="bg-amber-"],
+#manager-dashboard [class*="text-amber-"] {
+  background-color: #fef3c7 !important;
+  color: #78350f !important; /* بني غامق جداً ومقروء بوضوح */
+  border: 1px solid #fde68a !important;
+  font-weight: 800 !important;
+}
+
+/* الشارة الخضراء (تواصل / موعد / تم) */
+.manager-light-theme [class*="bg-emerald-"],
+.operations-light-theme [class*="bg-emerald-"],
+#manager-dashboard [class*="text-emerald-"] {
+  background-color: #d1fae5 !important;
+  color: #064e3b !important; /* أخضر داكن واضح */
+  border: 1px solid #a7f3d0 !important;
+  font-weight: 700 !important;
+}
+
+/* الشارات الرمادية (لم تكتمل بعد / البيانات العامة) */
+.manager-light-theme [class*="bg-slate-100"],
+.operations-light-theme [class*="bg-slate-100"],
+#manager-dashboard [class*="text-slate-400"],
+#manager-dashboard [class*="text-slate-500"] {
+  color: #334155 !important; /* نص رمادي غامق صريح للقراءة */
+  font-weight: 700 !important;
+}
+
+/* ===== تحسين شكل سجل مراحل الأوردر ===== */
+.order-timeline-section,
+[class*="order-timeline"] {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  padding: 12px !important;
+  margin-top: 10px !important;
+}
+
 @media (max-width: 640px) {
+  #manager-dashboard { font-size: 14px; }
+  #manager-dashboard .order-card-3d,
   .order-card-3d {
+    width: 100%;
+    max-width: 100%;
     border-radius: 12px !important;
     padding: 12px !important;
   }
-    }
+  #manager-dashboard [role="tablist"] { scrollbar-width: none; }
+  #manager-dashboard [role="tablist"]::-webkit-scrollbar { display: none; }
+}
