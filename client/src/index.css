@@ -424,3 +424,50 @@
   #manager-dashboard [role="tablist"] { scrollbar-width: none; }
   #manager-dashboard [role="tablist"]::-webkit-scrollbar { display: none; }
 }
+/* =========================================================
+   تعديلات بصرية شريط التنبيهات والأزرار العائمة
+   ========================================================= */
+
+/* 1. إصلاح شريط زر التنبيه الوردي ومنحه تباين قوي ومقروء */
+.manager-light-theme [class*="bg-rose-"],
+.manager-light-theme [class*="bg-red-100"],
+.operations-light-theme [class*="bg-rose-"],
+div[class*="bg-rose-"] {
+  background-color: #fef2f2 !important;
+  border: 1px solid #fca5a5 !important;
+  color: #991b1b !important; /* أحمر داكن جداً واضح ومقروء */
+}
+
+/* إصلاح الزر الصغير (فتح 12) داخل التنبيه */
+.manager-light-theme [class*="bg-rose-"] button,
+div[class*="bg-rose-"] button,
+.manager-light-theme [class*="bg-rose-"] span {
+  background-color: #ef4444 !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  border-radius: 8px !important;
+  padding: 4px 12px !important;
+}
+
+/* 2. تحسين زري الأسهم العائمة (لأعلى ولأسفل) حتى لا تُغطي على الكروت */
+.floating-scroll-buttons,
+button[aria-label*="scroll"],
+div[class*="fixed bottom-"] {
+  z-index: 50 !important;
+  opacity: 0.85;
+  transition: opacity 0.2s ease-in-out;
+}
+
+/* تصغير الحجم وإزاحتها للطرف الأيسر قليلاً */
+.floating-scroll-buttons button {
+  width: 36px !important;
+  height: 36px !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  border-radius: 50% !important;
+}
+
+.floating-scroll-buttons:hover {
+  opacity: 1;
+  }
