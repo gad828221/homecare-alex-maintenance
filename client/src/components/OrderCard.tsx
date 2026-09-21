@@ -46,7 +46,9 @@ export function OrderCard({ order, onSelect, onAssignTech }: OrderCardProps) {
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -3, boxShadow: "0 10px 25px rgba(0,0,0,0.08)" }}
       transition={{ duration: 0.2 }}
-      className="bg-white rounded-2xl border border-slate-200 hover:border-slate-300 overflow-hidden shadow-sm hover:shadow-md transition-all"
+      className={`order-card-3d bg-white rounded-2xl border border-slate-200 hover:border-slate-300 overflow-hidden shadow-sm hover:shadow-md transition-all ${
+        showDetails ? 'details-open' : ''
+      }`}
     >
       {/* Header (دائماً ظاهر) */}
       <div className="bg-slate-50 px-5 py-4 border-b border-slate-200">
@@ -178,9 +180,9 @@ export function OrderCard({ order, onSelect, onAssignTech }: OrderCardProps) {
               )}
 
               {/* =========================================
-                  سجل مراحل الأوردر
+                  سجل مراحل الأوردر (مربوط بتنسيقات CSS الموحدة)
                  ========================================= */}
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+              <div className="order-timeline-section bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
                 <div className="flex items-center justify-between pb-1 border-b border-slate-200">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
                     <History className="w-4 h-4 text-slate-600" />
@@ -192,24 +194,24 @@ export function OrderCard({ order, onSelect, onAssignTech }: OrderCardProps) {
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-xs pt-1">
-                  <div className="p-2 bg-emerald-100 border border-emerald-300 text-emerald-950 rounded-lg text-center">
-                    <p className="font-bold">● تواصل</p>
-                    <p className="text-[10px] text-emerald-800 font-semibold">مكتمل</p>
+                  <div className="p-2 bg-emerald-100 border border-emerald-300 rounded-lg text-center">
+                    <p className="font-extrabold text-emerald-900">● تواصل</p>
+                    <p className="text-[10px] font-bold text-emerald-800">مكتمل</p>
                   </div>
 
-                  <div className="p-2 bg-emerald-100 border border-emerald-300 text-emerald-950 rounded-lg text-center">
-                    <p className="font-bold">● موعد</p>
-                    <p className="text-[10px] text-emerald-800 font-semibold">مكتمل</p>
+                  <div className="p-2 bg-emerald-100 border border-emerald-300 rounded-lg text-center">
+                    <p className="font-extrabold text-emerald-900">● موعد</p>
+                    <p className="text-[10px] font-bold text-emerald-800">مكتمل</p>
                   </div>
 
-                  <div className="p-2 bg-slate-200/80 border border-slate-300 text-slate-800 rounded-lg text-center">
-                    <p className="font-bold">● تنفيذ</p>
-                    <p className="text-[10px] text-slate-600 font-semibold">لم تكتمل</p>
+                  <div className="p-2 bg-slate-100 border border-slate-300 rounded-lg text-center">
+                    <p className="font-bold text-slate-700">● تنفيذ</p>
+                    <p className="text-[10px] font-semibold text-slate-500">لم تكتمل</p>
                   </div>
 
-                  <div className="p-2 bg-slate-200/80 border border-slate-300 text-slate-800 rounded-lg text-center">
-                    <p className="font-bold">● الإغلاق والتحصيل</p>
-                    <p className="text-[10px] text-slate-600 font-semibold">لم تكتمل</p>
+                  <div className="p-2 bg-slate-100 border border-slate-300 rounded-lg text-center">
+                    <p className="font-bold text-slate-700">● الإغلاق والتحصيل</p>
+                    <p className="text-[10px] font-semibold text-slate-500">لم تكتمل</p>
                   </div>
                 </div>
               </div>
