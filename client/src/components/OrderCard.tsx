@@ -46,7 +46,8 @@ export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCard
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden mb-4"
+      /* إضافة class: order-card-3d و class: details-open شرطياً لتتطابق مع الـ CSS */
+      className={`order-card-3d bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden mb-4 ${showDetails ? 'details-open' : ''}`}
     >
       {/* 1. الهيدر العلوي (ثابت دائماً) */}
       <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
@@ -82,11 +83,11 @@ export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCard
               <span>{statusStyle.label}</span>
             </div>
 
-            {/* زر عرض / إخفاء التفاصيل */}
+            {/* زر عرض / إخفاء التفاصيل مع إلحاق كلاس order-details-toggle-btn */}
             <button
               type="button"
               onClick={() => setShowDetails(!showDetails)}
-              className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-extrabold rounded-xl transition-colors flex items-center gap-1 border border-blue-200"
+              className="order-details-toggle-btn px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-extrabold rounded-xl transition-colors flex items-center gap-1 border border-blue-200"
             >
               <span>{showDetails ? "إخفاء" : "تفاصيل"}</span>
               {showDetails ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -104,12 +105,12 @@ export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCard
             <p className="font-extrabold text-slate-900 truncate">{order.customer_name}</p>
           </div>
 
-          {/* الفني المكلف - ألوان واضحة جداً خلفية زرقاء وفنت أزرق داكن */}
-          <div className="bg-blue-50 p-2.5 rounded-xl border border-blue-200">
-            <p className="text-[10px] text-blue-600 font-bold mb-0.5">الفني المكلف</p>
-            <p className="font-black text-blue-900 text-xs truncate">
+          {/* الفني المكلف - ربط بالـ class الخاص tech-badge-box */}
+          <div className="tech-badge-box bg-blue-50 p-2.5 rounded-xl border border-blue-200">
+            <span className="tech-badge-title text-[10px] text-blue-600 font-bold mb-0.5">الفني المكلف</span>
+            <span className="tech-badge-name font-black text-blue-900 text-xs truncate">
               {order.technician || <span className="text-amber-700 font-bold">غير محدد</span>}
-            </p>
+            </span>
           </div>
 
           {/* الجهاز */}
@@ -152,7 +153,7 @@ export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCard
         </div>
       </div>
 
-      {/* 3. قسم التفاصيل والسجل (محمي بشرط showDetails تماماً) */}
+      {/* 3. قسم التفاصيل والسجل - ربط بالـ class order-details-wrapper */}
       <AnimatePresence>
         {showDetails && (
           <motion.div
@@ -160,7 +161,7 @@ export function OrderCard({ order, onSelect, onAssignTech, onDelete }: OrderCard
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="border-t border-slate-200 bg-slate-50/70 p-4 space-y-3"
+            className="order-details-wrapper border-t border-slate-200 bg-slate-50/70 p-4 space-y-3"
           >
             {/* تفاصيل موقع ومبلغ الأوردر إن وجدت */}
             {(order.address || order.price) && (
