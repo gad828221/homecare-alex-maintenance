@@ -22,6 +22,7 @@ import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, get
 import { createPickupMarker, getPickupTypeLabel, type PickupType, type PickupReceiptData } from '../utils/pickupReceipt';
 import { mergeCompanyTransferMarker } from '../utils/companyTransfer';
 import { getTechnicianDisplayName, getTechnicianPhotoUrl, parseTechnicianProfileNotification, profileNotificationPayload } from '../utils/technicianProfile';
+import { ORDER_WORKFLOW_ACTIONS, ORDER_WORKFLOW_STAGES, getOrderWorkflowIndex, normalizeOrderWorkflowStage } from '../utils/orderWorkflow';
 
 
 
@@ -40,20 +41,11 @@ type TechnicianFollowUp = {
   owner: string;
 };
 
-const FOLLOW_UP_STAGES = [
-  { value: 'new', label: 'جديد' },
-  { value: 'contact', label: 'بانتظار التواصل' },
-  { value: 'scheduled', label: 'تم تحديد الموعد' },
-  { value: 'in_progress', label: 'قيد التنفيذ' },
-  { value: 'blocked', label: 'بانتظار العميل أو قطعة' },
-  { value: 'ready_collection', label: 'جاهز للتحصيل' },
-  { value: 'closed', label: 'مغلق' }
-] as const;
-
-const FOLLOW_UP_ACTIONS = ['اتصل بالعميل', 'حدد موعداً', 'ابدأ التنفيذ', 'تابع قطعة غيار', 'اطلب تدخل المدير', 'اعتمد التحصيل', 'أغلق الأوردر'];
+const FOLLOW_UP_STAGES = ORDER_WORKFLOW_STAGES;
+const FOLLOW_UP_ACTIONS = ORDER_WORKFLOW_ACTIONS;
 const TECHNICIAN_WORKFLOW = [
-  { value: 'contact', label: 'تواصل', action: 'اتصل بالعميل' },
-  { value: 'scheduled', label: 'موعد', action: 'حدد موعداً' },
+  { value: 'new', label: 'جديد', action: 'اتصل بالعميل' },
+  { value: 'scheduled', label: 'موعد', action: 'حدد الموعد' },
   { value: 'in_progress', label: 'تنفيذ', action: 'ابدأ التنفيذ' },
   { value: 'ready_collection', label: 'تحصيل', action: 'اعتمد التحصيل' },
   { value: 'closed', label: 'إغلاق', action: 'أغلق الأوردر' }
@@ -67,7 +59,7 @@ const parseTechnicianFollowUp = (adminNotes: any): TechnicianFollowUp => {
   try {
     const parsed = JSON.parse(match[1]);
     return {
-      stage: String(parsed?.stage || ''),
+      stage: parsed?.stage ? normalizeOrderWorkflowStage(parsed.stage) : '',
       nextAction: String(parsed?.nextAction || ''),
       followUpDate: String(parsed?.followUpDate || ''),
       blocker: String(parsed?.blocker || ''),
@@ -90,10 +82,10 @@ const getWorkflowStage = (order: any) => {
   // The saved follow-up stage is authoritative; status may remain pending while the technician advances.
   if (savedStage === 'ready_collection') return 'ready_collection';
   if (savedStage === 'in_progress') return 'in_progress';
-  if (savedStage === 'scheduled' || savedStage === 'contact' || savedStage === 'blocked') return savedStage;
+  if (savedStage === 'scheduled' || savedStage === 'blocked') return savedStage;
   if (order?.status === 'in-progress' || order?.status === 'in_progress') return 'in_progress';
   if (order?.status === 'inspected') return 'ready_collection';
-  return 'contact';
+  return normalizeOrderWorkflowStage(order?.status);
 };
 
 const getWorkflowNext = (order: any) => {
@@ -104,7 +96,7 @@ const getWorkflowNext = (order: any) => {
 
 const getTechnicianPrimaryAction = (order: any) => {
   const stage = getWorkflowStage(order);
-  if (stage === 'contact') return { stage, label: 'اتصل بالعميل', tone: 'blue', icon: 'phone' };
+  if (stage === 'new') return { stage, label: 'اتصل بالعميل', tone: 'blue', icon: 'phone' };
   if (stage === 'scheduled') return { stage, label: 'تأكيد الموعد وبدء التنفيذ', tone: 'orange', icon: 'schedule' };
   if (stage === 'in_progress') return { stage, label: 'فتح التصفية', tone: 'emerald', icon: 'settle' };
   if (stage === 'ready_collection') return { stage, label: 'إتمام التصفية والإغلاق', tone: 'emerald', icon: 'settle' };
@@ -1364,7 +1356,7 @@ export default function TechnicianPortal() {
         if (isDelayed(item.order)) return 0;
         if (item.primaryAction.stage === 'ready_collection') return 1;
         if (item.primaryAction.stage === 'scheduled') return 2;
-        if (item.primaryAction.stage === 'contact') return 3;
+        if (item.primaryAction.stage === 'new') return 3;
         return 4;
       };
       const rankDifference = priority(a) - priority(b);
@@ -1498,7 +1490,7 @@ export default function TechnicianPortal() {
   );
 
   return (
-    <div className={`min-h-screen bg-slate-900 text-slate-200 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`}>
+    <div className={`operations-light-theme min-h-screen bg-slate-900 text-slate-200 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`}>
       
       {/* ✅ قفل الشاشة الإجباري لتفعيل الصوت */}
       {!audioEnabled && (
@@ -1892,7 +1884,7 @@ export default function TechnicianPortal() {
 
                       {/* إجراءات المرحلة الحالية */}
                       <div className="space-y-3 relative z-10 pt-4 border-t border-slate-800/50">
-                        {(workflowStage === 'contact' || order.status === 'pending' || order.status === 'returned') && !isPhoneHidden(order) && (
+                        {(workflowStage === 'new' || order.status === 'pending' || order.status === 'returned') && !isPhoneHidden(order) && (
                           <div className="space-y-2">
                             <div className="grid grid-cols-2 gap-2">
                               <a href={`tel:${order.phone}`} onClick={() => notifyCustomerContact(order, 'phone')} className="h-11 bg-blue-600 hover:bg-blue-500 text-white rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 font-black text-xs"><Phone size={17} /> اتصال بالعميل</a>

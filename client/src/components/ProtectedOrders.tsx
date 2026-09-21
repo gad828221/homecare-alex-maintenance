@@ -22,6 +22,7 @@ import IOSPushEnablePrompt from './IOSPushEnablePrompt';
 import { findTechnicianByIdentity, getTechnicianDisplayName, getTechnicianPhotoUrl, getTechnicianSpecialty, getDeviceSpecialty, parseTechnicianProfileNotification } from '../utils/technicianProfile';
 import { clearAuthSession, readAuthSession } from '../utils/authSession';
 import { getOneSignalExternalId, syncOneSignalIdentity } from '../utils/oneSignalIdentity';
+import { ORDER_WORKFLOW_ACTIONS, ORDER_WORKFLOW_STAGES, getOrderWorkflowIndex, getOrderWorkflowStageMeta, normalizeOrderWorkflowStage } from '../utils/orderWorkflow';
 
 // ==================== الإعدادات الأساسية ====================
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -32,16 +33,8 @@ const DEVICE_TYPES = ['غسالة', 'ثلاجة', 'بوتاجاز', 'سخان', 
 const BRANDS = ['سامسونج', 'LG', 'شارب', 'توشيبا', 'زانوسي', 'يونيون إير', 'فريش', 'وايت ويل', 'أريستون', 'بيكو', 'هوفر', 'إنديست', 'كريازي'];
 const REPORT_TIME_OFFSET_MS = 8 * 60 * 60 * 1000;
 const ORDER_ARCHIVE_AFTER_DAYS = 15;
-const OPERATION_STAGES = [
-  { value: 'new', label: 'جديد' },
-  { value: 'contact', label: 'بانتظار التواصل' },
-  { value: 'scheduled', label: 'تم تحديد الموعد' },
-  { value: 'in_progress', label: 'قيد التنفيذ' },
-  { value: 'blocked', label: 'بانتظار العميل أو قطعة' },
-  { value: 'ready_collection', label: 'جاهز للتحصيل' },
-  { value: 'closed', label: 'مغلق' }
-] as const;
-const getOperationStageLabel = (value: any) => OPERATION_STAGES.find((stage) => stage.value === value)?.label || 'غير محدد';
+const OPERATION_STAGES = ORDER_WORKFLOW_STAGES;
+const getOperationStageLabel = (value: any) => value ? getOrderWorkflowStageMeta(value).label : 'غير محدد';
 const playNavigationClick = () => {
   try {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
@@ -104,7 +97,7 @@ const getFollowUpData = (adminNotes: any): FollowUpData => {
   try {
     const parsed = JSON.parse(match[1]);
     return {
-      stage: String(parsed?.stage || ''),
+      stage: parsed?.stage ? normalizeOrderWorkflowStage(parsed.stage) : '',
       nextAction: String(parsed?.nextAction || ''),
       followUpDate: String(parsed?.followUpDate || ''),
       blocker: String(parsed?.blocker || ''),
@@ -4222,21 +4215,10 @@ ${trackingUrl}
                   const companyTransfer = parseCompanyTransfer(order.technician_note);
                   const collectionPending = isCollectionPending(order);
                   const transferPending = collectionPending && companyTransfer?.status === 'pending';
-                  const orderWorkflow = [
-                    { key: 'contact', label: 'تواصل' },
-                    { key: 'scheduled', label: 'موعد' },
-                    { key: 'in-progress', label: 'تنفيذ' },
-                    { key: 'ready_collection', label: 'تحصيل' },
-                    { key: 'completed', label: 'إغلاق' }
-                  ];
-                  const normalizedStatus = order.status === 'in_progress' ? 'in-progress' : order.status;
                   const followUp = getFollowUpData(order.admin_notes);
-                  const savedStageIndex: Record<string, number> = { contact: 0, scheduled: 1, in_progress: 2, 'in-progress': 2, ready_collection: 3, closed: 4 };
-                  const workflowIndex = followUp.stage && savedStageIndex[followUp.stage] !== undefined
-                    ? savedStageIndex[followUp.stage]
-                    : normalizedStatus === 'completed' ? 4
-                      : normalizedStatus === 'in-progress' || normalizedStatus === 'inspected' ? 2
-                        : normalizedStatus === 'deferred' || normalizedStatus === 'returned' ? 1 : 0;
+                  const orderWorkflow = ORDER_WORKFLOW_STAGES.map((stage) => ({ key: stage.value, label: stage.shortLabel }));
+                  const workflowStage = normalizeOrderWorkflowStage(followUp.stage || order.status);
+                  const workflowIndex = getOrderWorkflowIndex(workflowStage);
                   const shortOrderNumber = String(order.order_number || '').match(/\d{3,}$/)?.[0] || String(order.order_number || '').slice(-6);
                   const elapsedToneClass = elapsedTone === 'urgent' ? 'text-rose-200 bg-rose-500/20 border-rose-400/50 shadow-lg shadow-rose-500/20 animate-pulse' : elapsedTone === 'warning' ? 'text-amber-200 bg-amber-500/20 border-amber-400/40 shadow-lg shadow-amber-500/10' : 'text-slate-200 bg-slate-950/70 border-slate-700';
                   const cardTone = collectionPending ? 'bg-white border-yellow-300/70 shadow-yellow-400/20' : delayed ? 'bg-white border-rose-400/60 shadow-rose-900/20' : 'bg-white border-[#D8DEE6]/90';
@@ -5677,7 +5659,7 @@ ${trackingUrl}
                           <div>
                             <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">الإجراء التالي</label>
                             <select value={followUpForm.nextAction} onChange={e => setFollowUpForm({ ...followUpForm, nextAction: e.target.value })} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-orange-500">
-                              <option value="">اختر الإجراء</option><option value="اتصل بالعميل">اتصل بالعميل</option><option value="عيّن فني">عيّن فني</option><option value="حدد موعداً">حدد موعداً</option><option value="تابع قطعة غيار">تابع قطعة غيار</option><option value="اعتمد التحصيل">اعتمد التحصيل</option><option value="افتح الفاتورة">افتح الفاتورة</option><option value="أغلق الأوردر">أغلق الأوردر</option>
+                              <option value="">اختر الإجراء</option>{ORDER_WORKFLOW_ACTIONS.map((action) => <option key={action} value={action}>{action}</option>)}
                             </select>
                           </div>
                         </div>
