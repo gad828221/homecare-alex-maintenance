@@ -530,3 +530,7 @@ select,
   color: #0f172a !important;
   font-weight: 700 !important;
 }
+/* إخفاء سجل مراحل الأوردر الافتراضي وإظهاره فقط عند تفعيل التفاصيل */
+.order-card-3d:not(.details-open) .order-timeline-section {
+  display: none !important;
+}
