@@ -296,24 +296,6 @@
 .order-summary-warning { border-color: #fed7aa; background: #fff7ed; color: #d97706 !important; }
 .order-summary-warning strong { color: #b45309; }
 
-.manager-light-theme .order-details-toggle,
-.operations-light-theme .order-details-toggle {
-  min-height: 30px;
-  padding-inline: 10px !important;
-  border-color: #bfdbfe !important;
-  background: #eff6ff !important;
-  color: #1d4ed8 !important;
-  font-size: 10px !important;
-  box-shadow: none !important;
-}
-
-.manager-light-theme .order-details-toggle:hover,
-.operations-light-theme .order-details-toggle:hover {
-  border-color: #2563eb !important;
-  background: #dbeafe !important;
-  color: #1e40af !important;
-}
-
 .manager-light-theme .order-card-3d .text-slate-300,
 .operations-light-theme .order-card-3d .text-slate-300 { color: #334155 !important; }
 .manager-light-theme .order-card-3d .text-slate-400,
@@ -399,15 +381,7 @@
   border-radius: 7px;
 }
 
-.manager-light-theme .order-card-3d .order-details-toggle > svg {
-  width: 15px;
-  height: 15px;
-  padding: 0;
-  background: transparent;
-  color: currentColor;
-}
-
-/* The main control row uses one primary blue action and restrained secondary actions. */
+/* Main control row */
 .manager-light-theme > div:not([role="tablist"]) button {
   border-radius: 10px;
 }
@@ -457,95 +431,56 @@
     height: 18px;
   }
 }
-/* ==========================================
-   إصلاح وإعادة إظهار زر تفاصيل الأوردر
-   ========================================== */
 
-.operations-light-theme .order-details-toggle,
-.manager-light-theme .order-details-toggle,
-.operations-light-theme button[aria-expanded],
-.manager-light-theme button[aria-expanded] {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 6px !important;
-  min-height: 32px !important;
-  padding: 4px 12px !important;
-  border: 1px solid #bfdbfe !important;
-  border-radius: 8px !important;
-  background-color: #eff6ff !important;
-  color: #1d4ed8 !important;
-  font-size: 12px !important;
-  font-weight: 700 !important;
-  cursor: pointer !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-.operations-light-theme .order-details-toggle svg,
-.manager-light-theme .order-details-toggle svg,
-.operations-light-theme button[aria-expanded] svg,
-.manager-light-theme button[aria-expanded] svg {
-  width: 14px !important;
-  height: 14px !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  background: transparent !important;
-  border-radius: 0 !important;
-  color: currentColor !important;
-  filter: none !important;
-}
-
-.operations-light-theme .order-details-toggle:hover,
-.manager-light-theme .order-details-toggle:hover,
-.operations-light-theme button[aria-expanded]:hover,
-.manager-light-theme button[aria-expanded]:hover {
-  background-color: #dbeafe !important;
-  border-color: #2563eb !important;
-  color: #1e40af !important;
-}
-
-@keyframes fadeInSlide {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fadeIn {
-  animation: fadeInSlide 0.2s ease-out forwards;
-}
 /* ==========================================================
-   إصلاح الخلفية السوداء لإظهار اسم الفني والمراحل + التحكم بالتفاصيل
+   تنسيقات بطاقات الطلبات (التحكم بالتفاصيل واسم الفني)
    ========================================================== */
 
-/* 1. إصلاح الخانات السوداء (اسم الفني وشريط المراحل) وتوضيح النص */
-.manager-light-theme .order-card-3d [class*="bg-slate-"],
-.operations-light-theme .order-card-3d [class*="bg-slate-"],
-.manager-light-theme .order-card-3d .bg-black,
-.operations-light-theme .order-card-3d .bg-black,
-.manager-light-theme .order-card-3d [class*="bg-slate-900"],
-.operations-light-theme .order-card-3d [class*="bg-slate-900"] {
-  background-color: #f8fafc !important;
-  color: #0f172a !important;
-  border-color: #e2e8f0 !important;
+/* 1. تنسيق مخصص ومستقل لبطاقة الفني المكلف */
+.manager-light-theme .tech-badge-box,
+.operations-light-theme .tech-badge-box,
+.tech-badge-box {
+  background-color: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  border-radius: 12px !important;
+  padding: 8px 10px !important;
 }
 
-/* 2. إظهار نص اسم الفني "الفني: منصور" بشرائط تباين عالية */
-.manager-light-theme .order-card-3d span,
-.operations-light-theme .order-card-3d span,
-.manager-light-theme .order-card-3d div,
-.operations-light-theme .order-card-3d div {
-  color: inherit;
+.tech-badge-title {
+  color: #2563eb !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  display: block;
 }
 
-/* 3. إخفاء "سجل مراحل الأوردر" والأجزاء المتقدمة تلقائياً إذا لم تكن التفاصيل مفتوحة */
-.order-card-3d:not(.details-open) .order-details-content,
-.order-card-3d:not(.details-open) .order-timeline-section,
-.order-card-3d:not(.details-open) [data-details-section="true"] {
+.tech-badge-name {
+  color: #1e3a8a !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  display: block;
+}
+
+/* 2. إخفاء حاوية التفاصيل والسجل تماماً إلا إذا كانت البطاقة تحتوي على class (details-open) */
+.order-card-3d:not(.details-open) .order-details-wrapper {
   display: none !important;
+}
+
+/* 3. تنسيق زر التفاصيل */
+.order-details-toggle-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 4px 10px !important;
+  background-color: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  color: #1d4ed8 !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+}
+
+.order-details-toggle-btn:hover {
+  background-color: #dbeafe !important;
+  border-color: #2563eb !important;
 }
