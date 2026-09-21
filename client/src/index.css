@@ -471,3 +471,62 @@ div[class*="fixed bottom-"] {
 .floating-scroll-buttons:hover {
   opacity: 1;
   }
+/* =========================================================
+   تنسيقات شاملة لكارت الأوردر وسجل المراحل والأزرار العائمة
+   ========================================================= */
+
+/* 1. إصلاح تباين وألوان سجل مراحل الأوردر (تواصل / موعد) */
+.order-timeline-section .bg-emerald-100,
+div[class*="bg-green-"],
+div[class*="bg-emerald-"] {
+  background-color: #d1fae5 !important;
+  border: 1px solid #059669 !important;
+  color: #064e3b !important; /* لون أخضر داكن حاد جداً ومقروء */
+}
+
+.order-timeline-section .bg-emerald-100 *,
+div[class*="bg-emerald-"] * {
+  color: #064e3b !important;
+  font-weight: 800 !important;
+}
+
+/* 2. إصلاح زر التحصيل الوردي */
+button:contains("تحصيل"),
+div[class*="bg-rose-"] button,
+button[class*="bg-pink-"] {
+  background-color: #fef2f2 !important;
+  border: 1px solid #f87171 !important;
+  color: #991b1b !important;
+  font-weight: 800 !important;
+}
+
+/* 3. إزاحة وتصغير أزرار التنقل العائمة كي لا تغطي على الكارت */
+div[class*="fixed bottom-"],
+.floating-scroll-buttons {
+  left: 8px !important;
+  bottom: 20px !important;
+  z-index: 40 !important;
+}
+
+div[class*="fixed bottom-"] button,
+.floating-scroll-buttons button {
+  width: 32px !important;
+  height: 32px !important;
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+  border-radius: 50% !important;
+  opacity: 0.75;
+}
+
+div[class*="fixed bottom-"] button:hover {
+  opacity: 1;
+}
+
+/* 4. إعطاء القوائم المنسدلة وأزرار الإجراءات حدوداً واضحة */
+select, 
+.order-card-3d input {
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
