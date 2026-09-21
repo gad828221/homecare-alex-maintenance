@@ -1455,30 +1455,43 @@ export default function ProtectedOrders() {
     if (!isAdmin) return false;
     const orderId = Number(order.id);
     const companyShare = Number(order.company_share) || 0;
+    if (!Number.isFinite(orderId)) return false;
     if (cashProfitLocksRef.current.has(orderId)) return false;
-    if (order.profit_added_to_cash) { showToast("تمت إضافة ربح هذا الأوردر للخزنة مسبقاً", "info"); return false; }
     if (companyShare <= 0) { showToast("لا يوجد نصيب شركة صالح لهذا الأوردر", "error"); return false; }
     if (!order.is_paid) { showToast("يجب اعتماد التحصيل أولاً", "error"); return false; }
     if (order.status !== 'completed') { showToast("لا يمكن إضافة ربح أوردر غير مكتمل", "error"); return false; }
 
     cashProfitLocksRef.current.add(orderId);
     try {
-      const today = new Date().toISOString().split('T')[0];
+      // لا نعتمد على العلم وحده؛ نتحقق من القيد الفعلي لمنع العلامات الوهمية والتكرار.
+      const linkedEntries = await fetchAPI(`cash_ledger?select=id,type,amount,date,description,related_order_id&related_order_id=eq.${orderId}&type=eq.income`);
+      const legacyEntries = !Array.isArray(linkedEntries) || linkedEntries.length === 0
+        ? await fetchAPI(`cash_ledger?select=id,type,amount,date,description,related_order_id&description=ilike.*${encodeURIComponent(String(order.order_number || ''))}*&type=eq.income`)
+        : [];
+      const existingEntry = (Array.isArray(linkedEntries) && linkedEntries[0]) || (Array.isArray(legacyEntries) && legacyEntries[0]) || null;
+      if (existingEntry?.id) {
+        if (!order.profit_added_to_cash) await fetchAPI(`orders?id=eq.${orderId}`, { method: 'PATCH', body: JSON.stringify({ profit_added_to_cash: true }) });
+        showToast('هذا الأوردر له قيد دخل بالفعل؛ لم تتم الإضافة مرة أخرى', 'info');
+        return true;
+      }
+
       const roundedShare = Number(companyShare.toFixed(2));
+      const incomeDate = String(order.completed_at || order.actual_completion_date || order.date || new Date().toISOString()).slice(0, 10);
       const response = await fetch(`${supabaseUrl}/rest/v1/cash_ledger`, {
         method: 'POST',
         headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-        body: JSON.stringify({ type: 'income', amount: roundedShare, description: `أرباح شركة من أوردر ${order.customer_name} (رقم ${order.order_number})`, date: today })
+        body: JSON.stringify({ type: 'income', amount: roundedShare, description: `أرباح شركة من أوردر ${order.customer_name} (رقم ${order.order_number})`, date: incomeDate, related_order_id: orderId })
       });
       if (!response.ok) { const error = await response.text(); throw new Error(`cash-ledger-insert-failed: ${error}`); }
       const insertedPayload = await response.json().catch(() => []);
       const insertedEntry = Array.isArray(insertedPayload) ? insertedPayload[0] : insertedPayload;
-      const patchResponse = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${order.id}`, {
+      if (!insertedEntry?.id) throw new Error('cash-ledger-insert-returned-no-row');
+      const patchResponse = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${orderId}`, {
         method: 'PATCH', headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ profit_added_to_cash: true })
       });
       if (!patchResponse.ok) {
-        if (insertedEntry?.id) await fetchAPI(`cash_ledger?id=eq.${insertedEntry.id}`, { method: 'DELETE' });
+        await fetchAPI(`cash_ledger?id=eq.${insertedEntry.id}`, { method: 'DELETE' });
         throw new Error(`order-profit-flag-update-failed: ${await patchResponse.text()}`);
       }
       await addNotification('إضافة أرباح للخزنة', `✅ تم إضافة ${roundedShare} ج.م للخزنة من أوردر ${order.order_number} (${order.customer_name})`);
@@ -2219,8 +2232,11 @@ export default function ProtectedOrders() {
         .in('id', ids);
         
       if (error) throw error;
-      
-      showToast(`تم اعتماد تحصيل ${ids.length} أوردر بنجاح`, "success");
+      // الاعتماد الجماعي يجب أن ينشئ دخل الخزنة لكل أوردر، وليس تعديل is_paid فقط.
+      for (const order of unpaidCompleted) {
+        await addCompanyProfitToCash({ ...order, is_paid: true });
+      }
+      showToast(`تم اعتماد تحصيل ${ids.length} أوردر وإضافة دخلهم للخزنة بنجاح`, "success");
       fetchData();
     } catch (err) {
       console.error(err);
