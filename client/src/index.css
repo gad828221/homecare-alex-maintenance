@@ -312,3 +312,21 @@
     transform: none;
   }
 }
+
+
+/* ===== Manager light professional theme ===== */
+#manager-dashboard { background: #f4f6f8 !important; color: #334155; }
+#manager-dashboard [class*="bg-slate-950"] { background-color: #ffffff !important; }
+#manager-dashboard [class*="bg-slate-900"] { background-color: #ffffff !important; }
+#manager-dashboard [class*="bg-slate-800"] { background-color: #eef1f4 !important; }
+#manager-dashboard [class*="text-white"] { color: #1f2937 !important; }
+#manager-dashboard [class*="text-slate-200"], #manager-dashboard [class*="text-slate-300"] { color: #475569 !important; }
+#manager-dashboard [class*="text-slate-400"], #manager-dashboard [class*="text-slate-500"] { color: #64748b !important; }
+#manager-dashboard [class*="border-slate-"] { border-color: #d8dee6 !important; }
+#manager-dashboard input, #manager-dashboard select, #manager-dashboard textarea { color-scheme: light; }
+@media (max-width: 639px) {
+  #manager-dashboard { font-size: 14px; }
+  #manager-dashboard .order-card-3d { width: 100%; max-width: 100%; }
+  #manager-dashboard [role="tablist"] { scrollbar-width: none; }
+  #manager-dashboard [role="tablist"]::-webkit-scrollbar { display: none; }
+}

@@ -3599,10 +3599,10 @@ ${trackingUrl}
   };
 
     if (!initialLoadComplete) {
-      return <div className="min-h-screen bg-[#17191F] flex items-center justify-center text-slate-300" dir="rtl"><div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-5 text-sm font-black shadow-2xl">جاري تحميل بيانات لوحة المدير…</div></div>;
+      return <div className="min-h-screen bg-[#F4F6F8] flex items-center justify-center text-slate-700" dir="rtl"><div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-5 text-sm font-black shadow-2xl">جاري تحميل بيانات لوحة المدير…</div></div>;
     }
     return (
-    <div className={`min-h-screen bg-[#17191F] text-slate-200 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`}>
+    <div id="manager-dashboard" className={`min-h-screen overflow-x-hidden bg-[#F4F6F8] text-slate-700 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`}>
       {loading && (
         <div className="fixed top-2 left-1/2 -translate-x-1/2 z-[210] rounded-full border border-blue-400/40 bg-slate-900/95 px-4 py-2 text-xs font-black text-blue-200 shadow-xl" role="status">
           جاري تحديث البيانات…
@@ -3610,8 +3610,8 @@ ${trackingUrl}
       )}
       {/* ✅ قفل الشاشة الإجباري للمدير لتفعيل الصوت */}
       {!audioEnabled && (
-        <div className="fixed inset-0 z-[200] bg-[#17191F] flex items-center justify-center p-4 sm:p-6 text-center backdrop-blur-xl">
-          <div className="max-w-md w-full bg-[#2A2926] border border-orange-500/30 p-6 sm:p-8 rounded-[2rem] shadow-2xl animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-[200] bg-[#F4F6F8]/95 flex items-center justify-center p-4 sm:p-6 text-center backdrop-blur-xl">
+          <div className="max-w-md w-full bg-white border border-orange-200 p-6 sm:p-8 rounded-[1.5rem] shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="w-24 h-24 bg-orange-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-orange-900/40 animate-pulse">
               <LayoutDashboard className="text-white w-10 h-10" />
             </div>
@@ -3709,7 +3709,7 @@ ${trackingUrl}
       </div>
 
       {/* Compact icon navigation: one section at a time to keep the dashboard short on mobile. */}
-      <div role="tablist" aria-label="أقسام لوحة المدير" className="sticky top-[60px] z-30 border-b border-[#514B40]/70 bg-[#201F1D]/95 px-2.5 py-2.5 shadow-[0_12px_35px_rgba(2,8,23,0.45)] backdrop-blur-xl overflow-x-auto no-scrollbar flex gap-2">
+      <div role="tablist" aria-label="أقسام لوحة المدير" className="sticky top-[60px] z-30 border-b border-[#D8DEE6] bg-white/95 px-2.5 py-2.5 shadow-[0_12px_35px_rgba(2,8,23,0.45)] backdrop-blur-xl overflow-x-auto no-scrollbar flex gap-2">
         {[
           { id: 'orders', label: 'الأوردرات', icon: <ClipboardList size={16} />, color: 'orange' },
 	          { id: 'archived', label: `الأرشيف (${archivedOrders.length})`, icon: <LayoutDashboard size={16} />, color: 'indigo' },
@@ -3748,13 +3748,13 @@ ${trackingUrl}
         ))}
       </div>
 
-	      <div className="mx-auto w-full max-w-[1600px] p-3 sm:p-4">
+	      <div className="mx-auto w-full max-w-[1440px] min-w-0 px-2.5 py-3 sm:px-4 sm:py-4">
                 {loadingSection && activeTab !== 'orders' && <div className="mb-4 rounded-2xl border border-orange-500/20 bg-orange-500/5 px-4 py-3 text-center text-xs font-black text-orange-200">جارٍ تحميل بيانات القسم...</div>}
 		        {/* تبويب الأوردرات */}
 		        {activeTab === 'orders' && (
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
 	              {/* Operations Center Header */}
-	              <div className="bg-gradient-to-br from-[#2A2926] to-[#35322D] rounded-[1.75rem] p-4 sm:p-6 border border-[#514B40]/80 shadow-2xl relative overflow-hidden">
+	              <div className="bg-gradient-to-br from-white to-[#EEF1F4] rounded-[1.25rem] p-4 sm:p-5 border border-[#D8DEE6] shadow-2xl relative overflow-hidden">
 	                <div className="absolute top-0 left-0 w-1.5 h-full bg-cyan-500"></div>
 	                <div className="absolute -top-24 -right-24 w-64 h-64 bg-orange-600/10 rounded-full blur-3xl"></div>
 	                
@@ -4239,7 +4239,7 @@ ${trackingUrl}
                         : normalizedStatus === 'deferred' || normalizedStatus === 'returned' ? 1 : 0;
                   const shortOrderNumber = String(order.order_number || '').match(/\d{3,}$/)?.[0] || String(order.order_number || '').slice(-6);
                   const elapsedToneClass = elapsedTone === 'urgent' ? 'text-rose-200 bg-rose-500/20 border-rose-400/50 shadow-lg shadow-rose-500/20 animate-pulse' : elapsedTone === 'warning' ? 'text-amber-200 bg-amber-500/20 border-amber-400/40 shadow-lg shadow-amber-500/10' : 'text-slate-200 bg-slate-950/70 border-slate-700';
-                  const cardTone = collectionPending ? 'bg-[#2B2926] border-yellow-300/70 shadow-yellow-400/20' : delayed ? 'bg-[#2B2926] border-rose-400/60 shadow-rose-900/20' : 'bg-[#2A2926] border-[#514B40]/80';
+                  const cardTone = collectionPending ? 'bg-white border-yellow-300/70 shadow-yellow-400/20' : delayed ? 'bg-white border-rose-400/60 shadow-rose-900/20' : 'bg-white border-[#D8DEE6]/90';
                   const isOrderExpanded = expandedOrderIds.has(order.id);
                   const followUpDue = Boolean(followUp.followUpDate && followUp.followUpDate <= getEgyptTodayString());
                   const followUpLabel = followUp.nextAction || (noTechnician ? 'تعيين فني مسؤول' : delayed ? 'مراجعة الطلب المتأخر' : 'تحديد الإجراء التالي');
@@ -4264,7 +4264,7 @@ ${trackingUrl}
 		                      aria-label={`تعديل أوردر ${order.customer_name}`}
 		                      onClick={() => { stopUrgentAlert(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); }}
 		                      onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); stopUrgentAlert(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); } }}
-		                      className={`group order-card-3d ${cardTone} ${statusGlow} ${recentlyUpdated ? 'ring-2 ring-emerald-300/70 shadow-[0_0_26px_rgba(52,211,153,0.28)]' : ''} rounded-[1.1rem] border p-2.5 sm:p-3 transition-all hover:shadow-2xl active:scale-[0.98] cursor-pointer relative overflow-hidden ${config.pulse} bg-[#2A2926] backdrop-blur-md border-opacity-30 hover:border-opacity-100`}
+		                      className={`group order-card-3d ${cardTone} ${statusGlow} ${recentlyUpdated ? 'ring-2 ring-emerald-300/70 shadow-[0_0_26px_rgba(52,211,153,0.28)]' : ''} w-full min-w-0 rounded-xl border p-2.5 sm:p-3 transition-all hover:shadow-2xl active:scale-[0.98] cursor-pointer relative overflow-hidden ${config.pulse} bg-white backdrop-blur-md border-opacity-30 hover:border-opacity-100`}
 	                    >
 	                      <div className={`absolute inset-y-3 right-0 z-20 w-1 rounded-full ${statusRailClass}`} aria-label={`لون حالة الأوردر: ${config.label}`}></div>
                               {collectionPending && <div className="absolute inset-0 pointer-events-none rounded-[1.35rem] border border-amber-300/50 shadow-[0_0_20px_rgba(251,191,36,0.16)]"></div>}
