@@ -1525,7 +1525,7 @@ export default function ProtectedOrders() {
     profitDistributionLockRef.current = true;
     try {
       // نقرأ القيود كاملة هنا لأن بعض القيود القديمة سُجلت بصيغة 6/9/2024 بدل 2024-09-06.
-      const entries = await fetchAPI('cash_ledger?select=*&order=created_at.asc');
+      const entries = await fetchAllCashLedgerEntries();
       const ledgerEntries = Array.isArray(entries) ? entries : [];
       const normalizedTargetDate = normalizeLedgerDate(targetDate);
       const partnerRows = await fetchAPI('partners?select=*&order=created_at.desc');
