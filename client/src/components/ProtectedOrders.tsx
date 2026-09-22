@@ -1441,6 +1441,13 @@ export default function ProtectedOrders() {
     if (confirm('هل تريد حذف هذا القيد نهائياً؟')) {
       const deletedCash = cashLedger.find((entry: any) => entry.id === id);
       await fetchAPI(`cash_ledger?id=eq.${id}`, { method: 'DELETE' });
+      // v4.4.0: reset the linked order flag so a deleted profit can be re-added.
+      if (entryToDelete?.related_order_id) {
+        await fetchAPI(`orders?id=eq.${entryToDelete.related_order_id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ profit_added_to_cash: false })
+        });
+      }
       void addAuditLog('حذف قيد خزنة', 'cash_ledger', id, deletedCash || {}, null, currentUser?.name || 'المدير');
       await addNotification('حذف قيد خزنة', `تم حذف قيد من سجل الخزنة`);
       fetchCashLedger();
@@ -1483,6 +1490,14 @@ export default function ProtectedOrders() {
         if (!order.profit_added_to_cash) await fetchAPI(`orders?id=eq.${orderId}`, { method: 'PATCH', body: JSON.stringify({ profit_added_to_cash: true }) });
         showToast('هذا الأوردر له قيد دخل بالفعل؛ لم تتم الإضافة مرة أخرى', 'info');
         return true;
+      }
+
+      // If the flag is stale but no real income entry exists, clear it before re-adding.
+      if (order.profit_added_to_cash) {
+        await fetchAPI(`orders?id=eq.${orderId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ profit_added_to_cash: false })
+        });
       }
 
       const roundedShare = Number(companyShare.toFixed(2));
@@ -2363,7 +2378,17 @@ export default function ProtectedOrders() {
       if (!newPaidStatus && order.status === 'completed' && order.profit_added_to_cash) await deleteOrderProfitFromCash(order);
       await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ is_paid: newPaidStatus }) });
       await addNotification('تحديث حالة الدفع', `✅ تم تحديث حالة تحصيل أوردر ${order.customer_name} إلى ${newPaidStatus ? 'تم التحصيل' : 'لم يتم التحصيل'}`);
-      if (newPaidStatus && order.status === 'completed' && !order.profit_added_to_cash) await addCompanyProfitToCash({ ...order, is_paid: true });
+      if (newPaidStatus && order.status === 'completed') {
+        const existing = await fetchAPI(`cash_ledger?select=id&related_order_id=eq.${id}&type=eq.income`);
+        const hasRealEntry = Array.isArray(existing) && existing.length > 0;
+        if (!hasRealEntry) {
+          await fetchAPI(`orders?id=eq.${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ profit_added_to_cash: false })
+          });
+          await addCompanyProfitToCash({ ...order, is_paid: true, profit_added_to_cash: false });
+        }
+      }
       fetchData(); fetchCashLedger();
       showToast(`تم ${newPaidStatus ? 'تحصيل' : 'إلغاء تحصيل'} الأوردر`, newPaidStatus ? 'success' : 'info');
     } catch (err) { console.error(err); }
