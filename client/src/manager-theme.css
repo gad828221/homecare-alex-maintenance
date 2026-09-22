@@ -654,3 +654,61 @@
 :where(.manager-light-theme, .operations-light-theme) .order-card-3d .order-history-panel {
   margin-top: 0 !important;
 }
+
+/* Strong two-tone cards: white information plane with a visible digital blue plane. */
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d {
+  isolation: isolate !important;
+  background:
+    linear-gradient(118deg, #ffffff 0%, #ffffff 58%, #eff6ff 58%, #dbeafe 100%) !important;
+  border: 1px solid #bfd2e6 !important;
+  border-right: 5px solid #1d4ed8 !important;
+  box-shadow:
+    0 12px 28px rgba(30, 64, 175, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  right: 0;
+  width: 38%;
+  height: 100%;
+  pointer-events: none;
+  background: linear-gradient(160deg, rgba(219, 234, 254, 0.92), rgba(239, 246, 255, 0.68));
+  border-left: 1px solid rgba(37, 99, 235, 0.12);
+  clip-path: polygon(18% 0, 100% 0, 100% 100%, 0 100%);
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  top: 0;
+  width: 6px;
+  height: 42%;
+  background: linear-gradient(180deg, #06b6d4, #2563eb);
+  border-radius: 0 0 8px 0;
+  pointer-events: none;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d:hover {
+  background: linear-gradient(118deg, #ffffff 0%, #ffffff 54%, #e0efff 54%, #bfdbfe 100%) !important;
+  border-right-color: #1e40af !important;
+  box-shadow:
+    0 18px 36px rgba(30, 64, 175, 0.19),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
+  transform: translateY(-2px);
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d > *:not(.absolute) {
+  position: relative;
+  z-index: 2;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d .order-card-summary,
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d .order-history-panel {
+  box-shadow: 0 3px 10px rgba(30, 64, 175, 0.07) !important;
+}
