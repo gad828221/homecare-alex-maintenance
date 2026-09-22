@@ -771,3 +771,44 @@
 :where(.manager-light-theme, .operations-light-theme) .order-card-3d [class*="text-blue-"] {
   color: #44403c !important;
 }
+
+/* Background refinement: warm operational canvas with subtle digital depth. */
+:where(.manager-light-theme, .operations-light-theme) {
+  background-color: #f3f0eb !important;
+  background-image:
+    radial-gradient(circle at 8% 4%, rgba(251, 146, 60, 0.16) 0, rgba(251, 146, 60, 0) 25%),
+    radial-gradient(circle at 92% 18%, rgba(20, 184, 166, 0.10) 0, rgba(20, 184, 166, 0) 23%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(241, 236, 229, 0.88)) !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d {
+  background: linear-gradient(112deg, #fffdfa 0%, #fffdfa 70%, #fff7ed 70%, #ffedd5 100%) !important;
+  border: 1px solid #e5d9ce !important;
+  border-right: 4px solid #ea580c !important;
+  box-shadow: 0 10px 24px rgba(68, 50, 42, 0.10), 0 2px 5px rgba(68, 50, 42, 0.05) !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d::before {
+  width: 30% !important;
+  background: linear-gradient(160deg, rgba(255, 247, 237, 0.88), rgba(254, 215, 170, 0.48)) !important;
+  clip-path: polygon(26% 0, 100% 0, 100% 100%, 0 100%) !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d::after {
+  width: 4px !important;
+  height: 34% !important;
+  background: linear-gradient(180deg, #fb923c, #ea580c) !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d:hover {
+  background: linear-gradient(112deg, #ffffff 0%, #ffffff 66%, #fff1df 66%, #fed7aa 100%) !important;
+  border-right-color: #c2410c !important;
+  box-shadow: 0 16px 30px rgba(124, 45, 18, 0.15) !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d .order-card-summary,
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d .order-history-panel {
+  background: rgba(255, 255, 255, 0.97) !important;
+  border-color: #e8ded5 !important;
+  box-shadow: 0 2px 8px rgba(68, 50, 42, 0.06) !important;
+}
