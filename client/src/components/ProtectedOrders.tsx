@@ -352,10 +352,15 @@ const sendWhatsApp = (phoneNumber: string, message: string) => {
 // ==================== دالة جلب محسّنة ====================
 const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   try {
-    const separator = endpoint.includes('?') ? '&' : '?';
-    const url = `${supabaseUrl}/rest/v1/${endpoint}${separator}_t=${Date.now()}`;
+    const url = `${supabaseUrl}/rest/v1/${endpoint}`;
     const res = await fetch(url, {
-      headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      },
       cache: 'no-store',
       ...options,
     });
@@ -368,7 +373,6 @@ const fetchAPI = async (endpoint: string, options?: RequestInit) => {
     return null;
   }
 };
-
 const calculateCashLedgerBalance = (entries: any[]) => entries.reduce((total: number, entry: any) => {
   const amount = Number(entry.amount) || 0;
   if (entry.type === 'income') return total + amount;
