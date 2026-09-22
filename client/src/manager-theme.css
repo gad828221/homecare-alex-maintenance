@@ -812,3 +812,88 @@
   border-color: #e8ded5 !important;
   box-shadow: 0 2px 8px rgba(68, 50, 42, 0.06) !important;
 }
+
+/* Final visual hierarchy pass: warm canvas, crisp cards, unified actions. */
+:where(.manager-light-theme, .operations-light-theme) {
+  background-color: #e9e5df !important;
+  background-image:
+    radial-gradient(circle at 10% 0%, rgba(234, 88, 12, 0.13), transparent 24%),
+    radial-gradient(circle at 100% 45%, rgba(41, 37, 36, 0.08), transparent 28%),
+    linear-gradient(145deg, #f6f3ef 0%, #e9e5df 52%, #ded8d0 100%) !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d {
+  background: #fffdfa !important;
+  border: 1px solid #d8cec4 !important;
+  border-right: 5px solid #ea580c !important;
+  border-radius: 18px !important;
+  box-shadow: 0 10px 22px rgba(68, 50, 42, 0.12) !important;
+}
+
+/* A compact warm accent plane replaces the oversized pale gradient. */
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d::before {
+  width: 24% !important;
+  background: linear-gradient(180deg, rgba(255, 237, 213, 0.9), rgba(255, 247, 237, 0.55)) !important;
+  clip-path: polygon(34% 0, 100% 0, 100% 100%, 0 100%) !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d::after {
+  left: auto !important;
+  right: 0 !important;
+  top: 12px !important;
+  width: 5px !important;
+  height: 46% !important;
+  border-radius: 8px 0 0 8px !important;
+  background: linear-gradient(180deg, #fb923c, #c2410c) !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d:hover {
+  background: #ffffff !important;
+  border-right-color: #c2410c !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 16px 30px rgba(68, 50, 42, 0.18) !important;
+}
+
+/* Keep information surfaces quiet and readable. */
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d .order-card-summary,
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d .order-summary-item,
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d .order-history-panel {
+  background: #ffffff !important;
+  border-color: #e4dbd3 !important;
+  box-shadow: 0 2px 7px rgba(68, 50, 42, 0.06) !important;
+}
+
+/* Unified action palette: charcoal, teal, orange, and neutral only. */
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d [class*="bg-blue-600"],
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d [class*="bg-indigo-600"] {
+  background-color: #292524 !important;
+  border-color: #44403c !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d [class*="bg-rose-600"] {
+  background-color: #ea580c !important;
+  border-color: #c2410c !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d [class*="bg-purple-600"] {
+  background-color: #57534e !important;
+  border-color: #78716c !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d [class*="bg-emerald-600"] {
+  background-color: #0f766e !important;
+  border-color: #0f766e !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d select {
+  background: #f5f3f0 !important;
+  border-color: #d6ccc2 !important;
+  color: #292524 !important;
+}
+
+@media (max-width: 640px) {
+  :where(.manager-light-theme, .operations-light-theme) .order-card-3d {
+    border-radius: 16px !important;
+    padding: 9px !important;
+  }
+}
