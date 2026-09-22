@@ -4340,15 +4340,6 @@ ${trackingUrl}
                                 <div className="order-summary-item"><Cpu size={16} /><div><span>الجهاز</span><strong>{order.device_type || 'غير محدد'}{order.brand ? ` · ${order.brand}` : ''}</strong></div></div>
                                 <div className="order-summary-item"><Clock size={16} /><div><span>التاريخ والوقت</span><strong>{formatOrderDateTime(orderCreatedValue)}</strong></div></div>
                               </div>
-                              {isOrderExpanded && (<div className="mb-2 flex items-center justify-between gap-2 rounded-xl border border-[#514B40]/60 bg-[#201F1D] px-2.5 py-1.5">
-                                <div className="flex min-w-0 items-center gap-2 text-[10px] text-slate-300">
-                                  <Users size={14} className={noTechnician ? 'text-amber-300' : 'text-emerald-300'} />
-                                  <span className="shrink-0 text-slate-500">الفني:</span>
-                                  <span className={`truncate font-black ${noTechnician ? 'text-amber-300' : 'text-white'}`}>{noTechnician ? 'لم يتم التعيين' : order.technician}</span>
-                                </div>
-                                {noTechnician && order.status === 'pending' && <span className="shrink-0 rounded-lg bg-amber-500/15 px-2 py-1 text-[8px] font-black text-amber-200">يحتاج تعيين</span>}
-                              </div>
-                              )}
 {isOrderExpanded && (<div className={`relative mb-2 overflow-hidden rounded-xl border px-2.5 py-2 ${followUpTone}`}>
                                 <div className="absolute -left-6 -top-8 h-20 w-20 rounded-full bg-white/10 blur-2xl" />
                                 <div className="relative flex items-center justify-between gap-3">
@@ -4372,7 +4363,7 @@ ${trackingUrl}
                                 </div>}
                               </div>
                               )}
-{isOrderExpanded && (<div className="mb-2 rounded-xl border border-white/5 bg-[#201F1D] px-2.5 py-2" aria-label="مراحل الأوردر">
+                              {isOrderExpanded && (<div className="order-workflow-panel mb-2 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2" aria-label="مراحل الأوردر">
                                 <div className="flex items-center gap-1">
                                   {orderWorkflow.map((step, index) => {
                                     const complete = index < workflowIndex;
@@ -4380,7 +4371,7 @@ ${trackingUrl}
                                     return (<React.Fragment key={`compact-${step.key}`}>
                                       <button type="button" onClick={(event) => { event.stopPropagation(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); }} className="flex min-w-0 flex-1 flex-col items-center gap-1" title={`فتح مرحلة ${step.label}`}>
                                         <span className={`h-2 w-2 rounded-full border ${current ? 'border-orange-200 bg-orange-400 shadow-[0_0_9px_rgba(251,146,60,0.9)]' : complete ? 'border-emerald-300 bg-emerald-400' : 'border-slate-700 bg-slate-800'}`} />
-                                        <span className={`truncate text-[7px] font-black ${current ? 'text-orange-200' : complete ? 'text-emerald-300' : 'text-slate-600'}`}>{step.label}</span>
+                                        <span className={`truncate text-[7px] font-black ${current ? 'text-orange-700' : complete ? 'text-emerald-700' : 'text-slate-500'}`}>{step.label}</span>
                                       </button>
                                       {index < orderWorkflow.length - 1 && <span className={`h-px flex-1 ${index < workflowIndex ? 'bg-emerald-400/70' : 'bg-slate-700'}`} />}
                                     </React.Fragment>);
@@ -4647,7 +4638,7 @@ ${trackingUrl}
                             </div>
                             {canEditDelete() && <button type="button" onClick={() => { setSelectedOrder(order); setSettleForm({ total_amount: order.total_amount || 0, parts_cost: order.parts_cost || 0, transport_cost: order.transport_cost || 0, net_amount: order.net_amount || 0, technician_share: order.technician_share || 0, company_share: order.company_share || 0 }); setShowSettleModal(true); }} className="mt-2 w-full rounded-xl bg-amber-500 px-3 py-2 text-[10px] font-black text-slate-950 hover:bg-amber-400">فتح المراجعة وتأكيد التحصيل</button>}
                           </div>}
-                        <div className="rounded-2xl border border-slate-700/70 bg-slate-950/45 p-3"><div className="mb-3 flex items-center justify-between"><span className="flex items-center gap-1.5 text-[10px] font-black text-slate-200"><History size={13} className="text-blue-300" /> سجل مراحل الأوردر</span><span className="text-[9px] font-bold text-slate-500">آخر تحديث: {formatOrderDateTime(order.completed_at || order.updated_at || order.created_at)}</span></div><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{[ { label: 'تواصل', done: Boolean(order.created_at), time: order.created_at }, { label: 'موعد', done: Boolean(order.technician && order.technician !== '-'), time: order.created_at }, { label: 'تنفيذ', done: ['in-progress', 'in_progress', 'completed'].includes(String(order.status || '').toLowerCase()), time: order.completed_at || order.created_at }, { label: 'التحصيل والإغلاق', done: Boolean(order.is_paid), time: order.is_paid ? (order.completed_at || order.created_at) : null } ].map((step) => <div key={step.label} className={`rounded-xl border px-2.5 py-2 ${step.done ? 'border-emerald-400/25 bg-emerald-500/10' : 'border-slate-800 bg-slate-900/60'}`}><div className={`flex items-center gap-1.5 text-[9px] font-black ${step.done ? 'text-emerald-200' : 'text-slate-500'}`}><span className={`h-2 w-2 rounded-full ${step.done ? 'bg-emerald-400' : 'bg-slate-700'}`} />{step.label}</div><p className="mt-1 text-[8px] font-bold text-slate-500">{step.done && step.time ? formatOrderDateTime(step.time) : 'لم تكتمل بعد'}</p></div>)}</div></div>
+                        <div className="order-history-panel rounded-2xl border border-slate-200 bg-slate-50 p-3"><div className="mb-3 flex items-center justify-between"><span className="flex items-center gap-1.5 text-[10px] font-black text-slate-700"><History size={13} className="text-blue-600" /> سجل مراحل الأوردر</span><span className="text-[9px] font-bold text-slate-500">آخر تحديث: {formatOrderDateTime(order.completed_at || order.updated_at || order.created_at)}</span></div><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{[ { label: 'تواصل', done: Boolean(order.created_at), time: order.created_at }, { label: 'موعد', done: Boolean(order.technician && order.technician !== '-'), time: order.created_at }, { label: 'تنفيذ', done: ['in-progress', 'in_progress', 'completed'].includes(String(order.status || '').toLowerCase()), time: order.completed_at || order.created_at }, { label: 'التحصيل والإغلاق', done: Boolean(order.is_paid), time: order.is_paid ? (order.completed_at || order.created_at) : null } ].map((step) => <div key={step.label} className={`rounded-xl border px-2.5 py-2 ${step.done ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-white'}`}><div className={`flex items-center gap-1.5 text-[9px] font-black ${step.done ? 'text-emerald-700' : 'text-slate-500'}`}><span className={`h-2 w-2 rounded-full ${step.done ? 'bg-emerald-500' : 'bg-slate-300'}`} />{step.label}</div><p className="mt-1 text-[8px] font-bold text-slate-500">{step.done && step.time ? formatOrderDateTime(step.time) : 'لم تكتمل بعد'}</p></div>)}</div></div>
 	                      {/* Footer Buttons Row */}
 	                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
 

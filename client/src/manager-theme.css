@@ -484,3 +484,63 @@
   background-color: #dbeafe !important;
   border-color: #2563eb !important;
 }
+
+/* Final contrast pass for the live legacy card renderer. */
+.manager-light-theme .order-card-3d,
+.operations-light-theme .order-card-3d {
+  color: #172033 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.07) !important;
+}
+
+.manager-light-theme .order-card-3d button > svg,
+.operations-light-theme .order-card-3d button > svg,
+.manager-light-theme button > svg,
+.operations-light-theme button > svg {
+  width: 18px !important;
+  height: 18px !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: currentColor !important;
+  filter: none !important;
+}
+
+.manager-light-theme .order-card-3d [class*="bg-blue-600"],
+.manager-light-theme .order-card-3d [class*="bg-orange-600"],
+.manager-light-theme .order-card-3d [class*="bg-emerald-600"],
+.manager-light-theme .order-card-3d [class*="bg-green-600"],
+.manager-light-theme .order-card-3d [class*="bg-purple-600"],
+.manager-light-theme .order-card-3d [class*="bg-rose-600"],
+.operations-light-theme .order-card-3d [class*="bg-blue-600"],
+.operations-light-theme .order-card-3d [class*="bg-orange-600"],
+.operations-light-theme .order-card-3d [class*="bg-emerald-600"],
+.operations-light-theme .order-card-3d [class*="bg-green-600"],
+.operations-light-theme .order-card-3d [class*="bg-purple-600"],
+.operations-light-theme .order-card-3d [class*="bg-rose-600"] {
+  color: #ffffff !important;
+}
+
+.manager-light-theme .order-card-3d select,
+.operations-light-theme .order-card-3d select {
+  color: #172033 !important;
+  background: #f8fafc !important;
+}
+
+.manager-light-theme .order-card-3d .order-workflow-panel,
+.operations-light-theme .order-card-3d .order-workflow-panel {
+  border-color: #e2e8f0 !important;
+  background: #f8fafc !important;
+}
+
+.manager-light-theme .order-card-3d .order-history-panel,
+.operations-light-theme .order-card-3d .order-history-panel {
+  margin-top: 8px;
+}
+
+@media (max-width: 640px) {
+  .manager-light-theme .order-card-3d,
+  .operations-light-theme .order-card-3d { padding: 10px !important; }
+  .manager-light-theme .order-card-3d .order-card-summary,
+  .operations-light-theme .order-card-3d .order-card-summary { margin-bottom: 8px !important; }
+}
