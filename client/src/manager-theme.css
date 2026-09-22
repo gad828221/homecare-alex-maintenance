@@ -625,3 +625,32 @@
   background: #f8fafc !important;
   color: #172033 !important;
 }
+
+/* Two-tone premium order card: clean white reading zone + cool digital accent zone. */
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d {
+  background: linear-gradient(135deg, #ffffff 0%, #ffffff 76%, #eaf3ff 76%, #dbeafe 100%) !important;
+  border: 1px solid #cbdced !important;
+  border-right: 4px solid #2563eb !important;
+  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.10), 0 2px 5px rgba(15, 23, 42, 0.05) !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d:hover {
+  background: linear-gradient(135deg, #ffffff 0%, #ffffff 72%, #e0efff 72%, #c7ddff 100%) !important;
+  border-right-color: #1d4ed8 !important;
+  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.16) !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d > .absolute.top-0 {
+  opacity: 0.16 !important;
+  background: #60a5fa !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d .order-summary-item,
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d .order-history-panel {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: #d5e2ef !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d .order-history-panel {
+  margin-top: 0 !important;
+}
