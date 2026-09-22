@@ -4363,22 +4363,6 @@ ${trackingUrl}
                                 </div>}
                               </div>
                               )}
-                              {isOrderExpanded && (<div className="order-workflow-panel mb-2 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2" aria-label="مراحل الأوردر">
-                                <div className="flex items-center gap-1">
-                                  {orderWorkflow.map((step, index) => {
-                                    const complete = index < workflowIndex;
-                                    const current = index === workflowIndex;
-                                    return (<React.Fragment key={`compact-${step.key}`}>
-                                      <button type="button" onClick={(event) => { event.stopPropagation(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); }} className="flex min-w-0 flex-1 flex-col items-center gap-1" title={`فتح مرحلة ${step.label}`}>
-                                        <span className={`h-2 w-2 rounded-full border ${current ? 'border-orange-200 bg-orange-400 shadow-[0_0_9px_rgba(251,146,60,0.9)]' : complete ? 'border-emerald-300 bg-emerald-400' : 'border-slate-700 bg-slate-800'}`} />
-                                        <span className={`truncate text-[7px] font-black ${current ? 'text-orange-700' : complete ? 'text-emerald-700' : 'text-slate-500'}`}>{step.label}</span>
-                                      </button>
-                                      {index < orderWorkflow.length - 1 && <span className={`h-px flex-1 ${index < workflowIndex ? 'bg-emerald-400/70' : 'bg-slate-700'}`} />}
-                                    </React.Fragment>);
-                                  })}
-                                </div>
-                              </div>
-                              )}
 <div className={isOrderExpanded ? 'space-y-3' : 'hidden'}>
                             <div className="mb-3 relative z-10 flex items-center justify-between gap-2 bg-slate-950/30 px-3 py-1.5 rounded-xl border border-white/5">
                               <div className="flex items-center gap-1.5 overflow-hidden">
