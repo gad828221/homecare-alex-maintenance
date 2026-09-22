@@ -353,10 +353,10 @@ const sendWhatsApp = (phoneNumber: string, message: string) => {
 const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   try {
     const separator = endpoint.includes('?') ? '&' : '?';
-const url = `${supabaseUrl}/rest/v1/${endpoint}${separator}_t=${Date.now()}`;
-    headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
-cache: 'no-store',
-      headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+    const url = `${supabaseUrl}/rest/v1/${endpoint}${separator}_t=${Date.now()}`;
+    const res = await fetch(url, {
+      headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
+      cache: 'no-store',
       ...options,
     });
     if (res.status === 204 || options?.method === 'DELETE') return [];
@@ -365,7 +365,6 @@ cache: 'no-store',
     return JSON.parse(text);
   } catch (e) {
     console.error("fetchAPI error:", e);
-    // null تعني فشل الشبكة؛ المصفوفة الفارغة تعني نتيجة صحيحة بلا بيانات.
     return null;
   }
 };
