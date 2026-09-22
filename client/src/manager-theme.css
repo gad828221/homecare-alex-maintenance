@@ -544,3 +544,84 @@
   .manager-light-theme .order-card-3d .order-card-summary,
   .operations-light-theme .order-card-3d .order-card-summary { margin-bottom: 8px !important; }
 }
+
+/* High-contrast digital palette: readable text on every status surface. */
+:where(.manager-light-theme, .operations-light-theme) {
+  background: #eef3f8 !important;
+  color: #172033 !important;
+  font-family: "Cairo", "Tajawal", "Segoe UI", Arial, sans-serif !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d,
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d [class*="bg-slate-950"],
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d [class*="bg-slate-900"],
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d [class*="bg-slate-800"] {
+  background: #ffffff !important;
+  color: #172033 !important;
+  border-color: #dbe4ee !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d h3,
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d .text-white,
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d .text-slate-200,
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d .text-slate-300 {
+  color: #172033 !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d .text-slate-400,
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d .text-slate-500,
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d .text-slate-600 {
+  color: #526173 !important;
+}
+
+/* Pink/red alert surfaces use dark wine text, never white on pale pink. */
+:where(.manager-light-theme, .operations-light-theme) [class*="bg-rose-"],
+:where(.manager-light-theme, .operations-light-theme) [class*="bg-pink-"],
+:where(.manager-light-theme, .operations-light-theme) [class*="bg-fuchsia-"] {
+  color: #9f1239 !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .text-rose-100,
+:where(.manager-light-theme, .operations-light-theme) .text-rose-200,
+:where(.manager-light-theme, .operations-light-theme) .text-rose-300,
+:where(.manager-light-theme, .operations-light-theme) .text-pink-100,
+:where(.manager-light-theme, .operations-light-theme) .text-pink-200,
+:where(.manager-light-theme, .operations-light-theme) .text-pink-300,
+:where(.manager-light-theme, .operations-light-theme) .text-fuchsia-100,
+:where(.manager-light-theme, .operations-light-theme) .text-fuchsia-200,
+:where(.manager-light-theme, .operations-light-theme) .text-fuchsia-300 {
+  color: #9f1239 !important;
+}
+
+/* Low-shade status text is darkened for light cards. */
+:where(.manager-light-theme, .operations-light-theme) .text-cyan-100,
+:where(.manager-light-theme, .operations-light-theme) .text-cyan-200,
+:where(.manager-light-theme, .operations-light-theme) .text-cyan-300 { color: #0e7490 !important; }
+:where(.manager-light-theme, .operations-light-theme) .text-amber-100,
+:where(.manager-light-theme, .operations-light-theme) .text-amber-200,
+:where(.manager-light-theme, .operations-light-theme) .text-amber-300 { color: #92400e !important; }
+:where(.manager-light-theme, .operations-light-theme) .text-orange-100,
+:where(.manager-light-theme, .operations-light-theme) .text-orange-200,
+:where(.manager-light-theme, .operations-light-theme) .text-orange-300 { color: #9a3412 !important; }
+:where(.manager-light-theme, .operations-light-theme) .text-emerald-100,
+:where(.manager-light-theme, .operations-light-theme) .text-emerald-200,
+:where(.manager-light-theme, .operations-light-theme) .text-emerald-300 { color: #047857 !important; }
+:where(.manager-light-theme, .operations-light-theme) .text-violet-100,
+:where(.manager-light-theme, .operations-light-theme) .text-violet-200,
+:where(.manager-light-theme, .operations-light-theme) .text-violet-300 { color: #6d28d9 !important; }
+
+/* Preserve white labels only on genuinely dark/strong action buttons. */
+:where(.manager-light-theme, .operations-light-theme) button[class*="bg-blue-600"],
+:where(.manager-light-theme, .operations-light-theme) button[class*="bg-emerald-600"],
+:where(.manager-light-theme, .operations-light-theme) button[class*="bg-purple-600"],
+:where(.manager-light-theme, .operations-light-theme) button[class*="bg-orange-600"],
+:where(.manager-light-theme, .operations-light-theme) button[class*="bg-rose-600"] {
+  color: #ffffff !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d .order-history-panel {
+  margin-top: 0 !important;
+  border: 1px solid #dbe4ee !important;
+  background: #f8fafc !important;
+  color: #172033 !important;
+}

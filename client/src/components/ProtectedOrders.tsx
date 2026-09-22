@@ -22,7 +22,7 @@ import IOSPushEnablePrompt from './IOSPushEnablePrompt';
 import { findTechnicianByIdentity, getTechnicianDisplayName, getTechnicianPhotoUrl, getTechnicianSpecialty, getDeviceSpecialty, parseTechnicianProfileNotification } from '../utils/technicianProfile';
 import { clearAuthSession, readAuthSession } from '../utils/authSession';
 import { getOneSignalExternalId, syncOneSignalIdentity } from '../utils/oneSignalIdentity';
-import { ORDER_WORKFLOW_ACTIONS, ORDER_WORKFLOW_STAGES, getOrderWorkflowIndex, getOrderWorkflowStageMeta, normalizeOrderWorkflowStage } from '../utils/orderWorkflow';
+import { ORDER_WORKFLOW_ACTIONS, ORDER_WORKFLOW_STAGES, getOrderWorkflowStageMeta, normalizeOrderWorkflowStage } from '../utils/orderWorkflow';
 
 // ==================== الإعدادات الأساسية ====================
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -4237,9 +4237,6 @@ ${trackingUrl}
                   const collectionPending = isCollectionPending(order);
                   const transferPending = collectionPending && companyTransfer?.status === 'pending';
                   const followUp = getFollowUpData(order.admin_notes);
-                  const orderWorkflow = ORDER_WORKFLOW_STAGES.map((stage) => ({ key: stage.value, label: stage.shortLabel }));
-                  const workflowStage = normalizeOrderWorkflowStage(followUp.stage || order.status);
-                  const workflowIndex = getOrderWorkflowIndex(workflowStage);
                   const shortOrderNumber = String(order.order_number || '').match(/\d{3,}$/)?.[0] || String(order.order_number || '').slice(-6);
                   const elapsedToneClass = elapsedTone === 'urgent' ? 'text-rose-200 bg-rose-500/20 border-rose-400/50 shadow-lg shadow-rose-500/20 animate-pulse' : elapsedTone === 'warning' ? 'text-amber-200 bg-amber-500/20 border-amber-400/40 shadow-lg shadow-amber-500/10' : 'text-slate-200 bg-slate-950/70 border-slate-700';
                   const cardTone = collectionPending ? 'bg-white border-yellow-300/70 shadow-yellow-400/20' : delayed ? 'bg-white border-rose-400/60 shadow-rose-900/20' : 'bg-white border-[#D8DEE6]/90';
@@ -4399,26 +4396,7 @@ ${trackingUrl}
 	                              )}
                             </div>
 
-                            {/* Smart workflow progress */}
-                            <div className="mb-4 relative z-10 rounded-xl border border-white/5 bg-slate-950/40 px-3 py-2.5">
-                              <div className="flex items-center justify-between gap-1">
-                                {orderWorkflow.map((step, index) => {
-                                  const completedStep = index < workflowIndex || workflowStage === 'closed';
-                                  const currentStep = index === workflowIndex && workflowStage !== 'closed';
-                                  return (
-                                    <React.Fragment key={step.key}>
-                                      <button type="button" onClick={(event) => { event.stopPropagation(); setEditingOrder(order); setFormData(order); setFormStep(1); setShowOrderModal(true); }} className={`flex min-w-0 flex-col items-center gap-1 transition-colors ${currentStep ? 'text-orange-300' : completedStep ? 'text-emerald-300' : 'text-slate-600'}`} title="فتح تفاصيل المرحلة">
-                                        <span className={`h-2.5 w-2.5 rounded-full border ${currentStep ? 'border-orange-200 bg-orange-400 shadow-[0_0_10px_rgba(251,146,60,0.8)]' : completedStep ? 'border-emerald-300 bg-emerald-400' : 'border-slate-600 bg-slate-800'}`} />
-                                        <span className="truncate text-[8px] font-black">{step.label}</span>
-                                      </button>
-                                      {index < orderWorkflow.length - 1 && <span className={`h-px flex-1 ${index < workflowIndex ? 'bg-emerald-400/70' : 'bg-slate-700'}`} />}
-                                    </React.Fragment>
-                                  );
-                                })}
-                              </div>
-                            </div>
-
-			                      {/* Alerts Section */}
+                            {/* Alerts Section */}
 		                      {transferPending && isAdmin && (
 	                        <div className="mb-5 relative z-10 rounded-2xl border border-amber-300/70 bg-gradient-to-l from-amber-500/20 via-yellow-500/10 to-transparent p-4 shadow-lg shadow-amber-500/20 animate-in zoom-in-95 duration-300">
 	                          <div className="flex items-center justify-between gap-3">
