@@ -352,8 +352,10 @@ const sendWhatsApp = (phoneNumber: string, message: string) => {
 // ==================== دالة جلب محسّنة ====================
 const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   try {
-    const url = `${supabaseUrl}/rest/v1/${endpoint}`;
-    const res = await fetch(url, {
+    const separator = endpoint.includes('?') ? '&' : '?';
+const url = `${supabaseUrl}/rest/v1/${endpoint}${separator}_t=${Date.now()}`;
+    headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
+cache: 'no-store',
       headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
       ...options,
     });
