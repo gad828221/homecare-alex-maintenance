@@ -1159,3 +1159,357 @@
   min-width: 2.25rem !important;
   min-height: 2.25rem !important;
 }
+/* ==========================================================
+   v4.8.0 — 3D Buttons & Icons System
+   كل الأزرار والأيقونات بارزة بتأثير ثلاثي الأبعاد
+   ========================================================== */
+
+/* ============ 1) نظام الظلال 3D الأساسي ============ */
+.operations-light-theme,
+.manager-light-theme {
+  --btn-3d-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  --btn-3d-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 -1px 0 rgba(15, 23, 42, 0.06) inset,
+    0 2px 4px rgba(15, 23, 42, 0.08),
+    0 6px 14px rgba(15, 23, 42, 0.10);
+  --btn-3d-shadow-hover:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 -1px 0 rgba(15, 23, 42, 0.08) inset,
+    0 4px 8px rgba(15, 23, 42, 0.12),
+    0 14px 28px rgba(37, 99, 235, 0.20);
+  --btn-3d-shadow-active:
+    0 2px 4px rgba(15, 23, 42, 0.15) inset,
+    0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* ============ 2) كل الأزرار العامة — 3D Popup ============ */
+.operations-light-theme button,
+.manager-light-theme button {
+  position: relative !important;
+  transform: translateZ(0);
+  box-shadow: var(--btn-3d-shadow) !important;
+  border-radius: 12px !important;
+  transition:
+    transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    background 200ms ease,
+    color 200ms ease !important;
+}
+
+.operations-light-theme button:hover,
+.manager-light-theme button:hover {
+  transform: translateY(-2px) translateZ(0) !important;
+  box-shadow: var(--btn-3d-shadow-hover) !important;
+}
+
+.operations-light-theme button:active,
+.manager-light-theme button:active {
+  transform: translateY(1px) scale(0.98) !important;
+  box-shadow: var(--btn-3d-shadow-active) !important;
+  transition: transform 80ms ease, box-shadow 80ms ease !important;
+}
+
+/* ============ 3) الأزرار بألوان صريحة — Pop Strong ============ */
+
+/* أزرار أساسية (روز/بمبي) */
+.manager-light-theme button[class*="bg-rose-600"],
+.manager-light-theme button[class*="bg-orange-600"],
+.manager-light-theme .order-card-3d button[class*="bg-rose-600"] {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.35) inset,
+    0 -2px 0 rgba(0, 0, 0, 0.18) inset,
+    0 4px 0 #9f1239,
+    0 6px 14px rgba(225, 29, 72, 0.35) !important;
+  border: none !important;
+}
+
+.manager-light-theme button[class*="bg-rose-600"]:hover,
+.manager-light-theme button[class*="bg-orange-600"]:hover {
+  transform: translateY(-3px) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.4) inset,
+    0 -2px 0 rgba(0, 0, 0, 0.20) inset,
+    0 6px 0 #9f1239,
+    0 12px 24px rgba(225, 29, 72, 0.45) !important;
+}
+
+.manager-light-theme button[class*="bg-rose-600"]:active,
+.manager-light-theme button[class*="bg-orange-600"]:active {
+  transform: translateY(2px) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.3) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.15) inset,
+    0 1px 0 #9f1239,
+    0 2px 6px rgba(225, 29, 72, 0.30) !important;
+}
+
+/* أزرار زرقاء */
+.manager-light-theme button[class*="bg-blue-600"],
+.manager-light-theme button[class*="bg-indigo-600"] {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.35) inset,
+    0 -2px 0 rgba(0, 0, 0, 0.18) inset,
+    0 4px 0 #1e3a8a,
+    0 6px 14px rgba(37, 99, 235, 0.35) !important;
+  border: none !important;
+}
+
+.manager-light-theme button[class*="bg-blue-600"]:hover,
+.manager-light-theme button[class*="bg-indigo-600"]:hover {
+  transform: translateY(-3px) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.4) inset,
+    0 -2px 0 rgba(0, 0, 0, 0.20) inset,
+    0 6px 0 #1e3a8a,
+    0 12px 24px rgba(37, 99, 235, 0.45) !important;
+}
+
+.manager-light-theme button[class*="bg-blue-600"]:active,
+.manager-light-theme button[class*="bg-indigo-600"]:active {
+  transform: translateY(2px) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.3) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.15) inset,
+    0 1px 0 #1e3a8a,
+    0 2px 6px rgba(37, 99, 235, 0.30) !important;
+}
+
+/* أزرار خضراء */
+.manager-light-theme button[class*="bg-emerald-600"],
+.manager-light-theme button[class*="bg-green-600"] {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.35) inset,
+    0 -2px 0 rgba(0, 0, 0, 0.18) inset,
+    0 4px 0 #065f46,
+    0 6px 14px rgba(16, 185, 129, 0.35) !important;
+  border: none !important;
+}
+
+.manager-light-theme button[class*="bg-emerald-600"]:hover {
+  transform: translateY(-3px) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.4) inset,
+    0 -2px 0 rgba(0, 0, 0, 0.20) inset,
+    0 6px 0 #065f46,
+    0 12px 24px rgba(16, 185, 129, 0.45) !important;
+}
+
+.manager-light-theme button[class*="bg-emerald-600"]:active {
+  transform: translateY(2px) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.3) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.15) inset,
+    0 1px 0 #065f46,
+    0 2px 6px rgba(16, 185, 129, 0.30) !important;
+}
+
+/* ============ 4) الأزرار الفاتحة/الأيقونية — Bumpy 3D ============ */
+.manager-light-theme button[class*="bg-slate-800"],
+.manager-light-theme button[class*="bg-slate-700"],
+.manager-light-theme .order-card-3d button:not([class*="bg-"]):not([title*="حذف"]) {
+  background: linear-gradient(180deg, #ffffff 0%, #eef3fa 100%) !important;
+  border: 1.5px solid #d6e0ec !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 1) inset,
+    0 -2px 0 rgba(15, 23, 42, 0.06) inset,
+    0 3px 0 #c9d4e3,
+    0 5px 12px rgba(15, 23, 42, 0.10) !important;
+  color: #2563eb !important;
+}
+
+.manager-light-theme button[class*="bg-slate-800"]:hover,
+.manager-light-theme .order-card-3d button:not([class*="bg-"]):not([title*="حذف"]):hover {
+  transform: translateY(-3px) !important;
+  background: linear-gradient(180deg, #ffffff 0%, #e3ecf7 100%) !important;
+  border-color: #93c5fd !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 1) inset,
+    0 -2px 0 rgba(15, 23, 42, 0.06) inset,
+    0 5px 0 #b8c7db,
+    0 10px 22px rgba(37, 99, 235, 0.20) !important;
+}
+
+.manager-light-theme .order-card-3d button:not([class*="bg-"]):not([title*="حذف"]):active {
+  transform: translateY(1px) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 1px 2px rgba(15, 23, 42, 0.15) inset !important;
+}
+
+/* ============ 5) زر الحذف — أحمر بارز 3D ============ */
+.manager-light-theme .order-card-3d button[title*="حذف"],
+.operations-light-theme .order-card-3d button[title*="حذف"] {
+  background: linear-gradient(180deg, #ffffff 0%, #fff1f2 100%) !important;
+  border: 1.5px solid #fda4af !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 1) inset,
+    0 -2px 0 rgba(159, 18, 57, 0.08) inset,
+    0 3px 0 #fda4af,
+    0 5px 12px rgba(225, 29, 72, 0.18) !important;
+  color: #be123c !important;
+}
+
+.manager-light-theme .order-card-3d button[title*="حذف"]:hover {
+  transform: translateY(-3px) !important;
+  background: linear-gradient(180deg, #f43f5e 0%, #be123c 100%) !important;
+  border-color: #e11d48 !important;
+  color: #ffffff !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.3) inset,
+    0 -2px 0 rgba(0, 0, 0, 0.15) inset,
+    0 5px 0 #9f1239,
+    0 12px 22px rgba(225, 29, 72, 0.42) !important;
+}
+
+.manager-light-theme .order-card-3d button[title*="حذف"]:hover svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+.manager-light-theme .order-card-3d button[title*="حذف"]:active {
+  transform: translateY(1px) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.3) inset,
+    0 1px 2px rgba(159, 18, 57, 0.20) inset !important;
+}
+
+/* ============ 6) الأيقونات داخل الأزرار — Drop Shadow ============ */
+.operations-light-theme button svg,
+.manager-light-theme button svg {
+  filter: drop-shadow(0 2px 3px rgba(15, 23, 42, 0.22)) !important;
+  transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), filter 200ms ease !important;
+}
+
+.operations-light-theme button:hover svg,
+.manager-light-theme button:hover svg {
+  transform: scale(1.12) translateY(-1px) !important;
+  filter: drop-shadow(0 4px 6px rgba(15, 23, 42, 0.28)) !important;
+}
+
+/* ============ 7) تابات النافبار — 3D Press ============ */
+.manager-light-theme [role="tab"] {
+  background: linear-gradient(180deg, #ffffff 0%, #f0f4fa 100%) !important;
+  border: 1.5px solid #d6e0ec !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 1) inset,
+    0 -2px 0 rgba(15, 23, 42, 0.05) inset,
+    0 3px 0 #c9d4e3,
+    0 6px 14px rgba(15, 23, 42, 0.08) !important;
+  transition: all 200ms cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.manager-light-theme [role="tab"]:hover {
+  transform: translateY(-4px) !important;
+  border-color: #93c5fd !important;
+  background: linear-gradient(180deg, #ffffff 0%, #e3ecf7 100%) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 1) inset,
+    0 -2px 0 rgba(15, 23, 42, 0.05) inset,
+    0 6px 0 #b8c7db,
+    0 14px 26px rgba(37, 99, 235, 0.22) !important;
+}
+
+.manager-light-theme [role="tab"][aria-selected="true"] {
+  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%) !important;
+  border-color: #1e40af !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.35) inset,
+    0 -2px 0 rgba(0, 0, 0, 0.20) inset,
+    0 5px 0 #1e3a8a,
+    0 12px 26px rgba(37, 99, 235, 0.45) !important;
+  transform: translateY(-3px) !important;
+}
+
+.manager-light-theme [role="tab"][aria-selected="true"]:active {
+  transform: translateY(1px) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.3) inset,
+    0 2px 4px rgba(0, 0, 0, 0.25) inset,
+    0 1px 0 #1e3a8a !important;
+}
+
+/* ============ 8) أزرار الإجراءات في الكارت ============ */
+.manager-light-theme .order-card-3d button[title="اتصال"] svg,
+.manager-light-theme .order-card-3d a[href^="tel:"] svg {
+  filter: drop-shadow(0 2px 3px rgba(37, 99, 235, 0.35)) !important;
+}
+
+/* ============ 9) الأزرار الكبيرة في مركز العمليات ============ */
+.manager-light-theme > div:not([role="tablist"]) button {
+  transform: translateZ(0);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5) inset,
+    0 -3px 0 rgba(0, 0, 0, 0.12) inset,
+    0 5px 0 rgba(0, 0, 0, 0.10),
+    0 8px 20px rgba(15, 23, 42, 0.14) !important;
+  transition: all 200ms cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.manager-light-theme > div:not([role="tablist"]) button:hover {
+  transform: translateY(-3px) !important;
+}
+
+.manager-light-theme > div:not([role="tablist"]) button:active {
+  transform: translateY(2px) !important;
+}
+
+/* ============ 10) التأكد من وضوح النصوص داخل الأزرار ============ */
+.manager-light-theme button,
+.operations-light-theme button {
+  font-weight: 800 !important;
+  letter-spacing: -0.01em;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.4),
+    0 -1px 0 rgba(0, 0, 0, 0.05);
+}
+
+.manager-light-theme button[class*="bg-rose-600"],
+.manager-light-theme button[class*="bg-blue-600"],
+.manager-light-theme button[class*="bg-emerald-600"],
+.manager-light-theme button[class*="bg-indigo-600"],
+.manager-light-theme button[class*="bg-orange-600"] {
+  color: #ffffff !important;
+  text-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.35),
+    0 -1px 0 rgba(0, 0, 0, 0.15);
+}
+
+/* ============ 11) Smooth fade in on cards ============ */
+.manager-light-theme .order-card-3d {
+  animation: cardFadeIn3D 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes cardFadeIn3D {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ============ 12) Loading pulse effect للأزرار المهمة ============ */
+.manager-light-theme .animate-pulse {
+  animation: pulse3D 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+}
+
+@keyframes pulse3D {
+  0%, 100% {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.35) inset,
+      0 -2px 0 rgba(0, 0, 0, 0.18) inset,
+      0 4px 0 #9f1239,
+      0 6px 14px rgba(225, 29, 72, 0.35);
+  }
+  50% {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.35) inset,
+      0 -2px 0 rgba(0, 0, 0, 0.18) inset,
+      0 4px 0 #9f1239,
+      0 6px 14px rgba(225, 29, 72, 0.35),
+      0 0 0 6px rgba(225, 29, 72, 0.15);
+  }
+}
