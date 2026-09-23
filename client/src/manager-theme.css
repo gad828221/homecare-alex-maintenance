@@ -1513,3 +1513,175 @@
       0 0 0 6px rgba(225, 29, 72, 0.15);
   }
 }
+/* ==========================================================
+   v4.8.1 — Quick Access Panel Fix (وصول سريع)
+   وضوح كامل للأزرار الأربعة + البحث داخل اللوحة
+   ========================================================== */
+
+/* === الحاوية الرئيسية للوحة === */
+.manager-light-theme #manager-quick-actions,
+#manager-quick-actions {
+  background: linear-gradient(160deg, #ffffff 0%, #f5f9fe 100%) !important;
+  border: 1.5px solid #cdd9e8 !important;
+  border-radius: 20px !important;
+  box-shadow:
+    0 20px 48px rgba(15, 23, 42, 0.15),
+    0 6px 16px rgba(37, 99, 235, 0.12),
+    0 0 0 4px rgba(37, 99, 235, 0.04) !important;
+  padding: 14px !important;
+}
+
+/* === مربع البحث === */
+.manager-light-theme #manager-quick-actions input,
+#manager-quick-actions input {
+  background: linear-gradient(180deg, #ffffff, #f0f4fa) !important;
+  border: 2px solid #cdd9e8 !important;
+  color: #0a1324 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.06) inset !important;
+}
+
+.manager-light-theme #manager-quick-actions input::placeholder,
+#manager-quick-actions input::placeholder {
+  color: #94a3b8 !important;
+  font-weight: 600 !important;
+}
+
+.manager-light-theme #manager-quick-actions input:focus,
+#manager-quick-actions input:focus {
+  border-color: #2563eb !important;
+  box-shadow:
+    0 2px 4px rgba(15, 23, 42, 0.06) inset,
+    0 0 0 4px rgba(37, 99, 235, 0.12) !important;
+  outline: none !important;
+}
+
+/* أيقونة البحث */
+.manager-light-theme #manager-quick-actions .absolute svg,
+#manager-quick-actions .absolute svg {
+  color: #2563eb !important;
+  stroke: #2563eb !important;
+}
+
+/* === الأزرار الأربعة — الأساس === */
+.manager-light-theme #manager-quick-actions button,
+#manager-quick-actions button {
+  border-width: 1.5px !important;
+  border-style: solid !important;
+  font-weight: 800 !important;
+  text-shadow: none !important;
+  transition: all 220ms cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 1) inset,
+    0 -2px 0 rgba(15, 23, 42, 0.05) inset,
+    0 3px 0 rgba(15, 23, 42, 0.08),
+    0 6px 14px rgba(15, 23, 42, 0.08) !important;
+}
+
+.manager-light-theme #manager-quick-actions button:hover,
+#manager-quick-actions button:hover {
+  transform: translateY(-2px) !important;
+}
+
+.manager-light-theme #manager-quick-actions button:active,
+#manager-quick-actions button:active {
+  transform: translateY(1px) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.15) inset !important;
+}
+
+/* أيقونات الأزرار */
+.manager-light-theme #manager-quick-actions button svg,
+#manager-quick-actions button svg {
+  background: transparent !important;
+  padding: 0 !important;
+  color: currentColor !important;
+  stroke: currentColor !important;
+  filter: none !important;
+}
+
+/* كل النصوص داخل الأزرار ترث لون الزر */
+.manager-light-theme #manager-quick-actions button *,
+#manager-quick-actions button * {
+  color: inherit !important;
+  text-shadow: none !important;
+}
+
+/* === 1) تسجيل أوردر — برتقالي فاتح + نص داكن === */
+.manager-light-theme #manager-quick-actions button[class*="bg-orange-"],
+#manager-quick-actions button[class*="bg-orange-"] {
+  background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%) !important;
+  border-color: #fdba74 !important;
+  color: #9a3412 !important;
+}
+
+.manager-light-theme #manager-quick-actions button[class*="bg-orange-"]:hover,
+#manager-quick-actions button[class*="bg-orange-"]:hover {
+  background: linear-gradient(180deg, #ffedd5 0%, #fed7aa 100%) !important;
+  border-color: #fb923c !important;
+  color: #7c2d12 !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 1) inset,
+    0 -2px 0 rgba(15, 23, 42, 0.05) inset,
+    0 5px 0 #fb923c,
+    0 10px 22px rgba(249, 115, 22, 0.25) !important;
+}
+
+/* === 2) تعيين فني — أصفر فاتح + نص بني داكن === */
+.manager-light-theme #manager-quick-actions button[class*="bg-amber-"],
+#manager-quick-actions button[class*="bg-amber-"] {
+  background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%) !important;
+  border-color: #fcd34d !important;
+  color: #92400e !important;
+}
+
+.manager-light-theme #manager-quick-actions button[class*="bg-amber-"]:hover,
+#manager-quick-actions button[class*="bg-amber-"]:hover {
+  background: linear-gradient(180deg, #fef3c7 0%, #fde68a 100%) !important;
+  border-color: #f59e0b !important;
+  color: #78350f !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 1) inset,
+    0 -2px 0 rgba(15, 23, 42, 0.05) inset,
+    0 5px 0 #f59e0b,
+    0 10px 22px rgba(245, 158, 11, 0.25) !important;
+}
+
+/* === 3) مراجعة الخزنة — أخضر فاتح + نص أخضر داكن === */
+.manager-light-theme #manager-quick-actions button[class*="bg-emerald-"],
+#manager-quick-actions button[class*="bg-emerald-"] {
+  background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%) !important;
+  border-color: #6ee7b7 !important;
+  color: #047857 !important;
+}
+
+.manager-light-theme #manager-quick-actions button[class*="bg-emerald-"]:hover,
+#manager-quick-actions button[class*="bg-emerald-"]:hover {
+  background: linear-gradient(180deg, #d1fae5 0%, #a7f3d0 100%) !important;
+  border-color: #10b981 !important;
+  color: #065f46 !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 1) inset,
+    0 -2px 0 rgba(15, 23, 42, 0.05) inset,
+    0 5px 0 #10b981,
+    0 10px 22px rgba(16, 185, 129, 0.25) !important;
+}
+
+/* === 4) التقارير — أزرق فاتح + نص أزرق داكن === */
+.manager-light-theme #manager-quick-actions button[class*="bg-blue-"],
+#manager-quick-actions button[class*="bg-blue-"] {
+  background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%) !important;
+  border-color: #93c5fd !important;
+  color: #1d4ed8 !important;
+}
+
+.manager-light-theme #manager-quick-actions button[class*="bg-blue-"]:hover,
+#manager-quick-actions button[class*="bg-blue-"]:hover {
+  background: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%) !important;
+  border-color: #2563eb !important;
+  color: #1e40af !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 1) inset,
+    0 -2px 0 rgba(15, 23, 42, 0.05) inset,
+    0 5px 0 #2563eb,
+    0 10px 22px rgba(37, 99, 235, 0.25) !important;
+}
