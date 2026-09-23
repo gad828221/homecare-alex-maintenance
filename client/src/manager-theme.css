@@ -1032,3 +1032,95 @@
 .operations-light-theme > div:not(.fixed):not([role="status"]):not([class*="bg-amber-"]):not([class*="bg-red-"]) {
   background-color: transparent !important;
 }
+
+
+/* Digital Control Room finish: retain the latest warm canvas while adding a graphite command header and blue action hierarchy. */
+.manager-light-theme > .sticky.top-0 {
+  background: #111827 !important;
+  border-color: #243244 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.16) !important;
+  backdrop-filter: none !important;
+}
+
+.manager-light-theme > .sticky.top-0 .text-slate-500,
+.manager-light-theme > .sticky.top-0 .text-slate-400,
+.manager-light-theme > .sticky.top-0 .text-slate-300 {
+  color: #cbd5e1 !important;
+}
+
+.manager-light-theme > .sticky.top-0 .text-orange-500,
+.manager-light-theme > .sticky.top-0 svg {
+  color: #60a5fa !important;
+}
+
+.manager-light-theme .order-card-3d,
+.operations-light-theme .order-card-3d {
+  border-radius: 16px !important;
+  border-color: #dbe4ef !important;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06) !important;
+}
+
+.manager-light-theme .order-card-3d:hover,
+.operations-light-theme .order-card-3d:hover {
+  transform: translateY(-2px);
+  border-color: #93c5fd !important;
+  box-shadow: 0 12px 26px rgba(37, 99, 235, 0.12) !important;
+}
+
+.manager-light-theme .order-card-3d .order-summary-item,
+.operations-light-theme .order-card-3d .order-summary-item {
+  border-color: #e2e8f0 !important;
+  border-radius: 10px !important;
+  background: #f8fafc !important;
+}
+
+.manager-light-theme .order-card-3d .text-slate-500,
+.operations-light-theme .order-card-3d .text-slate-500 {
+  color: #64748b !important;
+}
+
+.manager-light-theme .order-card-3d .text-slate-400,
+.operations-light-theme .order-card-3d .text-slate-400 {
+  color: #475569 !important;
+}
+
+.manager-light-theme .bg-orange-600,
+.manager-light-theme .bg-orange-500,
+.operations-light-theme .bg-orange-600,
+.operations-light-theme .bg-orange-500 {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+}
+
+.manager-light-theme .bg-orange-600:hover,
+.manager-light-theme .bg-orange-500:hover,
+.operations-light-theme .bg-orange-600:hover,
+.operations-light-theme .bg-orange-500:hover {
+  background-color: #1d4ed8 !important;
+}
+
+@media (max-width: 640px) {
+  .manager-light-theme > .sticky.top-0 {
+    padding-block: 0.65rem !important;
+  }
+
+  .manager-light-theme .order-card-3d,
+  .operations-light-theme .order-card-3d {
+    border-radius: 14px !important;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.055) !important;
+  }
+
+  .manager-light-theme .order-card-summary,
+  .operations-light-theme .order-card-summary {
+    gap: 5px !important;
+    padding: 5px !important;
+    border-radius: 12px !important;
+  }
+
+  .manager-light-theme .order-summary-item,
+  .operations-light-theme .order-summary-item {
+    min-height: 42px;
+    padding: 5px !important;
+  }
+}
