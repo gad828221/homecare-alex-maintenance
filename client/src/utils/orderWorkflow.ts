@@ -2,10 +2,10 @@ export type OrderWorkflowStage = 'new' | 'scheduled' | 'in_progress' | 'blocked'
 
 export const ORDER_WORKFLOW_STAGES = [
   { value: 'new', label: 'اتصال بالعميل', shortLabel: 'اتصال', tone: 'blue', description: 'لم يتم التواصل مع العميل بعد', nextAction: 'اتصل بالعميل' },
-  { value: 'scheduled', label: 'تم التواصل والموعد', shortLabel: 'موعد', tone: 'violet', description: 'تم التواصل وتحديد موعد الزيارة', nextAction: 'حدد الموعد' },
+  { value: 'scheduled', label: 'اتصال وموعد', shortLabel: 'موعد', tone: 'violet', description: 'تم التواصل وتحديد موعد الزيارة', nextAction: 'حدد الموعد' },
   { value: 'in_progress', label: 'جاري التنفيذ', shortLabel: 'تنفيذ', tone: 'teal', description: 'الفني ينفذ الزيارة أو الإصلاح', nextAction: 'حدّث نتيجة الخدمة' },
   { value: 'blocked', label: 'رفض الإصلاح أو تأجيل بسبب', shortLabel: 'رفض/تأجيل', tone: 'amber', description: 'توقف مع تسجيل سبب الرفض أو التأجيل', nextAction: 'سجّل السبب وموعد المتابعة' },
-  { value: 'ready_collection', label: 'تصفية أوردر أو قيمة زيارة', shortLabel: 'تصفية', tone: 'emerald', description: 'الخدمة انتهت وتحتاج اعتماد التصفية أو قيمة الزيارة', nextAction: 'اعتمد التصفية' },
+  { value: 'ready_collection', label: 'تصفية أو قيمة زيارة', shortLabel: 'تصفية', tone: 'emerald', description: 'الخدمة انتهت وتحتاج اعتماد التصفية أو قيمة الزيارة', nextAction: 'اعتمد التصفية أو قيمة الزيارة' },
   { value: 'closed', label: 'مغلق', shortLabel: 'مغلق', tone: 'slate', description: 'تمت التصفية والإغلاق النهائي', nextAction: 'لا يوجد' }
 ] as const;
 
@@ -13,10 +13,8 @@ export const ORDER_WORKFLOW_ACTIONS = [
   'اتصل بالعميل',
   'حدد الموعد',
   'ابدأ التنفيذ',
-  'حدّث نتيجة الخدمة',
-  'تابع قطعة غيار',
-  'اطلب تدخل المدير',
-  'اعتمد التحصيل',
+  'سجّل رفض أو تأجيل وسببه',
+  'اعتمد التصفية أو قيمة الزيارة',
   'أغلق الأوردر'
 ] as const;
 

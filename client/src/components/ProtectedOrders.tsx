@@ -5656,7 +5656,7 @@ ${trackingUrl}
                         </div>
                       </div>
 
-                      <div className="rounded-2xl border border-orange-500/20 bg-orange-500/5 p-4 space-y-3">
+                      <div className="follow-up-editor rounded-2xl border border-orange-500/20 bg-orange-500/5 p-3 space-y-2">
                         <div className="flex items-center justify-between gap-2"><div><h4 className="text-xs font-black text-orange-200">تنظيم المتابعة</h4><p className="mt-1 text-[10px] font-bold text-slate-500">حدد الخطوة التالية حتى لا يتوقف الأوردر بلا مسؤولية</p></div><span className="rounded-full bg-slate-900 px-2 py-1 text-[9px] font-black text-slate-500">إلزامي للمتابعة</span></div>
                         <div className="grid grid-cols-2 gap-3">
                           <div>

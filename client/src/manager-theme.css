@@ -1124,3 +1124,83 @@
     padding: 5px !important;
   }
 }
+
+
+/* Compact follow-up system: one status rail, one next action, optional reason/date only. */
+:where(.manager-light-theme, .operations-light-theme) .order-workflow-panel {
+  border-color: #dbe4ee !important;
+  background: #f8fafc !important;
+  border-radius: 10px !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-followup-panel {
+  border-color: #fed7aa !important;
+  background: #fff7ed !important;
+  color: #475569 !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .order-card-3d .order-workflow-panel button {
+  min-height: 30px !important;
+  border-radius: 8px !important;
+  padding: 5px 8px !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .follow-up-editor {
+  border-radius: 14px !important;
+  background: #fffaf4 !important;
+  border-color: #fed7aa !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .follow-up-editor h4,
+:where(.manager-light-theme, .operations-light-theme) .follow-up-editor label {
+  color: #475569 !important;
+}
+
+:where(.manager-light-theme, .operations-light-theme) .follow-up-editor select,
+:where(.manager-light-theme, .operations-light-theme) .follow-up-editor input,
+:where(.manager-light-theme, .operations-light-theme) .follow-up-editor textarea {
+  min-height: 38px !important;
+  border-color: #dbe4ee !important;
+  border-radius: 9px !important;
+  background: #ffffff !important;
+  color: #172033 !important;
+  padding: 8px 10px !important;
+  font-size: 12px !important;
+}
+
+@media (max-width: 640px) {
+  .manager-light-theme .order-card-3d,
+  .operations-light-theme .order-card-3d {
+    padding: 8px !important;
+  }
+
+  .operations-light-theme .order-card-3d .order-workflow-panel {
+    margin-bottom: 6px !important;
+    padding: 7px !important;
+  }
+
+  .operations-light-theme .order-card-3d .order-workflow-panel + .order-followup-panel {
+    margin-bottom: 6px !important;
+  }
+
+  .operations-light-theme .order-card-3d .grid.grid-cols-2 {
+    gap: 6px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .operations-light-theme .order-card-3d .grid.grid-cols-2 > div,
+  .operations-light-theme .order-card-3d .grid.grid-cols-2 > label {
+    min-height: 40px !important;
+    padding: 7px !important;
+    border-radius: 11px !important;
+  }
+
+  .follow-up-editor .grid.grid-cols-2 {
+    gap: 8px !important;
+  }
+
+  .follow-up-editor .grid.grid-cols-2 > label,
+  .follow-up-editor .grid.grid-cols-2 > div {
+    min-width: 0;
+  }
+}
