@@ -941,3 +941,221 @@
   background: linear-gradient(180deg, #94a3b8, #64748b);
   background-clip: padding-box;
 }
+/* ==========================================================
+   v4.7.0 — VISIBILITY & CONTRAST FIXES
+   ضع هذا القسم في نهاية ملف manager-theme.css
+   ========================================================== */
+
+/* 1️⃣ خلفية الصفحة — فاتحة موحدة */
+.operations-light-theme,
+.manager-light-theme {
+  background: #f1f5fb !important;
+  background-image:
+    radial-gradient(circle at 10% 0%, rgba(37, 99, 235, 0.045), transparent 45%),
+    radial-gradient(circle at 90% 100%, rgba(13, 148, 136, 0.045), transparent 45%) !important;
+}
+
+/* 2️⃣ كارت الأوردر — أغمق من الخلفية بحدود واضحة وظل عميق */
+.operations-light-theme .order-card-3d,
+.manager-light-theme .order-card-3d {
+  background: linear-gradient(165deg, #ffffff 0%, #eef4fb 100%) !important;
+  border: 1.5px solid #cdd9e8 !important;
+  box-shadow:
+    0 4px 12px rgba(15, 23, 42, 0.07),
+    0 14px 36px rgba(37, 99, 235, 0.10) !important;
+}
+
+.operations-light-theme .order-card-3d:hover,
+.manager-light-theme .order-card-3d:hover {
+  border-color: rgba(37, 99, 235, 0.45) !important;
+  box-shadow:
+    0 10px 24px rgba(15, 23, 42, 0.10),
+    0 22px 52px rgba(37, 99, 235, 0.20) !important;
+}
+
+/* 3️⃣ 🎯 إصلاح زر الحذف — لون أحمر واضح */
+.manager-light-theme .order-card-3d button[title="حذف الأوردر"],
+.manager-light-theme .order-card-3d button[title*="حذف"],
+.operations-light-theme .order-card-3d button[title="حذف الأوردر"],
+.operations-light-theme .order-card-3d button[title*="حذف"] {
+  background: linear-gradient(135deg, #fff1f2, #ffe0e4) !important;
+  border: 1.5px solid #fda4af !important;
+  color: #be123c !important;
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.15) !important;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+}
+
+.manager-light-theme .order-card-3d button[title="حذف الأوردر"] svg,
+.manager-light-theme .order-card-3d button[title*="حذف"] svg,
+.operations-light-theme .order-card-3d button[title="حذف الأوردر"] svg,
+.operations-light-theme .order-card-3d button[title*="حذف"] svg {
+  color: #be123c !important;
+  stroke: #be123c !important;
+  background: transparent !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.manager-light-theme .order-card-3d button[title="حذف الأوردر"]:hover,
+.manager-light-theme .order-card-3d button[title*="حذف"]:hover,
+.operations-light-theme .order-card-3d button[title="حذف الأوردر"]:hover,
+.operations-light-theme .order-card-3d button[title*="حذف"]:hover {
+  background: linear-gradient(135deg, #f43f5e, #be123c) !important;
+  border-color: #e11d48 !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 22px rgba(225, 29, 72, 0.35) !important;
+  transform: translateY(-2px) scale(1.05);
+}
+
+.manager-light-theme .order-card-3d button[title="حذف الأوردر"]:hover svg,
+.manager-light-theme .order-card-3d button[title*="حذف"]:hover svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* 4️⃣ كل أزرار الأيقونات في الكارت — بخلفية واضحة */
+.manager-light-theme .order-card-3d button:not([class*="bg-orange"]):not([class*="bg-rose"]):not([class*="bg-emerald"]):not([title*="حذف"]),
+.operations-light-theme .order-card-3d button:not([class*="bg-orange"]):not([class*="bg-rose"]):not([class*="bg-emerald"]):not([title*="حذف"]) {
+  background: linear-gradient(135deg, #f5f9fe, #e8f0f9) !important;
+  border: 1.5px solid #d4deec !important;
+  color: #2563eb !important;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.06) !important;
+}
+
+.manager-light-theme .order-card-3d button:not([class*="bg-orange"]):not([class*="bg-rose"]):not([class*="bg-emerald"]):not([title*="حذف"]):hover {
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe) !important;
+  border-color: #93c5fd !important;
+  color: #1d4ed8 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.20) !important;
+}
+
+/* 5️⃣ زر "تحصيل؟" الأحمر — أوضح */
+.manager-light-theme .order-card-3d button[class*="bg-rose-600"],
+.manager-light-theme .order-card-3d button[class*="animate-pulse"] {
+  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 6px 18px rgba(225, 29, 72, 0.32) !important;
+}
+
+.manager-light-theme .order-card-3d button[class*="bg-rose-600"]:hover,
+.manager-light-theme .order-card-3d button[class*="animate-pulse"]:hover {
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%) !important;
+  box-shadow: 0 10px 26px rgba(225, 29, 72, 0.42) !important;
+  transform: translateY(-1px);
+}
+
+/* 6️⃣ قائمة "الحالة..." المنسدلة — أوضح */
+.manager-light-theme .order-card-3d select {
+  background: linear-gradient(135deg, #ffffff 0%, #f4f8fd 100%) !important;
+  border: 1.5px solid #cdd9e8 !important;
+  color: #0a1324 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05) !important;
+}
+
+.manager-light-theme .order-card-3d select:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12) !important;
+}
+
+/* 7️⃣ عنوان اسم العميل — أثقل وأوضح */
+.manager-light-theme .order-card-3d h3 {
+  color: #0a1324 !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.02em !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* 8️⃣ صناديق المعلومات الأربعة (العميل/الفني/الجهاز/التاريخ) — حدود أوضح */
+.order-card-summary {
+  background: linear-gradient(160deg, #edf3fa 0%, #e4eef8 100%) !important;
+  border: 1.5px solid #cfdceb !important;
+  padding: 10px !important;
+}
+
+.order-summary-item {
+  background: #ffffff !important;
+  border: 1.5px solid #d9e3ee !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05) !important;
+}
+
+.order-summary-item:hover {
+  border-color: rgba(37, 99, 235, 0.35) !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.10) !important;
+}
+
+.order-summary-item strong {
+  color: #0a1324 !important;
+  font-weight: 900 !important;
+}
+
+.order-summary-item span {
+  color: #64748b !important;
+  font-weight: 800 !important;
+}
+
+/* 9️⃣ صندوق "لم يتم التعيين" (تحذير الفني) — أوضح */
+.order-summary-warning {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%) !important;
+  border: 1.5px solid #fdba74 !important;
+}
+
+.order-summary-warning strong {
+  color: #c2410c !important;
+}
+
+/* 🔟 ضمان وضوح كل أيقونة SVG في الكارت */
+.manager-light-theme .order-card-3d button svg,
+.operations-light-theme .order-card-3d button svg {
+  color: inherit !important;
+  stroke: currentColor !important;
+  background: transparent !important;
+}
+
+/* 11. تحسين التباين في الهيدر */
+.manager-light-theme > .sticky.top-0 [class*="bg-slate-"],
+.manager-light-theme > .sticky.top-0 .rounded-full,
+.manager-light-theme > .sticky.top-0 .rounded-xl,
+.manager-light-theme > .sticky.top-0 .rounded-2xl {
+  background: rgba(255, 255, 255, 0.20) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.38) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.manager-light-theme > .sticky.top-0 .text-slate-300,
+.manager-light-theme > .sticky.top-0 .text-slate-400,
+.manager-light-theme > .sticky.top-0 .text-slate-500,
+.manager-light-theme > .sticky.top-0 .text-slate-600,
+.manager-light-theme > .sticky.top-0 .text-slate-700,
+.manager-light-theme > .sticky.top-0 .text-slate-800,
+.manager-light-theme > .sticky.top-0 .text-slate-900 {
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+/* 12. زر "تحويل لفني آخر" — بنفسجي أوضح */
+.manager-light-theme .order-card-3d button[class*="bg-blue-600"]:not([title*="حذف"]),
+.manager-light-theme .order-card-3d button[class*="bg-purple"] {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.28) !important;
+  font-weight: 800 !important;
+}
+
+/* 13. زر "إيصال" — بنفسجي فاتح أوضح */
+.manager-light-theme .order-card-3d button[class*="bg-purple-600/20"],
+.manager-light-theme .order-card-3d button:has(+ button) {
+  border-width: 1.5px !important;
+}
+
+/* 14. ضمان وضوح الأزرار الصغيرة العمودية */
+.manager-light-theme .order-card-3d button.w-9,
+.manager-light-theme .order-card-3d button.h-9 {
+  min-width: 2.25rem !important;
+  min-height: 2.25rem !important;
+}
