@@ -1204,3 +1204,61 @@
     min-width: 0;
   }
 }
+
+
+/* Final calm theme pass: cool light canvas, graphite shell, blue primary actions. */
+.manager-light-theme,
+.operations-light-theme {
+  background: #f4f7fb !important;
+  color: #111827 !important;
+}
+
+.manager-light-theme > .sticky.top-0 {
+  background: #111827 !important;
+  border-bottom-color: #243244 !important;
+}
+
+.manager-light-theme .order-card-3d,
+.operations-light-theme .order-card-3d {
+  background: #ffffff !important;
+  border: 1px solid #dbe4ee !important;
+  border-radius: 14px !important;
+  box-shadow: 0 5px 16px rgba(15, 23, 42, 0.06) !important;
+}
+
+.manager-light-theme .order-card-3d [class*="bg-slate-950"],
+.manager-light-theme .order-card-3d [class*="bg-slate-900"],
+.operations-light-theme .order-card-3d [class*="bg-slate-950"],
+.operations-light-theme .order-card-3d [class*="bg-slate-900"] {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+.manager-light-theme .order-card-3d [class*="bg-orange-600"],
+.manager-light-theme .order-card-3d [class*="bg-orange-500"],
+.operations-light-theme .order-card-3d [class*="bg-orange-600"],
+.operations-light-theme .order-card-3d [class*="bg-orange-500"] {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+.manager-light-theme .order-card-3d [class*="bg-orange-600"]:hover,
+.manager-light-theme .order-card-3d [class*="bg-orange-500"]:hover,
+.operations-light-theme .order-card-3d [class*="bg-orange-600"]:hover,
+.operations-light-theme .order-card-3d [class*="bg-orange-500"]:hover {
+  background: #1d4ed8 !important;
+}
+
+@media (max-width: 640px) {
+  .manager-light-theme,
+  .operations-light-theme {
+    background: #f4f7fb !important;
+  }
+
+  .manager-light-theme .order-card-3d,
+  .operations-light-theme .order-card-3d {
+    border-radius: 12px !important;
+    box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05) !important;
+  }
+}
