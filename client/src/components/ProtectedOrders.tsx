@@ -5658,20 +5658,7 @@ ${trackingUrl}
 
                       <div className="follow-up-editor rounded-2xl border border-orange-500/20 bg-orange-500/5 p-3 space-y-2">
                         <div className="flex items-center justify-between gap-2"><div><h4 className="text-xs font-black text-orange-200">تنظيم المتابعة</h4><p className="mt-1 text-[10px] font-bold text-slate-500">حدد الخطوة التالية حتى لا يتوقف الأوردر بلا مسؤولية</p></div><span className="rounded-full bg-slate-900 px-2 py-1 text-[9px] font-black text-slate-500">إلزامي للمتابعة</span></div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">مرحلة التشغيل</label>
-                            <select value={followUpForm.stage} onChange={e => setFollowUpForm({ ...followUpForm, stage: e.target.value })} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-orange-500">
-                              {OPERATION_STAGES.map(stage => <option key={stage.value} value={stage.value}>{stage.label}</option>)}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">الإجراء التالي</label>
-                            <select value={followUpForm.nextAction} onChange={e => setFollowUpForm({ ...followUpForm, nextAction: e.target.value })} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-orange-500">
-                              <option value="">اختر الإجراء</option>{ORDER_WORKFLOW_ACTIONS.map((action) => <option key={action} value={action}>{action}</option>)}
-                            </select>
-                          </div>
-                        </div>
+                        <label className="block text-[11px] font-black text-slate-500 uppercase">الخطوة الحالية والإجراء المطلوب<select value={followUpForm.stage} onChange={e => { const stage = OPERATION_STAGES.find(item => item.value === e.target.value); setFollowUpForm({ ...followUpForm, stage: e.target.value, nextAction: stage?.nextAction || '' }); }} className="mt-1 w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-orange-500"><option value="">اختر خطوة واحدة</option>{OPERATION_STAGES.map(stage => <option key={stage.value} value={stage.value}>{stage.label} ← {stage.nextAction}</option>)}</select></label>
                         <div className="grid grid-cols-2 gap-3">
                           <label className="text-[11px] font-black text-slate-500 uppercase">موعد المتابعة القادم<input type="date" value={followUpForm.followUpDate} onChange={e => setFollowUpForm({ ...followUpForm, followUpDate: e.target.value })} className="mt-1 w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-orange-500" /></label>
                           <label className="text-[11px] font-black text-slate-500 uppercase">مسؤول المتابعة<input value={followUpForm.owner} onChange={e => setFollowUpForm({ ...followUpForm, owner: e.target.value })} placeholder="المدير أو اسم الفني" className="mt-1 w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-orange-500" /></label>

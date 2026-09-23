@@ -2,7 +2,7 @@
 // OneSignal uses its own dedicated worker under /push/onesignal/.
 
 // PWA Caching Logic
-const CACHE_NAME = 'maintenance-guide-v4.3.7';
+const CACHE_NAME = 'maintenance-guide-v4.3.8';
 const APP_SHELL = [
   '/staff-manifest.webmanifest',
   '/pwa-192.png',
