@@ -1,6 +1,7 @@
 /* ==========================================================
-   Neo Operations Theme v4.5.0 — Modern Design System
+   Neo Operations Theme v4.6.0 — Modern Design System
    Glassmorphism + Soft Shadows + Vibrant Gradients
+   Fix: Header "Active" badge + Elevated command card
    ========================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@400;700;800&display=swap');
@@ -57,6 +58,137 @@
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==========================================================
+   🔧 FIX: Header Active/Online Badge — واضح تماماً
+   ========================================================== */
+
+/* شارة "نشط" الحمراء/الخضراء في الهيدر */
+.manager-light-theme > .sticky.top-0 [class*="bg-slate-800"],
+.manager-light-theme > .sticky.top-0 [class*="bg-slate-700"],
+.manager-light-theme > .sticky.top-0 [class*="bg-white"],
+.manager-light-theme > .sticky.top-0 [class*="bg-slate-950"],
+.manager-light-theme > .sticky.top-0 .rounded-2xl,
+.manager-light-theme > .sticky.top-0 .rounded-xl,
+.manager-light-theme > .sticky.top-0 .rounded-full,
+.manager-light-theme > .sticky.top-0 .rounded-lg {
+  background: rgba(255, 255, 255, 0.18) !important;
+  border: 1px solid rgba(255, 255, 255, 0.32) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* النص داخل الشارات */
+.manager-light-theme > .sticky.top-0 .rounded-2xl *,
+.manager-light-theme > .sticky.top-0 .rounded-xl *,
+.manager-light-theme > .sticky.top-0 .rounded-full *,
+.manager-light-theme > .sticky.top-0 .rounded-lg * {
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+/* أي نص رمادي داخل الهيدر يبقى أبيض */
+.manager-light-theme > .sticky.top-0 .text-slate-300,
+.manager-light-theme > .sticky.top-0 .text-slate-400,
+.manager-light-theme > .sticky.top-0 .text-slate-500,
+.manager-light-theme > .sticky.top-0 .text-slate-600,
+.manager-light-theme > .sticky.top-0 .text-slate-700,
+.manager-light-theme > .sticky.top-0 .text-slate-800,
+.manager-light-theme > .sticky.top-0 .text-slate-900 {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+/* نقطة الحالة الخضراء الحية */
+.manager-light-theme > .sticky.top-0 .bg-green-500,
+.manager-light-theme > .sticky.top-0 .bg-emerald-500 {
+  background: #22c55e !important;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.28), 0 0 12px rgba(34, 197, 94, 0.6) !important;
+}
+
+/* زر "إبقاء الشاشة" وزر الخروج */
+.manager-light-theme > .sticky.top-0 button {
+  background: rgba(255, 255, 255, 0.14) !important;
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 240ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.manager-light-theme > .sticky.top-0 button:hover {
+  background: rgba(255, 255, 255, 0.26) !important;
+  border-color: rgba(255, 255, 255, 0.45) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+}
+
+.manager-light-theme > .sticky.top-0 button svg {
+  color: #ffffff !important;
+}
+
+/* زر "الشاشة يقظة" الأخضر */
+.manager-light-theme > .sticky.top-0 button[class*="emerald"],
+.manager-light-theme > .sticky.top-0 button[class*="bg-emerald"] {
+  background: rgba(16, 185, 129, 0.28) !important;
+  border-color: rgba(52, 211, 153, 0.5) !important;
+  color: #ffffff !important;
+}
+
+/* ==========================================================
+   🎯 ENHANCED: Card "مركز العمليات" — بارز كأنه أيقونة
+   ========================================================== */
+
+/* الكارت الرئيسي — إطار ذهبي/أزرق بارز */
+.manager-light-theme .bg-gradient-to-br[class*="from-white"],
+.manager-light-theme div[class*="from-white"][class*="to-"] {
+  background: linear-gradient(160deg, #ffffff 0%, #f0f7ff 100%) !important;
+  border: 2px solid transparent !important;
+  background-clip: padding-box !important;
+  position: relative;
+  box-shadow:
+    0 20px 48px rgba(37, 99, 235, 0.12),
+    0 0 0 2px rgba(37, 99, 235, 0.18),
+    0 0 0 8px rgba(37, 99, 235, 0.04) !important;
+  border-radius: var(--ops-radius-xl) !important;
+}
+
+/* الشريط الجانبي الملون — يبقى أكثر بروزاً */
+.manager-light-theme .bg-gradient-to-br[class*="from-white"] > .absolute[class*="bg-cyan"],
+.manager-light-theme div[class*="from-white"] > .absolute[class*="bg-cyan"] {
+  background: linear-gradient(180deg, #06b6d4, #2563eb, #7c3aed) !important;
+  width: 6px !important;
+  box-shadow: 0 0 24px rgba(37, 99, 235, 0.5) !important;
+}
+
+/* عنوان "مركز العمليات" */
+.manager-light-theme .bg-gradient-to-br[class*="from-white"] h2,
+.manager-light-theme div[class*="from-white"] h2 {
+  background: linear-gradient(135deg, #1e40af, #2563eb, #0d9488);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 900 !important;
+  letter-spacing: -0.02em;
+}
+
+/* أيقونة "مركز العمليات" */
+.manager-light-theme .bg-gradient-to-br[class*="from-white"] svg[class*="text-orange"],
+.manager-light-theme div[class*="from-white"] svg[class*="text-orange"] {
+  color: #2563eb !important;
+  filter: drop-shadow(0 4px 12px rgba(37, 99, 235, 0.3));
+}
+
+/* رقم الرصيد — بارز جداً */
+.manager-light-theme .bg-gradient-to-br[class*="from-white"] .text-emerald-400,
+.manager-light-theme div[class*="from-white"] .text-emerald-400 {
+  background: linear-gradient(135deg, #059669, #10b981, #34d399);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 900 !important;
+  filter: drop-shadow(0 2px 8px rgba(16, 185, 129, 0.25));
 }
 
 /* ==========================================================
@@ -137,7 +269,7 @@
 }
 
 /* ==========================================================
-   Form Inputs — Modern Flat
+   Form Inputs
    ========================================================== */
 .operations-light-theme input,
 .operations-light-theme select,
@@ -172,7 +304,7 @@
 }
 
 /* ==========================================================
-   Buttons — Micro Interactions
+   Buttons
    ========================================================== */
 .operations-light-theme button,
 .manager-light-theme button {
@@ -200,7 +332,7 @@
 }
 
 /* ==========================================================
-   Order Cards — Floating Glass
+   Order Cards
    ========================================================== */
 .operations-light-theme .order-card-3d,
 .manager-light-theme .order-card-3d {
@@ -259,7 +391,7 @@
 }
 
 /* ==========================================================
-   Manager Header — Glass Hero
+   Manager Header
    ========================================================== */
 .manager-light-theme > .sticky.top-0 {
   background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #0d9488 100%) !important;
@@ -291,22 +423,8 @@
   color: #ffffff !important;
 }
 
-.manager-light-theme > .sticky.top-0 button:not([class*="bg-"]),
-.manager-light-theme > .sticky.top-0 button {
-  background: rgba(255, 255, 255, 0.16) !important;
-  border: 1px solid rgba(255, 255, 255, 0.22) !important;
-  color: #ffffff !important;
-  backdrop-filter: blur(8px);
-}
-
-.manager-light-theme > .sticky.top-0 button:hover {
-  background: rgba(255, 255, 255, 0.26) !important;
-  border-color: rgba(255, 255, 255, 0.42) !important;
-  transform: translateY(-1px);
-}
-
 /* ==========================================================
-   Tab List — Modern Pills
+   Tab List
    ========================================================== */
 .manager-light-theme [role="tablist"] {
   background: rgba(255, 255, 255, 0.85) !important;
@@ -507,11 +625,6 @@
   color: currentColor !important;
 }
 
-.manager-light-theme > .sticky.top-0 .text-orange-500,
-.manager-light-theme > .sticky.top-0 svg {
-  color: #ffffff !important;
-}
-
 .manager-light-theme .order-card-3d button > svg {
   width: 18px;
   height: 18px;
@@ -520,7 +633,7 @@
 }
 
 /* ==========================================================
-   Main Control Row — Modern Buttons
+   Main Control Row
    ========================================================== */
 .manager-light-theme > div:not([role="tablist"]) button {
   border-radius: var(--ops-radius-md);
@@ -572,7 +685,7 @@
 }
 
 /* ==========================================================
-   Tech Badge — Vibrant Pill
+   Tech Badge
    ========================================================== */
 .manager-light-theme .tech-badge-box,
 .operations-light-theme .tech-badge-box,
@@ -749,7 +862,7 @@
 :where(.manager-light-theme, .operations-light-theme) .text-blue-300 { color: #1d4ed8 !important; }
 
 /* ==========================================================
-   Responsive Adjustments
+   Responsive
    ========================================================== */
 @media (max-width: 640px) {
   .manager-light-theme [role="tablist"] {
@@ -802,7 +915,7 @@
 }
 
 /* ==========================================================
-   Custom Scrollbar — Modern
+   Custom Scrollbar
    ========================================================== */
 .operations-light-theme ::-webkit-scrollbar,
 .manager-light-theme ::-webkit-scrollbar {
