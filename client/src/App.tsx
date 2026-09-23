@@ -116,11 +116,16 @@ function AppContent() {
   // التحقق مما إذا كان المسار يتبع الإدارة/الموظفين
   const isStaffPath = ['/login', '/orders', '/tech-portal', '/data-entry'].some((path) => currentPath.startsWith(path));
 
-  // تحميل ملف manager-theme.css ديناميكيًا وحصريًا لمسارات الإدارة والعمل فقط
+  // v4.4.1: تحميل manager-theme.css ديناميكيًا وحصريًا لمسارات الإدارة والعمل.
+  // الهدف: منع تسريب ألوان لوحة المدير إلى صفحات الزوار (الرئيسية / التتبع / الفاتورة ...).
+  // ملاحظة: لا نُعيد التحميل عند الانتقال، فقط عند تغيّر حالة isStaffPath.
   useEffect(() => {
-    if (isStaffPath) {
-      import("./manager-theme.css");
-    }
+    if (!isStaffPath) return;
+    let cancelled = false;
+    import("./manager-theme.css").catch((error) => {
+      if (!cancelled) console.warn('[Maintenance Guide] manager-theme.css load failed:', error);
+    });
+    return () => { cancelled = true; };
   }, [isStaffPath]);
 
   // كل مسار له هوية تثبيت مستقلة: الزوار لا يرثون تطبيق الموظفين والعكس صحيح.
