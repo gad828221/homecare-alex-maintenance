@@ -652,3 +652,120 @@
 /* ==========================================================
    END OF FILE
    ========================================================== */
+/* ==========================================================
+   v6.0.1 — Fix pink text on pink background (manager + tech)
+   ========================================================== */
+
+/* أي نص وردي فاتح → بني غامق واضح */
+.manager-light-theme .text-rose-100,
+.manager-light-theme .text-rose-200,
+.manager-light-theme .text-rose-300,
+.manager-light-theme .text-red-100,
+.manager-light-theme .text-red-200,
+.manager-light-theme .text-red-300,
+.operations-light-theme .text-rose-100,
+.operations-light-theme .text-rose-200,
+.operations-light-theme .text-rose-300,
+.operations-light-theme .text-red-100,
+.operations-light-theme .text-red-200,
+.operations-light-theme .text-red-300 {
+  color: #9f1239 !important;
+}
+
+/* أي نص أصفر فاتح → بني غامق */
+.manager-light-theme .text-amber-100,
+.manager-light-theme .text-amber-200,
+.manager-light-theme .text-amber-300,
+.manager-light-theme .text-yellow-100,
+.manager-light-theme .text-yellow-200,
+.manager-light-theme .text-yellow-300,
+.operations-light-theme .text-amber-100,
+.operations-light-theme .text-amber-200,
+.operations-light-theme .text-amber-300,
+.operations-light-theme .text-yellow-100,
+.operations-light-theme .text-yellow-200,
+.operations-light-theme .text-yellow-300 {
+  color: #92400e !important;
+}
+
+/* أي نص برتقالي فاتح → بني غامق */
+.manager-light-theme .text-orange-100,
+.manager-light-theme .text-orange-200,
+.manager-light-theme .text-orange-300,
+.operations-light-theme .text-orange-100,
+.operations-light-theme .text-orange-200,
+.operations-light-theme .text-orange-300 {
+  color: #9a3412 !important;
+}
+
+/* أي نص أخضر فاتح → أخضر غامق */
+.manager-light-theme .text-emerald-100,
+.manager-light-theme .text-emerald-200,
+.manager-light-theme .text-emerald-300,
+.manager-light-theme .text-green-100,
+.manager-light-theme .text-green-200,
+.manager-light-theme .text-green-300,
+.operations-light-theme .text-emerald-100,
+.operations-light-theme .text-emerald-200,
+.operations-light-theme .text-emerald-300,
+.operations-light-theme .text-green-100,
+.operations-light-theme .text-green-200,
+.operations-light-theme .text-green-300 {
+  color: #047857 !important;
+}
+
+/* أي نص أزرق فاتح → أزرق غامق */
+.manager-light-theme .text-blue-100,
+.manager-light-theme .text-blue-200,
+.manager-light-theme .text-blue-300,
+.manager-light-theme .text-cyan-100,
+.manager-light-theme .text-cyan-200,
+.manager-light-theme .text-cyan-300,
+.operations-light-theme .text-blue-100,
+.operations-light-theme .text-blue-200,
+.operations-light-theme .text-blue-300,
+.operations-light-theme .text-cyan-100,
+.operations-light-theme .text-cyan-200,
+.operations-light-theme .text-cyan-300 {
+  color: #1d4ed8 !important;
+}
+
+/* أي نص بنفسجي فاتح → بنفسجي غامق */
+.manager-light-theme .text-violet-100,
+.manager-light-theme .text-violet-200,
+.manager-light-theme .text-violet-300,
+.manager-light-theme .text-purple-100,
+.manager-light-theme .text-purple-200,
+.manager-light-theme .text-purple-300,
+.operations-light-theme .text-violet-100,
+.operations-light-theme .text-violet-200,
+.operations-light-theme .text-violet-300,
+.operations-light-theme .text-purple-100,
+.operations-light-theme .text-purple-200,
+.operations-light-theme .text-purple-300 {
+  color: #6d28d9 !important;
+}
+
+/* ضمان إن العناصر اللي فيها خلفيات فاتحة يكون فيها نص غامق */
+.manager-light-theme [class*="bg-rose-500/"],
+.manager-light-theme [class*="bg-red-500/"],
+.manager-light-theme [class*="bg-amber-500/"],
+.manager-light-theme [class*="bg-yellow-500/"],
+.manager-light-theme [class*="bg-emerald-500/"],
+.manager-light-theme [class*="bg-blue-500/"],
+.manager-light-theme [class*="bg-violet-500/"],
+.operations-light-theme [class*="bg-rose-500/"],
+.operations-light-theme [class*="bg-red-500/"],
+.operations-light-theme [class*="bg-amber-500/"],
+.operations-light-theme [class*="bg-yellow-500/"],
+.operations-light-theme [class*="bg-emerald-500/"],
+.operations-light-theme [class*="bg-blue-500/"],
+.operations-light-theme [class*="bg-violet-500/"] {
+  color: #0f172a !important;
+}
+
+/* أي شارة "فتح X" أو عدّاد → خلفية حمراء، نص أبيض */
+.manager-light-theme button[class*="bg-rose-500/20"] span,
+.operations-light-theme button[class*="bg-rose-500/20"] span {
+  color: #9f1239 !important;
+}
