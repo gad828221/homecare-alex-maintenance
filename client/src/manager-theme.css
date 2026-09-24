@@ -1088,3 +1088,138 @@
   background: rgba(241, 245, 249, 0.9);
   border-color: #cbd5e1;
 }
+/* ==========================================================
+   v6.0.2 — Clear Typography for Order Cards
+   توضيح الخط في كروت الأوردرات
+   ========================================================== */
+
+/* 1️⃣ كارت التصفية الأصفر — نصوص واضحة جدًا */
+.manager-light-theme [class*="bg-amber-500/10"],
+.manager-light-theme [class*="bg-amber-300"],
+.operations-light-theme [class*="bg-amber-500/10"],
+.operations-light-theme [class*="bg-amber-300"] {
+  color: #78350f !important;
+}
+
+/* كل النصوص العادية داخل الكارت الأصفر */
+.manager-light-theme [class*="bg-amber-500/10"] span,
+.manager-light-theme [class*="bg-amber-500/10"] p,
+.manager-light-theme [class*="bg-amber-500/10"] strong,
+.operations-light-theme [class*="bg-amber-500/10"] span,
+.operations-light-theme [class*="bg-amber-500/10"] p,
+.operations-light-theme [class*="bg-amber-500/10"] strong {
+  color: #78350f !important;
+  font-weight: 800 !important;
+}
+
+/* 2️⃣ صناديق المعلومات البيضاء جوه الكارت — نص غامق */
+.manager-light-theme [class*="bg-amber-500/10"] [class*="bg-slate-950"],
+.manager-light-theme [class*="bg-amber-500/10"] [class*="bg-white"],
+.operations-light-theme [class*="bg-amber-500/10"] [class*="bg-slate-950"],
+.operations-light-theme [class*="bg-amber-500/10"] [class*="bg-white"] {
+  background: #fffbeb !important;
+  border-color: #fcd34d !important;
+}
+
+/* العناوين الصغيرة (مبلغ الفاتورة، قطع الغيار، إلخ) */
+.manager-light-theme [class*="bg-amber-500/10"] span[class*="text-slate"],
+.manager-light-theme [class*="bg-amber-500/10"] span[class*="text-amber"],
+.operations-light-theme [class*="bg-amber-500/10"] span[class*="text-slate"],
+.operations-light-theme [class*="bg-amber-500/10"] span[class*="text-amber"] {
+  color: #92400e !important;
+  font-weight: 900 !important;
+  font-size: 10px !important;
+}
+
+/* القيم الكبيرة (400، 650، 40، 50) */
+.manager-light-theme [class*="bg-amber-500/10"] strong,
+.operations-light-theme [class*="bg-amber-500/10"] strong {
+  color: #451a03 !important;
+  font-weight: 900 !important;
+  font-size: 14px !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* 3️⃣ تحسين نص "تصفية بانتظار اعتماد المدير" و "لم يعتمد بعد" */
+.manager-light-theme [class*="bg-amber-500/10"] .text-amber-200,
+.manager-light-theme [class*="bg-amber-500/10"] .text-amber-300,
+.operations-light-theme [class*="bg-amber-500/10"] .text-amber-200,
+.operations-light-theme [class*="bg-amber-500/10"] .text-amber-300 {
+  color: #78350f !important;
+  font-weight: 900 !important;
+}
+
+/* 4️⃣ تحسين كل النصوص الصغيرة في الكروت عمومًا */
+.operations-light-theme .order-card-3d [class*="text-\[8px\]"],
+.operations-light-theme .order-card-3d [class*="text-\[9px\]"],
+.operations-light-theme .order-card-3d [class*="text-\[10px\]"],
+.manager-light-theme .order-card-3d [class*="text-\[8px\]"],
+.manager-light-theme .order-card-3d [class*="text-\[9px\]"],
+.manager-light-theme .order-card-3d [class*="text-\[10px\]"] {
+  font-weight: 900 !important;
+  letter-spacing: 0 !important;
+}
+
+/* 5️⃣ عناوين الأوردر — خط أوضح */
+.operations-light-theme .order-card-3d h3,
+.manager-light-theme .order-card-3d h3 {
+  font-weight: 900 !important;
+  color: #0f172a !important;
+  letter-spacing: -0.01em !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+}
+
+/* 6️⃣ نص "مبلغ الفاتورة" وما شابه — وزنه أعلى */
+.operations-light-theme .order-card-3d span,
+.manager-light-theme .order-card-3d span {
+  font-weight: 700 !important;
+}
+
+.operations-light-theme .order-card-3d strong,
+.manager-light-theme .order-card-3d strong {
+  font-weight: 900 !important;
+}
+
+/* 7️⃣ القيم المالية — حجم أوضح */
+.operations-light-theme .order-card-3d [class*="text-amber-300"],
+.operations-light-theme .order-card-3d [class*="text-emerald-300"],
+.operations-light-theme .order-card-3d [class*="text-cyan-300"],
+.operations-light-theme .order-card-3d [class*="text-orange-300"] {
+  color: #451a03 !important;
+  font-weight: 900 !important;
+}
+
+/* 8️⃣ تحسين خط الأزرار الصغيرة */
+.operations-light-theme .order-card-3d button,
+.manager-light-theme .order-card-3d button {
+  font-weight: 900 !important;
+  letter-spacing: 0.01em !important;
+}
+
+/* 9️⃣ تحسين واضح للنصوص الرمادية الصغيرة */
+.operations-light-theme .order-card-3d .text-slate-500,
+.operations-light-theme .order-card-3d .text-slate-600,
+.manager-light-theme .order-card-3d .text-slate-500,
+.manager-light-theme .order-card-3d .text-slate-600 {
+  color: #475569 !important;
+  font-weight: 800 !important;
+}
+
+/* 🔟 القيم داخل الصناديق البيضاء — تباين عالي */
+.operations-light-theme .order-card-3d .rounded-lg.bg-white,
+.manager-light-theme .order-card-3d .rounded-lg.bg-white {
+  background: #ffffff !important;
+  border: 1.5px solid #e2e8f0 !important;
+}
+
+.operations-light-theme .order-card-3d .rounded-lg.bg-white strong,
+.manager-light-theme .order-card-3d .rounded-lg.bg-white strong {
+  color: #0f172a !important;
+  font-weight: 900 !important;
+}
+
+.operations-light-theme .order-card-3d .rounded-lg.bg-white span,
+.manager-light-theme .order-card-3d .rounded-lg.bg-white span {
+  color: #64748b !important;
+  font-weight: 800 !important;
+}
