@@ -219,7 +219,7 @@ export default function TechnicianPortal() {
     photos: [] as string[]
   });
   const [isUploadingPickupPhoto, setIsUploadingPickupPhoto] = useState(false);
-}, [s
+	useEffect(() => {
     const userRole = localStorage.getItem("userRole");
     const currentUser = localStorage.getItem("currentUser");
     if (userRole === "tech" && currentUser) {
