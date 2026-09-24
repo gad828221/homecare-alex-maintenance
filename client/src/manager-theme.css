@@ -2381,3 +2381,41 @@ body.modal-open {
   max-width: 32rem !important;
   margin: auto !important;
 }
+/* ==========================================================
+   v5.6.0 — Force Modal as Floating Window
+   ضمان ظهور المودالات كنافذة عائمة في وسط الشاشة
+   ========================================================== */
+
+/* إلغاء أي transform على العنصر الأب اللي بيكسر fixed */
+.operations-light-theme,
+.manager-light-theme {
+  transform: none !important;
+  filter: none !important;
+  will-change: auto !important;
+  contain: none !important;
+}
+
+/* المودالات — مثبتة في وسط الشاشة على طول */
+.operations-light-theme > div[class*="fixed"],
+.operations-light-theme div[class*="fixed"][class*="z-\["]  {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+  z-index: 9999 !important;
+  overflow-y: auto !important;
+}
+
+/* المحتوى الداخلي للمودال */
+.operations-light-theme > div[class*="fixed"] > div,
+.operations-light-theme div[class*="fixed"][class*="z-\["] > div {
+  max-height: calc(100vh - 32px) !important;
+  overflow-y: auto !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
