@@ -1,198 +1,54 @@
 /* ==========================================================
-   Neo Operations Theme v4.6.0 — Modern Design System
-   Glassmorphism + Soft Shadows + Vibrant Gradients
-   Fix: Header "Active" badge + Elevated command card
+   Maintenance Guide — Manager & Technician Theme
+   v5.7.0 — Clean Build
    ========================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@400;700;800&display=swap');
 
+/* ==========================================================
+   1. Design Tokens
+   ========================================================== */
 .operations-light-theme,
 .manager-light-theme {
-  /* === Color Tokens === */
   --ops-bg: #f0f4f9;
   --ops-bg-gradient: linear-gradient(135deg, #eef3fb 0%, #f7f9fc 50%, #eef6f3 100%);
   --ops-surface: #ffffff;
   --ops-surface-soft: #f8fafc;
-  --ops-surface-glass: rgba(255, 255, 255, 0.72);
   --ops-ink: #0a1324;
   --ops-muted: #5a6880;
   --ops-border: #e3e9f2;
-  --ops-border-strong: #cbd6e6;
 
-  /* === Brand Colors === */
   --ops-blue: #2563eb;
   --ops-blue-dark: #1d4ed8;
-  --ops-blue-light: #60a5fa;
-  --ops-violet: #7c3aed;
   --ops-teal: #0d9488;
-  --ops-orange: #f97316;
+  --ops-violet: #7c3aed;
   --ops-emerald: #10b981;
   --ops-rose: #e11d48;
 
-  /* === Gradients === */
   --ops-gradient-blue: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  --ops-gradient-blue-hover: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
   --ops-gradient-emerald: linear-gradient(135deg, #10b981 0%, #059669 100%);
   --ops-gradient-rose: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
   --ops-gradient-surface: linear-gradient(160deg, #ffffff 0%, #f8fafc 100%);
-  --ops-gradient-hero: linear-gradient(135deg, #1e40af 0%, #2563eb 45%, #0d9488 100%);
 
-  /* === Shadows === */
   --ops-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
   --ops-shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.06);
   --ops-shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
-  --ops-shadow-lg: 0 16px 40px rgba(15, 23, 42, 0.10);
   --ops-shadow-glow: 0 12px 32px rgba(37, 99, 235, 0.22);
 
-  /* === Radii === */
   --ops-radius-sm: 10px;
   --ops-radius-md: 14px;
   --ops-radius-lg: 20px;
-  --ops-radius-xl: 28px;
 
   background: var(--ops-bg) !important;
   background-image: var(--ops-bg-gradient) !important;
   color: var(--ops-ink) !important;
   font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif !important;
-  font-feature-settings: 'kern' 1, 'ss01' 1;
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ==========================================================
-   🔧 FIX: Header Active/Online Badge — واضح تماماً
-   ========================================================== */
-
-/* شارة "نشط" الحمراء/الخضراء في الهيدر */
-.manager-light-theme > .sticky.top-0 [class*="bg-slate-800"],
-.manager-light-theme > .sticky.top-0 [class*="bg-slate-700"],
-.manager-light-theme > .sticky.top-0 [class*="bg-white"],
-.manager-light-theme > .sticky.top-0 [class*="bg-slate-950"],
-.manager-light-theme > .sticky.top-0 .rounded-2xl,
-.manager-light-theme > .sticky.top-0 .rounded-xl,
-.manager-light-theme > .sticky.top-0 .rounded-full,
-.manager-light-theme > .sticky.top-0 .rounded-lg {
-  background: rgba(255, 255, 255, 0.18) !important;
-  border: 1px solid rgba(255, 255, 255, 0.32) !important;
-  color: #ffffff !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-/* النص داخل الشارات */
-.manager-light-theme > .sticky.top-0 .rounded-2xl *,
-.manager-light-theme > .sticky.top-0 .rounded-xl *,
-.manager-light-theme > .sticky.top-0 .rounded-full *,
-.manager-light-theme > .sticky.top-0 .rounded-lg * {
-  color: #ffffff !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-}
-
-/* أي نص رمادي داخل الهيدر يبقى أبيض */
-.manager-light-theme > .sticky.top-0 .text-slate-300,
-.manager-light-theme > .sticky.top-0 .text-slate-400,
-.manager-light-theme > .sticky.top-0 .text-slate-500,
-.manager-light-theme > .sticky.top-0 .text-slate-600,
-.manager-light-theme > .sticky.top-0 .text-slate-700,
-.manager-light-theme > .sticky.top-0 .text-slate-800,
-.manager-light-theme > .sticky.top-0 .text-slate-900 {
-  color: rgba(255, 255, 255, 0.92) !important;
-}
-
-/* نقطة الحالة الخضراء الحية */
-.manager-light-theme > .sticky.top-0 .bg-green-500,
-.manager-light-theme > .sticky.top-0 .bg-emerald-500 {
-  background: #22c55e !important;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.28), 0 0 12px rgba(34, 197, 94, 0.6) !important;
-}
-
-/* زر "إبقاء الشاشة" وزر الخروج */
-.manager-light-theme > .sticky.top-0 button {
-  background: rgba(255, 255, 255, 0.14) !important;
-  border: 1px solid rgba(255, 255, 255, 0.28) !important;
-  color: #ffffff !important;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  transition: all 240ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.manager-light-theme > .sticky.top-0 button:hover {
-  background: rgba(255, 255, 255, 0.26) !important;
-  border-color: rgba(255, 255, 255, 0.45) !important;
-  transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
-}
-
-.manager-light-theme > .sticky.top-0 button svg {
-  color: #ffffff !important;
-}
-
-/* زر "الشاشة يقظة" الأخضر */
-.manager-light-theme > .sticky.top-0 button[class*="emerald"],
-.manager-light-theme > .sticky.top-0 button[class*="bg-emerald"] {
-  background: rgba(16, 185, 129, 0.28) !important;
-  border-color: rgba(52, 211, 153, 0.5) !important;
-  color: #ffffff !important;
-}
-
-/* ==========================================================
-   🎯 ENHANCED: Card "مركز العمليات" — بارز كأنه أيقونة
-   ========================================================== */
-
-/* الكارت الرئيسي — إطار ذهبي/أزرق بارز */
-.manager-light-theme .bg-gradient-to-br[class*="from-white"],
-.manager-light-theme div[class*="from-white"][class*="to-"] {
-  background: linear-gradient(160deg, #ffffff 0%, #f0f7ff 100%) !important;
-  border: 2px solid transparent !important;
-  background-clip: padding-box !important;
-  position: relative;
-  box-shadow:
-    0 20px 48px rgba(37, 99, 235, 0.12),
-    0 0 0 2px rgba(37, 99, 235, 0.18),
-    0 0 0 8px rgba(37, 99, 235, 0.04) !important;
-  border-radius: var(--ops-radius-xl) !important;
-}
-
-/* الشريط الجانبي الملون — يبقى أكثر بروزاً */
-.manager-light-theme .bg-gradient-to-br[class*="from-white"] > .absolute[class*="bg-cyan"],
-.manager-light-theme div[class*="from-white"] > .absolute[class*="bg-cyan"] {
-  background: linear-gradient(180deg, #06b6d4, #2563eb, #7c3aed) !important;
-  width: 6px !important;
-  box-shadow: 0 0 24px rgba(37, 99, 235, 0.5) !important;
-}
-
-/* عنوان "مركز العمليات" */
-.manager-light-theme .bg-gradient-to-br[class*="from-white"] h2,
-.manager-light-theme div[class*="from-white"] h2 {
-  background: linear-gradient(135deg, #1e40af, #2563eb, #0d9488);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-weight: 900 !important;
-  letter-spacing: -0.02em;
-}
-
-/* أيقونة "مركز العمليات" */
-.manager-light-theme .bg-gradient-to-br[class*="from-white"] svg[class*="text-orange"],
-.manager-light-theme div[class*="from-white"] svg[class*="text-orange"] {
-  color: #2563eb !important;
-  filter: drop-shadow(0 4px 12px rgba(37, 99, 235, 0.3));
-}
-
-/* رقم الرصيد — بارز جداً */
-.manager-light-theme .bg-gradient-to-br[class*="from-white"] .text-emerald-400,
-.manager-light-theme div[class*="from-white"] .text-emerald-400 {
-  background: linear-gradient(135deg, #059669, #10b981, #34d399);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-weight: 900 !important;
-  filter: drop-shadow(0 2px 8px rgba(16, 185, 129, 0.25));
-}
-
-/* ==========================================================
-   Surface Replacements — Dark to Light Glass
+   2. Surface Replacement (dark → light)
    ========================================================== */
 .operations-light-theme .bg-slate-900,
 .operations-light-theme .bg-slate-950,
@@ -203,8 +59,6 @@
 .manager-light-theme [class*="bg-slate-900/"],
 .manager-light-theme [class*="bg-slate-950/"] {
   background-color: var(--ops-surface) !important;
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
 }
 
 .operations-light-theme .bg-slate-800,
@@ -221,8 +75,23 @@
   border-color: var(--ops-border) !important;
 }
 
+.operations-light-theme [class*="bg-blue-950"],
+.operations-light-theme [class*="bg-cyan-950"],
+.operations-light-theme [class*="bg-amber-950"],
+.operations-light-theme [class*="bg-purple-950"],
+.operations-light-theme [class*="bg-red-950"],
+.operations-light-theme [class*="bg-rose-950"],
+.manager-light-theme [class*="bg-blue-950"],
+.manager-light-theme [class*="bg-cyan-950"],
+.manager-light-theme [class*="bg-amber-950"],
+.manager-light-theme [class*="bg-purple-950"],
+.manager-light-theme [class*="bg-red-950"],
+.manager-light-theme [class*="bg-rose-950"] {
+  background-color: var(--ops-surface) !important;
+}
+
 /* ==========================================================
-   Text Colors
+   3. Text Colors
    ========================================================== */
 .operations-light-theme .text-white,
 .manager-light-theme .text-white,
@@ -242,242 +111,6 @@
   color: var(--ops-muted) !important;
 }
 
-/* ==========================================================
-   Deep-Tint Surfaces → Soft White
-   ========================================================== */
-.operations-light-theme [class*="bg-blue-950"],
-.operations-light-theme [class*="bg-cyan-950"],
-.operations-light-theme [class*="bg-amber-950"],
-.operations-light-theme [class*="bg-purple-950"],
-.operations-light-theme [class*="bg-red-950"],
-.operations-light-theme [class*="bg-rose-950"],
-.manager-light-theme [class*="bg-blue-950"],
-.manager-light-theme [class*="bg-cyan-950"],
-.manager-light-theme [class*="bg-amber-950"],
-.manager-light-theme [class*="bg-purple-950"],
-.manager-light-theme [class*="bg-red-950"],
-.manager-light-theme [class*="bg-rose-950"] {
-  background-color: var(--ops-surface) !important;
-}
-
-.operations-light-theme [class*="bg-gradient-to-br"],
-.operations-light-theme [class*="bg-gradient-to-r"],
-.manager-light-theme [class*="bg-gradient-to-br"],
-.manager-light-theme [class*="bg-gradient-to-r"] {
-  background-image: none !important;
-  background-color: var(--ops-surface) !important;
-}
-
-/* ==========================================================
-   Form Inputs
-   ========================================================== */
-.operations-light-theme input,
-.operations-light-theme select,
-.operations-light-theme textarea,
-.manager-light-theme input,
-.manager-light-theme select,
-.manager-light-theme textarea {
-  background-color: var(--ops-surface) !important;
-  border: 1.5px solid var(--ops-border) !important;
-  border-radius: var(--ops-radius-sm) !important;
-  color: var(--ops-ink) !important;
-  box-shadow: var(--ops-shadow-xs);
-  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.operations-light-theme input:focus,
-.operations-light-theme select:focus,
-.operations-light-theme textarea:focus,
-.manager-light-theme input:focus,
-.manager-light-theme select:focus,
-.manager-light-theme textarea:focus {
-  border-color: var(--ops-blue) !important;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10) !important;
-  outline: none !important;
-}
-
-.operations-light-theme input::placeholder,
-.operations-light-theme textarea::placeholder,
-.manager-light-theme input::placeholder,
-.manager-light-theme textarea::placeholder {
-  color: #94a3b8 !important;
-}
-
-/* ==========================================================
-   Buttons
-   ========================================================== */
-.operations-light-theme button,
-.manager-light-theme button {
-  transition: transform 220ms cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 220ms cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 220ms cubic-bezier(0.4, 0, 0.2, 1),
-              background 220ms cubic-bezier(0.4, 0, 0.2, 1),
-              color 220ms ease;
-}
-
-.operations-light-theme button:active,
-.manager-light-theme button:active {
-  transform: translateY(1px) scale(0.97);
-}
-
-.operations-light-theme button svg,
-.manager-light-theme button svg {
-  filter: none;
-  transition: transform 220ms ease, color 220ms ease;
-}
-
-.operations-light-theme button:hover svg,
-.manager-light-theme button:hover svg {
-  transform: scale(1.05);
-}
-
-/* ==========================================================
-   Order Cards
-   ========================================================== */
-.operations-light-theme .order-card-3d,
-.manager-light-theme .order-card-3d {
-  background: var(--ops-gradient-surface) !important;
-  border: 1px solid var(--ops-border) !important;
-  border-radius: var(--ops-radius-lg) !important;
-  box-shadow: var(--ops-shadow-md) !important;
-  backdrop-filter: none !important;
-  transition: transform 320ms cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 320ms cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 320ms ease !important;
-  position: relative;
-  overflow: hidden;
-}
-
-.operations-light-theme .order-card-3d::before,
-.manager-light-theme .order-card-3d::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 120px;
-  height: 120px;
-  background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.06), transparent 70%);
-  pointer-events: none;
-  border-radius: 50%;
-  opacity: 0;
-  transition: opacity 400ms ease;
-}
-
-.operations-light-theme .order-card-3d:hover::before,
-.manager-light-theme .order-card-3d:hover::before {
-  opacity: 1;
-}
-
-.operations-light-theme .order-card-3d:hover,
-.manager-light-theme .order-card-3d:hover {
-  border-color: rgba(37, 99, 235, 0.35) !important;
-  box-shadow: 0 20px 48px rgba(37, 99, 235, 0.15), 0 0 0 4px rgba(37, 99, 235, 0.04) !important;
-  transform: translateY(-4px);
-}
-
-.operations-light-theme .order-card-3d [class*="bg-orange-600"],
-.manager-light-theme .order-card-3d [class*="bg-orange-600"] {
-  background: var(--ops-gradient-blue) !important;
-  border-color: transparent !important;
-  color: #ffffff !important;
-  box-shadow: var(--ops-shadow-glow);
-}
-
-.operations-light-theme .order-card-3d [class*="bg-orange-600"]:hover,
-.manager-light-theme .order-card-3d [class*="bg-orange-600"]:hover {
-  background: var(--ops-gradient-blue-hover) !important;
-  box-shadow: 0 16px 40px rgba(37, 99, 235, 0.32);
-  transform: translateY(-2px);
-}
-
-/* ==========================================================
-   Manager Header
-   ========================================================== */
-.manager-light-theme > .sticky.top-0 {
-  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #0d9488 100%) !important;
-  border-color: transparent !important;
-  box-shadow: 0 12px 40px rgba(30, 58, 138, 0.28) !important;
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  position: relative;
-}
-
-.manager-light-theme > .sticky.top-0::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-}
-
-.manager-light-theme > .sticky.top-0 h1,
-.manager-light-theme > .sticky.top-0 p,
-.manager-light-theme > .sticky.top-0 span {
-  color: #ffffff !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
-}
-
-.manager-light-theme > .sticky.top-0 svg {
-  color: #ffffff !important;
-}
-
-/* ==========================================================
-   Tab List
-   ========================================================== */
-.manager-light-theme [role="tablist"] {
-  background: rgba(255, 255, 255, 0.85) !important;
-  border: 1px solid var(--ops-border) !important;
-  border-radius: var(--ops-radius-lg) !important;
-  box-shadow: var(--ops-shadow-md) !important;
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  padding: 0.6rem !important;
-}
-
-.manager-light-theme [role="tab"] {
-  width: auto !important;
-  min-width: 4.4rem;
-  height: 3.25rem !important;
-  border-radius: var(--ops-radius-md) !important;
-  border: 1px solid transparent !important;
-  background: transparent !important;
-  color: var(--ops-muted) !important;
-  box-shadow: none !important;
-  transition: all 240ms cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-.manager-light-theme [role="tab"]:hover {
-  border-color: rgba(37, 99, 235, 0.20) !important;
-  background: rgba(37, 99, 235, 0.06) !important;
-  color: var(--ops-blue) !important;
-  transform: translateY(-2px);
-}
-
-.manager-light-theme [role="tab"][aria-selected="true"] {
-  border-color: transparent !important;
-  background: var(--ops-gradient-blue) !important;
-  color: #ffffff !important;
-  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.32), 0 0 0 3px rgba(37, 99, 235, 0.08) !important;
-  transform: translateY(-2px);
-}
-
-.manager-light-theme [role="tab"] > span {
-  background: rgba(37, 99, 235, 0.06) !important;
-  color: currentColor !important;
-  border-radius: 10px !important;
-  transition: all 240ms ease;
-}
-
-.manager-light-theme [role="tab"][aria-selected="true"] > span {
-  background: rgba(255, 255, 255, 0.22) !important;
-  color: #ffffff !important;
-}
-
-/* ==========================================================
-   Semantic Text Accents
-   ========================================================== */
 .operations-light-theme .text-orange-300,
 .operations-light-theme .text-orange-400,
 .operations-light-theme .text-orange-500,
@@ -501,30 +134,162 @@
 .manager-light-theme .text-rose-300 { color: #be123c !important; }
 
 /* ==========================================================
-   Card Information Hierarchy
+   4. Form Inputs
    ========================================================== */
-.operations-light-theme .order-card-3d,
-.manager-light-theme .order-card-3d {
-  color: #172033 !important;
+.operations-light-theme input,
+.operations-light-theme select,
+.operations-light-theme textarea,
+.manager-light-theme input,
+.manager-light-theme select,
+.manager-light-theme textarea {
+  background-color: var(--ops-surface) !important;
+  border: 1.5px solid var(--ops-border) !important;
+  border-radius: var(--ops-radius-sm) !important;
+  color: var(--ops-ink) !important;
+}
+
+.operations-light-theme input:focus,
+.operations-light-theme select:focus,
+.operations-light-theme textarea:focus,
+.manager-light-theme input:focus,
+.manager-light-theme select:focus,
+.manager-light-theme textarea:focus {
+  border-color: var(--ops-blue) !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10) !important;
+  outline: none !important;
+}
+
+.operations-light-theme input::placeholder,
+.operations-light-theme textarea::placeholder,
+.manager-light-theme input::placeholder,
+.manager-light-theme textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* ==========================================================
+   5. Buttons — base
+   ========================================================== */
+.operations-light-theme button,
+.manager-light-theme button {
+  transition: transform 220ms cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 220ms cubic-bezier(0.4, 0, 0.2, 1),
+              background 220ms ease,
+              color 220ms ease;
+}
+
+.operations-light-theme button:active,
+.manager-light-theme button:active {
+  transform: translateY(1px) scale(0.97);
+}
+
+/* ==========================================================
+   6. Order Cards — technician portal (compact)
+   ========================================================== */
+.operations-light-theme .order-card-3d {
   background: #ffffff !important;
-  border-color: #e3e9f2 !important;
+  border: 1px solid #dfe7f1 !important;
+  border-radius: var(--ops-radius-lg) !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.07) !important;
+  padding: 8px !important;
+  margin-bottom: 8px !important;
+  transition: transform 320ms cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 320ms cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 320ms ease !important;
+  position: relative;
 }
 
-.operations-light-theme .order-card-3d h3,
-.manager-light-theme .order-card-3d h3 {
-  color: #0a1324 !important;
+.operations-light-theme .order-card-3d:hover {
+  border-color: rgba(37, 99, 235, 0.35) !important;
+  box-shadow: 0 16px 34px rgba(37, 99, 235, 0.13) !important;
+  transform: translateY(-3px);
+}
+
+/* Manager cards — same base */
+.manager-light-theme .order-card-3d {
+  background: #ffffff !important;
+  border: 1px solid #dfe7f1 !important;
+  border-radius: var(--ops-radius-lg) !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.07) !important;
+}
+
+.manager-light-theme .order-card-3d:hover {
+  border-color: rgba(37, 99, 235, 0.35) !important;
+  box-shadow: 0 16px 34px rgba(37, 99, 235, 0.13) !important;
+  transform: translateY(-3px);
+}
+
+/* ==========================================================
+   7. Technician portal — 3D buttons
+   ========================================================== */
+.operations-light-theme .order-card-3d button {
+  border-radius: 10px !important;
   font-weight: 800 !important;
-  letter-spacing: -0.015em;
+  border-width: 1.5px !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 -2px 0 rgba(15, 23, 42, 0.06) inset,
+    0 3px 0 rgba(15, 23, 42, 0.12),
+    0 6px 14px rgba(15, 23, 42, 0.10) !important;
 }
 
+/* كشف */
+.operations-light-theme .order-card-3d button[class*="bg-blue-"],
+.operations-light-theme .order-card-3d button[class*="text-blue-"] {
+  background: linear-gradient(180deg, #ffffff 0%, #e0ecff 100%) !important;
+  color: #1d4ed8 !important;
+  border-color: #93c5fd !important;
+}
+
+/* تأجيل */
+.operations-light-theme .order-card-3d button[class*="bg-slate-"] {
+  background: linear-gradient(180deg, #ffffff 0%, #edf1f6 100%) !important;
+  color: #475569 !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* إلغاء */
+.operations-light-theme .order-card-3d button[class*="text-rose-"],
+.operations-light-theme .order-card-3d button[class*="text-red-"] {
+  background: linear-gradient(180deg, #ffffff 0%, #ffe4e4 100%) !important;
+  color: #be123c !important;
+  border-color: #fca5a5 !important;
+}
+
+/* تصفية */
+.operations-light-theme .order-card-3d button[class*="bg-emerald-"],
+.operations-light-theme .order-card-3d button[class*="text-emerald-"] {
+  background: linear-gradient(180deg, #ffffff 0%, #d4fae7 100%) !important;
+  color: #047857 !important;
+  border-color: #6ee7b7 !important;
+}
+
+/* تصفية رسوم زيارة */
+.operations-light-theme .order-card-3d button[class*="bg-orange-"],
+.operations-light-theme .order-card-3d button[class*="text-orange-"] {
+  background: linear-gradient(180deg, #ffffff 0%, #ffe9d1 100%) !important;
+  color: #c2410c !important;
+  border-color: #fdba74 !important;
+}
+
+/* إيصال سحب */
+.operations-light-theme .order-card-3d button[class*="bg-purple-"],
+.operations-light-theme .order-card-3d button[class*="text-purple-"] {
+  background: linear-gradient(180deg, #ffffff 0%, #ebe2ff 100%) !important;
+  color: #6d28d9 !important;
+  border-color: #c4b5fd !important;
+}
+
+/* ==========================================================
+   8. Order Card Summary Grid
+   ========================================================== */
 .order-card-summary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  padding: 10px;
-  border: 1px solid #e9eff7;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #e7edf5;
   border-radius: var(--ops-radius-md);
-  background: linear-gradient(160deg, #fafbfd, #f4f7fb);
+  background: #f8fafc;
 }
 
 .order-summary-item {
@@ -532,18 +297,11 @@
   min-width: 0;
   align-items: center;
   gap: 8px;
-  padding: 10px;
+  padding: 8px;
   border: 1px solid #e8eef6;
   border-radius: var(--ops-radius-sm);
   background: #ffffff;
   color: var(--ops-blue);
-  box-shadow: var(--ops-shadow-xs);
-  transition: all 220ms ease;
-}
-
-.order-summary-item:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--ops-shadow-sm);
 }
 
 .order-summary-item > div {
@@ -577,20 +335,87 @@
 
 .order-summary-warning {
   border-color: #fed7aa;
-  background: linear-gradient(160deg, #fff7ed, #ffedd5);
+  background: #fff7ed;
   color: #d97706 !important;
 }
+
 .order-summary-warning strong { color: #b45309; }
 
-.manager-light-theme .order-card-3d .text-slate-300,
-.operations-light-theme .order-card-3d .text-slate-300 { color: #334155 !important; }
-.manager-light-theme .order-card-3d .text-slate-400,
-.operations-light-theme .order-card-3d .text-slate-400 { color: #64748b !important; }
-.manager-light-theme .order-card-3d .text-slate-500,
-.operations-light-theme .order-card-3d .text-slate-500 { color: #94a3b8 !important; }
+@media (min-width: 1024px) {
+  .order-card-summary { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
 
 /* ==========================================================
-   Digital Icon System
+   9. Manager Header
+   ========================================================== */
+.manager-light-theme > .sticky.top-0 {
+  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #0d9488 100%) !important;
+  border-color: transparent !important;
+  box-shadow: 0 12px 40px rgba(30, 58, 138, 0.28) !important;
+}
+
+.manager-light-theme > .sticky.top-0 h1,
+.manager-light-theme > .sticky.top-0 p,
+.manager-light-theme > .sticky.top-0 span {
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+.manager-light-theme > .sticky.top-0 svg {
+  color: #ffffff !important;
+}
+
+.manager-light-theme > .sticky.top-0 button {
+  background: rgba(255, 255, 255, 0.14) !important;
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+  color: #ffffff !important;
+}
+
+.manager-light-theme > .sticky.top-0 button:hover {
+  background: rgba(255, 255, 255, 0.26) !important;
+  border-color: rgba(255, 255, 255, 0.45) !important;
+}
+
+/* ==========================================================
+   10. Tab List — manager icon navigation
+   ========================================================== */
+.manager-light-theme [role="tablist"] {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border: 1px solid var(--ops-border) !important;
+  border-radius: var(--ops-radius-lg) !important;
+  box-shadow: var(--ops-shadow-md) !important;
+  padding: 0.6rem !important;
+}
+
+.manager-light-theme [role="tab"] {
+  width: auto !important;
+  min-width: 4.4rem;
+  height: 3.25rem !important;
+  border-radius: var(--ops-radius-md) !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: var(--ops-muted) !important;
+}
+
+.manager-light-theme [role="tab"][aria-selected="true"] {
+  background: var(--ops-gradient-blue) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.32) !important;
+}
+
+.manager-light-theme [role="tab"] > span {
+  background: rgba(37, 99, 235, 0.06) !important;
+  color: currentColor !important;
+  border-radius: 10px !important;
+}
+
+.manager-light-theme [role="tab"][aria-selected="true"] > span {
+  background: rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
+}
+
+/* ==========================================================
+   11. Icon System
    ========================================================== */
 .operations-light-theme svg,
 .manager-light-theme svg {
@@ -598,316 +423,48 @@
   flex-shrink: 0;
 }
 
-.operations-light-theme button > svg,
-.manager-light-theme button > svg {
-  width: 20px;
-  height: 20px;
-  padding: 4px;
-  box-sizing: content-box;
-  border-radius: 8px;
-  background: #eef4ff;
-  color: var(--ops-blue);
-  filter: none;
-  transition: all 220ms ease;
-}
-
-.operations-light-theme button:hover > svg,
-.manager-light-theme button:hover > svg {
-  background: #dbeafe;
-  color: var(--ops-blue-dark);
-}
-
-.manager-light-theme [role="tab"] > span svg {
-  width: 19px !important;
-  height: 19px !important;
-  padding: 0 !important;
-  background: transparent !important;
-  color: currentColor !important;
-}
-
-.manager-light-theme .order-card-3d button > svg {
-  width: 18px;
-  height: 18px;
-  padding: 3px;
-  border-radius: 7px;
-}
-
 /* ==========================================================
-   Main Control Row
+   12. Hide ScrollButtons on technician portal (mobile)
    ========================================================== */
-.manager-light-theme > div:not([role="tablist"]) button {
-  border-radius: var(--ops-radius-md);
-  transition: all 240ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.manager-light-theme > div:not([role="tablist"]) button > svg {
-  border-radius: 7px;
-}
-
-.manager-light-theme .bg-orange-600,
-.manager-light-theme .bg-orange-500 {
-  background: var(--ops-gradient-rose) !important;
-  border-color: transparent !important;
-  box-shadow: 0 6px 18px rgba(225, 29, 72, 0.24);
-}
-
-.manager-light-theme .bg-orange-600:hover,
-.manager-light-theme .bg-orange-500:hover {
-  background: linear-gradient(135deg, #e11d48, #be123c) !important;
-  box-shadow: 0 10px 26px rgba(225, 29, 72, 0.32);
-  transform: translateY(-1px);
-}
-
-.manager-light-theme .bg-emerald-600 {
-  background: var(--ops-gradient-emerald) !important;
-  border-color: transparent !important;
-  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.24);
-}
-
-.manager-light-theme .bg-emerald-600:hover {
-  box-shadow: 0 10px 26px rgba(16, 185, 129, 0.32);
-  transform: translateY(-1px);
-}
-
-.manager-light-theme .bg-blue-600 {
-  background: var(--ops-gradient-blue) !important;
-  border-color: transparent !important;
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.24);
-}
-
-.manager-light-theme .bg-blue-600:hover {
-  box-shadow: 0 10px 26px rgba(37, 99, 235, 0.32);
-  transform: translateY(-1px);
-}
-
-.manager-light-theme .bg-slate-800 {
-  color: #334155 !important;
-}
-
-/* ==========================================================
-   Tech Badge
-   ========================================================== */
-.manager-light-theme .tech-badge-box,
-.operations-light-theme .tech-badge-box,
-.tech-badge-box {
-  background: linear-gradient(135deg, #eff6ff, #dbeafe) !important;
-  border: 1px solid #bfdbfe !important;
-  border-radius: var(--ops-radius-md) !important;
-  padding: 10px 12px !important;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.08);
-}
-
-.tech-badge-title {
-  color: var(--ops-blue) !important;
-  font-size: 10px !important;
-  font-weight: 700 !important;
-  display: block;
-  letter-spacing: 0.02em;
-}
-
-.tech-badge-name {
-  color: #1e3a8a !important;
-  font-size: 12px !important;
-  font-weight: 900 !important;
-  display: block;
-}
-
-/* ==========================================================
-   Order Details Toggle
-   ========================================================== */
-.order-card-3d:not(.details-open) .order-details-wrapper {
+.operations-light-theme .fixed.bottom-24.left-6,
+.operations-light-theme .fixed[class*="bottom-24"][class*="left-6"],
+.operations-light-theme > div.fixed.bottom-24,
+.operations-light-theme [class*="ScrollButtons"] {
   display: none !important;
-}
-
-.order-details-toggle-btn {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-  padding: 6px 12px !important;
-  background: linear-gradient(135deg, #eff6ff, #dbeafe) !important;
-  border: 1px solid #bfdbfe !important;
-  color: var(--ops-blue-dark) !important;
-  border-radius: var(--ops-radius-sm) !important;
-  font-size: 11px !important;
-  font-weight: 800 !important;
-  cursor: pointer !important;
-  transition: all 220ms ease;
-}
-
-.order-details-toggle-btn:hover {
-  background: linear-gradient(135deg, #dbeafe, #bfdbfe) !important;
-  border-color: var(--ops-blue) !important;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.20);
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  z-index: -1 !important;
 }
 
 /* ==========================================================
-   Final Contrast Pass
+   13. Modal Positioning
    ========================================================== */
-.manager-light-theme .order-card-3d button > svg,
-.operations-light-theme .order-card-3d button > svg,
-.manager-light-theme button > svg,
-.operations-light-theme button > svg {
-  width: 18px !important;
-  height: 18px !important;
-  padding: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  color: currentColor !important;
-  filter: none !important;
-}
-
-.manager-light-theme .order-card-3d [class*="bg-blue-600"],
-.manager-light-theme .order-card-3d [class*="bg-orange-600"],
-.manager-light-theme .order-card-3d [class*="bg-emerald-600"],
-.manager-light-theme .order-card-3d [class*="bg-green-600"],
-.manager-light-theme .order-card-3d [class*="bg-purple-600"],
-.manager-light-theme .order-card-3d [class*="bg-rose-600"],
-.operations-light-theme .order-card-3d [class*="bg-blue-600"],
-.operations-light-theme .order-card-3d [class*="bg-orange-600"],
-.operations-light-theme .order-card-3d [class*="bg-emerald-600"],
-.operations-light-theme .order-card-3d [class*="bg-green-600"],
-.operations-light-theme .order-card-3d [class*="bg-purple-600"],
-.operations-light-theme .order-card-3d [class*="bg-rose-600"] {
-  color: #ffffff !important;
-}
-
-.manager-light-theme .order-card-3d select,
-.operations-light-theme .order-card-3d select {
-  color: #172033 !important;
-  background: #f8fafc !important;
-}
-
-.manager-light-theme .order-card-3d .order-workflow-panel,
-.operations-light-theme .order-card-3d .order-workflow-panel {
-  border-color: #e2e8f0 !important;
-  background: #f8fafc !important;
-}
-
-.manager-light-theme .order-card-3d .order-history-panel,
-.operations-light-theme .order-card-3d .order-history-panel {
-  margin-top: 8px;
+.operations-light-theme > div[class*="fixed"][class*="inset-0"],
+.manager-light-theme > div[class*="fixed"][class*="inset-0"] {
+  z-index: 9999 !important;
 }
 
 /* ==========================================================
-   High-Contrast Digital Palette
-   ========================================================== */
-:where(.manager-light-theme, .operations-light-theme) {
-  background: var(--ops-bg) !important;
-  background-image: var(--ops-bg-gradient) !important;
-  color: #172033 !important;
-  font-family: "Cairo", "Tajawal", "Segoe UI", Arial, sans-serif !important;
-}
-
-:where(.manager-light-theme, .operations-light-theme) .order-card-3d,
-:where(.manager-light-theme, .operations-light-theme) .order-card-3d [class*="bg-slate-950"],
-:where(.manager-light-theme, .operations-light-theme) .order-card-3d [class*="bg-slate-900"],
-:where(.manager-light-theme, .operations-light-theme) .order-card-3d [class*="bg-slate-800"] {
-  background: #ffffff !important;
-  color: #172033 !important;
-  border-color: #dbe4ee !important;
-}
-
-:where(.manager-light-theme, .operations-light-theme) .order-card-3d h3,
-:where(.manager-light-theme, .operations-light-theme) .order-card-3d .text-white,
-:where(.manager-light-theme, .operations-light-theme) .order-card-3d .text-slate-200,
-:where(.manager-light-theme, .operations-light-theme) .order-card-3d .text-slate-300 {
-  color: #172033 !important;
-}
-
-:where(.manager-light-theme, .operations-light-theme) .order-card-3d .text-slate-400,
-:where(.manager-light-theme, .operations-light-theme) .order-card-3d .text-slate-500,
-:where(.manager-light-theme, .operations-light-theme) .order-card-3d .text-slate-600 {
-  color: #526173 !important;
-}
-
-/* ==========================================================
-   Alert Surface Text
-   ========================================================== */
-:where(.manager-light-theme, .operations-light-theme) [class*="bg-rose-"],
-:where(.manager-light-theme, .operations-light-theme) [class*="bg-pink-"],
-:where(.manager-light-theme, .operations-light-theme) [class*="bg-fuchsia-"] {
-  color: #9f1239 !important;
-}
-
-:where(.manager-light-theme, .operations-light-theme) .text-rose-100,
-:where(.manager-light-theme, .operations-light-theme) .text-rose-200,
-:where(.manager-light-theme, .operations-light-theme) .text-rose-300,
-:where(.manager-light-theme, .operations-light-theme) .text-pink-100,
-:where(.manager-light-theme, .operations-light-theme) .text-pink-200,
-:where(.manager-light-theme, .operations-light-theme) .text-pink-300,
-:where(.manager-light-theme, .operations-light-theme) .text-fuchsia-100,
-:where(.manager-light-theme, .operations-light-theme) .text-fuchsia-200,
-:where(.manager-light-theme, .operations-light-theme) .text-fuchsia-300 {
-  color: #9f1239 !important;
-}
-
-:where(.manager-light-theme, .operations-light-theme) .text-cyan-100,
-:where(.manager-light-theme, .operations-light-theme) .text-cyan-200,
-:where(.manager-light-theme, .operations-light-theme) .text-cyan-300 { color: #0e7490 !important; }
-:where(.manager-light-theme, .operations-light-theme) .text-amber-100,
-:where(.manager-light-theme, .operations-light-theme) .text-amber-200,
-:where(.manager-light-theme, .operations-light-theme) .text-amber-300 { color: #92400e !important; }
-:where(.manager-light-theme, .operations-light-theme) .text-orange-100,
-:where(.manager-light-theme, .operations-light-theme) .text-orange-200,
-:where(.manager-light-theme, .operations-light-theme) .text-orange-300 { color: #9a3412 !important; }
-:where(.manager-light-theme, .operations-light-theme) .text-emerald-100,
-:where(.manager-light-theme, .operations-light-theme) .text-emerald-200,
-:where(.manager-light-theme, .operations-light-theme) .text-emerald-300 { color: #047857 !important; }
-:where(.manager-light-theme, .operations-light-theme) .text-violet-100,
-:where(.manager-light-theme, .operations-light-theme) .text-violet-200,
-:where(.manager-light-theme, .operations-light-theme) .text-violet-300 { color: #6d28d9 !important; }
-:where(.manager-light-theme, .operations-light-theme) .text-blue-100,
-:where(.manager-light-theme, .operations-light-theme) .text-blue-200,
-:where(.manager-light-theme, .operations-light-theme) .text-blue-300 { color: #1d4ed8 !important; }
-
-/* ==========================================================
-   Responsive
+   14. Responsive
    ========================================================== */
 @media (max-width: 640px) {
-  .manager-light-theme [role="tablist"] {
-    padding: 0.5rem !important;
-    border-radius: var(--ops-radius-md) !important;
-  }
-
-  .manager-light-theme [role="tab"] {
-    min-width: 3.2rem !important;
-    width: 3.2rem !important;
-    height: 2.9rem !important;
-    border-radius: 11px !important;
-  }
-
-  .manager-light-theme [role="tab"] > span {
-    width: 2rem !important;
-    height: 2rem !important;
-    border-radius: 9px !important;
-  }
-
-  .operations-light-theme button > svg,
-  .manager-light-theme button > svg {
-    width: 17px;
-    height: 17px;
-  }
-
   .operations-light-theme .order-card-3d,
   .manager-light-theme .order-card-3d {
     border-radius: var(--ops-radius-md) !important;
-    padding: 11px !important;
+    padding: 6px !important;
+    margin-bottom: 6px !important;
   }
 
-  .order-card-summary { gap: 6px; padding: 7px; }
-  .order-summary-item { gap: 5px; padding: 7px; }
-  .order-summary-item svg { width: 14px; height: 14px; }
-  .order-summary-item strong { font-size: 10px; }
-}
-
-@media (min-width: 1024px) {
-  .order-card-summary {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+  .operations-light-theme .order-card-3d button,
+  .manager-light-theme .order-card-3d button {
+    font-size: 9px !important;
+    padding: 4px 6px !important;
+    min-height: 30px !important;
   }
-}
 
-@media (max-width: 430px) {
   .order-card-summary { gap: 6px; padding: 6px; }
   .order-summary-item { gap: 5px; padding: 6px; }
   .order-summary-item svg { width: 14px; height: 14px; }
@@ -915,7 +472,7 @@
 }
 
 /* ==========================================================
-   Custom Scrollbar
+   15. Custom Scrollbar
    ========================================================== */
 .operations-light-theme ::-webkit-scrollbar,
 .manager-light-theme ::-webkit-scrollbar {
@@ -932,1490 +489,4 @@
 .manager-light-theme ::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #cbd5e1, #94a3b8);
   border-radius: 8px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-.operations-light-theme ::-webkit-scrollbar-thumb:hover,
-.manager-light-theme ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #94a3b8, #64748b);
-  background-clip: padding-box;
-}
-/* ==========================================================
-   v4.7.0 — VISIBILITY & CONTRAST FIXES
-   ضع هذا القسم في نهاية ملف manager-theme.css
-   ========================================================== */
-
-/* 1️⃣ خلفية الصفحة — فاتحة موحدة */
-.operations-light-theme,
-.manager-light-theme {
-  background: #f1f5fb !important;
-  background-image:
-    radial-gradient(circle at 10% 0%, rgba(37, 99, 235, 0.045), transparent 45%),
-    radial-gradient(circle at 90% 100%, rgba(13, 148, 136, 0.045), transparent 45%) !important;
-}
-
-/* 2️⃣ كارت الأوردر — أغمق من الخلفية بحدود واضحة وظل عميق */
-.operations-light-theme .order-card-3d,
-.manager-light-theme .order-card-3d {
-  background: linear-gradient(165deg, #ffffff 0%, #eef4fb 100%) !important;
-  border: 1.5px solid #cdd9e8 !important;
-  box-shadow:
-    0 4px 12px rgba(15, 23, 42, 0.07),
-    0 14px 36px rgba(37, 99, 235, 0.10) !important;
-}
-
-.operations-light-theme .order-card-3d:hover,
-.manager-light-theme .order-card-3d:hover {
-  border-color: rgba(37, 99, 235, 0.45) !important;
-  box-shadow:
-    0 10px 24px rgba(15, 23, 42, 0.10),
-    0 22px 52px rgba(37, 99, 235, 0.20) !important;
-}
-
-/* 3️⃣ 🎯 إصلاح زر الحذف — لون أحمر واضح */
-.manager-light-theme .order-card-3d button[title="حذف الأوردر"],
-.manager-light-theme .order-card-3d button[title*="حذف"],
-.operations-light-theme .order-card-3d button[title="حذف الأوردر"],
-.operations-light-theme .order-card-3d button[title*="حذف"] {
-  background: linear-gradient(135deg, #fff1f2, #ffe0e4) !important;
-  border: 1.5px solid #fda4af !important;
-  color: #be123c !important;
-  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.15) !important;
-  min-width: 2.25rem;
-  min-height: 2.25rem;
-}
-
-.manager-light-theme .order-card-3d button[title="حذف الأوردر"] svg,
-.manager-light-theme .order-card-3d button[title*="حذف"] svg,
-.operations-light-theme .order-card-3d button[title="حذف الأوردر"] svg,
-.operations-light-theme .order-card-3d button[title*="حذف"] svg {
-  color: #be123c !important;
-  stroke: #be123c !important;
-  background: transparent !important;
-  width: 16px !important;
-  height: 16px !important;
-}
-
-.manager-light-theme .order-card-3d button[title="حذف الأوردر"]:hover,
-.manager-light-theme .order-card-3d button[title*="حذف"]:hover,
-.operations-light-theme .order-card-3d button[title="حذف الأوردر"]:hover,
-.operations-light-theme .order-card-3d button[title*="حذف"]:hover {
-  background: linear-gradient(135deg, #f43f5e, #be123c) !important;
-  border-color: #e11d48 !important;
-  color: #ffffff !important;
-  box-shadow: 0 8px 22px rgba(225, 29, 72, 0.35) !important;
-  transform: translateY(-2px) scale(1.05);
-}
-
-.manager-light-theme .order-card-3d button[title="حذف الأوردر"]:hover svg,
-.manager-light-theme .order-card-3d button[title*="حذف"]:hover svg {
-  color: #ffffff !important;
-  stroke: #ffffff !important;
-}
-
-/* 4️⃣ كل أزرار الأيقونات في الكارت — بخلفية واضحة */
-.manager-light-theme .order-card-3d button:not([class*="bg-orange"]):not([class*="bg-rose"]):not([class*="bg-emerald"]):not([title*="حذف"]),
-.operations-light-theme .order-card-3d button:not([class*="bg-orange"]):not([class*="bg-rose"]):not([class*="bg-emerald"]):not([title*="حذف"]) {
-  background: linear-gradient(135deg, #f5f9fe, #e8f0f9) !important;
-  border: 1.5px solid #d4deec !important;
-  color: #2563eb !important;
-  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.06) !important;
-}
-
-.manager-light-theme .order-card-3d button:not([class*="bg-orange"]):not([class*="bg-rose"]):not([class*="bg-emerald"]):not([title*="حذف"]):hover {
-  background: linear-gradient(135deg, #dbeafe, #bfdbfe) !important;
-  border-color: #93c5fd !important;
-  color: #1d4ed8 !important;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.20) !important;
-}
-
-/* 5️⃣ زر "تحصيل؟" الأحمر — أوضح */
-.manager-light-theme .order-card-3d button[class*="bg-rose-600"],
-.manager-light-theme .order-card-3d button[class*="animate-pulse"] {
-  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%) !important;
-  color: #ffffff !important;
-  border: none !important;
-  box-shadow: 0 6px 18px rgba(225, 29, 72, 0.32) !important;
-}
-
-.manager-light-theme .order-card-3d button[class*="bg-rose-600"]:hover,
-.manager-light-theme .order-card-3d button[class*="animate-pulse"]:hover {
-  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%) !important;
-  box-shadow: 0 10px 26px rgba(225, 29, 72, 0.42) !important;
-  transform: translateY(-1px);
-}
-
-/* 6️⃣ قائمة "الحالة..." المنسدلة — أوضح */
-.manager-light-theme .order-card-3d select {
-  background: linear-gradient(135deg, #ffffff 0%, #f4f8fd 100%) !important;
-  border: 1.5px solid #cdd9e8 !important;
-  color: #0a1324 !important;
-  font-weight: 700 !important;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05) !important;
-}
-
-.manager-light-theme .order-card-3d select:focus {
-  border-color: #2563eb !important;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12) !important;
-}
-
-/* 7️⃣ عنوان اسم العميل — أثقل وأوضح */
-.manager-light-theme .order-card-3d h3 {
-  color: #0a1324 !important;
-  font-weight: 900 !important;
-  letter-spacing: -0.02em !important;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
-}
-
-/* 8️⃣ صناديق المعلومات الأربعة (العميل/الفني/الجهاز/التاريخ) — حدود أوضح */
-.order-card-summary {
-  background: linear-gradient(160deg, #edf3fa 0%, #e4eef8 100%) !important;
-  border: 1.5px solid #cfdceb !important;
-  padding: 10px !important;
-}
-
-.order-summary-item {
-  background: #ffffff !important;
-  border: 1.5px solid #d9e3ee !important;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05) !important;
-}
-
-.order-summary-item:hover {
-  border-color: rgba(37, 99, 235, 0.35) !important;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.10) !important;
-}
-
-.order-summary-item strong {
-  color: #0a1324 !important;
-  font-weight: 900 !important;
-}
-
-.order-summary-item span {
-  color: #64748b !important;
-  font-weight: 800 !important;
-}
-
-/* 9️⃣ صندوق "لم يتم التعيين" (تحذير الفني) — أوضح */
-.order-summary-warning {
-  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%) !important;
-  border: 1.5px solid #fdba74 !important;
-}
-
-.order-summary-warning strong {
-  color: #c2410c !important;
-}
-
-/* 🔟 ضمان وضوح كل أيقونة SVG في الكارت */
-.manager-light-theme .order-card-3d button svg,
-.operations-light-theme .order-card-3d button svg {
-  color: inherit !important;
-  stroke: currentColor !important;
-  background: transparent !important;
-}
-
-/* 11. تحسين التباين في الهيدر */
-.manager-light-theme > .sticky.top-0 [class*="bg-slate-"],
-.manager-light-theme > .sticky.top-0 .rounded-full,
-.manager-light-theme > .sticky.top-0 .rounded-xl,
-.manager-light-theme > .sticky.top-0 .rounded-2xl {
-  background: rgba(255, 255, 255, 0.20) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.38) !important;
-  color: #ffffff !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-.manager-light-theme > .sticky.top-0 .text-slate-300,
-.manager-light-theme > .sticky.top-0 .text-slate-400,
-.manager-light-theme > .sticky.top-0 .text-slate-500,
-.manager-light-theme > .sticky.top-0 .text-slate-600,
-.manager-light-theme > .sticky.top-0 .text-slate-700,
-.manager-light-theme > .sticky.top-0 .text-slate-800,
-.manager-light-theme > .sticky.top-0 .text-slate-900 {
-  color: #ffffff !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-}
-
-/* 12. زر "تحويل لفني آخر" — بنفسجي أوضح */
-.manager-light-theme .order-card-3d button[class*="bg-blue-600"]:not([title*="حذف"]),
-.manager-light-theme .order-card-3d button[class*="bg-purple"] {
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
-  color: #ffffff !important;
-  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.28) !important;
-  font-weight: 800 !important;
-}
-
-/* 13. زر "إيصال" — بنفسجي فاتح أوضح */
-.manager-light-theme .order-card-3d button[class*="bg-purple-600/20"],
-.manager-light-theme .order-card-3d button:has(+ button) {
-  border-width: 1.5px !important;
-}
-
-/* 14. ضمان وضوح الأزرار الصغيرة العمودية */
-.manager-light-theme .order-card-3d button.w-9,
-.manager-light-theme .order-card-3d button.h-9 {
-  min-width: 2.25rem !important;
-  min-height: 2.25rem !important;
-}
-/* ==========================================================
-   v4.8.0 — 3D Buttons & Icons System
-   كل الأزرار والأيقونات بارزة بتأثير ثلاثي الأبعاد
-   ========================================================== */
-
-/* ============ 1) نظام الظلال 3D الأساسي ============ */
-.operations-light-theme,
-.manager-light-theme {
-  --btn-3d-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.85);
-  --btn-3d-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 -1px 0 rgba(15, 23, 42, 0.06) inset,
-    0 2px 4px rgba(15, 23, 42, 0.08),
-    0 6px 14px rgba(15, 23, 42, 0.10);
-  --btn-3d-shadow-hover:
-    0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 -1px 0 rgba(15, 23, 42, 0.08) inset,
-    0 4px 8px rgba(15, 23, 42, 0.12),
-    0 14px 28px rgba(37, 99, 235, 0.20);
-  --btn-3d-shadow-active:
-    0 2px 4px rgba(15, 23, 42, 0.15) inset,
-    0 1px 0 rgba(255, 255, 255, 0.5);
-}
-
-/* ============ 2) كل الأزرار العامة — 3D Popup ============ */
-.operations-light-theme button,
-.manager-light-theme button {
-  position: relative !important;
-  transform: translateZ(0);
-  box-shadow: var(--btn-3d-shadow) !important;
-  border-radius: 12px !important;
-  transition:
-    transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
-    background 200ms ease,
-    color 200ms ease !important;
-}
-
-.operations-light-theme button:hover,
-.manager-light-theme button:hover {
-  transform: translateY(-2px) translateZ(0) !important;
-  box-shadow: var(--btn-3d-shadow-hover) !important;
-}
-
-.operations-light-theme button:active,
-.manager-light-theme button:active {
-  transform: translateY(1px) scale(0.98) !important;
-  box-shadow: var(--btn-3d-shadow-active) !important;
-  transition: transform 80ms ease, box-shadow 80ms ease !important;
-}
-
-/* ============ 3) الأزرار بألوان صريحة — Pop Strong ============ */
-
-/* أزرار أساسية (روز/بمبي) */
-.manager-light-theme button[class*="bg-rose-600"],
-.manager-light-theme button[class*="bg-orange-600"],
-.manager-light-theme .order-card-3d button[class*="bg-rose-600"] {
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.35) inset,
-    0 -2px 0 rgba(0, 0, 0, 0.18) inset,
-    0 4px 0 #9f1239,
-    0 6px 14px rgba(225, 29, 72, 0.35) !important;
-  border: none !important;
-}
-
-.manager-light-theme button[class*="bg-rose-600"]:hover,
-.manager-light-theme button[class*="bg-orange-600"]:hover {
-  transform: translateY(-3px) !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.4) inset,
-    0 -2px 0 rgba(0, 0, 0, 0.20) inset,
-    0 6px 0 #9f1239,
-    0 12px 24px rgba(225, 29, 72, 0.45) !important;
-}
-
-.manager-light-theme button[class*="bg-rose-600"]:active,
-.manager-light-theme button[class*="bg-orange-600"]:active {
-  transform: translateY(2px) !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.3) inset,
-    0 -1px 0 rgba(0, 0, 0, 0.15) inset,
-    0 1px 0 #9f1239,
-    0 2px 6px rgba(225, 29, 72, 0.30) !important;
-}
-
-/* أزرار زرقاء */
-.manager-light-theme button[class*="bg-blue-600"],
-.manager-light-theme button[class*="bg-indigo-600"] {
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.35) inset,
-    0 -2px 0 rgba(0, 0, 0, 0.18) inset,
-    0 4px 0 #1e3a8a,
-    0 6px 14px rgba(37, 99, 235, 0.35) !important;
-  border: none !important;
-}
-
-.manager-light-theme button[class*="bg-blue-600"]:hover,
-.manager-light-theme button[class*="bg-indigo-600"]:hover {
-  transform: translateY(-3px) !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.4) inset,
-    0 -2px 0 rgba(0, 0, 0, 0.20) inset,
-    0 6px 0 #1e3a8a,
-    0 12px 24px rgba(37, 99, 235, 0.45) !important;
-}
-
-.manager-light-theme button[class*="bg-blue-600"]:active,
-.manager-light-theme button[class*="bg-indigo-600"]:active {
-  transform: translateY(2px) !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.3) inset,
-    0 -1px 0 rgba(0, 0, 0, 0.15) inset,
-    0 1px 0 #1e3a8a,
-    0 2px 6px rgba(37, 99, 235, 0.30) !important;
-}
-
-/* أزرار خضراء */
-.manager-light-theme button[class*="bg-emerald-600"],
-.manager-light-theme button[class*="bg-green-600"] {
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.35) inset,
-    0 -2px 0 rgba(0, 0, 0, 0.18) inset,
-    0 4px 0 #065f46,
-    0 6px 14px rgba(16, 185, 129, 0.35) !important;
-  border: none !important;
-}
-
-.manager-light-theme button[class*="bg-emerald-600"]:hover {
-  transform: translateY(-3px) !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.4) inset,
-    0 -2px 0 rgba(0, 0, 0, 0.20) inset,
-    0 6px 0 #065f46,
-    0 12px 24px rgba(16, 185, 129, 0.45) !important;
-}
-
-.manager-light-theme button[class*="bg-emerald-600"]:active {
-  transform: translateY(2px) !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.3) inset,
-    0 -1px 0 rgba(0, 0, 0, 0.15) inset,
-    0 1px 0 #065f46,
-    0 2px 6px rgba(16, 185, 129, 0.30) !important;
-}
-
-/* ============ 4) الأزرار الفاتحة/الأيقونية — Bumpy 3D ============ */
-.manager-light-theme button[class*="bg-slate-800"],
-.manager-light-theme button[class*="bg-slate-700"],
-.manager-light-theme .order-card-3d button:not([class*="bg-"]):not([title*="حذف"]) {
-  background: linear-gradient(180deg, #ffffff 0%, #eef3fa 100%) !important;
-  border: 1.5px solid #d6e0ec !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 -2px 0 rgba(15, 23, 42, 0.06) inset,
-    0 3px 0 #c9d4e3,
-    0 5px 12px rgba(15, 23, 42, 0.10) !important;
-  color: #2563eb !important;
-}
-
-.manager-light-theme button[class*="bg-slate-800"]:hover,
-.manager-light-theme .order-card-3d button:not([class*="bg-"]):not([title*="حذف"]):hover {
-  transform: translateY(-3px) !important;
-  background: linear-gradient(180deg, #ffffff 0%, #e3ecf7 100%) !important;
-  border-color: #93c5fd !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 -2px 0 rgba(15, 23, 42, 0.06) inset,
-    0 5px 0 #b8c7db,
-    0 10px 22px rgba(37, 99, 235, 0.20) !important;
-}
-
-.manager-light-theme .order-card-3d button:not([class*="bg-"]):not([title*="حذف"]):active {
-  transform: translateY(1px) !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.8) inset,
-    0 1px 2px rgba(15, 23, 42, 0.15) inset !important;
-}
-
-/* ============ 5) زر الحذف — أحمر بارز 3D ============ */
-.manager-light-theme .order-card-3d button[title*="حذف"],
-.operations-light-theme .order-card-3d button[title*="حذف"] {
-  background: linear-gradient(180deg, #ffffff 0%, #fff1f2 100%) !important;
-  border: 1.5px solid #fda4af !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 -2px 0 rgba(159, 18, 57, 0.08) inset,
-    0 3px 0 #fda4af,
-    0 5px 12px rgba(225, 29, 72, 0.18) !important;
-  color: #be123c !important;
-}
-
-.manager-light-theme .order-card-3d button[title*="حذف"]:hover {
-  transform: translateY(-3px) !important;
-  background: linear-gradient(180deg, #f43f5e 0%, #be123c 100%) !important;
-  border-color: #e11d48 !important;
-  color: #ffffff !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.3) inset,
-    0 -2px 0 rgba(0, 0, 0, 0.15) inset,
-    0 5px 0 #9f1239,
-    0 12px 22px rgba(225, 29, 72, 0.42) !important;
-}
-
-.manager-light-theme .order-card-3d button[title*="حذف"]:hover svg {
-  color: #ffffff !important;
-  stroke: #ffffff !important;
-}
-
-.manager-light-theme .order-card-3d button[title*="حذف"]:active {
-  transform: translateY(1px) !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.3) inset,
-    0 1px 2px rgba(159, 18, 57, 0.20) inset !important;
-}
-
-/* ============ 6) الأيقونات داخل الأزرار — Drop Shadow ============ */
-.operations-light-theme button svg,
-.manager-light-theme button svg {
-  filter: drop-shadow(0 2px 3px rgba(15, 23, 42, 0.22)) !important;
-  transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), filter 200ms ease !important;
-}
-
-.operations-light-theme button:hover svg,
-.manager-light-theme button:hover svg {
-  transform: scale(1.12) translateY(-1px) !important;
-  filter: drop-shadow(0 4px 6px rgba(15, 23, 42, 0.28)) !important;
-}
-
-/* ============ 7) تابات النافبار — 3D Press ============ */
-.manager-light-theme [role="tab"] {
-  background: linear-gradient(180deg, #ffffff 0%, #f0f4fa 100%) !important;
-  border: 1.5px solid #d6e0ec !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 -2px 0 rgba(15, 23, 42, 0.05) inset,
-    0 3px 0 #c9d4e3,
-    0 6px 14px rgba(15, 23, 42, 0.08) !important;
-  transition: all 200ms cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-}
-
-.manager-light-theme [role="tab"]:hover {
-  transform: translateY(-4px) !important;
-  border-color: #93c5fd !important;
-  background: linear-gradient(180deg, #ffffff 0%, #e3ecf7 100%) !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 -2px 0 rgba(15, 23, 42, 0.05) inset,
-    0 6px 0 #b8c7db,
-    0 14px 26px rgba(37, 99, 235, 0.22) !important;
-}
-
-.manager-light-theme [role="tab"][aria-selected="true"] {
-  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%) !important;
-  border-color: #1e40af !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.35) inset,
-    0 -2px 0 rgba(0, 0, 0, 0.20) inset,
-    0 5px 0 #1e3a8a,
-    0 12px 26px rgba(37, 99, 235, 0.45) !important;
-  transform: translateY(-3px) !important;
-}
-
-.manager-light-theme [role="tab"][aria-selected="true"]:active {
-  transform: translateY(1px) !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.3) inset,
-    0 2px 4px rgba(0, 0, 0, 0.25) inset,
-    0 1px 0 #1e3a8a !important;
-}
-
-/* ============ 8) أزرار الإجراءات في الكارت ============ */
-.manager-light-theme .order-card-3d button[title="اتصال"] svg,
-.manager-light-theme .order-card-3d a[href^="tel:"] svg {
-  filter: drop-shadow(0 2px 3px rgba(37, 99, 235, 0.35)) !important;
-}
-
-/* ============ 9) الأزرار الكبيرة في مركز العمليات ============ */
-.manager-light-theme > div:not([role="tablist"]) button {
-  transform: translateZ(0);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.5) inset,
-    0 -3px 0 rgba(0, 0, 0, 0.12) inset,
-    0 5px 0 rgba(0, 0, 0, 0.10),
-    0 8px 20px rgba(15, 23, 42, 0.14) !important;
-  transition: all 200ms cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-}
-
-.manager-light-theme > div:not([role="tablist"]) button:hover {
-  transform: translateY(-3px) !important;
-}
-
-.manager-light-theme > div:not([role="tablist"]) button:active {
-  transform: translateY(2px) !important;
-}
-
-/* ============ 10) التأكد من وضوح النصوص داخل الأزرار ============ */
-.manager-light-theme button,
-.operations-light-theme button {
-  font-weight: 800 !important;
-  letter-spacing: -0.01em;
-  text-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.4),
-    0 -1px 0 rgba(0, 0, 0, 0.05);
-}
-
-.manager-light-theme button[class*="bg-rose-600"],
-.manager-light-theme button[class*="bg-blue-600"],
-.manager-light-theme button[class*="bg-emerald-600"],
-.manager-light-theme button[class*="bg-indigo-600"],
-.manager-light-theme button[class*="bg-orange-600"] {
-  color: #ffffff !important;
-  text-shadow:
-    0 1px 1px rgba(0, 0, 0, 0.35),
-    0 -1px 0 rgba(0, 0, 0, 0.15);
-}
-
-/* ============ 11) Smooth fade in on cards ============ */
-.manager-light-theme .order-card-3d {
-  animation: cardFadeIn3D 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
-@keyframes cardFadeIn3D {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* ============ 12) Loading pulse effect للأزرار المهمة ============ */
-.manager-light-theme .animate-pulse {
-  animation: pulse3D 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
-}
-
-@keyframes pulse3D {
-  0%, 100% {
-    box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.35) inset,
-      0 -2px 0 rgba(0, 0, 0, 0.18) inset,
-      0 4px 0 #9f1239,
-      0 6px 14px rgba(225, 29, 72, 0.35);
-  }
-  50% {
-    box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.35) inset,
-      0 -2px 0 rgba(0, 0, 0, 0.18) inset,
-      0 4px 0 #9f1239,
-      0 6px 14px rgba(225, 29, 72, 0.35),
-      0 0 0 6px rgba(225, 29, 72, 0.15);
-  }
-}
-/* ==========================================================
-   v4.8.1 — Quick Access Panel Fix (وصول سريع)
-   وضوح كامل للأزرار الأربعة + البحث داخل اللوحة
-   ========================================================== */
-
-/* === الحاوية الرئيسية للوحة === */
-.manager-light-theme #manager-quick-actions,
-#manager-quick-actions {
-  background: linear-gradient(160deg, #ffffff 0%, #f5f9fe 100%) !important;
-  border: 1.5px solid #cdd9e8 !important;
-  border-radius: 20px !important;
-  box-shadow:
-    0 20px 48px rgba(15, 23, 42, 0.15),
-    0 6px 16px rgba(37, 99, 235, 0.12),
-    0 0 0 4px rgba(37, 99, 235, 0.04) !important;
-  padding: 14px !important;
-}
-
-/* === مربع البحث === */
-.manager-light-theme #manager-quick-actions input,
-#manager-quick-actions input {
-  background: linear-gradient(180deg, #ffffff, #f0f4fa) !important;
-  border: 2px solid #cdd9e8 !important;
-  color: #0a1324 !important;
-  font-weight: 700 !important;
-  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.06) inset !important;
-}
-
-.manager-light-theme #manager-quick-actions input::placeholder,
-#manager-quick-actions input::placeholder {
-  color: #94a3b8 !important;
-  font-weight: 600 !important;
-}
-
-.manager-light-theme #manager-quick-actions input:focus,
-#manager-quick-actions input:focus {
-  border-color: #2563eb !important;
-  box-shadow:
-    0 2px 4px rgba(15, 23, 42, 0.06) inset,
-    0 0 0 4px rgba(37, 99, 235, 0.12) !important;
-  outline: none !important;
-}
-
-/* أيقونة البحث */
-.manager-light-theme #manager-quick-actions .absolute svg,
-#manager-quick-actions .absolute svg {
-  color: #2563eb !important;
-  stroke: #2563eb !important;
-}
-
-/* === الأزرار الأربعة — الأساس === */
-.manager-light-theme #manager-quick-actions button,
-#manager-quick-actions button {
-  border-width: 1.5px !important;
-  border-style: solid !important;
-  font-weight: 800 !important;
-  text-shadow: none !important;
-  transition: all 220ms cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 -2px 0 rgba(15, 23, 42, 0.05) inset,
-    0 3px 0 rgba(15, 23, 42, 0.08),
-    0 6px 14px rgba(15, 23, 42, 0.08) !important;
-}
-
-.manager-light-theme #manager-quick-actions button:hover,
-#manager-quick-actions button:hover {
-  transform: translateY(-2px) !important;
-}
-
-.manager-light-theme #manager-quick-actions button:active,
-#manager-quick-actions button:active {
-  transform: translateY(1px) !important;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.15) inset !important;
-}
-
-/* أيقونات الأزرار */
-.manager-light-theme #manager-quick-actions button svg,
-#manager-quick-actions button svg {
-  background: transparent !important;
-  padding: 0 !important;
-  color: currentColor !important;
-  stroke: currentColor !important;
-  filter: none !important;
-}
-
-/* كل النصوص داخل الأزرار ترث لون الزر */
-.manager-light-theme #manager-quick-actions button *,
-#manager-quick-actions button * {
-  color: inherit !important;
-  text-shadow: none !important;
-}
-
-/* === 1) تسجيل أوردر — برتقالي فاتح + نص داكن === */
-.manager-light-theme #manager-quick-actions button[class*="bg-orange-"],
-#manager-quick-actions button[class*="bg-orange-"] {
-  background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%) !important;
-  border-color: #fdba74 !important;
-  color: #9a3412 !important;
-}
-
-.manager-light-theme #manager-quick-actions button[class*="bg-orange-"]:hover,
-#manager-quick-actions button[class*="bg-orange-"]:hover {
-  background: linear-gradient(180deg, #ffedd5 0%, #fed7aa 100%) !important;
-  border-color: #fb923c !important;
-  color: #7c2d12 !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 -2px 0 rgba(15, 23, 42, 0.05) inset,
-    0 5px 0 #fb923c,
-    0 10px 22px rgba(249, 115, 22, 0.25) !important;
-}
-
-/* === 2) تعيين فني — أصفر فاتح + نص بني داكن === */
-.manager-light-theme #manager-quick-actions button[class*="bg-amber-"],
-#manager-quick-actions button[class*="bg-amber-"] {
-  background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%) !important;
-  border-color: #fcd34d !important;
-  color: #92400e !important;
-}
-
-.manager-light-theme #manager-quick-actions button[class*="bg-amber-"]:hover,
-#manager-quick-actions button[class*="bg-amber-"]:hover {
-  background: linear-gradient(180deg, #fef3c7 0%, #fde68a 100%) !important;
-  border-color: #f59e0b !important;
-  color: #78350f !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 -2px 0 rgba(15, 23, 42, 0.05) inset,
-    0 5px 0 #f59e0b,
-    0 10px 22px rgba(245, 158, 11, 0.25) !important;
-}
-
-/* === 3) مراجعة الخزنة — أخضر فاتح + نص أخضر داكن === */
-.manager-light-theme #manager-quick-actions button[class*="bg-emerald-"],
-#manager-quick-actions button[class*="bg-emerald-"] {
-  background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%) !important;
-  border-color: #6ee7b7 !important;
-  color: #047857 !important;
-}
-
-.manager-light-theme #manager-quick-actions button[class*="bg-emerald-"]:hover,
-#manager-quick-actions button[class*="bg-emerald-"]:hover {
-  background: linear-gradient(180deg, #d1fae5 0%, #a7f3d0 100%) !important;
-  border-color: #10b981 !important;
-  color: #065f46 !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 -2px 0 rgba(15, 23, 42, 0.05) inset,
-    0 5px 0 #10b981,
-    0 10px 22px rgba(16, 185, 129, 0.25) !important;
-}
-
-/* === 4) التقارير — أزرق فاتح + نص أزرق داكن === */
-.manager-light-theme #manager-quick-actions button[class*="bg-blue-"],
-#manager-quick-actions button[class*="bg-blue-"] {
-  background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%) !important;
-  border-color: #93c5fd !important;
-  color: #1d4ed8 !important;
-}
-
-.manager-light-theme #manager-quick-actions button[class*="bg-blue-"]:hover,
-#manager-quick-actions button[class*="bg-blue-"]:hover {
-  background: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%) !important;
-  border-color: #2563eb !important;
-  color: #1e40af !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 -2px 0 rgba(15, 23, 42, 0.05) inset,
-    0 5px 0 #2563eb,
-    0 10px 22px rgba(37, 99, 235, 0.25) !important;
-}
-
-/* Technician login mobile sizing only. The public website and manager login remain unchanged. */
-@media (max-width: 480px) {
-  .technician-login-page.is-technician-login {
-    min-height: 100dvh;
-    overflow-x: hidden;
-    align-items: flex-start;
-    padding: max(0.75rem, env(safe-area-inset-top)) 0.75rem max(0.75rem, env(safe-area-inset-bottom));
-  }
-
-  .technician-login-page.is-technician-login .technician-login-card {
-    width: min(100%, 24rem);
-    margin: auto 0;
-    padding: 1.125rem;
-    border-radius: 1.25rem;
-  }
-
-  .technician-login-page.is-technician-login .technician-login-card > div:first-child {
-    margin-bottom: 1rem;
-  }
-
-  .technician-login-page.is-technician-login .technician-login-card > div:first-child > div:first-child {
-    width: 3.5rem;
-    height: 3.5rem;
-    margin-bottom: 0.75rem;
-    border-radius: 1rem;
-  }
-
-  .technician-login-page.is-technician-login .technician-login-card > div:first-child > div:first-child svg {
-    width: 1.75rem;
-    height: 1.75rem;
-  }
-
-  .technician-login-page.is-technician-login h1 {
-    font-size: 1.2rem;
-    line-height: 1.5rem;
-  }
-
-  .technician-login-page.is-technician-login form {
-    gap: 0.875rem;
-  }
-
-  .technician-login-page.is-technician-login form input {
-    min-height: 2.75rem;
-    padding: 0.65rem 0.8rem;
-    font-size: 0.9rem;
-  }
-
-  .technician-login-page.is-technician-login form label {
-    margin-bottom: 0.35rem;
-    font-size: 0.75rem;
-  }
-
-  .technician-login-page.is-technician-login form button[type="submit"] {
-    min-height: 2.75rem;
-    padding-top: 0.65rem;
-    padding-bottom: 0.65rem;
-  }
-
-  .technician-login-page.is-technician-login .technician-role-switcher {
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-  }
-
-  .technician-login-page.is-technician-login .technician-role-switcher button {
-    min-height: 2.75rem;
-    padding: 0.65rem 0.4rem;
-    font-size: 0.78rem;
-  }
-
-  .technician-login-page.is-technician-login .technician-login-card > div:nth-child(3) {
-    margin-bottom: 0.875rem;
-    padding: 0.75rem;
-  }
-}
-
-@media (max-width: 360px) {
-  .technician-login-page.is-technician-login {
-    padding-right: 0.5rem;
-    padding-left: 0.5rem;
-  }
-
-  .technician-login-page.is-technician-login .technician-login-card {
-    padding: 0.875rem;
-  }
-
-  .technician-login-page.is-technician-login .technician-role-switcher button {
-    gap: 0.25rem;
-    font-size: 0.7rem;
-  }
-}
-/* ==========================================================
-   v5.1.0 — COMPACT TECHNICIAN CARDS + 3D BUTTONS
-   تصغير الكارت + أزرار 3D بارزة لألوان الفني
-   ========================================================== */
-
-/* 1️⃣ الكارت — أصغر وأنضف */
-.operations-light-theme .order-card-3d {
-  padding: 8px !important;
-  border-radius: 14px !important;
-  margin-bottom: 8px !important;
-  box-shadow:
-    0 2px 6px rgba(15, 23, 42, 0.06),
-    0 4px 12px rgba(15, 23, 42, 0.05) !important;
-}
-
-.operations-light-theme .order-card-3d > * {
-  margin-bottom: 6px !important;
-}
-
-.operations-light-theme .order-card-3d > *:last-child {
-  margin-bottom: 0 !important;
-}
-
-.operations-light-theme .order-card-3d .grid {
-  gap: 5px !important;
-}
-
-.operations-light-theme .order-card-3d h3 {
-  font-size: 13px !important;
-  margin-bottom: 2px !important;
-}
-
-.operations-light-theme .order-card-3d .p-3,
-.operations-light-theme .order-card-3d [class*="p-3"] {
-  padding: 6px !important;
-}
-
-.operations-light-theme .order-card-3d .p-2,
-.operations-light-theme .order-card-3d [class*="p-2"] {
-  padding: 5px !important;
-}
-
-.operations-light-theme .order-card-3d .text-\[9px\],
-.operations-light-theme .order-card-3d .text-\[10px\] {
-  font-size: 9px !important;
-  line-height: 1.3 !important;
-}
-
-/* 2️⃣ صف الأزرار — 5 في صف */
-.operations-light-theme .order-card-3d .flex.gap-2 {
-  flex-wrap: wrap !important;
-  gap: 4px !important;
-}
-
-.operations-light-theme .order-card-3d .flex.gap-2 button {
-  flex: 1 1 calc(20% - 4px) !important;
-  min-width: 60px !important;
-}
-
-/* 3️⃣ نظام الظلال 3D */
-.operations-light-theme .order-card-3d button {
-  position: relative !important;
-  padding: 6px 8px !important;
-  border-radius: 10px !important;
-  font-size: 10px !important;
-  font-weight: 800 !important;
-  min-height: 34px !important;
-  border-width: 1.5px !important;
-  transition: all 180ms cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 -2px 0 rgba(15, 23, 42, 0.06) inset,
-    0 3px 0 rgba(15, 23, 42, 0.12),
-    0 6px 14px rgba(15, 23, 42, 0.10) !important;
-}
-
-.operations-light-theme .order-card-3d button:hover {
-  transform: translateY(-3px) !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.95) inset,
-    0 -2px 0 rgba(15, 23, 42, 0.08) inset,
-    0 6px 0 rgba(15, 23, 42, 0.15),
-    0 12px 24px rgba(15, 23, 42, 0.20) !important;
-}
-
-.operations-light-theme .order-card-3d button:active {
-  transform: translateY(1px) !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.6) inset,
-    0 1px 2px rgba(15, 23, 42, 0.20) inset !important;
-}
-
-/* 4️⃣ الأزرار الملونة — ألوان بارزة 3D */
-
-/* 🔍 كشف — أزرق سماوي 3D */
-.operations-light-theme .order-card-3d button[class*="bg-blue-"],
-.operations-light-theme .order-card-3d button[class*="text-blue-"] {
-  background: linear-gradient(180deg, #ffffff 0%, #e0ecff 100%) !important;
-  color: #1d4ed8 !important;
-  border-color: #93c5fd !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 -2px 0 rgba(37, 99, 235, 0.10) inset,
-    0 3px 0 #93c5fd,
-    0 6px 14px rgba(37, 99, 235, 0.18) !important;
-}
-.operations-light-theme .order-card-3d button[class*="bg-blue-"]:hover,
-.operations-light-theme .order-card-3d button[class*="text-blue-"]:hover {
-  background: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%) !important;
-  border-color: #2563eb !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 -2px 0 rgba(37, 99, 235, 0.12) inset,
-    0 5px 0 #60a5fa,
-    0 12px 22px rgba(37, 99, 235, 0.30) !important;
-}
-
-/* ⏰ تأجيل — رمادي هادئ 3D */
-.operations-light-theme .order-card-3d button[class*="bg-slate-"] {
-  background: linear-gradient(180deg, #ffffff 0%, #edf1f6 100%) !important;
-  color: #475569 !important;
-  border-color: #cbd5e1 !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 -2px 0 rgba(15, 23, 42, 0.06) inset,
-    0 3px 0 #cbd5e1,
-    0 6px 14px rgba(15, 23, 42, 0.10) !important;
-}
-.operations-light-theme .order-card-3d button[class*="bg-slate-"]:hover {
-  background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%) !important;
-  color: #334155 !important;
-  border-color: #94a3b8 !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 -2px 0 rgba(15, 23, 42, 0.08) inset,
-    0 5px 0 #94a3b8,
-    0 12px 22px rgba(15, 23, 42, 0.18) !important;
-}
-
-/* ❌ إلغاء — أحمر فاتح 3D */
-.operations-light-theme .order-card-3d button[class*="text-rose-"],
-.operations-light-theme .order-card-3d button[class*="text-red-"] {
-  background: linear-gradient(180deg, #ffffff 0%, #ffe4e4 100%) !important;
-  color: #be123c !important;
-  border-color: #fca5a5 !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 -2px 0 rgba(225, 29, 72, 0.10) inset,
-    0 3px 0 #fca5a5,
-    0 6px 14px rgba(225, 29, 72, 0.15) !important;
-}
-.operations-light-theme .order-card-3d button[class*="text-rose-"]:hover,
-.operations-light-theme .order-card-3d button[class*="text-red-"]:hover {
-  background: linear-gradient(180deg, #fee2e2 0%, #fecaca 100%) !important;
-  color: #9f1239 !important;
-  border-color: #f87171 !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 -2px 0 rgba(225, 29, 72, 0.12) inset,
-    0 5px 0 #f87171,
-    0 12px 22px rgba(225, 29, 72, 0.25) !important;
-}
-
-/* 💰 تصفية — أخضر واضح 3D */
-.operations-light-theme .order-card-3d button[class*="bg-emerald-"],
-.operations-light-theme .order-card-3d button[class*="text-emerald-"] {
-  background: linear-gradient(180deg, #ffffff 0%, #d4fae7 100%) !important;
-  color: #047857 !important;
-  border-color: #6ee7b7 !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 -2px 0 rgba(16, 185, 129, 0.12) inset,
-    0 3px 0 #6ee7b7,
-    0 6px 14px rgba(16, 185, 129, 0.20) !important;
-}
-.operations-light-theme .order-card-3d button[class*="bg-emerald-"]:hover,
-.operations-light-theme .order-card-3d button[class*="text-emerald-"]:hover {
-  background: linear-gradient(180deg, #d1fae5 0%, #a7f3d0 100%) !important;
-  color: #065f46 !important;
-  border-color: #10b981 !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 -2px 0 rgba(16, 185, 129, 0.15) inset,
-    0 5px 0 #10b981,
-    0 12px 22px rgba(16, 185, 129, 0.30) !important;
-}
-
-/* 💰 تصفية رسوم زيارة — برتقالي دافئ 3D */
-.operations-light-theme .order-card-3d button[class*="bg-orange-"],
-.operations-light-theme .order-card-3d button[class*="text-orange-"] {
-  background: linear-gradient(180deg, #ffffff 0%, #ffe9d1 100%) !important;
-  color: #c2410c !important;
-  border-color: #fdba74 !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 -2px 0 rgba(249, 115, 22, 0.12) inset,
-    0 3px 0 #fdba74,
-    0 6px 14px rgba(249, 115, 22, 0.20) !important;
-}
-.operations-light-theme .order-card-3d button[class*="bg-orange-"]:hover,
-.operations-light-theme .order-card-3d button[class*="text-orange-"]:hover {
-  background: linear-gradient(180deg, #ffedd5 0%, #fed7aa 100%) !important;
-  color: #9a3412 !important;
-  border-color: #fb923c !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 -2px 0 rgba(249, 115, 22, 0.15) inset,
-    0 5px 0 #fb923c,
-    0 12px 22px rgba(249, 115, 22, 0.30) !important;
-}
-
-/* 📋 إيصال سحب — بنفسجي 3D */
-.operations-light-theme .order-card-3d button[class*="bg-purple-"],
-.operations-light-theme .order-card-3d button[class*="text-purple-"] {
-  background: linear-gradient(180deg, #ffffff 0%, #ebe2ff 100%) !important;
-  color: #6d28d9 !important;
-  border-color: #c4b5fd !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 -2px 0 rgba(139, 92, 246, 0.12) inset,
-    0 3px 0 #c4b5fd,
-    0 6px 14px rgba(139, 92, 246, 0.20) !important;
-}
-.operations-light-theme .order-card-3d button[class*="bg-purple-"]:hover,
-.operations-light-theme .order-card-3d button[class*="text-purple-"]:hover {
-  background: linear-gradient(180deg, #ede9fe 0%, #ddd6fe 100%) !important;
-  color: #5b21b6 !important;
-  border-color: #a78bfa !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 -2px 0 rgba(139, 92, 246, 0.15) inset,
-    0 5px 0 #a78bfa,
-    0 12px 22px rgba(139, 92, 246, 0.30) !important;
-}
-
-/* 5️⃣ الأزرار الرئيسية الكبيرة (اتصال / واتساب) — 3D بارز */
-.operations-light-theme .order-card-3d button[class*="bg-green-600"],
-.operations-light-theme .order-card-3d button[class*="bg-emerald-600"] {
-  min-height: 42px !important;
-  padding: 10px 14px !important;
-  font-size: 12px !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.4) inset,
-    0 -3px 0 rgba(0, 0, 0, 0.18) inset,
-    0 5px 0 #065f46,
-    0 8px 20px rgba(16, 185, 129, 0.30) !important;
-}
-.operations-light-theme .order-card-3d button[class*="bg-green-600"]:hover,
-.operations-light-theme .order-card-3d button[class*="bg-emerald-600"]:hover {
-  transform: translateY(-3px) !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.45) inset,
-    0 -3px 0 rgba(0, 0, 0, 0.20) inset,
-    0 8px 0 #065f46,
-    0 14px 28px rgba(16, 185, 129, 0.40) !important;
-}
-
-/* 6️⃣ الموبايل — تصغير إضافي */
-@media (max-width: 640px) {
-  .operations-light-theme .order-card-3d {
-    padding: 7px !important;
-  }
-  
-  .operations-light-theme .order-card-3d button {
-    padding: 5px 6px !important;
-    font-size: 9px !important;
-    min-height: 30px !important;
-    border-width: 1.5px !important;
-  }
-  
-  .operations-light-theme .order-card-3d .flex.gap-2 button {
-    min-width: 55px !important;
-  }
-     }
-/* ==========================================================
-   v5.2.0 — Technician Header: Match Manager Royal Blue
-   هيدر بوابة الفنيين بنفس أزرق وألوان لوحة المدير
-   ========================================================== */
-
-/* 1️⃣ الهيدر الرئيسي في بوابة الفني — أزرق ملكي متدرج */
-.operations-light-theme > header,
-.operations-light-theme > .sticky.top-0,
-.operations-light-theme .tech-portal-header,
-.operations-light-theme > div:first-child > header {
-  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #0d9488 100%) !important;
-  border-color: transparent !important;
-  box-shadow: 0 12px 40px rgba(30, 58, 138, 0.28) !important;
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  position: relative;
-  color: #ffffff !important;
-}
-
-/* خط رفيع أسفل الهيدر — يدي لمسة أنيقة */
-.operations-light-theme > header::after,
-.operations-light-theme > .sticky.top-0::after,
-.operations-light-theme .tech-portal-header::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-}
-
-/* 2️⃣ كل النصوص والعناوين في الهيدر — بيضاء */
-.operations-light-theme > header h1,
-.operations-light-theme > header h2,
-.operations-light-theme > header h3,
-.operations-light-theme > header p,
-.operations-light-theme > header span,
-.operations-light-theme > .sticky.top-0 h1,
-.operations-light-theme > .sticky.top-0 h2,
-.operations-light-theme > .sticky.top-0 h3,
-.operations-light-theme > .sticky.top-0 p,
-.operations-light-theme > .sticky.top-0 span,
-.operations-light-theme .tech-portal-header h1,
-.operations-light-theme .tech-portal-header h2,
-.operations-light-theme .tech-portal-header p,
-.operations-light-theme .tech-portal-header span {
-  color: #ffffff !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-}
-
-/* 3️⃣ الأيقونات في الهيدر — بيضاء */
-.operations-light-theme > header svg,
-.operations-light-theme > .sticky.top-0 svg,
-.operations-light-theme .tech-portal-header svg {
-  color: #ffffff !important;
-}
-
-/* 4️⃣ شارة "الشاشة يقظة" — خضراء فاتحة واضحة */
-.operations-light-theme > header button[class*="emerald"],
-.operations-light-theme > .sticky.top-0 button[class*="emerald"],
-.operations-light-theme .tech-portal-header button[class*="emerald"] {
-  background: rgba(16, 185, 129, 0.28) !important;
-  border: 1.5px solid rgba(52, 211, 153, 0.5) !important;
-  color: #ffffff !important;
-  backdrop-filter: blur(8px);
-}
-
-/* 5️⃣ شارات "المعرض" و "الكاميرا" — زر شفاف أنيق */
-.operations-light-theme > header button,
-.operations-light-theme > .sticky.top-0 button,
-.operations-light-theme .tech-portal-header button {
-  background: rgba(255, 255, 255, 0.14) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.28) !important;
-  color: #ffffff !important;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  transition: all 240ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.operations-light-theme > header button:hover,
-.operations-light-theme > .sticky.top-0 button:hover,
-.operations-light-theme .tech-portal-header button:hover {
-  background: rgba(255, 255, 255, 0.26) !important;
-  border-color: rgba(255, 255, 255, 0.45) !important;
-  transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
-}
-
-/* 6️⃣ صورة الفني — إطار أبيض ناعم */
-.operations-light-theme > header img,
-.operations-light-theme > .sticky.top-0 img,
-.operations-light-theme .tech-portal-header img {
-  border-color: rgba(255, 255, 255, 0.4) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.20);
-}
-
-/* 7️⃣ التابات (الأوردرات / أداء الفني) — أنيقة */
-.operations-light-theme [role="tablist"] {
-  background: rgba(255, 255, 255, 0.85) !important;
-  border: 1px solid #e3e9f2 !important;
-  border-radius: 20px !important;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08) !important;
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  padding: 0.6rem !important;
-}
-
-/* زر التاب النشط — أزرق ملكي */
-.operations-light-theme [role="tab"][aria-selected="true"] {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
-  color: #ffffff !important;
-  border-color: transparent !important;
-  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.32) !important;
-  transform: translateY(-2px) !important;
-}
-
-.operations-light-theme [role="tab"][aria-selected="true"] * {
-  color: #ffffff !important;
-}
-
-/* 8️⃣ الشريط البرتقالي (التنبيه للفني) — تحسين الألوان */
-.operations-light-theme > div[class*="bg-orange"],
-.operations-light-theme > div[class*="bg-amber"],
-.operations-light-theme [class*="bg-orange-500"],
-.operations-light-theme [class*="bg-amber-500"] {
-  background: linear-gradient(135deg, #ea580c 0%, #f97316 100%) !important;
-  color: #ffffff !important;
-  border: none !important;
-  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.25) !important;
-}
-
-.operations-light-theme > div[class*="bg-orange"] *,
-.operations-light-theme > div[class*="bg-amber"] *,
-.operations-light-theme [class*="bg-orange-500"] *,
-.operations-light-theme [class*="bg-amber-500"] * {
-  color: #ffffff !important;
-   }
-/* ==========================================================
-   v5.3.0 — ULTRA COMPACT TECHNICIAN CARD
-   ضغط كارت الفني لأقصى درجة — كل العناصر أصغر بـ 40%
-   ========================================================== */
-
-/* 1️⃣ الكارت نفسه — ضغط شديد */
-.operations-light-theme .order-card-3d {
-  padding: 6px !important;
-  margin-bottom: 6px !important;
-  border-radius: 12px !important;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05) !important;
-}
-
-/* 2️⃣ الهيدر (اسم العميل + الرقم) */
-.operations-light-theme .order-card-3d .bg-slate-50 {
-  padding: 6px 8px !important;
-  background: linear-gradient(135deg, #f8fafc, #f1f5f9) !important;
-}
-
-.operations-light-theme .order-card-3d h3 {
-  font-size: 12px !important;
-  line-height: 1.2 !important;
-  margin: 0 !important;
-}
-
-/* 3️⃣ كل النصوص الصغيرة — أصغر */
-.operations-light-theme .order-card-3d {
-  font-size: 10px !important;
-}
-
-.operations-light-theme .order-card-3d [class*="text-\[9px"],
-.operations-light-theme .order-card-3d [class*="text-\[10px"],
-.operations-light-theme .order-card-3d [class*="text-\[11px"] {
-  font-size: 8px !important;
-  line-height: 1.2 !important;
-}
-
-.operations-light-theme .order-card-3d [class*="text-xs"] {
-  font-size: 10px !important;
-  line-height: 1.3 !important;
-}
-
-.operations-light-theme .order-card-3d [class*="text-sm"] {
-  font-size: 11px !important;
-}
-
-/* 4️⃣ صناديق المعلومات (العميل/الفني/الجهاز/التاريخ) */
-.operations-light-theme .order-card-3d .grid {
-  gap: 3px !important;
-}
-
-.operations-light-theme .order-card-3d [class*="bg-slate-50"][class*="border"],
-.operations-light-theme .order-card-3d [class*="bg-blue-50"][class*="border"] {
-  padding: 4px 6px !important;
-  border-radius: 8px !important;
-}
-
-/* 5️⃣ صندوق التفاصيل — مخفي افتراضيًا بالفعل */
-.operations-light-theme .order-card-3d .order-details-wrapper {
-  padding: 6px !important;
-}
-
-/* 6️⃣ الأزرار الرئيسية (اتصال / واتساب) */
-.operations-light-theme .order-card-3d button[class*="bg-green"],
-.operations-light-theme .order-card-3d button[class*="bg-blue-600"],
-.operations-light-theme .order-card-3d button[class*="bg-blue-700"] {
-  min-height: 34px !important;
-  padding: 6px 10px !important;
-  font-size: 11px !important;
-  border-radius: 8px !important;
-}
-
-/* 7️⃣ الأزرار الصغيرة (5 في صف) — ضغط أقصى */
-.operations-light-theme .order-card-3d .flex.gap-2 {
-  gap: 3px !important;
-  padding: 0 !important;
-  margin-top: 4px !important;
-}
-
-.operations-light-theme .order-card-3d .flex.gap-2 button {
-  flex: 1 1 calc(20% - 3px) !important;
-  min-width: 52px !important;
-  padding: 5px 4px !important;
-  font-size: 8.5px !important;
-  min-height: 30px !important;
-  border-radius: 8px !important;
-  font-weight: 800 !important;
-  letter-spacing: -0.02em !important;
-}
-
-/* 8️⃣ أيقونات الأزرار — أصغر */
-.operations-light-theme .order-card-3d button svg {
-  width: 13px !important;
-  height: 13px !important;
-}
-
-/* 9️⃣ زر "تفاصيل" — أصغر */
-.operations-light-theme .order-card-3d .order-details-toggle-btn {
-  padding: 3px 8px !important;
-  font-size: 9px !important;
-  min-height: auto !important;
-}
-
-/* 🔟 شارات الحالة */
-.operations-light-theme .order-card-3d [class*="rounded-full"],
-.operations-light-theme .order-card-3d [class*="rounded-lg"][class*="px-2"] {
-  padding: 2px 6px !important;
-  font-size: 8px !important;
-}
-
-/* 11. الموبايل — تصغير إضافي */
-@media (max-width: 640px) {
-  .operations-light-theme .order-card-3d {
-    padding: 5px !important;
-    margin-bottom: 5px !important;
-  }
-
-  .operations-light-theme .order-card-3d .flex.gap-2 button {
-    flex: 1 1 calc(20% - 3px) !important;
-    min-width: 48px !important;
-    padding: 4px 3px !important;
-    font-size: 8px !important;
-    min-height: 28px !important;
-  }
-
-  .operations-light-theme .order-card-3d h3 {
-    font-size: 11px !important;
-  }
-
-  .operations-light-theme .order-card-3d button[class*="bg-green"],
-  .operations-light-theme .order-card-3d button[class*="bg-blue-600"] {
-    min-height: 32px !important;
-    font-size: 10px !important;
-  }
-}
-
-/* 12. تقليل ارتفاع صناديق المعلومات الفارغة */
-.operations-light-theme .order-card-3d .grid.grid-cols-2 > div {
-  min-height: auto !important;
-}
-
-/* 13. ضغط المسافات بين عناصر الكارت */
-.operations-light-theme .order-card-3d > div {
-  margin-bottom: 3px !important;
-}
-
-.operations-light-theme .order-card-3d > div:last-child {
-  margin-bottom: 0 !important;
-}
-
-/* 14. الأيقونات الكبيرة — أصغر */
-.operations-light-theme .order-card-3d img {
-  max-width: 32px !important;
-  max-height: 32px !important;
-}
-/* ==========================================================
-   v5.5.0 — Fix Modal Centering on Tech Portal
-   المودالات تفتح في وسط الشاشة على طول بدون سكرول
-   ========================================================== */
-
-/* قفل سكرول الصفحة عند فتح المودال */
-body.modal-open {
-  overflow: hidden !important;
-  position: fixed !important;
-  width: 100% !important;
-}
-
-/* كل المودالات في بوابة الفني — مثبتة في وسط الشاشة */
-.operations-light-theme > div[class*="fixed"][class*="inset-0"],
-.operations-light-theme div[class*="fixed"][class*="inset-0"][class*="z-"] {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  z-index: 9999 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 1rem !important;
-  overflow-y: auto !important;
-  background: rgba(0, 0, 0, 0.75) !important;
-}
-
-/* المودال الداخلي — بحد أقصى 90% من الشاشة */
-.operations-light-theme > div[class*="fixed"][class*="inset-0"] > div,
-.operations-light-theme div[class*="fixed"][class*="inset-0"][class*="z-"] > div {
-  max-height: calc(100vh - 2rem) !important;
-  overflow-y: auto !important;
-  width: 100% !important;
-  max-width: 32rem !important;
-  margin: auto !important;
-}
-/* ==========================================================
-   v5.6.0 — Force Modal as Floating Window
-   ضمان ظهور المودالات كنافذة عائمة في وسط الشاشة
-   ========================================================== */
-
-/* إلغاء أي transform على العنصر الأب اللي بيكسر fixed */
-.operations-light-theme,
-.manager-light-theme {
-  transform: none !important;
-  filter: none !important;
-  will-change: auto !important;
-  contain: none !important;
-}
-
-/* المودالات — مثبتة في وسط الشاشة على طول */
-.operations-light-theme > div[class*="fixed"],
-.operations-light-theme div[class*="fixed"][class*="z-\["]  {
-  position: fixed !important;
-  top: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 16px !important;
-  z-index: 9999 !important;
-  overflow-y: auto !important;
-}
-
-/* المحتوى الداخلي للمودال */
-.operations-light-theme > div[class*="fixed"] > div,
-.operations-light-theme div[class*="fixed"][class*="z-\["] > div {
-  max-height: calc(100vh - 32px) !important;
-  overflow-y: auto !important;
-  width: 100% !important;
-  margin: 0 auto !important;
 }
