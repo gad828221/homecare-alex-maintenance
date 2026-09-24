@@ -2188,3 +2188,158 @@
 .operations-light-theme [class*="bg-amber-500"] * {
   color: #ffffff !important;
    }
+/* ==========================================================
+   v5.3.0 — ULTRA COMPACT TECHNICIAN CARD
+   ضغط كارت الفني لأقصى درجة — كل العناصر أصغر بـ 40%
+   ========================================================== */
+
+/* 1️⃣ الكارت نفسه — ضغط شديد */
+.operations-light-theme .order-card-3d {
+  padding: 6px !important;
+  margin-bottom: 6px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05) !important;
+}
+
+/* 2️⃣ الهيدر (اسم العميل + الرقم) */
+.operations-light-theme .order-card-3d .bg-slate-50 {
+  padding: 6px 8px !important;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9) !important;
+}
+
+.operations-light-theme .order-card-3d h3 {
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  margin: 0 !important;
+}
+
+/* 3️⃣ كل النصوص الصغيرة — أصغر */
+.operations-light-theme .order-card-3d {
+  font-size: 10px !important;
+}
+
+.operations-light-theme .order-card-3d [class*="text-\[9px"],
+.operations-light-theme .order-card-3d [class*="text-\[10px"],
+.operations-light-theme .order-card-3d [class*="text-\[11px"] {
+  font-size: 8px !important;
+  line-height: 1.2 !important;
+}
+
+.operations-light-theme .order-card-3d [class*="text-xs"] {
+  font-size: 10px !important;
+  line-height: 1.3 !important;
+}
+
+.operations-light-theme .order-card-3d [class*="text-sm"] {
+  font-size: 11px !important;
+}
+
+/* 4️⃣ صناديق المعلومات (العميل/الفني/الجهاز/التاريخ) */
+.operations-light-theme .order-card-3d .grid {
+  gap: 3px !important;
+}
+
+.operations-light-theme .order-card-3d [class*="bg-slate-50"][class*="border"],
+.operations-light-theme .order-card-3d [class*="bg-blue-50"][class*="border"] {
+  padding: 4px 6px !important;
+  border-radius: 8px !important;
+}
+
+/* 5️⃣ صندوق التفاصيل — مخفي افتراضيًا بالفعل */
+.operations-light-theme .order-card-3d .order-details-wrapper {
+  padding: 6px !important;
+}
+
+/* 6️⃣ الأزرار الرئيسية (اتصال / واتساب) */
+.operations-light-theme .order-card-3d button[class*="bg-green"],
+.operations-light-theme .order-card-3d button[class*="bg-blue-600"],
+.operations-light-theme .order-card-3d button[class*="bg-blue-700"] {
+  min-height: 34px !important;
+  padding: 6px 10px !important;
+  font-size: 11px !important;
+  border-radius: 8px !important;
+}
+
+/* 7️⃣ الأزرار الصغيرة (5 في صف) — ضغط أقصى */
+.operations-light-theme .order-card-3d .flex.gap-2 {
+  gap: 3px !important;
+  padding: 0 !important;
+  margin-top: 4px !important;
+}
+
+.operations-light-theme .order-card-3d .flex.gap-2 button {
+  flex: 1 1 calc(20% - 3px) !important;
+  min-width: 52px !important;
+  padding: 5px 4px !important;
+  font-size: 8.5px !important;
+  min-height: 30px !important;
+  border-radius: 8px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+}
+
+/* 8️⃣ أيقونات الأزرار — أصغر */
+.operations-light-theme .order-card-3d button svg {
+  width: 13px !important;
+  height: 13px !important;
+}
+
+/* 9️⃣ زر "تفاصيل" — أصغر */
+.operations-light-theme .order-card-3d .order-details-toggle-btn {
+  padding: 3px 8px !important;
+  font-size: 9px !important;
+  min-height: auto !important;
+}
+
+/* 🔟 شارات الحالة */
+.operations-light-theme .order-card-3d [class*="rounded-full"],
+.operations-light-theme .order-card-3d [class*="rounded-lg"][class*="px-2"] {
+  padding: 2px 6px !important;
+  font-size: 8px !important;
+}
+
+/* 11. الموبايل — تصغير إضافي */
+@media (max-width: 640px) {
+  .operations-light-theme .order-card-3d {
+    padding: 5px !important;
+    margin-bottom: 5px !important;
+  }
+
+  .operations-light-theme .order-card-3d .flex.gap-2 button {
+    flex: 1 1 calc(20% - 3px) !important;
+    min-width: 48px !important;
+    padding: 4px 3px !important;
+    font-size: 8px !important;
+    min-height: 28px !important;
+  }
+
+  .operations-light-theme .order-card-3d h3 {
+    font-size: 11px !important;
+  }
+
+  .operations-light-theme .order-card-3d button[class*="bg-green"],
+  .operations-light-theme .order-card-3d button[class*="bg-blue-600"] {
+    min-height: 32px !important;
+    font-size: 10px !important;
+  }
+}
+
+/* 12. تقليل ارتفاع صناديق المعلومات الفارغة */
+.operations-light-theme .order-card-3d .grid.grid-cols-2 > div {
+  min-height: auto !important;
+}
+
+/* 13. ضغط المسافات بين عناصر الكارت */
+.operations-light-theme .order-card-3d > div {
+  margin-bottom: 3px !important;
+}
+
+.operations-light-theme .order-card-3d > div:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* 14. الأيقونات الكبيرة — أصغر */
+.operations-light-theme .order-card-3d img {
+  max-width: 32px !important;
+  max-height: 32px !important;
+}
