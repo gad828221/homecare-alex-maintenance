@@ -957,3 +957,94 @@
     transform: none;
   }
 }
+
+
+/* ==========================================================
+   11. DAY MODE READABILITY PATCH
+   Prevents white-on-white text while keeping white button labels.
+   ========================================================== */
+.manager-light-theme:not(.staff-night-theme),
+.operations-light-theme:not(.staff-night-theme) {
+  --bg: #e8edf3;
+  --surface: #ffffff;
+  --surface-2: #f4f7fa;
+  --ink: #17202a;
+  --ink-2: #334155;
+  --muted: #536274;
+  --border: #cbd5e1;
+  background: linear-gradient(145deg, #e8edf3 0%, #f5f7fa 48%, #e6ecf2 100%) !important;
+  color: var(--ink) !important;
+}
+
+.manager-light-theme:not(.staff-night-theme) main,
+.operations-light-theme:not(.staff-night-theme) main {
+  color: var(--ink) !important;
+}
+
+/* Text that previously inherited white from dark utility classes. */
+.manager-light-theme:not(.staff-night-theme) .bg-white .text-white:not(button),
+.operations-light-theme:not(.staff-night-theme) .bg-white .text-white:not(button),
+.manager-light-theme:not(.staff-night-theme) .bg-slate-50 .text-white:not(button),
+.operations-light-theme:not(.staff-night-theme) .bg-slate-50 .text-white:not(button),
+.manager-light-theme:not(.staff-night-theme) .bg-\[\#ffffff\] .text-white:not(button),
+.operations-light-theme:not(.staff-night-theme) .bg-\[\#ffffff\] .text-white:not(button) {
+  color: var(--ink) !important;
+  text-shadow: none !important;
+}
+
+.manager-light-theme:not(.staff-night-theme) main .text-slate-100,
+.manager-light-theme:not(.staff-night-theme) main .text-slate-200,
+.manager-light-theme:not(.staff-night-theme) main .text-slate-300,
+.manager-light-theme:not(.staff-night-theme) main .text-slate-400,
+.operations-light-theme:not(.staff-night-theme) main .text-slate-100,
+.operations-light-theme:not(.staff-night-theme) main .text-slate-200,
+.operations-light-theme:not(.staff-night-theme) main .text-slate-300,
+.operations-light-theme:not(.staff-night-theme) main .text-slate-400 {
+  color: #526174 !important;
+}
+
+.manager-light-theme:not(.staff-night-theme) main .text-white,
+.operations-light-theme:not(.staff-night-theme) main .text-white {
+  color: var(--ink) !important;
+}
+
+/* Action controls retain white labels on saturated backgrounds. */
+.manager-light-theme:not(.staff-night-theme) main button.text-white,
+.manager-light-theme:not(.staff-night-theme) main button .text-white,
+.operations-light-theme:not(.staff-night-theme) main button.text-white,
+.operations-light-theme:not(.staff-night-theme) main button .text-white,
+.manager-light-theme:not(.staff-night-theme) main a.text-white,
+.operations-light-theme:not(.staff-night-theme) main a.text-white {
+  color: #ffffff !important;
+}
+
+.manager-light-theme:not(.staff-night-theme) .bg-white,
+.operations-light-theme:not(.staff-night-theme) .bg-white {
+  border-color: #d4dde7 !important;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08) !important;
+}
+
+.manager-light-theme:not(.staff-night-theme) .order-card-3d,
+.operations-light-theme:not(.staff-night-theme) .order-card-3d {
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 8px 0 rgba(148, 163, 184, 0.32), 0 16px 28px rgba(15, 23, 42, 0.10) !important;
+}
+
+.manager-light-theme:not(.staff-night-theme) .order-card-3d:hover,
+.operations-light-theme:not(.staff-night-theme) .order-card-3d:hover {
+  box-shadow: 0 10px 0 rgba(148, 163, 184, 0.35), 0 20px 34px rgba(37, 99, 235, 0.16) !important;
+}
+
+.manager-light-theme:not(.staff-night-theme) [role="tablist"],
+.operations-light-theme:not(.staff-night-theme) [role="tablist"] {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+}
+
+@media (max-width: 640px) {
+  .manager-light-theme:not(.staff-night-theme) main,
+  .operations-light-theme:not(.staff-night-theme) main {
+    background: transparent !important;
+  }
+}
