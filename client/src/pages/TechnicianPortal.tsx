@@ -94,12 +94,10 @@ const getWorkflowNext = (order: any) => {
 
 const getTechnicianPrimaryAction = (order: any) => {
   const stage = getWorkflowStage(order);
-  if (stage === 'new') return { stage, label: 'اتصل بالعميل', tone: 'blue', icon: 'phone' };
-  if (stage === 'scheduled') return { stage, label: 'تأكيد الموعد وبدء التنفيذ', tone: 'orange', icon: 'schedule' };
-  if (stage === 'in_progress') return { stage, label: 'فتح التصفية', tone: 'emerald', icon: 'settle' };
-  if (stage === 'ready_collection') return { stage, label: 'إتمام التصفية والإغلاق', tone: 'emerald', icon: 'settle' };
+  // v4.9.0: زر التصفية ظاهر في كل المراحل المفتوحة
+  if (stage === 'closed') return { stage, label: 'تم الإغلاق', tone: 'slate', icon: 'closed' };
   if (stage === 'blocked') return { stage, label: 'تحديث سبب التعطيل', tone: 'amber', icon: 'blocked' };
-  return { stage, label: 'تم الإغلاق', tone: 'slate', icon: 'closed' };
+  return { stage, label: 'فتح التصفية', tone: 'emerald', icon: 'settle' };
 };
 
 const removeTechnicianFollowUpMarker = (adminNotes: any) => String(adminNotes || '')
