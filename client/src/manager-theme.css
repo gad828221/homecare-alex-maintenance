@@ -1223,3 +1223,404 @@
   color: #64748b !important;
   font-weight: 800 !important;
 }
+/* ==========================================================
+   🌙 DARK MODE — v6.1.0 Enhanced
+   ========================================================== */
+
+/* ===== 1. BASE ===== */
+html.dark-mode,
+html.dark-mode body {
+  background: #0a0f1a !important;
+  color: #e2e8f0 !important;
+  color-scheme: dark;
+}
+
+html.dark-mode .operations-light-theme,
+html.dark-mode .manager-light-theme {
+  --bg: #0a0f1a;
+  --surface: #131c2e;
+  --surface-2: #1e2a41;
+  --ink: #f1f5f9;
+  --ink-2: #cbd5e1;
+  --muted: #94a3b8;
+  --border: #2d3a52;
+
+  background: #0a0f1a !important;
+  color: #e2e8f0 !important;
+}
+
+/* ===== 2. HEADER — Deep Royal Blue ===== */
+html.dark-mode .operations-light-theme > .sticky.top-0,
+html.dark-mode .manager-light-theme > .sticky.top-0 {
+  background: linear-gradient(135deg, #0a1a35 0%, #1e3a8a 50%, #115e59 100%) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* ===== 3. SURFACES ===== */
+html.dark-mode .operations-light-theme .bg-white,
+html.dark-mode .manager-light-theme .bg-white,
+html.dark-mode .operations-light-theme [class*="bg-slate-900"],
+html.dark-mode .manager-light-theme [class*="bg-slate-900"],
+html.dark-mode .operations-light-theme [class*="bg-slate-950"],
+html.dark-mode .manager-light-theme [class*="bg-slate-950"] {
+  background-color: #131c2e !important;
+  color: #f1f5f9 !important;
+}
+
+html.dark-mode .operations-light-theme [class*="bg-slate-800"],
+html.dark-mode .manager-light-theme [class*="bg-slate-800"],
+html.dark-mode .operations-light-theme [class*="bg-slate-100"],
+html.dark-mode .manager-light-theme [class*="bg-slate-100"],
+html.dark-mode .operations-light-theme [class*="bg-slate-50"],
+html.dark-mode .manager-light-theme [class*="bg-slate-50"] {
+  background-color: #1e2a41 !important;
+  color: #e2e8f0 !important;
+}
+
+/* ===== 4. TEXT ===== */
+html.dark-mode .operations-light-theme .text-white,
+html.dark-mode .manager-light-theme .text-white,
+html.dark-mode .operations-light-theme .text-slate-900,
+html.dark-mode .manager-light-theme .text-slate-900,
+html.dark-mode .operations-light-theme .text-slate-800,
+html.dark-mode .manager-light-theme .text-slate-800 {
+  color: #f1f5f9 !important;
+}
+
+html.dark-mode .operations-light-theme .text-slate-700,
+html.dark-mode .manager-light-theme .text-slate-700,
+html.dark-mode .operations-light-theme .text-slate-600,
+html.dark-mode .manager-light-theme .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+html.dark-mode .operations-light-theme .text-slate-500,
+html.dark-mode .manager-light-theme .text-slate-500,
+html.dark-mode .operations-light-theme .text-slate-400,
+html.dark-mode .manager-light-theme .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+/* ===== 5. BORDERS ===== */
+html.dark-mode .operations-light-theme [class*="border-slate-"],
+html.dark-mode .manager-light-theme [class*="border-slate-"],
+html.dark-mode .operations-light-theme [class*="border-white/"],
+html.dark-mode .manager-light-theme [class*="border-white/"] {
+  border-color: #2d3a52 !important;
+}
+
+/* ===== 6. CARDS ===== */
+html.dark-mode .operations-light-theme .order-card-3d,
+html.dark-mode .manager-light-theme .order-card-3d {
+  background: linear-gradient(165deg, #1a2540 0%, #131c2e 100%) !important;
+  border: 1.5px solid #2d3a52 !important;
+  color: #e2e8f0 !important;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.5),
+    0 12px 32px rgba(0, 0, 0, 0.3) !important;
+}
+
+html.dark-mode .operations-light-theme .order-card-3d:hover,
+html.dark-mode .manager-light-theme .order-card-3d:hover {
+  border-color: #60a5fa !important;
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.6),
+    0 20px 48px rgba(59, 130, 246, 0.20) !important;
+}
+
+html.dark-mode .operations-light-theme .order-card-3d h3,
+html.dark-mode .manager-light-theme .order-card-3d h3 {
+  color: #f1f5f9 !important;
+}
+
+/* ===== 7. ORDER SUMMARY GRID ===== */
+html.dark-mode .order-card-summary {
+  background: linear-gradient(160deg, #131c2e, #0a0f1a) !important;
+  border-color: #2d3a52 !important;
+}
+
+html.dark-mode .order-summary-item {
+  background: #1a2540 !important;
+  border-color: #2d3a52 !important;
+  color: #93c5fd !important;
+}
+
+html.dark-mode .order-summary-item strong {
+  color: #f1f5f9 !important;
+}
+
+html.dark-mode .order-summary-item span {
+  color: #94a3b8 !important;
+}
+
+html.dark-mode .order-summary-warning {
+  background: linear-gradient(180deg, rgba(120, 53, 15, 0.5), rgba(154, 52, 18, 0.4)) !important;
+  border-color: #b45309 !important;
+}
+
+html.dark-mode .order-summary-warning strong {
+  color: #fbbf24 !important;
+}
+
+/* ===== 8. TABS ===== */
+html.dark-mode .manager-light-theme [role="tablist"],
+html.dark-mode .operations-light-theme [role="tablist"] {
+  background: #131c2e !important;
+  border-color: #2d3a52 !important;
+}
+
+html.dark-mode .manager-light-theme [role="tab"],
+html.dark-mode .operations-light-theme [role="tab"] {
+  background: #1a2540 !important;
+  border-color: #2d3a52 !important;
+  color: #94a3b8 !important;
+}
+
+html.dark-mode .manager-light-theme [role="tab"]:hover,
+html.dark-mode .operations-light-theme [role="tab"]:hover {
+  background: #243b5e !important;
+  border-color: #60a5fa !important;
+  color: #93c5fd !important;
+}
+
+html.dark-mode .manager-light-theme [role="tab"][aria-selected="true"],
+html.dark-mode .operations-light-theme [role="tab"][aria-selected="true"] {
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 24px rgba(59, 130, 246, 0.45) !important;
+}
+
+html.dark-mode .manager-light-theme [role="tab"][aria-selected="true"] *,
+html.dark-mode .operations-light-theme [role="tab"][aria-selected="true"] * {
+  color: #ffffff !important;
+}
+
+/* ===== 9. BUTTONS ===== */
+html.dark-mode .operations-light-theme .order-card-3d button,
+html.dark-mode .manager-light-theme .order-card-3d button {
+  background: linear-gradient(180deg, #2d3a52 0%, #1e2a41 100%) !important;
+  border-color: #3f4d68 !important;
+  color: #cbd5e1 !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.10) inset,
+    0 -2px 0 rgba(0, 0, 0, 0.3) inset,
+    0 3px 0 #0a0f1a,
+    0 6px 14px rgba(0, 0, 0, 0.4) !important;
+}
+
+html.dark-mode .operations-light-theme .order-card-3d button:hover,
+html.dark-mode .manager-light-theme .order-card-3d button:hover {
+  background: linear-gradient(180deg, #3f4d68 0%, #2d3a52 100%) !important;
+  border-color: #60a5fa !important;
+  color: #ffffff !important;
+}
+
+/* Colored buttons stay vibrant */
+html.dark-mode .operations-light-theme .order-card-3d button[class*="bg-blue-600"] {
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%) !important;
+  color: #ffffff !important;
+}
+
+html.dark-mode .operations-light-theme .order-card-3d button[class*="bg-green-600"],
+html.dark-mode .operations-light-theme .order-card-3d button[class*="bg-emerald-600"] {
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
+}
+
+html.dark-mode .operations-light-theme .order-card-3d button[class*="bg-orange-"] {
+  background: linear-gradient(180deg, #fb923c 0%, #ea580c 100%) !important;
+  color: #ffffff !important;
+}
+
+html.dark-mode .operations-light-theme .order-card-3d button[class*="text-rose-"] {
+  background: linear-gradient(180deg, #f43f5e 0%, #e11d48 100%) !important;
+  color: #ffffff !important;
+}
+
+html.dark-mode .operations-light-theme .order-card-3d button[class*="bg-purple-"] {
+  background: linear-gradient(180deg, #8b5cf6 0%, #7c3aed 100%) !important;
+  color: #ffffff !important;
+}
+
+/* ===== 10. INPUTS ===== */
+html.dark-mode .operations-light-theme input,
+html.dark-mode .operations-light-theme select,
+html.dark-mode .operations-light-theme textarea,
+html.dark-mode .manager-light-theme input,
+html.dark-mode .manager-light-theme select,
+html.dark-mode .manager-light-theme textarea {
+  background: #1a2540 !important;
+  border-color: #2d3a52 !important;
+  color: #f1f5f9 !important;
+}
+
+html.dark-mode .operations-light-theme input:focus,
+html.dark-mode .manager-light-theme input:focus,
+html.dark-mode .operations-light-theme select:focus,
+html.dark-mode .manager-light-theme select:focus {
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.20) !important;
+}
+
+html.dark-mode .operations-light-theme input::placeholder,
+html.dark-mode .manager-light-theme input::placeholder {
+  color: #64748b !important;
+}
+
+/* ===== 11. NOTIFICATIONS CARD ===== */
+html.dark-mode .operations-light-theme #technician-notifications,
+html.dark-mode .operations-light-theme section[aria-live="assertive"] {
+  background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%) !important;
+  border-color: #dc2626 !important;
+  box-shadow: 0 12px 32px rgba(220, 38, 38, 0.25) !important;
+}
+
+html.dark-mode .operations-light-theme #technician-notifications h2,
+html.dark-mode .operations-light-theme #technician-notifications h3,
+html.dark-mode .operations-light-theme #technician-notifications p,
+html.dark-mode .operations-light-theme #technician-notifications span {
+  color: #fee2e2 !important;
+}
+
+html.dark-mode .operations-light-theme #technician-notifications > div > div {
+  background: rgba(15, 23, 42, 0.7) !important;
+  border-color: #991b1b !important;
+}
+
+/* ===== 12. QUICK ACCESS PANEL ===== */
+html.dark-mode #manager-quick-actions {
+  background: linear-gradient(160deg, #1a2540 0%, #131c2e 100%) !important;
+  border-color: #2d3a52 !important;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.7) !important;
+}
+
+html.dark-mode #manager-quick-actions input {
+  background: #0a0f1a !important;
+  border-color: #2d3a52 !important;
+  color: #f1f5f9 !important;
+}
+
+/* ===== 13. BOTTOM NAV ===== */
+html.dark-mode .operations-light-theme nav[aria-label="تنقل الفني"] {
+  background: rgba(10, 15, 26, 0.98) !important;
+  border-color: #2d3a52 !important;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.7) !important;
+}
+
+html.dark-mode .operations-light-theme nav[aria-label="تنقل الفني"] button {
+  color: #94a3b8 !important;
+}
+
+html.dark-mode .operations-light-theme nav[aria-label="تنقل الفني"] button:hover {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #93c5fd !important;
+}
+
+/* ===== 14. TOP ALERT BAR ===== */
+html.dark-mode .operations-light-theme > div.bg-amber-500 {
+  background: linear-gradient(135deg, #b45309 0%, #9a3412 100%) !important;
+  color: #ffffff !important;
+}
+
+/* ===== 15. MODALS ===== */
+html.dark-mode .operations-light-theme > div[class*="fixed"][class*="inset-0"] > div,
+html.dark-mode .manager-light-theme > div[class*="fixed"][class*="inset-0"] > div {
+  background: #131c2e !important;
+  border-color: #2d3a52 !important;
+  color: #e2e8f0 !important;
+}
+
+html.dark-mode .operations-light-theme > div[class*="fixed"][class*="inset-0"] h3,
+html.dark-mode .manager-light-theme > div[class*="fixed"][class*="inset-0"] h3 {
+  color: #f1f5f9 !important;
+}
+
+/* ===== 16. SCROLLBAR ===== */
+html.dark-mode ::-webkit-scrollbar-thumb {
+  background: #2d3a52 !important;
+  border-radius: 6px;
+}
+
+html.dark-mode ::-webkit-scrollbar-thumb:hover {
+  background: #3f4d68 !important;
+}
+
+/* ===== 17. DARK MODE TOGGLE BUTTON ===== */
+.dark-mode-toggle {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, 0.16) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.30) !important;
+  color: #ffffff !important;
+  font-size: 18px !important;
+  cursor: pointer !important;
+  transition: all 240ms cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.dark-mode-toggle:hover {
+  background: rgba(255, 255, 255, 0.28) !important;
+  transform: translateY(-2px) rotate(10deg) !important;
+}
+
+/* ===== 18. TECH-CARD 3D BUTTONS IN DARK ===== */
+html.dark-mode .operations-light-theme .order-card-3d button {
+  font-weight: 800 !important;
+}
+
+html.dark-mode .operations-light-theme .order-card-3d button svg {
+  color: currentColor !important;
+}
+
+/* ===== 19. STATUS BADGES ===== */
+html.dark-mode .operations-light-theme .bg-amber-500\/15,
+html.dark-mode .manager-light-theme .bg-amber-500\/15 {
+  background: rgba(217, 119, 6, 0.25) !important;
+  color: #fbbf24 !important;
+}
+
+html.dark-mode .operations-light-theme .bg-emerald-500\/15,
+html.dark-mode .manager-light-theme .bg-emerald-500\/15 {
+  background: rgba(5, 150, 105, 0.25) !important;
+  color: #34d399 !important;
+}
+
+html.dark-mode .operations-light-theme .bg-blue-500\/15,
+html.dark-mode .manager-light-theme .bg-blue-500\/15 {
+  background: rgba(37, 99, 235, 0.25) !important;
+  color: #60a5fa !important;
+}
+
+html.dark-mode .operations-light-theme .bg-rose-500\/15,
+html.dark-mode .manager-light-theme .bg-rose-500\/15 {
+  background: rgba(225, 29, 72, 0.25) !important;
+  color: #fb7185 !important;
+}
+
+/* ===== 20. FIX PINK/TEXT ON PINK BACKGROUND ===== */
+html.dark-mode .text-rose-100,
+html.dark-mode .text-rose-200,
+html.dark-mode .text-rose-300 { color: #fda4af !important; }
+
+html.dark-mode .text-amber-100,
+html.dark-mode .text-amber-200,
+html.dark-mode .text-amber-300 { color: #fcd34d !important; }
+
+html.dark-mode .text-emerald-100,
+html.dark-mode .text-emerald-200,
+html.dark-mode .text-emerald-300 { color: #6ee7b7 !important; }
+
+html.dark-mode .text-blue-100,
+html.dark-mode .text-blue-200,
+html.dark-mode .text-blue-300 { color: #93c5fd !important; }
+
+html.dark-mode .text-orange-100,
+html.dark-mode .text-orange-200,
+html.dark-mode .text-orange-300 { color: #fdba74 !important; }
+
+html.dark-mode .text-violet-100,
+html.dark-mode .text-violet-200,
+html.dark-mode .text-violet-300 { color: #c4b5fd !important; }
