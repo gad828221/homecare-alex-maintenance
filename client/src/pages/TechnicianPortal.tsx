@@ -220,6 +220,13 @@ export default function TechnicianPortal() {
   });
   const [isUploadingPickupPhoto, setIsUploadingPickupPhoto] = useState(false);
 
+// v5.4.0: التمرير لأعلى عند فتح أي مودال
+useEffect(() => {
+  const anyModalOpen = showSettleModal || showActionModal || showActionsModal || showFollowUpModal || showProfilePanel;
+  if (anyModalOpen) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}, [showSettleModal, showActionModal, showActionsModal, showFollowUpModal, showProfilePanel]);
   useEffect(() => {
     const userRole = localStorage.getItem("userRole");
     const currentUser = localStorage.getItem("currentUser");
