@@ -235,7 +235,7 @@ useEffect(() => {
     document.documentElement.style.overflow = '';
   };
 }, [showSettleModal, showActionModal, showActionsModal, showFollowUpModal, showProfilePanel]);
-}  useEffect(() => {
+ useEffect(() => {
     const userRole = localStorage.getItem("userRole");
     const currentUser = localStorage.getItem("currentUser");
     if (userRole === "tech" && currentUser) {
