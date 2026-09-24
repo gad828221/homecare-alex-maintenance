@@ -1048,3 +1048,43 @@
     background: transparent !important;
   }
 }
+
+
+/* Compact follow-up controls: the next action stays primary, extras stay available but out of the way. */
+.manager-light-theme .follow-up-extra-actions,
+.operations-light-theme .follow-up-extra-actions {
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.manager-light-theme .follow-up-extra-actions[open],
+.operations-light-theme .follow-up-extra-actions[open] {
+  background: rgba(15, 23, 42, 0.48);
+  border-color: rgba(148, 163, 184, 0.34);
+}
+
+.manager-light-theme .follow-up-extra-actions > summary::-webkit-details-marker,
+.operations-light-theme .follow-up-extra-actions > summary::-webkit-details-marker {
+  display: none;
+}
+
+.manager-light-theme .follow-up-extra-actions > summary::before,
+.operations-light-theme .follow-up-extra-actions > summary::before {
+  content: '＋';
+  display: inline-flex;
+  margin-left: 6px;
+  align-items: center;
+  justify-content: center;
+  color: #f59e0b;
+  font-size: 13px;
+}
+
+.manager-light-theme .follow-up-extra-actions[open] > summary::before,
+.operations-light-theme .follow-up-extra-actions[open] > summary::before {
+  content: '−';
+}
+
+.manager-light-theme:not(.staff-night-theme) .follow-up-extra-actions[open],
+.operations-light-theme:not(.staff-night-theme) .follow-up-extra-actions[open] {
+  background: rgba(241, 245, 249, 0.9);
+  border-color: #cbd5e1;
+}
