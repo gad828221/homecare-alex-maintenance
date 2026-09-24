@@ -135,8 +135,8 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-4">
-      <div className="bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md p-8 border border-slate-700">
+    <div className={`technician-login-page min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-4 ${role === 'tech' ? 'is-technician-login' : ''}`}>
+      <div className="technician-login-card bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md p-8 border border-slate-700">
         <div className="text-center mb-8">
           <div className="w-20 h-20 bg-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-orange-900/20">
             <LogIn className="w-10 h-10 text-white" />
@@ -172,7 +172,7 @@ export default function Login() {
           </div>
         )}
 
-        <div className="flex gap-3 mb-6">
+        <div className="technician-role-switcher flex gap-3 mb-6">
           <button
             type="button"
             onClick={() => setRole('admin')}
