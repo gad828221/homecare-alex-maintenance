@@ -210,6 +210,7 @@ export default function TechnicianPortal() {
     warranty_period: '6 أشهر',
     parts_used: ''
   });
+  const [settlementMode, setSettlementMode] = useState<'repair' | 'visit'>('repair');
   const [companyTransferConfirmed, setCompanyTransferConfirmed] = useState(false);
 
   const [pickupForm, setPickupForm] = useState({
@@ -728,7 +729,7 @@ export default function TechnicianPortal() {
     const companyShare = Math.round(total * (100 - technicianPercentage) / 100);
     const techShare = total - companyShare;
     const statusChanged = order.status !== 'inspected';
-    const inspectionFollowUp = { stage: 'ready_collection', nextAction: 'اعتمد التحصيل', followUpDate: '', blocker: '', owner: techName };
+    const inspectionFollowUp = { stage: 'ready_collection', nextAction: 'افتح التصفية', followUpDate: '', blocker: '', owner: techName };
     const inspectionNotes = `${removeTechnicianFollowUpMarker(order.admin_notes)}${buildTechnicianFollowUpMarker(inspectionFollowUp)}`.trim();
     void updateStatus(order.id, 'inspected', {
       total_amount: total, parts_cost: 0, transport_cost: 0, net_amount: total,
@@ -1008,7 +1009,7 @@ export default function TechnicianPortal() {
       return;
     }
     const numValue = parseFloat(value) || 0;
-    const isInspectionVisit = selectedOrder?.status === 'inspected';
+    const isInspectionVisit = settlementMode === 'visit' || selectedOrder?.status === 'inspected';
     const updated = {
       ...settleForm,
       [field]: numValue,
@@ -1020,9 +1021,10 @@ export default function TechnicianPortal() {
     setSettleForm({ ...updated, net_amount: net, technician_share: techShare, company_share: companyShare });
   };
 
-  const openSettleModal = async (order: any) => {
+  const openSettleModal = async (order: any, mode: 'repair' | 'visit' = 'repair') => {
     await fetchTechnicianPercentage();
     setSelectedOrder(order);
+    setSettlementMode(mode);
     const savedOldPhoto = extractPartsPhoto(order.technician_note, 'OLD');
     const savedNewPhoto = extractPartsPhoto(order.technician_note, 'NEW');
     setOldPartsPhoto(savedOldPhoto);
@@ -1030,10 +1032,10 @@ export default function TechnicianPortal() {
     setOldPartsPreview(savedOldPhoto);
     setNewPartsPreview(savedNewPhoto);
     setSettleForm({
-      total_amount: order.total_amount || 0, parts_cost: order.parts_cost || 0, transport_cost: order.transport_cost || 0,
+      total_amount: order.total_amount || 0, parts_cost: mode === 'visit' ? 0 : (order.parts_cost || 0), transport_cost: order.transport_cost || 0,
       net_amount: order.net_amount || 0, technician_share: order.technician_share || 0, company_share: order.company_share || 0,
       warranty_period: '6 أشهر',
-      parts_used: ''
+      parts_used: mode === 'visit' ? 'لا توجد — رسوم زيارة فقط' : ''
     });
     setCompanyTransferConfirmed(false);
     setShowSettleModal(true);
@@ -1074,13 +1076,14 @@ export default function TechnicianPortal() {
       at: transferAt
     });
 
-    const isInspectionVisit = selectedOrder.status === 'inspected';
+    const isInspectionVisit = settlementMode === 'visit' || selectedOrder.status === 'inspected';
     const settlementFollowUp = { stage: 'closed', nextAction: '', followUpDate: '', blocker: '', owner: techName };
     const settlementAdminNotes = `${removeTechnicianFollowUpMarker(selectedOrder.admin_notes)}${buildTechnicianFollowUpMarker(settlementFollowUp)}`.trim();
     const settlementData = {
       ...settleForm,
       admin_notes: settlementAdminNotes,
-      status: isInspectionVisit ? 'inspected' : 'completed',
+      // رسوم الكشف المدفوعة تُغلق كتحصيل مكتمل حتى تظهر للمدير وتدخل الخزنة.
+      status: 'completed',
       warranty_period: isInspectionVisit ? 'بدون ضمان' : settleForm.warranty_period,
       parts_cost: isInspectionVisit ? 0 : settleForm.parts_cost,
       parts_used: isInspectionVisit ? 'لا توجد — كشف/زيارة فقط' : settleForm.parts_used,
@@ -1091,7 +1094,7 @@ export default function TechnicianPortal() {
       technician_note: finalNote
     };
 
-    await updateStatus(selectedOrder.id, isInspectionVisit ? 'inspected' : 'completed', settlementData, { notifyManagers: false });
+    await updateStatus(selectedOrder.id, 'completed', settlementData, { notifyManagers: false });
 
     setShowSettleModal(false);
 
@@ -1903,7 +1906,7 @@ export default function TechnicianPortal() {
                         )}
                         {workflowStage === 'closed' && <div className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 py-3 text-center text-xs font-black text-emerald-200">✅ تم إغلاق الأوردر بعد التصفية</div>}
                         <div className="flex gap-2">
-                          <button onClick={() => openActionModal(order, 'inspect')} className="flex-1 py-2 bg-slate-800/50 hover:bg-slate-800 text-slate-400 rounded-lg text-[9px] font-bold transition-all">🔍 كشف</button>
+                          <button onClick={() => { void openSettleModal(order, 'visit'); }} className="flex-1 py-2 bg-orange-600/20 hover:bg-orange-600/40 text-orange-300 rounded-lg text-[9px] font-black transition-all border border-orange-500/20">💰 تصفية رسوم زيارة</button>
                           <button onClick={() => openActionModal(order, 'defer')} className="flex-1 py-2 bg-slate-800/50 hover:bg-slate-800 text-slate-400 rounded-lg text-[9px] font-bold transition-all">⏰ تأجيل</button>
                           <button onClick={() => openActionModal(order, 'cancel')} className="flex-1 py-2 bg-slate-800/50 hover:bg-slate-800 text-rose-500/50 hover:text-rose-500 rounded-lg text-[9px] font-bold transition-all">❌ إلغاء</button>
                           <button onClick={() => openActionModal(order, 'pickup')} className="flex-1 py-2 bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 rounded-lg text-[9px] font-black transition-all border border-purple-500/20">📋 إيصال سحب</button>
@@ -1951,7 +1954,7 @@ export default function TechnicianPortal() {
           <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md">
             <div className="flex justify-between mb-4"><h3 className="text-xl font-bold text-white">إجراءات الأوردر</h3><button onClick={() => setShowActionsModal(false)} className="text-slate-400"><X className="w-5 h-5" /></button></div>
             <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => { setShowActionsModal(false); openActionModal(selectedOrderForActions, 'inspect'); }} className="bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-400 p-3 rounded-xl flex flex-col items-center gap-1 transition"><DollarSign className="w-6 h-6" /><span className="text-xs">كشف / زيارة بقيمة</span></button>
+              <button onClick={() => { setShowActionsModal(false); void openSettleModal(selectedOrderForActions, 'visit'); }} className="bg-orange-600/20 hover:bg-orange-600/30 text-orange-300 p-3 rounded-xl flex flex-col items-center gap-1 transition"><DollarSign className="w-6 h-6" /><span className="text-xs">تصفية رسوم زيارة</span></button>
               <button onClick={() => { setShowActionsModal(false); openActionModal(selectedOrderForActions, 'cancel'); }} className="bg-red-600/20 hover:bg-red-600/30 text-red-400 p-3 rounded-xl flex flex-col items-center gap-1 transition"><Ban className="w-6 h-6" /><span className="text-xs">إلغاء</span></button>
               <button onClick={() => { setShowActionsModal(false); openActionModal(selectedOrderForActions, 'defer'); }} className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 p-3 rounded-xl flex flex-col items-center gap-1 transition"><CalendarX className="w-6 h-6" /><span className="text-xs">تأجيل</span></button>
               <button onClick={() => { setShowActionsModal(false); openActionModal(selectedOrderForActions, 'note'); }} className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 p-3 rounded-xl flex flex-col items-center gap-1 transition"><MessageSquare className="w-6 h-6" /><span className="text-xs">ملاحظة</span></button>
@@ -2038,7 +2041,7 @@ export default function TechnicianPortal() {
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
           <div className="bg-slate-800 rounded-3xl p-6 w-full max-w-md border border-slate-700 shadow-2xl overflow-y-auto max-h-[90vh]">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-black text-white">💰 تصفية الأوردر</h3>
+              <h3 className="text-xl font-black text-white">{settlementMode === 'visit' || selectedOrder.status === 'inspected' ? '💰 تصفية رسوم الزيارة' : '💰 تصفية الأوردر'}</h3>
               <button onClick={() => setShowSettleModal(false)} className="p-2 bg-slate-700 rounded-full text-slate-400 hover:text-white"><X size={20} /></button>
             </div>
             
@@ -2069,11 +2072,11 @@ export default function TechnicianPortal() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[11px] font-bold text-slate-500 mb-1 block">قطع غيار</label>
+                    <label className="text-[11px] font-bold text-slate-500 mb-1 block">{settlementMode === 'visit' || selectedOrder.status === 'inspected' ? 'قطع غيار (غير مطبق)' : 'قطع غيار'}</label>
                     <input type="number" value={settleForm.parts_cost || ''} onChange={e => handleSettleChange('parts_cost', e.target.value)} className="w-full bg-slate-800 rounded-xl px-3 py-2 text-white border border-slate-700 outline-none" placeholder="0" />
                   </div>
 	                  <div>
-	                    <label className="text-[11px] font-bold text-slate-500 mb-1 block">مواصلات</label>
+                    <label className="text-[11px] font-bold text-slate-500 mb-1 block">مواصلات تخصم من رسوم الزيارة</label>
 	                    <input type="number" value={settleForm.transport_cost || ''} onChange={e => handleSettleChange('transport_cost', e.target.value)} className="w-full bg-slate-800 rounded-xl px-3 py-2 text-white border border-slate-700 outline-none" placeholder="0" />
 	                  </div>
 	                </div>
@@ -2126,7 +2129,7 @@ export default function TechnicianPortal() {
               {/* Summary */}
               <div className="bg-slate-950/50 p-4 rounded-2xl space-y-3 border border-slate-800">
                 <div className="flex justify-between items-center"><span className="text-xs text-slate-500">الصافي للشركة والفني:</span><span className="text-sm font-black text-white">{settleForm.net_amount} ج.م</span></div>
-                {selectedOrder?.status === 'inspected' && <div className="mb-3 rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-3 py-2 text-[10px] font-bold text-cyan-200">🔍 كشف / زيارة فقط: يتم توزيع قيمة الزيارة الصافية بين الفني والشركة حسب نسبة الفني ({technicianPercentage}%)، ولا تُحتسب كإصلاح.</div>}
+                {(settlementMode === 'visit' || selectedOrder?.status === 'inspected') && <div className="mb-3 rounded-xl border border-orange-400/30 bg-orange-500/10 px-3 py-2 text-[10px] font-bold text-orange-200">🔍 رسوم زيارة: اكتب المبلغ المحصل، ويمكن خصم المواصلات منه. سيُغلق الأوردر كتصفية مكتملة ويُرسل للمدير للتأكيد.</div>}
                 <div className="flex justify-between items-center"><span className="text-xs text-slate-500">نصيب الفني ({technicianPercentage}%):</span><span className="text-sm font-black text-emerald-400">{settleForm.technician_share} ج.م</span></div>
                 <div className="flex justify-between items-center pt-2 border-t border-slate-800"><span className="text-xs text-slate-400 font-bold">المستحق للشركة:</span><span className="text-lg font-black text-orange-500">{settleForm.company_share} ج.م</span></div>
               </div>
