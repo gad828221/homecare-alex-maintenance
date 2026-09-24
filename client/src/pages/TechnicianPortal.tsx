@@ -220,8 +220,22 @@ export default function TechnicianPortal() {
   });
   const [isUploadingPickupPhoto, setIsUploadingPickupPhoto] = useState(false);
 
+// v5.6.0: قفل سكرول الصفحة عند فتح أي مودال — المودال يظهر في وسط الشاشة
+useEffect(() => {
+  const anyModalOpen = showSettleModal || showActionModal || showActionsModal || showFollowUpModal || showProfilePanel;
+  if (anyModalOpen) {
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
+  }
+  return () => {
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
+  };
 }, [showSettleModal, showActionModal, showActionsModal, showFollowUpModal, showProfilePanel]);
-  useEffect(() => {
+}  useEffect(() => {
     const userRole = localStorage.getItem("userRole");
     const currentUser = localStorage.getItem("currentUser");
     if (userRole === "tech" && currentUser) {
