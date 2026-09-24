@@ -1624,3 +1624,265 @@ html.dark-mode .text-orange-300 { color: #fdba74 !important; }
 html.dark-mode .text-violet-100,
 html.dark-mode .text-violet-200,
 html.dark-mode .text-violet-300 { color: #c4b5fd !important; }
+/* ==========================================================
+   v6.2.0 — Clear Typography for Reports & Tables
+   توضيح خط التقارير والجداول وملخصات الإدارة
+   ========================================================== */
+
+/* 1️⃣ كل الجداول في التقارير — خط واضح */
+.manager-light-theme table,
+.operations-light-theme table {
+  font-family: 'Cairo', system-ui, sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+}
+
+.manager-light-theme table th,
+.operations-light-theme table th {
+  font-weight: 900 !important;
+  font-size: 12px !important;
+  color: #0f172a !important;
+  padding: 12px 10px !important;
+  background: #f1f5f9 !important;
+  border-bottom: 2px solid #cbd5e1 !important;
+  text-align: right !important;
+  white-space: nowrap !important;
+}
+
+.manager-light-theme table td,
+.operations-light-theme table td {
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  color: #1e293b !important;
+  padding: 10px !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  line-height: 1.5 !important;
+}
+
+.manager-light-theme table tbody tr:hover,
+.operations-light-theme table tbody tr:hover {
+  background: #f8fafc !important;
+}
+
+/* 2️⃣ ملخص الإدارة في التقارير — بطاقات الأرقام */
+.manager-light-theme .grid > div[class*="rounded-xl"][class*="border-slate-800"],
+.operations-light-theme .grid > div[class*="rounded-xl"][class*="border-slate-800"] {
+  border-width: 1.5px !important;
+}
+
+/* عناوين البطاقات */
+.manager-light-theme .grid > div[class*="rounded-xl"] p[class*="text-\[10px\]"],
+.manager-light-theme .grid > div[class*="rounded-xl"] p[class*="text-slate-500"],
+.operations-light-theme .grid > div[class*="rounded-xl"] p[class*="text-\[10px\]"],
+.operations-light-theme .grid > div[class*="rounded-xl"] p[class*="text-slate-500"] {
+  color: #475569 !important;
+  font-weight: 900 !important;
+  font-size: 11px !important;
+  letter-spacing: 0.01em !important;
+}
+
+/* الأرقام الكبيرة في البطاقات */
+.manager-light-theme .grid > div[class*="rounded-xl"] p[class*="text-lg"],
+.manager-light-theme .grid > div[class*="rounded-xl"] p[class*="text-xl"],
+.manager-light-theme .grid > div[class*="rounded-xl"] p[class*="text-2xl"],
+.operations-light-theme .grid > div[class*="rounded-xl"] p[class*="text-lg"],
+.operations-light-theme .grid > div[class*="rounded-xl"] p[class*="text-xl"],
+.operations-light-theme .grid > div[class*="rounded-xl"] p[class*="text-2xl"] {
+  font-weight: 900 !important;
+  letter-spacing: -0.02em !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+}
+
+/* 3️⃣ عناوين الأقسام داخل التقارير */
+.manager-light-theme h3[class*="text-base"],
+.manager-light-theme h3[class*="font-black"],
+.operations-light-theme h3[class*="text-base"],
+.operations-light-theme h3[class*="font-black"] {
+  font-weight: 900 !important;
+  color: #0f172a !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* عناوين التقارير الرئيسية */
+.manager-light-theme h2,
+.operations-light-theme h2 {
+  font-weight: 900 !important;
+  color: #0f172a !important;
+  letter-spacing: -0.02em !important;
+}
+
+/* 4️⃣ نصوص التقارير التفصيلية */
+.manager-light-theme [class*="text-\[11px\]"],
+.operations-light-theme [class*="text-\[11px\]"] {
+  font-weight: 800 !important;
+  font-size: 11px !important;
+  color: #334155 !important;
+}
+
+.manager-light-theme [class*="text-\[10px\]"],
+.operations-light-theme [class*="text-\[10px\]"] {
+  font-weight: 800 !important;
+  font-size: 10px !important;
+  color: #475569 !important;
+}
+
+/* 5️⃣ الألوان المميزة في التقارير — تباين عالي */
+.manager-light-theme .text-orange-300,
+.manager-light-theme .text-orange-400,
+.operations-light-theme .text-orange-300,
+.operations-light-theme .text-orange-400 {
+  color: #c2410c !important;
+  font-weight: 900 !important;
+}
+
+.manager-light-theme .text-emerald-300,
+.manager-light-theme .text-emerald-400,
+.operations-light-theme .text-emerald-300,
+.operations-light-theme .text-emerald-400 {
+  color: #047857 !important;
+  font-weight: 900 !important;
+}
+
+.manager-light-theme .text-blue-300,
+.manager-light-theme .text-blue-400,
+.operations-light-theme .text-blue-300,
+.operations-light-theme .text-blue-400 {
+  color: #1d4ed8 !important;
+  font-weight: 900 !important;
+}
+
+.manager-light-theme .text-amber-300,
+.manager-light-theme .text-amber-400,
+.operations-light-theme .text-amber-300,
+.operations-light-theme .text-amber-400 {
+  color: #b45309 !important;
+  font-weight: 900 !important;
+}
+
+.manager-light-theme .text-rose-300,
+.manager-light-theme .text-rose-400,
+.operations-light-theme .text-rose-300,
+.operations-light-theme .text-rose-400 {
+  color: #be123c !important;
+  font-weight: 900 !important;
+}
+
+.manager-light-theme .text-cyan-300,
+.manager-light-theme .text-cyan-400,
+.operations-light-theme .text-cyan-300,
+.operations-light-theme .text-cyan-400 {
+  color: #0e7490 !important;
+  font-weight: 900 !important;
+}
+
+.manager-light-theme .text-purple-300,
+.manager-light-theme .text-violet-300,
+.operations-light-theme .text-purple-300,
+.operations-light-theme .text-violet-300 {
+  color: #6d28d9 !important;
+  font-weight: 900 !important;
+}
+
+/* 6️⃣ خلفية الجداول — بيضاء نظيفة */
+.manager-light-theme table,
+.operations-light-theme table {
+  background: #ffffff !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+
+.manager-light-theme table thead,
+.operations-light-theme table thead {
+  background: #f8fafc !important;
+}
+
+/* 7️⃣ حاويات التقارير — تحسين */
+.manager-light-theme [class*="rounded-2xl"][class*="border-orange-500"],
+.manager-light-theme [class*="rounded-2xl"][class*="border-cyan-500"],
+.manager-light-theme [class*="rounded-2xl"][class*="border-indigo-500"],
+.operations-light-theme [class*="rounded-2xl"][class*="border-orange-500"],
+.operations-light-theme [class*="rounded-2xl"][class*="border-cyan-500"],
+.operations-light-theme [class*="rounded-2xl"][class*="border-indigo-500"] {
+  background: #ffffff !important;
+  border-width: 1.5px !important;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06) !important;
+}
+
+/* 8️⃣ الرسوم البيانية (charts) */
+.manager-light-theme .grid > div > div[class*="h-32"],
+.operations-light-theme .grid > div > div[class*="h-32"] {
+  font-weight: 900 !important;
+}
+
+.manager-light-theme .grid > div > div[class*="h-32"] span,
+.operations-light-theme .grid > div > div[class*="h-32"] span {
+  font-weight: 900 !important;
+  color: #1e293b !important;
+}
+
+/* 9️⃣ الأشرطة الملونة في التقارير */
+.manager-light-theme .flex-1.h-2,
+.operations-light-theme .flex-1.h-2 {
+  height: 10px !important;
+  border-radius: 5px !important;
+  background: #e2e8f0 !important;
+}
+
+/* 🔟 نصوص "أعلى شهر" و "أكثر يوم" */
+.manager-light-theme span[class*="text-orange-300"],
+.manager-light-theme span[class*="text-orange-400"],
+.operations-light-theme span[class*="text-orange-300"],
+.operations-light-theme span[class*="text-orange-400"] {
+  font-weight: 900 !important;
+  font-size: 12px !important;
+  color: #c2410c !important;
+}
+
+/* 11. الفواتير والأوردرات المكتملة */
+.manager-light-theme [class*="grid-cols-1"][class*="lg:grid-cols-2"] > div,
+.operations-light-theme [class*="grid-cols-1"][class*="lg:grid-cols-2"] > div {
+  font-weight: 800 !important;
+}
+
+.manager-light-theme [class*="grid-cols-1"][class*="lg:grid-cols-2"] p,
+.operations-light-theme [class*="grid-cols-1"][class*="lg:grid-cols-2"] p {
+  font-weight: 800 !important;
+  color: #1e293b !important;
+}
+
+/* 12. التقارير في الوضع الليلي */
+html.dark-mode .manager-light-theme table,
+html.dark-mode .operations-light-theme table {
+  background: #131c2e !important;
+}
+
+html.dark-mode .manager-light-theme table th,
+html.dark-mode .operations-light-theme table th {
+  background: #1a2540 !important;
+  color: #f1f5f9 !important;
+  border-bottom-color: #2d3a52 !important;
+}
+
+html.dark-mode .manager-light-theme table td,
+html.dark-mode .operations-light-theme table td {
+  color: #cbd5e1 !important;
+  border-bottom-color: #2d3a52 !important;
+}
+
+html.dark-mode .manager-light-theme table tbody tr:hover,
+html.dark-mode .operations-light-theme table tbody tr:hover {
+  background: #1a2540 !important;
+}
+
+html.dark-mode .manager-light-theme .grid > div[class*="rounded-xl"],
+html.dark-mode .operations-light-theme .grid > div[class*="rounded-xl"] {
+  background: #1a2540 !important;
+  border-color: #2d3a52 !important;
+}
+
+html.dark-mode .manager-light-theme .grid > div[class*="rounded-xl"] p[class*="text-lg"],
+html.dark-mode .manager-light-theme .grid > div[class*="rounded-xl"] p[class*="text-xl"],
+html.dark-mode .operations-light-theme .grid > div[class*="rounded-xl"] p[class*="text-lg"],
+html.dark-mode .operations-light-theme .grid > div[class*="rounded-xl"] p[class*="text-xl"] {
+  text-shadow: none !important;
+   }
