@@ -34,8 +34,7 @@ export default function ScrollButtons() {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-24 left-6 flex flex-col gap-3 z-[60] animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <button
+    <div className="hidden md:flex fixed bottom-24 left-6 flex-col gap-3 z-[45] animate-in fade-in slide-in-from-bottom-4 duration-300">
         onClick={scrollToTop}
         className="w-12 h-12 bg-slate-800/80 backdrop-blur-md text-orange-500 rounded-2xl flex items-center justify-center shadow-2xl border border-white/10 hover:bg-orange-600 hover:text-white transition-all active:scale-90 group"
         title="للأعلى"
