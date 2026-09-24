@@ -354,16 +354,21 @@ const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   try {
     const url = `${supabaseUrl}/rest/v1/${endpoint}`;
     const res = await fetch(url, {
+      cache: 'no-store',
+      ...options,
       headers: {
         'apikey': supabaseKey,
         'Authorization': `Bearer ${supabaseKey}`,
         'Content-Type': 'application/json',
         'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
-      },
-      cache: 'no-store',
-      ...options,
+        'Pragma': 'no-cache',
+        ...(options?.headers || {})
+      }
     });
+    if (!res.ok) {
+      console.error(`fetchAPI HTTP ${res.status}:`, await res.text());
+      return null;
+    }
     if (res.status === 204 || options?.method === 'DELETE') return [];
     const text = await res.text();
     if (!text) return [];
@@ -1017,11 +1022,29 @@ export default function ProtectedOrders() {
     }
   };
 
+  const syncTechnicianLoginStatus = async (account: any, isActive: boolean) => {
+    if (account?.role !== 'tech') return true;
+    const username = String(account.username || '').trim();
+    const name = String(account.name || '').trim();
+    const filter = username
+      ? `username=eq.${encodeURIComponent(username)}`
+      : `name=eq.${encodeURIComponent(name)}`;
+    const result = await fetchAPI(`technicians?${filter}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ is_active: isActive })
+    });
+    return result !== null;
+  };
+
   const toggleUserAccountStatus = async (user: any) => {
     if (userRole !== 'admin') return showToast("ليس لديك صلاحية", "error");
     try {
-      await fetchAPI(`users?id=eq.${user.id}`, { method: 'PATCH', body: JSON.stringify({ is_active: !user.is_active }) });
-      showToast(user.is_active ? "⚠️ تم إيقاف الحساب" : "✅ تم تفعيل الحساب", "info");
+      const nextIsActive = !user.is_active;
+      const userResult = await fetchAPI(`users?id=eq.${user.id}`, { method: 'PATCH', body: JSON.stringify({ is_active: nextIsActive }) });
+      if (userResult === null) return showToast("❌ تعذر تحديث حساب الموظف", "error");
+      const technicianSynced = await syncTechnicianLoginStatus(user, nextIsActive);
+      if (!technicianSynced) return showToast("⚠️ تم تحديث الحساب لكن تعذر مزامنة دخول الفني", "error");
+      showToast(nextIsActive ? "✅ تم تفعيل الحساب ودخول الفني" : "⚠️ تم إيقاف الحساب ودخول الفني", "info");
       fetchData();
     } catch (err) { console.error(err); }
   };
@@ -2662,8 +2685,12 @@ ${trackingUrl}
 
   const toggleTechnicianActive = async (tech: any) => {
     if (!canManageTechnicians) return showToast("مدير العمليات لا يملك صلاحية تعديل الفنيين", "error");
-    await fetchAPI(`technicians?id=eq.${tech.id}`, { method: 'PATCH', body: JSON.stringify({ is_active: !tech.is_active }) });
-    await addNotification('تغيير حالة فني', `تم ${!tech.is_active ? 'تفعيل' : 'تعطيل'} الفني ${tech.name}`);
+    const nextIsActive = tech.is_active === false;
+    const techResult = await fetchAPI(`technicians?id=eq.${tech.id}`, { method: 'PATCH', body: JSON.stringify({ is_active: nextIsActive }) });
+    if (techResult === null) return showToast("❌ تعذر تحديث حالة الفني", "error");
+    const technicianSynced = await syncTechnicianLoginStatus({ ...tech, role: 'tech' }, nextIsActive);
+    if (!technicianSynced) return showToast("⚠️ تم تحديث الفني لكن تعذر مزامنة حساب الدخول", "error");
+    await addNotification('تغيير حالة فني', `تم ${nextIsActive ? 'تفعيل' : 'تعطيل'} الفني ${tech.name}`);
     fetchData();
   };
 
