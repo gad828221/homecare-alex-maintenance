@@ -769,3 +769,191 @@
 .operations-light-theme button[class*="bg-rose-500/20"] span {
   color: #9f1239 !important;
 }
+
+
+/* ==========================================================
+   10. DIGITAL GRAPHITE — STAFF DAY/NIGHT SYSTEM
+   Scoped to staff portals only; public pages are not affected.
+   ========================================================== */
+.manager-light-theme,
+.operations-light-theme {
+  --staff-ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --staff-3d-shadow: 0 3px 0 rgba(15, 23, 42, 0.18), 0 8px 18px rgba(15, 23, 42, 0.12);
+  --staff-3d-shadow-hover: 0 5px 0 rgba(15, 23, 42, 0.2), 0 14px 26px rgba(15, 23, 42, 0.18);
+}
+
+/* Dark mode has its own palette and never touches visitor routes. */
+.manager-light-theme.staff-night-theme,
+.operations-light-theme.staff-night-theme {
+  --bg: #0b1117;
+  --surface: #121c27;
+  --surface-2: #172432;
+  --ink: #f8fafc;
+  --ink-2: #d6e0eb;
+  --muted: #a9b7c7;
+  --border: #2a3a4b;
+  --blue: #38bdf8;
+  --blue-dark: #0284c7;
+  --orange: #f59e0b;
+  --orange-dark: #d97706;
+  background: var(--bg) !important;
+  color: var(--ink) !important;
+}
+
+.staff-night-theme .bg-white,
+.staff-night-theme .bg-slate-50,
+.staff-night-theme .bg-slate-100,
+.staff-night-theme .bg-gray-50,
+.staff-night-theme .bg-\[\#F4F6F8\],
+.staff-night-theme .bg-\[\#f4f6f8\] {
+  background: var(--surface) !important;
+}
+
+.staff-night-theme .bg-slate-900,
+.staff-night-theme .bg-slate-950,
+.staff-night-theme .bg-slate-800,
+.staff-night-theme .bg-slate-700 {
+  background: var(--surface-2) !important;
+}
+
+.staff-night-theme .text-slate-950,
+.staff-night-theme .text-slate-900,
+.staff-night-theme .text-slate-800,
+.staff-night-theme .text-slate-700,
+.staff-night-theme .text-slate-600 {
+  color: var(--ink) !important;
+}
+
+.staff-night-theme .text-slate-500,
+.staff-night-theme .text-slate-400,
+.staff-night-theme .text-gray-500,
+.staff-night-theme .text-gray-600 {
+  color: var(--muted) !important;
+}
+
+.staff-night-theme input,
+.staff-night-theme select,
+.staff-night-theme textarea {
+  background: #0f1924 !important;
+  border-color: var(--border) !important;
+  color: var(--ink) !important;
+}
+
+.staff-night-theme input::placeholder,
+.staff-night-theme textarea::placeholder {
+  color: #8fa1b4 !important;
+}
+
+.staff-night-theme .order-card-3d,
+.staff-night-theme .order-summary-item,
+.staff-night-theme [role="tablist"] {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+  color: var(--ink) !important;
+}
+
+.staff-night-theme .order-card-summary {
+  background: linear-gradient(145deg, #172432, #101a25) !important;
+  border-color: var(--border) !important;
+}
+
+.staff-night-theme .order-summary-item strong,
+.staff-night-theme .order-card-3d h3 {
+  color: #f8fafc !important;
+}
+
+.staff-night-theme .order-summary-item span {
+  color: #a9b7c7 !important;
+}
+
+/* Every staff button gets a restrained physical key-cap effect. */
+.manager-light-theme button,
+.operations-light-theme button {
+  border-radius: 10px;
+  transition: transform 160ms var(--staff-ease), box-shadow 160ms var(--staff-ease), filter 160ms ease, background-color 160ms ease !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -2px 0 rgba(15, 23, 42, 0.18),
+    var(--staff-3d-shadow) !important;
+}
+
+.manager-light-theme button:hover:not(:disabled),
+.operations-light-theme button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -2px 0 rgba(15, 23, 42, 0.2),
+    var(--staff-3d-shadow-hover) !important;
+}
+
+.manager-light-theme button:active:not(:disabled),
+.operations-light-theme button:active:not(:disabled) {
+  transform: translateY(2px) scale(0.985);
+  filter: brightness(0.98);
+  box-shadow:
+    inset 0 2px 4px rgba(15, 23, 42, 0.28),
+    0 1px 0 rgba(15, 23, 42, 0.18) !important;
+}
+
+.manager-light-theme button:focus-visible,
+.operations-light-theme button:focus-visible,
+.manager-light-theme input:focus-visible,
+.operations-light-theme input:focus-visible,
+.manager-light-theme select:focus-visible,
+.operations-light-theme select:focus-visible,
+.manager-light-theme textarea:focus-visible,
+.operations-light-theme textarea:focus-visible {
+  outline: 3px solid rgba(56, 189, 248, 0.72) !important;
+  outline-offset: 2px;
+}
+
+.manager-light-theme button:disabled,
+.operations-light-theme button:disabled {
+  box-shadow: none !important;
+  filter: saturate(0.55);
+  cursor: not-allowed;
+}
+
+/* High-contrast primary controls. */
+.manager-light-theme button[class*="bg-orange-"],
+.operations-light-theme button[class*="bg-orange-"] {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.3), inset 0 -3px 0 rgba(124,45,18,.28), 0 4px 0 #c2410c, 0 10px 20px rgba(234,88,12,.24) !important;
+}
+
+.manager-light-theme button[class*="bg-blue-"],
+.operations-light-theme button[class*="bg-blue-"] {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.3), inset 0 -3px 0 rgba(30,64,175,.3), 0 4px 0 #1d4ed8, 0 10px 20px rgba(37,99,235,.22) !important;
+}
+
+.manager-light-theme button[class*="bg-emerald-"],
+.operations-light-theme button[class*="bg-emerald-"] {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.3), inset 0 -3px 0 rgba(6,78,59,.3), 0 4px 0 #047857, 0 10px 20px rgba(5,150,105,.22) !important;
+}
+
+.staff-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #f59e0b !important;
+  background: rgba(245, 158, 11, 0.14) !important;
+  border: 1px solid rgba(245, 158, 11, 0.42) !important;
+}
+
+.staff-night-theme .staff-theme-toggle {
+  color: #fde68a !important;
+  background: rgba(245, 158, 11, 0.18) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .manager-light-theme button,
+  .operations-light-theme button {
+    transition: none !important;
+  }
+  .manager-light-theme button:hover:not(:disabled),
+  .operations-light-theme button:hover:not(:disabled),
+  .manager-light-theme button:active:not(:disabled),
+  .operations-light-theme button:active:not(:disabled) {
+    transform: none;
+  }
+}

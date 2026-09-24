@@ -4,7 +4,7 @@ import {
   RefreshCw, Phone, MapPin, ClipboardList,
   Calendar, X, Trash2, Eye, EyeOff, ClockArrowUp, StickyNote,
   Play, FileCheck, DollarSign, CalendarX, Ban, MessageSquare, Search, MessageCircle,
-  Camera,   TrendingUp, Award, Wallet, Send, ExternalLink, Bell, Upload, Cpu, UserCircle, ImagePlus, Navigation, ChevronDown
+  Camera,   TrendingUp, Award, Wallet, Send, ExternalLink, Bell, Upload, Cpu, UserCircle, ImagePlus, Navigation, ChevronDown, Sun, Moon
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useNotification } from "../components/EnhancedNotificationSystem";
@@ -148,6 +148,10 @@ export default function TechnicianPortal() {
   const [techProfilePhoto, setTechProfilePhoto] = useState('');
   const [isUploadingProfilePhoto, setIsUploadingProfilePhoto] = useState(false);
   const [isActive, setIsActive] = useState(true);
+  const [staffNightMode, setStaffNightMode] = useState(() => localStorage.getItem('mg_staff_theme') === 'night');
+  useEffect(() => {
+    localStorage.setItem('mg_staff_theme', staffNightMode ? 'night' : 'day');
+  }, [staffNightMode]);
   const [isUrgentAlert, setIsUrgentAlert] = useState(false);
   const [stageNotice, setStageNotice] = useState<{ orderNumber: string; customerName: string; stage: string; action: string } | null>(null);
   const stageNoticeTimerRef = useRef<number | null>(null);
@@ -1488,7 +1492,7 @@ export default function TechnicianPortal() {
   );
 
   return (
-    <div className={`operations-light-theme min-h-screen bg-slate-900 text-slate-200 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`}>
+    <div className={`operations-light-theme ${staffNightMode ? 'staff-night-theme' : ''} min-h-screen bg-slate-900 text-slate-200 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`}>
       
       {/* ✅ قفل الشاشة الإجباري لتفعيل الصوت */}
       {!audioEnabled && (
@@ -1558,8 +1562,8 @@ export default function TechnicianPortal() {
 	              </div>
 	            </div>
 	          </div>
-	          <div className="flex items-center gap-2">
-
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => setStaffNightMode((current) => !current)} title={staffNightMode ? 'تفعيل الوضع النهاري' : 'تفعيل الوضع الليلي'} aria-label={staffNightMode ? 'تفعيل الوضع النهاري' : 'تفعيل الوضع الليلي'} className="staff-theme-toggle p-2 rounded-lg"><span className="sr-only">{staffNightMode ? 'الوضع النهاري' : 'الوضع الليلي'}</span>{staffNightMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}</button>
             <button
               type="button"
               onClick={toggleWakeLock}

@@ -6,7 +6,7 @@ import {
   Copy, Check, Trash, Bell,   DollarSign,
   Download, X, Printer, UserPlus, UserMinus, LogOut, Send, Play, LogIn,
   RotateCcw, Clock, MapPin, Star, Cpu, ShieldCheck, Wrench, UserCircle, Wallet,
-  ClipboardList, FileCheck, Camera, Navigation, ExternalLink, Pin, PinOff, History, MessageCircle
+  ClipboardList, FileCheck, Camera, Navigation, ExternalLink, Pin, PinOff, History, MessageCircle, Sun, Moon
 } from "lucide-react";
 import { createClient } from '@supabase/supabase-js';
 import { Helmet } from 'react-helmet-async';
@@ -650,6 +650,10 @@ export default function ProtectedOrders() {
 
 
   const [userRole, setUserRole] = useState<string>('');
+  const [staffNightMode, setStaffNightMode] = useState(() => localStorage.getItem('mg_staff_theme') === 'night');
+  useEffect(() => {
+    localStorage.setItem('mg_staff_theme', staffNightMode ? 'night' : 'day');
+  }, [staffNightMode]);
   const [isUrgentAlert, setIsUrgentAlert] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -3673,7 +3677,7 @@ ${trackingUrl}
       return <div className="min-h-screen bg-[#F4F6F8] flex items-center justify-center text-slate-700" dir="rtl"><div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-5 text-sm font-black shadow-2xl">جاري تحميل بيانات لوحة المدير…</div></div>;
     }
     return (
-    <div id="manager-dashboard" className={`manager-light-theme min-h-screen overflow-x-hidden bg-[#F4F6F8] text-slate-700 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`}>
+    <div id="manager-dashboard" className={`manager-light-theme ${staffNightMode ? 'staff-night-theme' : ''} min-h-screen overflow-x-hidden bg-[#F4F6F8] text-slate-700 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`}>
       {loading && (
         <div className="fixed top-2 left-1/2 -translate-x-1/2 z-[210] rounded-full border border-blue-400/40 bg-slate-900/95 px-4 py-2 text-xs font-black text-blue-200 shadow-xl" role="status">
           جاري تحديث البيانات…
@@ -3763,6 +3767,7 @@ ${trackingUrl}
               <span className={`w-1.5 h-1.5 rounded-full ${wakeLockActive ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`}></span>
               {wakeLockActive ? 'الشاشة يقظة' : wakeLockEnabled ? 'إبقاء الشاشة' : 'الشاشة مغلقة'}
             </button>
+            <button type="button" onClick={() => setStaffNightMode((current) => !current)} title={staffNightMode ? 'تفعيل الوضع النهاري' : 'تفعيل الوضع الليلي'} aria-label={staffNightMode ? 'تفعيل الوضع النهاري' : 'تفعيل الوضع الليلي'} className="staff-theme-toggle p-2 rounded-lg"><span className="sr-only">{staffNightMode ? 'الوضع النهاري' : 'الوضع الليلي'}</span>{staffNightMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}</button>
             <button onClick={handleLogout} title="تسجيل الخروج" aria-label="تسجيل الخروج" className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"><LogOut className="w-5 h-5" /></button>
           </div>
         </div>
