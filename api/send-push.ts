@@ -120,6 +120,13 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     'https://maintenanceguide.life',
   ]);
 
+  // هذا المسار يُستدعى من لوحة الموقع فقط؛ رفض المصدر المفقود/الخارجي يقلل
+  // إساءة الاستخدام وطلبات CSRF دون تغيير محتوى الإشعارات أو مستلميها.
+  if (!origin || !allowedOrigins.has(origin)) {
+    respond(res, 403, { error: 'Origin not allowed' });
+    return;
+  }
+
   if (res.setHeader) {
     res.setHeader('Access-Control-Allow-Origin', origin && allowedOrigins.has(origin) ? origin : 'https://www.maintenanceguide.life');
     res.setHeader('Vary', 'Origin');
@@ -147,11 +154,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     return;
   }
   // تنظيف فائق الصرامة: حذف أي شيء ليس حرفاً أو رقماً أو شرطة سفلية أو شرطة عادية
-  const rawLen = apiKey.length;
   apiKey = apiKey.replace(/[^a-zA-Z0-9_-]/g, '');
-  const cleanLen = apiKey.length;
-  // تشخيص مفصل v1.1.9
-  const keyInfo = `V1.1.9|Len:${cleanLen}|Start:${apiKey.slice(0, 10)}|End:${apiKey.slice(-10)}`;
 
   const body = (req.body || {}) as PushBody;
   const title = typeof body.title === 'string' ? body.title.trim().slice(0, 120) : '';
@@ -257,7 +260,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       const errorDetail = results[failedIndex];
       let errorMessage = Array.isArray(errorDetail.errors) ? errorDetail.errors.join(', ') : 'OneSignal rejected the notification';
       if (responses[failedIndex].status === 401 || responses[failedIndex].status === 403) {
-        errorMessage = `Auth Failed (${keyInfo}): ${errorMessage}`;
+        errorMessage = `Auth Failed: ${errorMessage}`;
       }
       respond(res, responses[failedIndex].status, {
         error: errorMessage,

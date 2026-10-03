@@ -853,8 +853,8 @@ export default function ProtectedOrders() {
 
   const playDing = async (isUrgent = false) => {
     try {
-      // MP3 أكثر ثباتًا على أندرويد من جدولة Oscillator بعد تغيّر حالة الصفحة.
-      if (!notificationAudioRef.current) notificationAudioRef.current = new Audio('/sounds/notification.mp3');
+      // ملف WAV محلي ثابت لتقليل فشل الصوت بعد تغيّر حالة الصفحة.
+      if (!notificationAudioRef.current) notificationAudioRef.current = new Audio('/sounds/notification.wav');
       const audio = notificationAudioRef.current;
       audio.volume = isUrgent ? 1 : 0.75;
       audio.currentTime = 0;
@@ -4043,12 +4043,12 @@ ${trackingUrl}
 	                      {filterTechnician && <span className="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-3 py-1 rounded-full text-[9px] font-black flex items-center gap-1.5">👨‍🔧 {filterTechnician === '__NONE__' ? 'بدون فني' : filterTechnician} <X size={10} className="cursor-pointer" onClick={() => setFilterTechnician('')}/></span>}
 	                      {filterDelay === 'delayed' && <span className="bg-red-500/10 text-red-400 border border-red-500/20 px-3 py-1 rounded-full text-[9px] font-black flex items-center gap-1.5">🚨 متأخر <X size={10} className="cursor-pointer" onClick={() => setFilterDelay('all')}/></span>}
 	                      
-                        {filterStatus === '__UNPAID__' && isAdmin && filteredOrders.length > 0 && (
+                        {filterStatus === '__UNPAID__' && isAdmin && pendingCollectionOrders.length > 0 && (
                           <button 
                             onClick={handleBatchConfirmPaid}
                             className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-full text-[9px] font-black flex items-center gap-1.5 shadow-lg animate-pulse"
                           >
-                            <CheckCircle2 size={12} /> اعتماد تحصيل الكل ({filteredOrders.length})
+                            <CheckCircle2 size={12} /> اعتماد تحصيل الكل ({pendingCollectionOrders.length})
                           </button>
                         )}
 

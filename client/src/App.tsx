@@ -136,12 +136,13 @@ function AppContent() {
       else manifestLink.removeAttribute('href');
     }
 
-    // تنظيف أي Service Worker قديم من إعداد Netlify/OneSignal قبل استخدام العامل الموحد.
+    // لا نلغي عامل OneSignal الحالي؛ فهو العامل المطلوب للإشعارات الخارجية.
+    // تنظيف العامل القديم الخاص بـ Updater فقط، إن وُجد.
     if (isStaffPath && 'serviceWorker' in navigator) {
       void navigator.serviceWorker.getRegistrations().then(async (registrations) => {
         const legacyWorkers = registrations.filter((registration) => {
           const scriptUrl = registration.active?.scriptURL || registration.waiting?.scriptURL || '';
-          return scriptUrl.includes('/OneSignalSDKWorker.js') || scriptUrl.includes('/OneSignalSDKUpdaterWorker.js');
+          return scriptUrl.includes('/OneSignalSDKUpdaterWorker.js');
         });
         await Promise.all(legacyWorkers.map((registration) => registration.unregister()));
       }).catch((error) => console.warn('[Maintenance Guide] Legacy push worker cleanup failed:', error));

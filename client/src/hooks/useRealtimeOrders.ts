@@ -75,7 +75,7 @@ export function useRealtimeOrders() {
 
   const playNotificationSound = () => {
     try {
-      const audio = new Audio('/sounds/notification.mp3');
+      const audio = new Audio('/sounds/notification.wav');
       audio.play().catch(() => console.log('Audio playback failed'));
     } catch (err) {
       console.error('Error playing notification:', err);

@@ -94,9 +94,9 @@ const formatPhoneForWhatsApp = (phone: string): string => {
 export const playNotificationSound = (type: 'default' | 'urgent' | 'success' = 'default') => {
   try {
     const soundMap = {
-      default: '/sounds/notification.mp3',
-      urgent: '/sounds/notification.mp3',
-      success: '/sounds/notification.mp3'
+      default: '/sounds/notification.wav',
+      urgent: '/sounds/notification.wav',
+      success: '/sounds/notification.wav'
     };
     
     const audio = new Audio(soundMap[type]);

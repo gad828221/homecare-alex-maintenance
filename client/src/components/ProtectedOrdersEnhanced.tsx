@@ -32,7 +32,7 @@ export function ProtectedOrdersEnhanced() {
 
   const playNotificationSound = () => {
     try {
-      const audio = new Audio('/sounds/notification.mp3');
+      const audio = new Audio('/sounds/notification.wav');
       audio.volume = 0.5;
       audio.play().catch(() => console.log('Audio playback failed'));
     } catch (err) {

@@ -71,7 +71,7 @@ const parseChatReceipt = (row: any): ChatReceipt | null => {
 
 const playChatTone = (type: 'incoming' | 'read') => {
   try {
-    const audio = new Audio(type === 'read' ? '/notification-sound.mp3' : '/sounds/notification.mp3');
+    const audio = new Audio(type === 'read' ? '/notification-sound.mp3' : '/sounds/notification.wav');
     audio.volume = type === 'read' ? 0.22 : 0.38;
     void audio.play().catch(() => undefined);
   } catch { /* بعض المتصفحات تمنع الصوت قبل أول تفاعل */ }
