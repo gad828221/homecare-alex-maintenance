@@ -34,6 +34,16 @@ const supabase = async (path: string, init: RequestInit = {}) => {
   if (!response.ok) throw new Error(`Supabase ${response.status}: ${JSON.stringify(data)}`);
   return data;
 };
+const supabaseAll = async (path: string, pageSize = 1000) => {
+  const rows: any[] = [];
+  for (let offset = 0; offset < 100000; offset += pageSize) {
+    const page = await supabase(`${path}&limit=${pageSize}&offset=${offset}`);
+    if (!Array.isArray(page)) break;
+    rows.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return rows;
+};
 
 const cairoDate = () => {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -96,8 +106,8 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     if (alreadyCreated) return respond(res, 200, { ok: true, skipped: true, reportKey, reason: 'already_created' });
 
     const [ledger, orders] = await Promise.all([
-      supabase(`cash_ledger?select=type,amount,date&date=gte.${startDate}&date=lte.${endDate}`),
-      supabase(`orders?select=id,status,is_paid,technician,created_at&created_at=gte.${startDate}T00:00:00&created_at=lt.${shiftDate(endDate, 1)}T00:00:00&deleted_at=is.null`),
+      supabaseAll(`cash_ledger?select=type,amount,date&date=gte.${startDate}&date=lte.${endDate}`),
+      supabaseAll(`orders?select=id,status,is_paid,technician,created_at&created_at=gte.${startDate}T00:00:00&created_at=lt.${shiftDate(endDate, 1)}T00:00:00&deleted_at=is.null`),
     ]);
     const rows = Array.isArray(ledger) ? ledger : [];
     const orderRows = Array.isArray(orders) ? orders : [];
@@ -141,4 +151,3 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 export const config = { maxDuration: 60 };
 
 export const _private = { shiftDate, money };
-

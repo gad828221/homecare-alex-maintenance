@@ -27,6 +27,16 @@ const supabase = async (path: string, init: RequestInit = {}) => {
   if (!response.ok) throw new Error(`Supabase ${response.status}: ${JSON.stringify(data)}`);
   return data;
 };
+const supabaseAll = async (path: string, pageSize = 1000) => {
+  const rows: any[] = [];
+  for (let offset = 0; offset < 100000; offset += pageSize) {
+    const page = await supabase(`${path}&limit=${pageSize}&offset=${offset}`);
+    if (!Array.isArray(page)) break;
+    rows.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return rows;
+};
 const saveNotification = async (action: string, details: string) => {
   await supabase('notifications', { method: 'POST', body: JSON.stringify({ action, details, user_name: 'النظام الآلي', created_at: new Date().toISOString() }) });
 };
@@ -67,7 +77,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   try {
     const [technicians, orders, recentWarnings, recentCollectionWarnings] = await Promise.all([
       supabase('technicians?select=id,name,username,code,is_active&is_active=eq.true'),
-      supabase('orders?select=id,order_number,customer_name,technician,status,created_at,updated_at,last_action_at,action_date,deleted_at,total_amount,is_paid&deleted_at=is.null'),
+      supabaseAll('orders?select=id,order_number,customer_name,technician,status,created_at,updated_at,last_action_at,action_date,deleted_at,total_amount,is_paid&deleted_at=is.null'),
       supabase(`notifications?select=details&action=eq.${encodeURIComponent('تحذير خمول فني')}&created_at=gte.${new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()}`),
       supabase(`notifications?select=details&action=eq.${encodeURIComponent('تحذير تحصيل فني')}&created_at=gte.${new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()}`),
     ]);
