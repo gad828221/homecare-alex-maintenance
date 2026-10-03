@@ -32,14 +32,19 @@ export function ThemeProvider({
 
   useEffect(() => {
     const root = document.documentElement;
+    const isStaffPath = /^\/(login|orders|tech-portal|data-entry)(?:\/|$)/.test(window.location.pathname);
+    const staffThemeClasses = ["manager-light-theme", "operations-light-theme", "staff-night-theme"];
 
-    if (theme === "dark") {
+    if (theme === "dark" && isStaffPath) {
       root.classList.add("dark");
-      root.classList.remove("manager-light-theme", "operations-light-theme");
-    } else {
+      root.classList.add("manager-light-theme", "operations-light-theme", "staff-night-theme");
+    } else if (theme === "light" && isStaffPath) {
       root.classList.remove("dark");
-      // تفعيل كلاس الثيم الفاتح المطور لوحة التحكم والموديل
       root.classList.add("manager-light-theme", "operations-light-theme");
+      root.classList.remove("staff-night-theme");
+    } else {
+      // صفحات الزوار تبقى على ثيمها الأصلي ولا ترث ثيم لوحة الموظفين.
+      root.classList.remove("dark", ...staffThemeClasses);
     }
 
     if (switchable && typeof window !== "undefined") {
