@@ -122,7 +122,7 @@ export default function BookingForm({ defaultService, title, description }: Book
       if (!insertError) {
         setSubmitMessage("✅ تم استلام طلبك بنجاح! سنتواصل معك خلال 5 دقائق.");
         setStep(4);
-        trackBookingConversion({ device_type: finalDeviceType, brand: finalBrand });
+        trackBookingConversion({ device_type: finalDeviceType, brand: finalBrand, transaction_id: orderNumber });
         
         const publicOrderMessage = `عميل جديد: ${formData.customer_name}\nالجهاز: ${finalDeviceType}\nالعنوان: ${formData.address}\nرقم الأوردر: ${orderNumber}`;
         // استهداف مباشر للاشتراكات الإدارية الحالية؛ لا نعتمد على وسوم الدور القديمة.
