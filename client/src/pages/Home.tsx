@@ -60,6 +60,7 @@ export default function Home() {
             className="w-full h-full object-cover opacity-40 scale-105"
             loading="eager"
             fetchPriority="high"
+            decoding="async"
           />
           <div className="absolute inset-0 bg-gradient-to-l from-slate-900 via-slate-900/60 to-transparent"></div>
         </div>
@@ -220,6 +221,7 @@ export default function Home() {
                   alt={service.title}
                   className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:scale-110 transition-transform duration-700"
                   loading="lazy"
+                  decoding="async"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
                 <div className="absolute bottom-0 right-0 p-12 text-right">

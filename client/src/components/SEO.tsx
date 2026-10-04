@@ -11,6 +11,9 @@ interface SEOProps {
 const SEO: React.FC<SEOProps> = ({ title, description, keywords, brand }) => {
   const siteName = "Homecare Alex Maintenance";
   const fullTitle = `${title} | ${siteName}`;
+  const canonicalUrl = typeof window === 'undefined'
+    ? 'https://maintenanceguide.life/'
+    : `https://maintenanceguide.life${window.location.pathname.replace(/\/$/, '') || '/'}`;
   
   const schemaOrgJSONLD = {
     "@context": "http://schema.org",
@@ -31,6 +34,7 @@ const SEO: React.FC<SEOProps> = ({ title, description, keywords, brand }) => {
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
       {keywords && <meta name="keywords" content={keywords} /> }
+      <link rel="canonical" href={canonicalUrl} />
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
       <script type="application/ld+json">

@@ -2,6 +2,14 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /private
+Disallow: /login
+Disallow: /orders
+Disallow: /tech-portal
+Disallow: /data-entry
+Disallow: /invoice
+Disallow: /pickup-receipt
+Disallow: /feedback
+Disallow: /track/
 
 # Sitemap location
 Sitemap: https://maintenanceguide.life/sitemap.xml
