@@ -1235,8 +1235,8 @@ html.dark body {
   color-scheme: dark;
 }
 
-html.dark .operations-light-theme,
-html.dark .manager-light-theme {
+html.dark.operations-light-theme,
+html.dark.manager-light-theme {
   --bg: #0a0f1a;
   --surface: #131c2e;
   --surface-2: #1e2a41;
@@ -1250,68 +1250,68 @@ html.dark .manager-light-theme {
 }
 
 /* ===== 2. HEADER — Deep Royal Blue ===== */
-html.dark .operations-light-theme > .sticky.top-0,
-html.dark .manager-light-theme > .sticky.top-0 {
+html.dark.operations-light-theme > .sticky.top-0,
+html.dark.manager-light-theme > .sticky.top-0 {
   background: linear-gradient(135deg, #0a1a35 0%, #1e3a8a 50%, #115e59 100%) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
 }
 
 /* ===== 3. SURFACES ===== */
-html.dark .operations-light-theme .bg-white,
-html.dark .manager-light-theme .bg-white,
-html.dark .operations-light-theme [class*="bg-slate-900"],
-html.dark .manager-light-theme [class*="bg-slate-900"],
-html.dark .operations-light-theme [class*="bg-slate-950"],
-html.dark .manager-light-theme [class*="bg-slate-950"] {
+html.dark.operations-light-theme .bg-white,
+html.dark.manager-light-theme .bg-white,
+html.dark.operations-light-theme [class*="bg-slate-900"],
+html.dark.manager-light-theme [class*="bg-slate-900"],
+html.dark.operations-light-theme [class*="bg-slate-950"],
+html.dark.manager-light-theme [class*="bg-slate-950"] {
   background-color: #131c2e !important;
   color: #f1f5f9 !important;
 }
 
-html.dark .operations-light-theme [class*="bg-slate-800"],
-html.dark .manager-light-theme [class*="bg-slate-800"],
-html.dark .operations-light-theme [class*="bg-slate-100"],
-html.dark .manager-light-theme [class*="bg-slate-100"],
-html.dark .operations-light-theme [class*="bg-slate-50"],
-html.dark .manager-light-theme [class*="bg-slate-50"] {
+html.dark.operations-light-theme [class*="bg-slate-800"],
+html.dark.manager-light-theme [class*="bg-slate-800"],
+html.dark.operations-light-theme [class*="bg-slate-100"],
+html.dark.manager-light-theme [class*="bg-slate-100"],
+html.dark.operations-light-theme [class*="bg-slate-50"],
+html.dark.manager-light-theme [class*="bg-slate-50"] {
   background-color: #1e2a41 !important;
   color: #e2e8f0 !important;
 }
 
 /* ===== 4. TEXT ===== */
-html.dark .operations-light-theme .text-white,
-html.dark .manager-light-theme .text-white,
-html.dark .operations-light-theme .text-slate-900,
-html.dark .manager-light-theme .text-slate-900,
-html.dark .operations-light-theme .text-slate-800,
-html.dark .manager-light-theme .text-slate-800 {
+html.dark.operations-light-theme .text-white,
+html.dark.manager-light-theme .text-white,
+html.dark.operations-light-theme .text-slate-900,
+html.dark.manager-light-theme .text-slate-900,
+html.dark.operations-light-theme .text-slate-800,
+html.dark.manager-light-theme .text-slate-800 {
   color: #f1f5f9 !important;
 }
 
-html.dark .operations-light-theme .text-slate-700,
-html.dark .manager-light-theme .text-slate-700,
-html.dark .operations-light-theme .text-slate-600,
-html.dark .manager-light-theme .text-slate-600 {
+html.dark.operations-light-theme .text-slate-700,
+html.dark.manager-light-theme .text-slate-700,
+html.dark.operations-light-theme .text-slate-600,
+html.dark.manager-light-theme .text-slate-600 {
   color: #cbd5e1 !important;
 }
 
-html.dark .operations-light-theme .text-slate-500,
-html.dark .manager-light-theme .text-slate-500,
-html.dark .operations-light-theme .text-slate-400,
-html.dark .manager-light-theme .text-slate-400 {
+html.dark.operations-light-theme .text-slate-500,
+html.dark.manager-light-theme .text-slate-500,
+html.dark.operations-light-theme .text-slate-400,
+html.dark.manager-light-theme .text-slate-400 {
   color: #94a3b8 !important;
 }
 
 /* ===== 5. BORDERS ===== */
-html.dark .operations-light-theme [class*="border-slate-"],
-html.dark .manager-light-theme [class*="border-slate-"],
-html.dark .operations-light-theme [class*="border-white/"],
-html.dark .manager-light-theme [class*="border-white/"] {
+html.dark.operations-light-theme [class*="border-slate-"],
+html.dark.manager-light-theme [class*="border-slate-"],
+html.dark.operations-light-theme [class*="border-white/"],
+html.dark.manager-light-theme [class*="border-white/"] {
   border-color: #2d3a52 !important;
 }
 
 /* ===== 6. CARDS ===== */
-html.dark .operations-light-theme .order-card-3d,
-html.dark .manager-light-theme .order-card-3d {
+html.dark.operations-light-theme .order-card-3d,
+html.dark.manager-light-theme .order-card-3d {
   background: linear-gradient(165deg, #1a2540 0%, #131c2e 100%) !important;
   border: 1.5px solid #2d3a52 !important;
   color: #e2e8f0 !important;
@@ -1320,16 +1320,16 @@ html.dark .manager-light-theme .order-card-3d {
     0 12px 32px rgba(0, 0, 0, 0.3) !important;
 }
 
-html.dark .operations-light-theme .order-card-3d:hover,
-html.dark .manager-light-theme .order-card-3d:hover {
+html.dark.operations-light-theme .order-card-3d:hover,
+html.dark.manager-light-theme .order-card-3d:hover {
   border-color: #60a5fa !important;
   box-shadow:
     0 8px 20px rgba(0, 0, 0, 0.6),
     0 20px 48px rgba(59, 130, 246, 0.20) !important;
 }
 
-html.dark .operations-light-theme .order-card-3d h3,
-html.dark .manager-light-theme .order-card-3d h3 {
+html.dark.operations-light-theme .order-card-3d h3,
+html.dark.manager-light-theme .order-card-3d h3 {
   color: #f1f5f9 !important;
 }
 
@@ -1363,41 +1363,41 @@ html.dark .order-summary-warning strong {
 }
 
 /* ===== 8. TABS ===== */
-html.dark .manager-light-theme [role="tablist"],
-html.dark .operations-light-theme [role="tablist"] {
+html.dark.manager-light-theme [role="tablist"],
+html.dark.operations-light-theme [role="tablist"] {
   background: #131c2e !important;
   border-color: #2d3a52 !important;
 }
 
-html.dark .manager-light-theme [role="tab"],
-html.dark .operations-light-theme [role="tab"] {
+html.dark.manager-light-theme [role="tab"],
+html.dark.operations-light-theme [role="tab"] {
   background: #1a2540 !important;
   border-color: #2d3a52 !important;
   color: #94a3b8 !important;
 }
 
-html.dark .manager-light-theme [role="tab"]:hover,
-html.dark .operations-light-theme [role="tab"]:hover {
+html.dark.manager-light-theme [role="tab"]:hover,
+html.dark.operations-light-theme [role="tab"]:hover {
   background: #243b5e !important;
   border-color: #60a5fa !important;
   color: #93c5fd !important;
 }
 
-html.dark .manager-light-theme [role="tab"][aria-selected="true"],
-html.dark .operations-light-theme [role="tab"][aria-selected="true"] {
+html.dark.manager-light-theme [role="tab"][aria-selected="true"],
+html.dark.operations-light-theme [role="tab"][aria-selected="true"] {
   background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%) !important;
   color: #ffffff !important;
   box-shadow: 0 10px 24px rgba(59, 130, 246, 0.45) !important;
 }
 
-html.dark .manager-light-theme [role="tab"][aria-selected="true"] *,
-html.dark .operations-light-theme [role="tab"][aria-selected="true"] * {
+html.dark.manager-light-theme [role="tab"][aria-selected="true"] *,
+html.dark.operations-light-theme [role="tab"][aria-selected="true"] * {
   color: #ffffff !important;
 }
 
 /* ===== 9. BUTTONS ===== */
-html.dark .operations-light-theme .order-card-3d button,
-html.dark .manager-light-theme .order-card-3d button {
+html.dark.operations-light-theme .order-card-3d button,
+html.dark.manager-light-theme .order-card-3d button {
   background: linear-gradient(180deg, #2d3a52 0%, #1e2a41 100%) !important;
   border-color: #3f4d68 !important;
   color: #cbd5e1 !important;
@@ -1408,81 +1408,81 @@ html.dark .manager-light-theme .order-card-3d button {
     0 6px 14px rgba(0, 0, 0, 0.4) !important;
 }
 
-html.dark .operations-light-theme .order-card-3d button:hover,
-html.dark .manager-light-theme .order-card-3d button:hover {
+html.dark.operations-light-theme .order-card-3d button:hover,
+html.dark.manager-light-theme .order-card-3d button:hover {
   background: linear-gradient(180deg, #3f4d68 0%, #2d3a52 100%) !important;
   border-color: #60a5fa !important;
   color: #ffffff !important;
 }
 
 /* Colored buttons stay vibrant */
-html.dark .operations-light-theme .order-card-3d button[class*="bg-blue-600"] {
+html.dark.operations-light-theme .order-card-3d button[class*="bg-blue-600"] {
   background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%) !important;
   color: #ffffff !important;
 }
 
-html.dark .operations-light-theme .order-card-3d button[class*="bg-green-600"],
-html.dark .operations-light-theme .order-card-3d button[class*="bg-emerald-600"] {
+html.dark.operations-light-theme .order-card-3d button[class*="bg-green-600"],
+html.dark.operations-light-theme .order-card-3d button[class*="bg-emerald-600"] {
   background: linear-gradient(180deg, #10b981 0%, #059669 100%) !important;
   color: #ffffff !important;
 }
 
-html.dark .operations-light-theme .order-card-3d button[class*="bg-orange-"] {
+html.dark.operations-light-theme .order-card-3d button[class*="bg-orange-"] {
   background: linear-gradient(180deg, #fb923c 0%, #ea580c 100%) !important;
   color: #ffffff !important;
 }
 
-html.dark .operations-light-theme .order-card-3d button[class*="text-rose-"] {
+html.dark.operations-light-theme .order-card-3d button[class*="text-rose-"] {
   background: linear-gradient(180deg, #f43f5e 0%, #e11d48 100%) !important;
   color: #ffffff !important;
 }
 
-html.dark .operations-light-theme .order-card-3d button[class*="bg-purple-"] {
+html.dark.operations-light-theme .order-card-3d button[class*="bg-purple-"] {
   background: linear-gradient(180deg, #8b5cf6 0%, #7c3aed 100%) !important;
   color: #ffffff !important;
 }
 
 /* ===== 10. INPUTS ===== */
-html.dark .operations-light-theme input,
-html.dark .operations-light-theme select,
-html.dark .operations-light-theme textarea,
-html.dark .manager-light-theme input,
-html.dark .manager-light-theme select,
-html.dark .manager-light-theme textarea {
+html.dark.operations-light-theme input,
+html.dark.operations-light-theme select,
+html.dark.operations-light-theme textarea,
+html.dark.manager-light-theme input,
+html.dark.manager-light-theme select,
+html.dark.manager-light-theme textarea {
   background: #1a2540 !important;
   border-color: #2d3a52 !important;
   color: #f1f5f9 !important;
 }
 
-html.dark .operations-light-theme input:focus,
-html.dark .manager-light-theme input:focus,
-html.dark .operations-light-theme select:focus,
-html.dark .manager-light-theme select:focus {
+html.dark.operations-light-theme input:focus,
+html.dark.manager-light-theme input:focus,
+html.dark.operations-light-theme select:focus,
+html.dark.manager-light-theme select:focus {
   border-color: #60a5fa !important;
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.20) !important;
 }
 
-html.dark .operations-light-theme input::placeholder,
-html.dark .manager-light-theme input::placeholder {
+html.dark.operations-light-theme input::placeholder,
+html.dark.manager-light-theme input::placeholder {
   color: #64748b !important;
 }
 
 /* ===== 11. NOTIFICATIONS CARD ===== */
-html.dark .operations-light-theme #technician-notifications,
-html.dark .operations-light-theme section[aria-live="assertive"] {
+html.dark.operations-light-theme #technician-notifications,
+html.dark.operations-light-theme section[aria-live="assertive"] {
   background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%) !important;
   border-color: #dc2626 !important;
   box-shadow: 0 12px 32px rgba(220, 38, 38, 0.25) !important;
 }
 
-html.dark .operations-light-theme #technician-notifications h2,
-html.dark .operations-light-theme #technician-notifications h3,
-html.dark .operations-light-theme #technician-notifications p,
-html.dark .operations-light-theme #technician-notifications span {
+html.dark.operations-light-theme #technician-notifications h2,
+html.dark.operations-light-theme #technician-notifications h3,
+html.dark.operations-light-theme #technician-notifications p,
+html.dark.operations-light-theme #technician-notifications span {
   color: #fee2e2 !important;
 }
 
-html.dark .operations-light-theme #technician-notifications > div > div {
+html.dark.operations-light-theme #technician-notifications > div > div {
   background: rgba(15, 23, 42, 0.7) !important;
   border-color: #991b1b !important;
 }
@@ -1501,37 +1501,37 @@ html.dark #manager-quick-actions input {
 }
 
 /* ===== 13. BOTTOM NAV ===== */
-html.dark .operations-light-theme nav[aria-label="تنقل الفني"] {
+html.dark.operations-light-theme nav[aria-label="تنقل الفني"] {
   background: rgba(10, 15, 26, 0.98) !important;
   border-color: #2d3a52 !important;
   box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.7) !important;
 }
 
-html.dark .operations-light-theme nav[aria-label="تنقل الفني"] button {
+html.dark.operations-light-theme nav[aria-label="تنقل الفني"] button {
   color: #94a3b8 !important;
 }
 
-html.dark .operations-light-theme nav[aria-label="تنقل الفني"] button:hover {
+html.dark.operations-light-theme nav[aria-label="تنقل الفني"] button:hover {
   background: rgba(59, 130, 246, 0.15) !important;
   color: #93c5fd !important;
 }
 
 /* ===== 14. TOP ALERT BAR ===== */
-html.dark .operations-light-theme > div.bg-amber-500 {
+html.dark.operations-light-theme > div.bg-amber-500 {
   background: linear-gradient(135deg, #b45309 0%, #9a3412 100%) !important;
   color: #ffffff !important;
 }
 
 /* ===== 15. MODALS ===== */
-html.dark .operations-light-theme > div[class*="fixed"][class*="inset-0"] > div,
-html.dark .manager-light-theme > div[class*="fixed"][class*="inset-0"] > div {
+html.dark.operations-light-theme > div[class*="fixed"][class*="inset-0"] > div,
+html.dark.manager-light-theme > div[class*="fixed"][class*="inset-0"] > div {
   background: #131c2e !important;
   border-color: #2d3a52 !important;
   color: #e2e8f0 !important;
 }
 
-html.dark .operations-light-theme > div[class*="fixed"][class*="inset-0"] h3,
-html.dark .manager-light-theme > div[class*="fixed"][class*="inset-0"] h3 {
+html.dark.operations-light-theme > div[class*="fixed"][class*="inset-0"] h3,
+html.dark.manager-light-theme > div[class*="fixed"][class*="inset-0"] h3 {
   color: #f1f5f9 !important;
 }
 
@@ -1567,35 +1567,35 @@ html.dark ::-webkit-scrollbar-thumb:hover {
 }
 
 /* ===== 18. TECH-CARD 3D BUTTONS IN DARK ===== */
-html.dark .operations-light-theme .order-card-3d button {
+html.dark.operations-light-theme .order-card-3d button {
   font-weight: 800 !important;
 }
 
-html.dark .operations-light-theme .order-card-3d button svg {
+html.dark.operations-light-theme .order-card-3d button svg {
   color: currentColor !important;
 }
 
 /* ===== 19. STATUS BADGES ===== */
-html.dark .operations-light-theme .bg-amber-500\/15,
-html.dark .manager-light-theme .bg-amber-500\/15 {
+html.dark.operations-light-theme .bg-amber-500\/15,
+html.dark.manager-light-theme .bg-amber-500\/15 {
   background: rgba(217, 119, 6, 0.25) !important;
   color: #fbbf24 !important;
 }
 
-html.dark .operations-light-theme .bg-emerald-500\/15,
-html.dark .manager-light-theme .bg-emerald-500\/15 {
+html.dark.operations-light-theme .bg-emerald-500\/15,
+html.dark.manager-light-theme .bg-emerald-500\/15 {
   background: rgba(5, 150, 105, 0.25) !important;
   color: #34d399 !important;
 }
 
-html.dark .operations-light-theme .bg-blue-500\/15,
-html.dark .manager-light-theme .bg-blue-500\/15 {
+html.dark.operations-light-theme .bg-blue-500\/15,
+html.dark.manager-light-theme .bg-blue-500\/15 {
   background: rgba(37, 99, 235, 0.25) !important;
   color: #60a5fa !important;
 }
 
-html.dark .operations-light-theme .bg-rose-500\/15,
-html.dark .manager-light-theme .bg-rose-500\/15 {
+html.dark.operations-light-theme .bg-rose-500\/15,
+html.dark.manager-light-theme .bg-rose-500\/15 {
   background: rgba(225, 29, 72, 0.25) !important;
   color: #fb7185 !important;
 }
@@ -1851,47 +1851,47 @@ html.dark .text-violet-300 { color: #c4b5fd !important; }
 }
 
 /* 12. التقارير في الوضع الليلي */
-html.dark .manager-light-theme table,
-html.dark .operations-light-theme table {
+html.dark.manager-light-theme table,
+html.dark.operations-light-theme table {
   background: #131c2e !important;
 }
 
-html.dark .manager-light-theme table th,
-html.dark .operations-light-theme table th {
+html.dark.manager-light-theme table th,
+html.dark.operations-light-theme table th {
   background: #1a2540 !important;
   color: #f1f5f9 !important;
   border-bottom-color: #2d3a52 !important;
 }
 
-html.dark .manager-light-theme table td,
-html.dark .operations-light-theme table td {
+html.dark.manager-light-theme table td,
+html.dark.operations-light-theme table td {
   color: #cbd5e1 !important;
   border-bottom-color: #2d3a52 !important;
 }
 
-html.dark .manager-light-theme table tbody tr:hover,
-html.dark .operations-light-theme table tbody tr:hover {
+html.dark.manager-light-theme table tbody tr:hover,
+html.dark.operations-light-theme table tbody tr:hover {
   background: #1a2540 !important;
 }
 
-html.dark .manager-light-theme .grid > div[class*="rounded-xl"],
-html.dark .operations-light-theme .grid > div[class*="rounded-xl"] {
+html.dark.manager-light-theme .grid > div[class*="rounded-xl"],
+html.dark.operations-light-theme .grid > div[class*="rounded-xl"] {
   background: #1a2540 !important;
   border-color: #2d3a52 !important;
 }
 
-html.dark .manager-light-theme .grid > div[class*="rounded-xl"] p[class*="text-lg"],
-html.dark .manager-light-theme .grid > div[class*="rounded-xl"] p[class*="text-xl"],
-html.dark .operations-light-theme .grid > div[class*="rounded-xl"] p[class*="text-lg"],
-html.dark .operations-light-theme .grid > div[class*="rounded-xl"] p[class*="text-xl"] {
+html.dark.manager-light-theme .grid > div[class*="rounded-xl"] p[class*="text-lg"],
+html.dark.manager-light-theme .grid > div[class*="rounded-xl"] p[class*="text-xl"],
+html.dark.operations-light-theme .grid > div[class*="rounded-xl"] p[class*="text-lg"],
+html.dark.operations-light-theme .grid > div[class*="rounded-xl"] p[class*="text-xl"] {
   text-shadow: none !important;
    }
 
 /* ==========================================================
    21. STAFF NIGHT POLISH — scoped to employee portals only
    ========================================================== */
-html.dark .manager-light-theme,
-html.dark .operations-light-theme {
+html.dark.manager-light-theme,
+html.dark.operations-light-theme {
   color-scheme: dark;
   --night-bg: #0b1220;
   --night-surface: #111c2d;
@@ -1903,95 +1903,95 @@ html.dark .operations-light-theme {
   color: var(--night-text) !important;
 }
 
-html.dark .manager-light-theme main,
-html.dark .operations-light-theme main,
-html.dark .manager-light-theme section,
-html.dark .operations-light-theme section {
+html.dark.manager-light-theme main,
+html.dark.operations-light-theme main,
+html.dark.manager-light-theme section,
+html.dark.operations-light-theme section {
   color: var(--night-text);
 }
 
-html.dark .manager-light-theme [class*="border-white/"],
-html.dark .operations-light-theme [class*="border-white/"],
-html.dark .manager-light-theme [class*="border-slate-"],
-html.dark .operations-light-theme [class*="border-slate-"] {
+html.dark.manager-light-theme [class*="border-white/"],
+html.dark.operations-light-theme [class*="border-white/"],
+html.dark.manager-light-theme [class*="border-slate-"],
+html.dark.operations-light-theme [class*="border-slate-"] {
   border-color: var(--night-border) !important;
 }
 
-html.dark .manager-light-theme .bg-black,
-html.dark .operations-light-theme .bg-black,
-html.dark .manager-light-theme [class*="bg-black/"],
-html.dark .operations-light-theme [class*="bg-black/"] {
+html.dark.manager-light-theme .bg-black,
+html.dark.operations-light-theme .bg-black,
+html.dark.manager-light-theme [class*="bg-black/"],
+html.dark.operations-light-theme [class*="bg-black/"] {
   background-color: #070c14 !important;
 }
 
-html.dark .manager-light-theme table,
-html.dark .operations-light-theme table {
+html.dark.manager-light-theme table,
+html.dark.operations-light-theme table {
   background: var(--night-surface) !important;
   color: var(--night-text) !important;
   border-color: var(--night-border) !important;
 }
 
-html.dark .manager-light-theme th,
-html.dark .operations-light-theme th {
+html.dark.manager-light-theme th,
+html.dark.operations-light-theme th {
   background: #1d3048 !important;
   color: #dbeafe !important;
   border-color: var(--night-border) !important;
 }
 
-html.dark .manager-light-theme td,
-html.dark .operations-light-theme td {
+html.dark.manager-light-theme td,
+html.dark.operations-light-theme td {
   border-color: rgba(48, 68, 94, 0.72) !important;
   color: var(--night-muted) !important;
 }
 
-html.dark .manager-light-theme input:focus,
-html.dark .manager-light-theme select:focus,
-html.dark .manager-light-theme textarea:focus,
-html.dark .operations-light-theme input:focus,
-html.dark .operations-light-theme select:focus,
-html.dark .operations-light-theme textarea:focus {
+html.dark.manager-light-theme input:focus,
+html.dark.manager-light-theme select:focus,
+html.dark.manager-light-theme textarea:focus,
+html.dark.operations-light-theme input:focus,
+html.dark.operations-light-theme select:focus,
+html.dark.operations-light-theme textarea:focus {
   border-color: #38bdf8 !important;
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.22), 0 8px 24px rgba(2, 132, 199, 0.14) !important;
 }
 
-html.dark .manager-light-theme input::placeholder,
-html.dark .manager-light-theme textarea::placeholder,
-html.dark .operations-light-theme input::placeholder,
-html.dark .operations-light-theme textarea::placeholder {
+html.dark.manager-light-theme input::placeholder,
+html.dark.manager-light-theme textarea::placeholder,
+html.dark.operations-light-theme input::placeholder,
+html.dark.operations-light-theme textarea::placeholder {
   color: #91a4ba !important;
   opacity: 1 !important;
 }
 
-html.dark .manager-light-theme button:focus-visible,
-html.dark .operations-light-theme button:focus-visible,
-html.dark .manager-light-theme a:focus-visible,
-html.dark .operations-light-theme a:focus-visible {
+html.dark.manager-light-theme button:focus-visible,
+html.dark.operations-light-theme button:focus-visible,
+html.dark.manager-light-theme a:focus-visible,
+html.dark.operations-light-theme a:focus-visible {
   outline: 3px solid #67e8f9 !important;
   outline-offset: 3px !important;
 }
 
-html.dark .manager-light-theme .text-slate-300,
-html.dark .operations-light-theme .text-slate-300,
-html.dark .manager-light-theme .text-gray-300,
-html.dark .operations-light-theme .text-gray-300 {
+html.dark.manager-light-theme .text-slate-300,
+html.dark.operations-light-theme .text-slate-300,
+html.dark.manager-light-theme .text-gray-300,
+html.dark.operations-light-theme .text-gray-300 {
   color: #d5e1ee !important;
 }
 
-html.dark .manager-light-theme .text-slate-400,
-html.dark .operations-light-theme .text-slate-400,
-html.dark .manager-light-theme .text-gray-400,
-html.dark .operations-light-theme .text-gray-400 {
+html.dark.manager-light-theme .text-slate-400,
+html.dark.operations-light-theme .text-slate-400,
+html.dark.manager-light-theme .text-gray-400,
+html.dark.operations-light-theme .text-gray-400 {
   color: var(--night-muted) !important;
 }
 
-html.dark .manager-light-theme .rounded-xl,
-html.dark .operations-light-theme .rounded-xl {
+html.dark.manager-light-theme .rounded-xl,
+html.dark.operations-light-theme .rounded-xl {
   background-clip: padding-box;
 }
 
 @media (max-width: 640px) {
-  html.dark .manager-light-theme .order-card-3d,
-  html.dark .operations-light-theme .order-card-3d {
+  html.dark.manager-light-theme .order-card-3d,
+  html.dark.operations-light-theme .order-card-3d {
     box-shadow: 0 5px 18px rgba(0, 0, 0, 0.34) !important;
   }
 }
