@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { sendExternalPush } from "../utils/pushNotifications";
-import { trackBookingConversion } from "../utils/adTracking";
+import { estimateLeadValue, trackBookingConversion } from "../utils/adTracking";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
@@ -83,7 +83,12 @@ export default function BookingFormEnhanced() {
       if (response.ok) {
         setSubmitMessage("✅ تم استلام طلبك بنجاح! سنتواصل معك خلال 5 دقائق.");
         setStep(4); // Success step
-        trackBookingConversion({ device_type: finalDeviceType, brand: finalBrand, transaction_id: orderNumber });
+        trackBookingConversion({
+          device_type: finalDeviceType,
+          brand: finalBrand,
+          transaction_id: orderNumber,
+          lead_value: estimateLeadValue(finalDeviceType),
+        });
         
         const publicOrderMessage = `عميل جديد: ${formData.customer_name}\nالجهاز: ${finalDeviceType}\nالعنوان: ${formData.address}\nرقم الأوردر: ${orderNumber}`;
         // استهداف مباشر للاشتراكات الإدارية الحالية؛ لا نعتمد على وسوم الدور القديمة.

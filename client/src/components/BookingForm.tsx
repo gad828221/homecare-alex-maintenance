@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { sendExternalPush } from "../utils/pushNotifications";
-import { trackBookingConversion } from "../utils/adTracking";
+import { estimateLeadValue, trackBookingConversion } from "../utils/adTracking";
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -122,7 +122,12 @@ export default function BookingForm({ defaultService, title, description }: Book
       if (!insertError) {
         setSubmitMessage("✅ تم استلام طلبك بنجاح! سنتواصل معك خلال 5 دقائق.");
         setStep(4);
-        trackBookingConversion({ device_type: finalDeviceType, brand: finalBrand, transaction_id: orderNumber });
+        trackBookingConversion({
+          device_type: finalDeviceType,
+          brand: finalBrand,
+          transaction_id: orderNumber,
+          lead_value: estimateLeadValue(finalDeviceType),
+        });
         
         const publicOrderMessage = `عميل جديد: ${formData.customer_name}\nالجهاز: ${finalDeviceType}\nالعنوان: ${formData.address}\nرقم الأوردر: ${orderNumber}`;
         // استهداف مباشر للاشتراكات الإدارية الحالية؛ لا نعتمد على وسوم الدور القديمة.
