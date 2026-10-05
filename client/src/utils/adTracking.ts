@@ -6,6 +6,7 @@ type TrackingWindow = Window & {
 };
 
 const GOOGLE_ADS_SEND_TO = 'AW-16803756129/UeUnCOvx05AdEOHw08w-';
+const PHONE_CLICK_SEND_TO = 'AW-16803756129/XcX9CJekr4IcEOHw08w-';
 
 // Estimated lead value in EGP, kept separate from invoices and the cash ledger.
 const LEAD_VALUE_BY_DEVICE: Record<string, number> = {
@@ -20,6 +21,20 @@ const LEAD_VALUE_BY_DEVICE: Record<string, number> = {
 
 export function estimateLeadValue(deviceType?: string): number {
   return LEAD_VALUE_BY_DEVICE[deviceType?.trim() || ''] || 200;
+}
+
+export function trackPhoneClick(): void {
+  if (typeof window === 'undefined') return;
+  const trackingWindow = window as TrackingWindow;
+  const event = { event: 'phone_click', lead_type: 'phone_number_click', page_path: window.location.pathname };
+  trackingWindow.dataLayer = trackingWindow.dataLayer || [];
+  trackingWindow.dataLayer.push(event);
+  if (typeof trackingWindow.gtag === 'function') {
+    trackingWindow.gtag('event', 'conversion', {
+      send_to: PHONE_CLICK_SEND_TO,
+      transport_type: 'beacon',
+    });
+  }
 }
 
 export function trackBookingConversion(params: AdEventParams = {}): void {
