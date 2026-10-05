@@ -47,8 +47,22 @@ export default function Home() {
     // Notifications disabled
   }, []);
 
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map((faq) => ({
+      "@type": "Question",
+      "name": faq.q,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.a,
+      },
+    })),
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-white overflow-x-hidden font-sans" dir="rtl">
+      <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
       <Header />
 
       {/* HERO SECTION - RE-DESIGNED */}

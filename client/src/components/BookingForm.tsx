@@ -45,6 +45,8 @@ export default function BookingForm({ defaultService, title, description }: Book
   const [customBrand, setCustomBrand] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
+  const [honeypot, setHoneypot] = useState("");
+  const [formStartedAt] = useState(() => Date.now());
   const [previousCustomer, setPreviousCustomer] = useState<any>(null);
   const [customerLookupLoading, setCustomerLookupLoading] = useState(false);
 
@@ -89,6 +91,10 @@ export default function BookingForm({ defaultService, title, description }: Book
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (honeypot.trim() || Date.now() - formStartedAt < 2500) {
+      setSubmitMessage("يرجى الانتظار لحظة ثم المحاولة مرة أخرى.");
+      return;
+    }
     setIsSubmitting(true);
     setSubmitMessage("");
 
@@ -163,6 +169,16 @@ export default function BookingForm({ defaultService, title, description }: Book
 
   return (
     <div className="bg-white rounded-[2.5rem] shadow-2xl p-6 md:p-10 border border-slate-100 w-full max-w-2xl mx-auto overflow-hidden" dir="rtl">
+      <input
+        type="text"
+        name="website"
+        value={honeypot}
+        onChange={(event) => setHoneypot(event.target.value)}
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="absolute -left-[9999px] h-px w-px opacity-0"
+      />
       {step < 4 && (
         <div className="mb-10">
           <div className="flex justify-between mb-4">
@@ -317,6 +333,8 @@ export default function BookingForm({ defaultService, title, description }: Book
                   </label>
                   <input 
                     type="text" 
+                    name="customer_name"
+                    autoComplete="name"
                     required 
                     value={formData.customer_name} 
                     onChange={e => setFormData({...formData, customer_name: e.target.value})} 
@@ -330,6 +348,9 @@ export default function BookingForm({ defaultService, title, description }: Book
                   </label>
                   <input 
                     type="tel" 
+                    name="phone"
+                    autoComplete="tel"
+                    inputMode="tel"
                     required 
                     value={formData.phone} 
                     onChange={e => setFormData({...formData, phone: e.target.value})} 
@@ -362,6 +383,8 @@ export default function BookingForm({ defaultService, title, description }: Book
                 </label>
                 <input 
                   type="text" 
+                  name="address"
+                  autoComplete="street-address"
                   required 
                   value={formData.address} 
                   onChange={e => setFormData({...formData, address: e.target.value})} 

@@ -37,6 +37,8 @@ export default function BookingFormEnhanced() {
   const [customBrand, setCustomBrand] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
+  const [honeypot, setHoneypot] = useState("");
+  const [formStartedAt] = useState(() => Date.now());
 
   const nextStep = () => {
     if (step === 1 && (!formData.device_type && !isOtherDevice)) return alert("يرجى اختيار نوع الجهاز");
@@ -49,6 +51,10 @@ export default function BookingFormEnhanced() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (honeypot.trim() || Date.now() - formStartedAt < 2500) {
+      setSubmitMessage("يرجى الانتظار لحظة ثم المحاولة مرة أخرى.");
+      return;
+    }
     setIsSubmitting(true);
     setSubmitMessage("");
 
@@ -120,6 +126,16 @@ export default function BookingFormEnhanced() {
 
   return (
     <div className="bg-gradient-to-br from-white to-slate-50 rounded-[3rem] shadow-2xl p-8 md:p-12 border border-slate-100 w-full max-w-3xl mx-auto overflow-hidden" dir="rtl">
+      <input
+        type="text"
+        name="website"
+        value={honeypot}
+        onChange={(event) => setHoneypot(event.target.value)}
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="absolute -left-[9999px] h-px w-px opacity-0"
+      />
       {/* Decorative background elements */}
       <div className="absolute top-0 right-0 w-40 h-40 bg-orange-100/30 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
       <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-100/30 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none"></div>
@@ -313,6 +329,8 @@ export default function BookingFormEnhanced() {
                   </label>
                   <input 
                     type="text" 
+                    name="customer_name"
+                    autoComplete="name"
                     required 
                     value={formData.customer_name} 
                     onChange={e => setFormData({...formData, customer_name: e.target.value})} 
@@ -326,6 +344,9 @@ export default function BookingFormEnhanced() {
                   </label>
                   <input 
                     type="tel" 
+                    name="phone"
+                    autoComplete="tel"
+                    inputMode="tel"
                     required 
                     value={formData.phone} 
                     onChange={e => setFormData({...formData, phone: e.target.value})} 
@@ -341,6 +362,8 @@ export default function BookingFormEnhanced() {
                 </label>
                 <input 
                   type="text" 
+                  name="address"
+                  autoComplete="street-address"
                   required 
                   value={formData.address} 
                   onChange={e => setFormData({...formData, address: e.target.value})} 
