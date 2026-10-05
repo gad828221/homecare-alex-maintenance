@@ -177,7 +177,7 @@ export default function BookingForm({ defaultService, title, description }: Book
         tabIndex={-1}
         autoComplete="off"
         aria-hidden="true"
-        className="absolute -left-[9999px] h-px w-px opacity-0"
+        className="absolute left-0 top-0 h-px w-px opacity-0 pointer-events-none"
       />
       {step < 4 && (
         <div className="mb-10">

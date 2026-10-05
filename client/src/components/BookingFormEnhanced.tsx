@@ -134,7 +134,7 @@ export default function BookingFormEnhanced() {
         tabIndex={-1}
         autoComplete="off"
         aria-hidden="true"
-        className="absolute -left-[9999px] h-px w-px opacity-0"
+        className="absolute left-0 top-0 h-px w-px opacity-0 pointer-events-none"
       />
       {/* Decorative background elements */}
       <div className="absolute top-0 right-0 w-40 h-40 bg-orange-100/30 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
