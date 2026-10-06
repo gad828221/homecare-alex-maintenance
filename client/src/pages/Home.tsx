@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BookingForm from "@/components/BookingForm";
+import SEO from "@/components/SEO";
 import {
   Zap, Droplet, Wind, Flame, Star, Clock, Shield, Users,
   Phone, MessageCircle, CheckCircle, Award, Truck,
@@ -62,11 +63,16 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col bg-white overflow-x-hidden font-sans" dir="rtl">
+      <SEO
+        title="صيانة أجهزة منزلية بالإسكندرية | فني يصل إلى المنزل بسرعة"
+        description="اطلب فني صيانة أجهزة منزلية في الإسكندرية للثلاجات والغسالات والتكييفات والبوتاجازات. حجز سريع من المنزل، قطع غيار موثوقة وضمان على الخدمة."
+        keywords="صيانة أجهزة منزلية الإسكندرية, فني ثلاجات, صيانة غسالات, صيانة تكييفات, صيانة بوتاجازات, حجز فني صيانة"
+      />
       <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
       <Header />
 
       {/* HERO SECTION - RE-DESIGNED */}
-      <section className="relative min-h-[95vh] flex items-center overflow-hidden bg-slate-900 pt-20">
+      <section className="relative min-h-0 lg:min-h-[88vh] flex items-center overflow-hidden bg-slate-900 pt-16 lg:pt-20">
         <div className="absolute inset-0 z-0">
           <img
             src="/images/hero-bg-professional.webp"
@@ -79,56 +85,47 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-l from-slate-900 via-slate-900/60 to-transparent"></div>
         </div>
 
-        <div className="container mx-auto px-4 relative z-10 py-12">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className="container mx-auto px-4 relative z-10 py-8 md:py-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8 }}
-              className="text-right"
+              className="text-right max-w-2xl mx-auto lg:mx-0"
             >
-              <div className="inline-flex items-center gap-2 bg-orange-500/20 border border-orange-500/30 px-4 py-2 rounded-full mb-8">
-                <Sparkles className="w-5 h-5 text-orange-400" />
-                <span className="text-orange-400 font-black text-sm md:text-base">خدمة صيانة موثوقة في الإسكندرية</span>
+              <div className="inline-flex items-center gap-2 bg-orange-500/20 border border-orange-500/30 px-3 py-2 rounded-full mb-5 lg:mb-8">
+                <Sparkles className="w-4 h-4 text-orange-400" aria-hidden="true" />
+                <span className="text-orange-300 font-black text-xs md:text-base">خدمة صيانة منزلية داخل الإسكندرية</span>
               </div>
 
-              <h1 className="text-5xl md:text-8xl font-black text-white leading-[1.1] mb-8">
+              <h1 className="text-[2.35rem] sm:text-5xl lg:text-7xl font-black text-white leading-[1.15] mb-5 lg:mb-8">
                 صيانة أجهزتك <br />
                 <span className="text-orange-500">في منزلك اليوم</span> <br />
-                <span className="text-3xl md:text-5xl text-slate-300">بقطع غيار أصلية وضمان عام</span>
+                <span className="text-xl sm:text-3xl lg:text-5xl text-slate-300">بحجز سريع وضمان على الخدمة</span>
               </h1>
 
-              <p className="text-xl md:text-2xl text-slate-300 mb-12 max-w-2xl font-bold leading-relaxed">
-                لا داعي لنقل جهازك! مهندسونا المتخصصون يصلون إليك خلال ساعة لإصلاح (الثلاجات، الغسالات، المكيفات) بجميع الماركات العالمية.
+              <p className="text-base sm:text-xl md:text-2xl text-slate-300 mb-7 lg:mb-10 max-w-2xl font-bold leading-relaxed">
+                لا داعي لنقل جهازك. اطلب فنيًا إلى منزلك لإصلاح الثلاجات والغسالات والتكييفات والبوتاجازات في مختلف مناطق الإسكندرية.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-5 mb-12">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-8 lg:mb-12">
                 <Button
                   size="lg"
-                  className="bg-orange-600 hover:bg-orange-700 text-white text-2xl font-black px-12 py-10 rounded-3xl shadow-3xl shadow-orange-900/40 transition-all transform hover:scale-105 group"
+                  type="button"
+                  className="bg-orange-600 hover:bg-orange-700 text-white text-lg sm:text-xl font-black px-5 py-5 sm:py-7 rounded-2xl shadow-xl shadow-orange-900/40 transition-all group"
                   onClick={() => document.getElementById("booking-form")?.scrollIntoView({ behavior: "smooth", block: "center" })}
                 >
-                  <Calendar className="w-8 h-8 ml-3 group-hover:rotate-12 transition-transform" />
+                  <Calendar className="w-6 h-6 ml-2 group-hover:rotate-12 transition-transform" aria-hidden="true" />
                   احجز موعدك الآن
                 </Button>
 
                 <a
                   href="tel:01278885772"
-                  className="flex items-center justify-center gap-4 bg-white/10 hover:bg-white/20 backdrop-blur-xl border-2 border-white/20 text-white text-2xl font-black px-12 py-6 rounded-3xl transition-all"
+                  className="flex items-center justify-center gap-3 bg-white/10 hover:bg-white/20 backdrop-blur-xl border-2 border-white/20 text-white text-lg sm:text-xl font-black px-5 py-5 sm:py-7 rounded-2xl transition-all"
+                  aria-label="الاتصال بمركز الصيانة"
                 >
-                  <Phone className="w-7 h-7 animate-bounce" />
-                  01278885772
-                </a>
-
-                <a
-                  href="https://wa.me/201558625259?text=%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%AD%D8%AC%D8%B2%20%D8%AE%D8%AF%D9%85%D8%A9%20%D8%B5%D9%8A%D8%A7%D9%86%D8%A9"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-3 bg-green-600 hover:bg-green-700 text-white text-xl font-black px-8 py-6 rounded-3xl transition-all"
-                  aria-label="التواصل عبر واتساب"
-                >
-                  <MessageCircle className="w-7 h-7" />
-                  واتساب
+                  <Phone className="w-6 h-6" aria-hidden="true" />
+                  اتصل الآن
                 </a>
               </div>
 
