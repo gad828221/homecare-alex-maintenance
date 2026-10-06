@@ -129,6 +129,10 @@ export default function Home() {
                 </a>
               </div>
 
+              <p className="text-sm sm:text-base text-slate-300/90 font-bold mb-6">
+                اترك بياناتك الآن وسنتواصل معك لتأكيد الموعد والتكلفة قبل الزيارة.
+              </p>
+
               <div className="flex flex-wrap gap-8">
                 <div className="flex items-center gap-3 text-white font-black">
                   <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center border border-green-500/30">
@@ -159,8 +163,9 @@ export default function Home() {
             >
               <div className="absolute -inset-4 bg-orange-500/30 rounded-[3rem] blur-3xl animate-pulse-slow"></div>
               <div id="booking-form" className="relative bg-white p-1 rounded-[2.5rem] shadow-2xl border-4 border-orange-500/20 scroll-mt-24">
-                <div className="bg-orange-500 text-white py-3 px-6 rounded-t-[2.2rem] text-center font-black text-xl mb-1">
+                <div className="bg-orange-500 text-white py-3 px-4 rounded-t-[2.2rem] text-center font-black text-lg sm:text-xl mb-1">
                    احجز صيانة فورية الآن ⚡
+                   <span className="block text-xs sm:text-sm font-bold text-orange-100 mt-1">نراجع طلبك ونتواصل معك لتأكيد التفاصيل</span>
                 </div>
                 <BookingForm />
               </div>
@@ -400,10 +405,27 @@ export default function Home() {
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-right">
             <div className="text-right">
-              <h2 className="text-5xl md:text-7xl font-black mb-10 leading-tight">جاهز لإصلاح جهازك؟</h2>
-              <p className="text-2xl text-slate-400 font-bold mb-12 leading-relaxed">
-                انضم إلى أكثر من 50,000 عميل سعيد في الإسكندرية. احجز الآن وسنصلك خلال 60 دقيقة فقط بقطع غيار أصلية وضمان معتمد.
+              <h2 className="text-4xl sm:text-5xl md:text-7xl font-black mb-8 leading-tight">جاهز لإصلاح جهازك؟</h2>
+              <p className="text-lg sm:text-2xl text-slate-400 font-bold mb-8 leading-relaxed">
+                احجز الآن وسنتواصل معك لتأكيد الموعد، مع خدمة منزلية وقطع غيار موثوقة وضمان على الإصلاح.
               </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mb-12">
+                <Button
+                  type="button"
+                  className="bg-orange-600 hover:bg-orange-700 text-white font-black py-6 rounded-2xl text-lg"
+                  onClick={() => document.getElementById("booking-form")?.scrollIntoView({ behavior: "smooth", block: "center" })}
+                >
+                  احجز موعدك الآن
+                </Button>
+                <a
+                  href="tel:01278885772"
+                  className="flex items-center justify-center gap-2 border border-slate-600 hover:bg-slate-800 text-white font-black py-6 rounded-2xl text-lg"
+                  aria-label="الاتصال بمركز الصيانة"
+                >
+                  <Phone className="w-5 h-5" aria-hidden="true" />
+                  اتصل الآن
+                </a>
+              </div>
 
               <div className="space-y-8">
                 <div className="flex items-center gap-6">
