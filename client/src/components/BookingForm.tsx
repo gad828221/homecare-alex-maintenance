@@ -7,14 +7,13 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { sendExternalPush } from "../utils/pushNotifications";
 import { estimateLeadValue, trackBookingConversion } from "../utils/adTracking";
+import { DEVICE_TYPES, BRAND_OPTIONS } from "../constants/catalog";
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const DEVICE_TYPES = ['غسالة', 'ثلاجة', 'بوتاجاز', 'سخان', 'تكييف', 'ميكروويف', 'غسالة أطباق'];
-const BRANDS = ['سامسونج', 'LG', 'شارب', 'توشيبا', 'زانوسي', 'يونيون إير', 'فريش', 'وايت ويل', 'أريستون', 'بيكو', 'هوفر', 'إنديست', 'كريازي'];
 
 export interface BookingFormProps {
   defaultService?: string;
@@ -282,7 +281,7 @@ export default function BookingForm({ defaultService, title, description }: Book
                   className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg text-slate-900 font-medium outline-none focus:border-orange-500 appearance-none transition-all"
                 >
                   <option value="">اختر الماركة</option>
-                  {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+                  {BRAND_OPTIONS.map(b => <option key={b} value={b}>{b}</option>)}
                   <option value="other">أخرى...</option>
                 </select>
                 {isOtherBrand && (
