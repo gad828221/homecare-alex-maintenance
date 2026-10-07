@@ -23,14 +23,13 @@ import { findTechnicianByIdentity, getTechnicianDisplayName, getTechnicianPhotoU
 import { clearAuthSession, readAuthSession } from '../utils/authSession';
 import { getOneSignalExternalId, syncOneSignalIdentity } from '../utils/oneSignalIdentity';
 import { ORDER_WORKFLOW_ACTIONS, ORDER_WORKFLOW_STAGES, getOrderWorkflowStageMeta, normalizeOrderWorkflowStage } from '../utils/orderWorkflow';
+import { DEVICE_TYPES, BRAND_OPTIONS } from '../constants/catalog';
 
 // ==================== الإعدادات الأساسية ====================
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const DEVICE_TYPES = ['غسالة', 'ثلاجة', 'بوتاجاز', 'سخان', 'تكييف', 'ميكروويف', 'غسالة أطباق'];
-const BRANDS = ['سامسونج', 'LG', 'شارب', 'توشيبا', 'زانوسي', 'يونيون إير', 'فريش', 'وايت ويل', 'أريستون', 'بيكو', 'هوفر', 'إنديست', 'كريازي'];
 const REPORT_TIME_OFFSET_MS = 8 * 60 * 60 * 1000;
 const ORDER_ARCHIVE_AFTER_DAYS = 15;
 const OPERATION_STAGES = ORDER_WORKFLOW_STAGES;
@@ -5658,7 +5657,7 @@ ${trackingUrl}
                           <label className="text-[11px] font-black text-slate-500 uppercase mb-1.5 block">الماركة</label>
                           <select value={formData.brand} onChange={e => handleFormChange('brand', e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-white font-bold outline-none focus:border-orange-500 transition-colors">
                             <option value="">اختر الماركة</option>
-                            {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+                            {BRAND_OPTIONS.map(b => <option key={b} value={b}>{b}</option>)}
                             <option value="other">أخرى</option>
                           </select>
                         </div>
