@@ -10,9 +10,9 @@ import { Star, CheckCircle, Zap, ShieldCheck, Clock, Award, Phone, MessageCircle
 export default function LGService() {
   useEffect(() => {
     // Dynamic SEO Update - Policy Compliant
-    document.title = "صيانة ال جي الإسكندرية | مركز خدمة LG المتخصص 01278885772";
+    document.title = "صيانة LG بالإسكندرية | إصلاح غسالات وثلاجات LG";
     const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute("content", "خدمة صيانة ال جي بالإسكندرية. نحن مركز خدمة متخصص لصيانة كافة أجهزة LG (ثلاجات، غسالات، تكييفات) بالمنزل بقطع غيار أصلية وضمان سنة.");
+    if (metaDesc) metaDesc.setAttribute("content", "خدمة صيانة LG في الإسكندرية لإصلاح الغسالات والثلاجات والتكييفات في المنزل. احجز فنيًا متخصصًا وتواصل معنا لتأكيد الموعد.");
 
     // Schema Markup for Google Ads Quality Score
     const schema = {
@@ -31,7 +31,7 @@ export default function LGService() {
         }
       },
       "areaServed": "Alexandria",
-      "description": "خدمة صيانة ال جي المتخصصة في الإسكندرية بقطع غيار أصلية."
+      "description": "خدمة صيانة LG في الإسكندرية لإصلاح الغسالات والثلاجات والتكييفات في المنزل. احجز فنيًا متخصصًا وتواصل معنا لتأكيد الموعد."
     };
 
     const script = document.createElement("script");
@@ -47,7 +47,7 @@ export default function LGService() {
 
   return (
     <>
-      <SEO title="صيانة LG الإسكندرية | مركز خدمة معتمد" description="مركز صيانة LG المتخصص في الإسكندرية. خدمة سريعة وضمان معتمد على قطع الغيار الأصلية لجميع أجهزة LG." keywords="صيانة LG, توكيل LG الاسكندرية, اصلاح LG" />
+      <SEO title="صيانة LG بالإسكندرية | إصلاح غسالات وثلاجات LG" description="خدمة صيانة LG في الإسكندرية لإصلاح الغسالات والثلاجات والتكييفات في المنزل. احجز فنيًا متخصصًا وتواصل معنا لتأكيد الموعد." keywords="صيانة LG الإسكندرية, صيانة غسالات LG, صيانة ثلاجات LG, إصلاح ال جي" />
       <div className="min-h-screen flex flex-col bg-white overflow-x-hidden">
       <Header />
 

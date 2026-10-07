@@ -10,9 +10,9 @@ import { Star, CheckCircle, Zap, ShieldCheck, Clock, Award, Phone, MessageCircle
 export default function ZanussiService() {
   useEffect(() => {
     // Dynamic SEO Update - Policy Compliant
-    document.title = "صيانة زانوسي الإسكندرية | مركز خدمة Zanussi المتخصص 01278885772";
+    document.title = "صيانة زانوسي بالإسكندرية | إصلاح غسالات وثلاجات Zanussi";
     const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute("content", "خدمة صيانة زانوسي بالإسكندرية. نحن مركز خدمة متخصص لصيانة كافة أجهزة Zanussi (ثلاجات، غسالات، تكييفات) بالمنزل بقطع غيار أصلية وضمان سنة.");
+    if (metaDesc) metaDesc.setAttribute("content", "اطلب صيانة زانوسي في الإسكندرية لإصلاح الغسالات والثلاجات في المنزل. فني متخصص، حجز سريع وضمان على الخدمة.");
 
     // Schema Markup for Google Ads Quality Score
     const schema = {
@@ -31,7 +31,7 @@ export default function ZanussiService() {
         }
       },
       "areaServed": "Alexandria",
-      "description": "خدمة صيانة زانوسي المتخصصة في الإسكندرية بقطع غيار أصلية."
+      "description": "اطلب صيانة زانوسي في الإسكندرية لإصلاح الغسالات والثلاجات في المنزل. فني متخصص، حجز سريع وضمان على الخدمة."
     };
 
     const script = document.createElement("script");
@@ -47,7 +47,7 @@ export default function ZanussiService() {
 
   return (
     <>
-      <SEO title="صيانة Zanussi الإسكندرية | مركز خدمة معتمد" description="مركز صيانة Zanussi المتخصص في الإسكندرية. خدمة سريعة وضمان معتمد على قطع الغيار الأصلية لجميع أجهزة Zanussi." keywords="صيانة Zanussi, توكيل Zanussi الاسكندرية, اصلاح Zanussi" />
+      <SEO title="صيانة زانوسي بالإسكندرية | إصلاح غسالات وثلاجات Zanussi" description="اطلب صيانة زانوسي في الإسكندرية لإصلاح الغسالات والثلاجات في المنزل. فني متخصص، حجز سريع وضمان على الخدمة." keywords="صيانة زانوسي الإسكندرية, صيانة غسالات زانوسي, صيانة ثلاجات زانوسي, إصلاح زانوسي" />
       <div className="min-h-screen flex flex-col bg-white overflow-x-hidden">
       <Header />
 

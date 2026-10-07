@@ -33,7 +33,7 @@ export default function SamsungService() {
         }
       },
       "areaServed": "Alexandria",
-      "description": "خدمة صيانة سامسونج المتخصصة في الإسكندرية بقطع غيار أصلية."
+      "description": "اطلب صيانة سامسونج في الإسكندرية لإصلاح الثلاجات والغسالات والتكييفات في المنزل. حجز سريع، فني متخصص وضمان على الخدمة."
     };
 
     const script = document.createElement("script");
@@ -49,7 +49,7 @@ export default function SamsungService() {
 
   return (
     <>
-      <SEO title="صيانة Samsung الإسكندرية | مركز خدمة معتمد" description="مركز صيانة Samsung المتخصص في الإسكندرية. خدمة سريعة وضمان معتمد على قطع الغيار الأصلية لجميع أجهزة Samsung." keywords="صيانة Samsung, توكيل Samsung الاسكندرية, اصلاح Samsung" />
+      <SEO title="صيانة سامسونج بالإسكندرية | إصلاح أجهزة Samsung في المنزل" description="اطلب صيانة سامسونج في الإسكندرية لإصلاح الثلاجات والغسالات والتكييفات في المنزل. حجز سريع، فني متخصص وضمان على الخدمة." keywords="صيانة سامسونج الإسكندرية, صيانة ثلاجة سامسونج, صيانة غسالة سامسونج, إصلاح سامسونج" />
       <div className="min-h-screen flex flex-col bg-white overflow-x-hidden" dir="rtl">
       <Header />
 

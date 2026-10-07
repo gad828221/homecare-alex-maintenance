@@ -10,9 +10,9 @@ import { Star, CheckCircle, Zap, ShieldCheck, Clock, Award, Phone, MessageCircle
 export default function BekoService() {
   useEffect(() => {
     // Dynamic SEO Update - Policy Compliant
-    document.title = "صيانة بيكو الإسكندرية | مركز خدمة Beko المتخصص 01278885772";
+    document.title = "صيانة بيكو بالإسكندرية | إصلاح غسالات وثلاجات Beko";
     const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute("content", "خدمة صيانة بيكو بالإسكندرية. نحن مركز خدمة متخصص لصيانة كافة أجهزة Beko (ثلاجات، غسالات، تكييفات) بالمنزل بقطع غيار أصلية وضمان سنة.");
+    if (metaDesc) metaDesc.setAttribute("content", "خدمة صيانة بيكو في الإسكندرية لإصلاح الغسالات والثلاجات في المنزل. احجز موعدك وسنتواصل معك لتأكيد التفاصيل.");
 
     // Schema Markup for Google Ads Quality Score
     const schema = {
@@ -31,7 +31,7 @@ export default function BekoService() {
         }
       },
       "areaServed": "Alexandria",
-      "description": "خدمة صيانة بيكو المتخصصة في الإسكندرية بقطع غيار أصلية."
+      "description": "خدمة صيانة بيكو في الإسكندرية لإصلاح الغسالات والثلاجات في المنزل. احجز موعدك وسنتواصل معك لتأكيد التفاصيل."
     };
 
     const script = document.createElement("script");
@@ -47,7 +47,7 @@ export default function BekoService() {
 
   return (
     <>
-      <SEO title="صيانة Beko الإسكندرية | مركز خدمة معتمد" description="مركز صيانة Beko المتخصص في الإسكندرية. خدمة سريعة وضمان معتمد على قطع الغيار الأصلية لجميع أجهزة Beko." keywords="صيانة Beko, توكيل Beko الاسكندرية, اصلاح Beko" />
+      <SEO title="صيانة بيكو بالإسكندرية | إصلاح غسالات وثلاجات Beko" description="خدمة صيانة بيكو في الإسكندرية لإصلاح الغسالات والثلاجات في المنزل. احجز موعدك وسنتواصل معك لتأكيد التفاصيل." keywords="صيانة بيكو الإسكندرية, صيانة غسالات بيكو, صيانة ثلاجات بيكو, إصلاح بيكو" />
       <div className="min-h-screen flex flex-col bg-white overflow-x-hidden">
       <Header />
 

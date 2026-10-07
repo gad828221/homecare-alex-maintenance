@@ -10,9 +10,9 @@ import { Star, CheckCircle, Zap, ShieldCheck, Clock, Award, Phone, MessageCircle
 export default function SharpService() {
   useEffect(() => {
     // Dynamic SEO Update - Policy Compliant
-    document.title = "صيانة شارب الإسكندرية | مركز خدمة Sharp المتخصص 01278885772";
+    document.title = "صيانة شارب بالإسكندرية | إصلاح أجهزة Sharp في المنزل";
     const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute("content", "خدمة صيانة شارب بالإسكندرية. نحن مركز خدمة متخصص لصيانة كافة أجهزة Sharp (ثلاجات، غسالات، تكييفات) بالمنزل بقطع غيار أصلية وضمان سنة.");
+    if (metaDesc) metaDesc.setAttribute("content", "اطلب صيانة شارب في الإسكندرية لإصلاح الثلاجات والغسالات والتكييفات في المنزل. خدمة سريعة وفني متخصص وضمان على الخدمة.");
 
     // Schema Markup for Google Ads Quality Score
     const schema = {
@@ -31,7 +31,7 @@ export default function SharpService() {
         }
       },
       "areaServed": "Alexandria",
-      "description": "خدمة صيانة شارب المتخصصة في الإسكندرية بقطع غيار أصلية."
+      "description": "اطلب صيانة شارب في الإسكندرية لإصلاح الثلاجات والغسالات والتكييفات في المنزل. خدمة سريعة وفني متخصص وضمان على الخدمة."
     };
 
     const script = document.createElement("script");
@@ -47,7 +47,7 @@ export default function SharpService() {
 
   return (
     <>
-      <SEO title="صيانة Sharp الإسكندرية | مركز خدمة معتمد" description="مركز صيانة Sharp المتخصص في الإسكندرية. خدمة سريعة وضمان معتمد على قطع الغيار الأصلية لجميع أجهزة Sharp." keywords="صيانة Sharp, توكيل Sharp الاسكندرية, اصلاح Sharp" />
+      <SEO title="صيانة شارب بالإسكندرية | إصلاح أجهزة Sharp في المنزل" description="اطلب صيانة شارب في الإسكندرية لإصلاح الثلاجات والغسالات والتكييفات في المنزل. خدمة سريعة وفني متخصص وضمان على الخدمة." keywords="صيانة شارب الإسكندرية, صيانة ثلاجة شارب, صيانة غسالة شارب, إصلاح شارب" />
       <div className="min-h-screen flex flex-col bg-white overflow-x-hidden">
       <Header />
 

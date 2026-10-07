@@ -10,9 +10,9 @@ import { Star, CheckCircle, Zap, ShieldCheck, Clock, Award, Phone, MessageCircle
 export default function WhiteWhaleService() {
   useEffect(() => {
     // Dynamic SEO Update - Policy Compliant
-    document.title = "صيانة وايت ويل الإسكندرية | مركز خدمة White Whale المتخصص 01278885772";
+    document.title = "صيانة وايت ويل بالإسكندرية | إصلاح غسالات وثلاجات White Whale";
     const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute("content", "خدمة صيانة وايت ويل بالإسكندرية. نحن مركز خدمة متخصص لصيانة كافة أجهزة White Whale (ثلاجات، غسالات، تكييفات) بالمنزل بقطع غيار أصلية وضمان سنة.");
+    if (metaDesc) metaDesc.setAttribute("content", "خدمة صيانة وايت ويل في الإسكندرية لإصلاح الغسالات والثلاجات في المنزل. احجز فنيًا متخصصًا وسنتواصل معك لتأكيد الموعد.");
 
     // Schema Markup for Google Ads Quality Score
     const schema = {
@@ -31,7 +31,7 @@ export default function WhiteWhaleService() {
         }
       },
       "areaServed": "Alexandria",
-      "description": "خدمة صيانة وايت ويل المتخصصة في الإسكندرية بقطع غيار أصلية."
+      "description": "خدمة صيانة وايت ويل في الإسكندرية لإصلاح الغسالات والثلاجات في المنزل. احجز فنيًا متخصصًا وسنتواصل معك لتأكيد الموعد."
     };
 
     const script = document.createElement("script");
@@ -47,7 +47,7 @@ export default function WhiteWhaleService() {
 
   return (
     <>
-      <SEO title="صيانة WhiteWhale الإسكندرية | مركز خدمة معتمد" description="مركز صيانة WhiteWhale المتخصص في الإسكندرية. خدمة سريعة وضمان معتمد على قطع الغيار الأصلية لجميع أجهزة WhiteWhale." keywords="صيانة WhiteWhale, توكيل WhiteWhale الاسكندرية, اصلاح WhiteWhale" />
+      <SEO title="صيانة وايت ويل بالإسكندرية | إصلاح غسالات وثلاجات White Whale" description="خدمة صيانة وايت ويل في الإسكندرية لإصلاح الغسالات والثلاجات في المنزل. احجز فنيًا متخصصًا وسنتواصل معك لتأكيد الموعد." keywords="صيانة وايت ويل الإسكندرية, صيانة غسالات وايت ويل, صيانة ثلاجات وايت ويل, إصلاح وايت ويل" />
       <div className="min-h-screen flex flex-col bg-white overflow-x-hidden">
       <Header />
 

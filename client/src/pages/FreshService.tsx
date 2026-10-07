@@ -10,9 +10,9 @@ import { Star, CheckCircle, Zap, ShieldCheck, Clock, Award, Phone, MessageCircle
 export default function FreshService() {
   useEffect(() => {
     // Dynamic SEO Update - Policy Compliant
-    document.title = "صيانة فريش الإسكندرية | مركز خدمة Fresh المتخصص 01278885772";
+    document.title = "صيانة فريش بالإسكندرية | إصلاح غسالات وثلاجات Fresh";
     const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute("content", "خدمة صيانة فريش بالإسكندرية. نحن مركز خدمة متخصص لصيانة كافة أجهزة Fresh (ثلاجات، غسالات، تكييفات) بالمنزل بقطع غيار أصلية وضمان سنة.");
+    if (metaDesc) metaDesc.setAttribute("content", "اطلب صيانة فريش في الإسكندرية لإصلاح الغسالات والثلاجات في المنزل. خدمة سريعة وفني متخصص وضمان على الخدمة.");
 
     // Schema Markup for Google Ads Quality Score
     const schema = {
@@ -31,7 +31,7 @@ export default function FreshService() {
         }
       },
       "areaServed": "Alexandria",
-      "description": "خدمة صيانة فريش المتخصصة في الإسكندرية بقطع غيار أصلية."
+      "description": "اطلب صيانة فريش في الإسكندرية لإصلاح الغسالات والثلاجات في المنزل. خدمة سريعة وفني متخصص وضمان على الخدمة."
     };
 
     const script = document.createElement("script");
@@ -47,7 +47,7 @@ export default function FreshService() {
 
   return (
     <>
-      <SEO title="صيانة Fresh الإسكندرية | مركز خدمة معتمد" description="مركز صيانة Fresh المتخصص في الإسكندرية. خدمة سريعة وضمان معتمد على قطع الغيار الأصلية لجميع أجهزة Fresh." keywords="صيانة Fresh, توكيل Fresh الاسكندرية, اصلاح Fresh" />
+      <SEO title="صيانة فريش بالإسكندرية | إصلاح غسالات وثلاجات Fresh" description="اطلب صيانة فريش في الإسكندرية لإصلاح الغسالات والثلاجات في المنزل. خدمة سريعة وفني متخصص وضمان على الخدمة." keywords="صيانة فريش الإسكندرية, صيانة غسالات فريش, صيانة ثلاجات فريش, إصلاح فريش" />
       <div className="min-h-screen flex flex-col bg-white overflow-x-hidden">
       <Header />
 

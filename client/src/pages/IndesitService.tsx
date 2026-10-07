@@ -10,9 +10,9 @@ import { Star, CheckCircle, Zap, ShieldCheck, Clock, Award, Phone, MessageCircle
 export default function IndesitService() {
   useEffect(() => {
     // Dynamic SEO Update - Policy Compliant
-    document.title = "صيانة انديست الإسكندرية | مركز خدمة Indesit المتخصص 01278885772";
+    document.title = "صيانة إنديست بالإسكندرية | إصلاح غسالات وثلاجات Indesit";
     const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute("content", "خدمة صيانة انديست بالإسكندرية. نحن مركز خدمة متخصص لصيانة كافة أجهزة Indesit (ثلاجات، غسالات، تكييفات) بالمنزل بقطع غيار أصلية وضمان سنة.");
+    if (metaDesc) metaDesc.setAttribute("content", "خدمة صيانة إنديست في الإسكندرية لإصلاح الغسالات والثلاجات في المنزل. احجز فنيًا متخصصًا وسنتواصل معك لتأكيد الموعد.");
 
     // Schema Markup for Google Ads Quality Score
     const schema = {
@@ -31,7 +31,7 @@ export default function IndesitService() {
         }
       },
       "areaServed": "Alexandria",
-      "description": "خدمة صيانة انديست المتخصصة في الإسكندرية بقطع غيار أصلية."
+      "description": "خدمة صيانة إنديست في الإسكندرية لإصلاح الغسالات والثلاجات في المنزل. احجز فنيًا متخصصًا وسنتواصل معك لتأكيد الموعد."
     };
 
     const script = document.createElement("script");
@@ -47,7 +47,7 @@ export default function IndesitService() {
 
   return (
     <>
-      <SEO title="صيانة Indesit الإسكندرية | مركز خدمة معتمد" description="مركز صيانة Indesit المتخصص في الإسكندرية. خدمة سريعة وضمان معتمد على قطع الغيار الأصلية لجميع أجهزة Indesit." keywords="صيانة Indesit, توكيل Indesit الاسكندرية, اصلاح Indesit" />
+      <SEO title="صيانة إنديست بالإسكندرية | إصلاح غسالات وثلاجات Indesit" description="خدمة صيانة إنديست في الإسكندرية لإصلاح الغسالات والثلاجات في المنزل. احجز فنيًا متخصصًا وسنتواصل معك لتأكيد الموعد." keywords="صيانة إنديست الإسكندرية, صيانة غسالات إنديست, صيانة ثلاجات إنديست, إصلاح إنديست" />
       <div className="min-h-screen flex flex-col bg-white overflow-x-hidden">
       <Header />
 

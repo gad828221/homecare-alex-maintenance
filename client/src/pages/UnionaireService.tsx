@@ -10,9 +10,9 @@ import { Star, CheckCircle, Zap, ShieldCheck, Clock, Award, Phone, MessageCircle
 export default function UnionaireService() {
   useEffect(() => {
     // Dynamic SEO Update - Policy Compliant
-    document.title = "صيانة يونيون اير الإسكندرية | مركز خدمة Unionaire المتخصص 01278885772";
+    document.title = "صيانة يونيون إير بالإسكندرية | إصلاح تكييفات Unionaire";
     const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute("content", "خدمة صيانة يونيون اير بالإسكندرية. نحن مركز خدمة متخصص لصيانة كافة أجهزة Unionaire (ثلاجات، غسالات، تكييفات) بالمنزل بقطع غيار أصلية وضمان سنة.");
+    if (metaDesc) metaDesc.setAttribute("content", "خدمة صيانة يونيون إير في الإسكندرية لإصلاح التكييفات والثلاجات في المنزل. احجز فنيًا متخصصًا وسنتواصل معك لتأكيد الموعد.");
 
     // Schema Markup for Google Ads Quality Score
     const schema = {
@@ -31,7 +31,7 @@ export default function UnionaireService() {
         }
       },
       "areaServed": "Alexandria",
-      "description": "خدمة صيانة يونيون اير المتخصصة في الإسكندرية بقطع غيار أصلية."
+      "description": "خدمة صيانة يونيون إير في الإسكندرية لإصلاح التكييفات والثلاجات في المنزل. احجز فنيًا متخصصًا وسنتواصل معك لتأكيد الموعد."
     };
 
     const script = document.createElement("script");
@@ -47,7 +47,7 @@ export default function UnionaireService() {
 
   return (
     <>
-      <SEO title="صيانة Unionaire الإسكندرية | مركز خدمة معتمد" description="مركز صيانة Unionaire المتخصص في الإسكندرية. خدمة سريعة وضمان معتمد على قطع الغيار الأصلية لجميع أجهزة Unionaire." keywords="صيانة Unionaire, توكيل Unionaire الاسكندرية, اصلاح Unionaire" />
+      <SEO title="صيانة يونيون إير بالإسكندرية | إصلاح تكييفات Unionaire" description="خدمة صيانة يونيون إير في الإسكندرية لإصلاح التكييفات والثلاجات في المنزل. احجز فنيًا متخصصًا وسنتواصل معك لتأكيد الموعد." keywords="صيانة يونيون إير الإسكندرية, صيانة تكييف يونيون إير, إصلاح يونيون اير" />
       <div className="min-h-screen flex flex-col bg-white overflow-x-hidden">
       <Header />
 

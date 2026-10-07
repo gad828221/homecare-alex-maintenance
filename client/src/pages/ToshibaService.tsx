@@ -10,9 +10,9 @@ import { Star, CheckCircle, Zap, ShieldCheck, Clock, Award, Phone, MessageCircle
 export default function ToshibaService() {
   useEffect(() => {
     // Dynamic SEO Update - Policy Compliant
-    document.title = "صيانة توشيبا الإسكندرية | مركز خدمة Toshiba المتخصص 01278885772";
+    document.title = "صيانة توشيبا بالإسكندرية | إصلاح أجهزة Toshiba في المنزل";
     const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute("content", "خدمة صيانة توشيبا بالإسكندرية. نحن مركز خدمة متخصص لصيانة كافة أجهزة Toshiba (ثلاجات، غسالات، تكييفات) بالمنزل بقطع غيار أصلية وضمان سنة.");
+    if (metaDesc) metaDesc.setAttribute("content", "خدمة صيانة توشيبا في الإسكندرية لإصلاح الثلاجات والغسالات والتكييفات في المنزل. احجز موعدك وسنتواصل معك لتأكيد التفاصيل.");
 
     // Schema Markup for Google Ads Quality Score
     const schema = {
@@ -31,7 +31,7 @@ export default function ToshibaService() {
         }
       },
       "areaServed": "Alexandria",
-      "description": "خدمة صيانة توشيبا المتخصصة في الإسكندرية بقطع غيار أصلية."
+      "description": "خدمة صيانة توشيبا في الإسكندرية لإصلاح الثلاجات والغسالات والتكييفات في المنزل. احجز موعدك وسنتواصل معك لتأكيد التفاصيل."
     };
 
     const script = document.createElement("script");
@@ -47,7 +47,7 @@ export default function ToshibaService() {
 
   return (
     <>
-      <SEO title="صيانة Toshiba الإسكندرية | مركز خدمة معتمد" description="مركز صيانة Toshiba المتخصص في الإسكندرية. خدمة سريعة وضمان معتمد على قطع الغيار الأصلية لجميع أجهزة Toshiba." keywords="صيانة Toshiba, توكيل Toshiba الاسكندرية, اصلاح Toshiba" />
+      <SEO title="صيانة توشيبا بالإسكندرية | إصلاح أجهزة Toshiba في المنزل" description="خدمة صيانة توشيبا في الإسكندرية لإصلاح الثلاجات والغسالات والتكييفات في المنزل. احجز موعدك وسنتواصل معك لتأكيد التفاصيل." keywords="صيانة توشيبا الإسكندرية, صيانة ثلاجة توشيبا, صيانة غسالة توشيبا, إصلاح توشيبا" />
       <div className="min-h-screen flex flex-col bg-white overflow-x-hidden">
       <Header />
 

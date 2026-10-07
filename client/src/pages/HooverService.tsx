@@ -10,9 +10,9 @@ import { Star, CheckCircle, Zap, ShieldCheck, Clock, Award, Phone, MessageCircle
 export default function HooverService() {
   useEffect(() => {
     // Dynamic SEO Update - Policy Compliant
-    document.title = "صيانة هوفر الإسكندرية | مركز خدمة Hoover المتخصص 01278885772";
+    document.title = "صيانة هوفر بالإسكندرية | إصلاح غسالات وأجهزة Hoover";
     const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute("content", "خدمة صيانة هوفر بالإسكندرية. نحن مركز خدمة متخصص لصيانة كافة أجهزة Hoover (ثلاجات، غسالات، تكييفات) بالمنزل بقطع غيار أصلية وضمان سنة.");
+    if (metaDesc) metaDesc.setAttribute("content", "اطلب صيانة هوفر في الإسكندرية لإصلاح الغسالات والأجهزة المنزلية في المنزل. فني متخصص وحجز سريع وضمان على الخدمة.");
 
     // Schema Markup for Google Ads Quality Score
     const schema = {
@@ -31,7 +31,7 @@ export default function HooverService() {
         }
       },
       "areaServed": "Alexandria",
-      "description": "خدمة صيانة هوفر المتخصصة في الإسكندرية بقطع غيار أصلية."
+      "description": "اطلب صيانة هوفر في الإسكندرية لإصلاح الغسالات والأجهزة المنزلية في المنزل. فني متخصص وحجز سريع وضمان على الخدمة."
     };
 
     const script = document.createElement("script");
@@ -47,7 +47,7 @@ export default function HooverService() {
 
   return (
     <>
-      <SEO title="صيانة Hoover الإسكندرية | مركز خدمة معتمد" description="مركز صيانة Hoover المتخصص في الإسكندرية. خدمة سريعة وضمان معتمد على قطع الغيار الأصلية لجميع أجهزة Hoover." keywords="صيانة Hoover, توكيل Hoover الاسكندرية, اصلاح Hoover" />
+      <SEO title="صيانة هوفر بالإسكندرية | إصلاح غسالات وأجهزة Hoover" description="اطلب صيانة هوفر في الإسكندرية لإصلاح الغسالات والأجهزة المنزلية في المنزل. فني متخصص وحجز سريع وضمان على الخدمة." keywords="صيانة هوفر الإسكندرية, صيانة غسالات هوفر, إصلاح هوفر" />
       <div className="min-h-screen flex flex-col bg-white overflow-x-hidden">
       <Header />
 

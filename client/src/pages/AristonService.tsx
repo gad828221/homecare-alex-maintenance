@@ -10,9 +10,9 @@ import { Star, CheckCircle, Zap, ShieldCheck, Clock, Award, Phone, MessageCircle
 export default function AristonService() {
   useEffect(() => {
     // Dynamic SEO Update - Policy Compliant
-    document.title = "صيانة اريستون الإسكندرية | مركز خدمة Ariston المتخصص 01278885772";
+    document.title = "صيانة أريستون بالإسكندرية | إصلاح غسالات وسخانات Ariston";
     const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute("content", "خدمة صيانة اريستون بالإسكندرية. نحن مركز خدمة متخصص لصيانة كافة أجهزة Ariston (ثلاجات، غسالات، تكييفات) بالمنزل بقطع غيار أصلية وضمان سنة.");
+    if (metaDesc) metaDesc.setAttribute("content", "اطلب صيانة أريستون في الإسكندرية لإصلاح الغسالات والسخانات في المنزل. فني متخصص وحجز سريع وضمان على الخدمة.");
 
     // Schema Markup for Google Ads Quality Score
     const schema = {
@@ -31,7 +31,7 @@ export default function AristonService() {
         }
       },
       "areaServed": "Alexandria",
-      "description": "خدمة صيانة اريستون المتخصصة في الإسكندرية بقطع غيار أصلية."
+      "description": "اطلب صيانة أريستون في الإسكندرية لإصلاح الغسالات والسخانات في المنزل. فني متخصص وحجز سريع وضمان على الخدمة."
     };
 
     const script = document.createElement("script");
@@ -47,7 +47,7 @@ export default function AristonService() {
 
   return (
     <>
-      <SEO title="صيانة Ariston الإسكندرية | مركز خدمة معتمد" description="مركز صيانة Ariston المتخصص في الإسكندرية. خدمة سريعة وضمان معتمد على قطع الغيار الأصلية لجميع أجهزة Ariston." keywords="صيانة Ariston, توكيل Ariston الاسكندرية, اصلاح Ariston" />
+      <SEO title="صيانة أريستون بالإسكندرية | إصلاح غسالات وسخانات Ariston" description="اطلب صيانة أريستون في الإسكندرية لإصلاح الغسالات والسخانات في المنزل. فني متخصص وحجز سريع وضمان على الخدمة." keywords="صيانة أريستون الإسكندرية, صيانة غسالات أريستون, صيانة سخانات أريستون, إصلاح أريستون" />
       <div className="min-h-screen flex flex-col bg-white overflow-x-hidden">
       <Header />
 
