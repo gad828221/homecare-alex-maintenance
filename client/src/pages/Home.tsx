@@ -120,7 +120,7 @@ export default function Home() {
                 </Button>
 
                 <a
-                  href="tel:01278885772"
+                  href="tel:01558625259"
                   className="flex items-center justify-center gap-3 bg-white/10 hover:bg-white/20 backdrop-blur-xl border-2 border-white/20 text-white text-lg sm:text-xl font-black px-5 py-5 sm:py-7 rounded-2xl transition-all"
                   aria-label="الاتصال بمركز الصيانة"
                 >
@@ -418,7 +418,7 @@ export default function Home() {
                   احجز موعدك الآن
                 </Button>
                 <a
-                  href="tel:01278885772"
+                  href="tel:01558625259"
                   className="flex items-center justify-center gap-2 border border-slate-600 hover:bg-slate-800 text-white font-black py-6 rounded-2xl text-lg"
                   aria-label="الاتصال بمركز الصيانة"
                 >

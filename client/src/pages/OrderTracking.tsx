@@ -220,7 +220,7 @@ export default function OrderTracking() {
                 <h4 className="text-lg font-black text-slate-900">{techNameDisplay}</h4>
                 <p className="text-xs text-orange-600 font-bold">متخصص {getDeviceSpecialty(order.device_type)}</p>
                 <div className="mt-3 flex gap-2">
-                  <a href={`tel:${order.technician_phone || '01278885772'}`} className="bg-blue-600 text-white p-2 rounded-xl shadow-lg shadow-blue-200 active:scale-90 transition-all">
+                  <a href={`tel:${order.technician_phone || '01558625259'}`} className="bg-blue-600 text-white p-2 rounded-xl shadow-lg shadow-blue-200 active:scale-90 transition-all">
                     <Phone size={18} />
                   </a>
                   <a href={`https://wa.me/201558625259`} target="_blank" className="bg-green-600 text-white p-2 rounded-xl shadow-lg shadow-green-200 active:scale-90 transition-all">
@@ -238,7 +238,7 @@ export default function OrderTracking() {
           <h3 className="text-xl font-black mb-2 relative z-10">هل تحتاج مساعدة؟</h3>
           <p className="text-slate-400 text-xs font-bold mb-6 relative z-10 leading-relaxed">فريق الدعم الفني متواجد لخدمتك على مدار الساعة للإجابة على أي استفسار.</p>
           <div className="flex flex-col sm:flex-row gap-3 relative z-10">
-            <a href="tel:01278885772" className="flex-1 bg-white text-slate-900 py-4 rounded-2xl font-black flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all">
+            <a href="tel:01558625259" className="flex-1 bg-white text-slate-900 py-4 rounded-2xl font-black flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all">
               <Phone size={18} /> اتصل بنا
             </a>
             <a href="https://wa.me/201558625259" target="_blank" className="flex-1 bg-green-600 text-white py-4 rounded-2xl font-black flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all">
