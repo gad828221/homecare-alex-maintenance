@@ -25,7 +25,7 @@ const SEO: React.FC<SEOProps> = ({ title, description, keywords, brand }) => {
     name: businessName,
     description,
     url: SITE_URL,
-    telephone: '+201558625259',
+    telephone: '+201278885772',
     image: DEFAULT_IMAGE,
     address: {
       '@type': 'PostalAddress',
