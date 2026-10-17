@@ -1,4 +1,4 @@
-import { useId, useState, useEffect } from "react";
+import { useId, useState, useEffect, useRef } from "react";
 import { 
   MessageCircle, CheckCircle, User, Phone, Wrench, MapPin, 
   AlertCircle, Star, ShieldCheck, Clock, Users, Award, 
@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { sendExternalPush } from "../utils/pushNotifications";
-import { estimateLeadValue, trackBookingConversion } from "../utils/adTracking";
+import { estimateLeadValue, trackBookingConversion, trackBookingStart } from "../utils/adTracking";
 import { DEVICE_TYPES, BRAND_OPTIONS } from "../constants/catalog";
 import { createClient } from '@supabase/supabase-js';
 
@@ -48,6 +48,7 @@ export default function BookingForm({ defaultService, title, description }: Book
   const [formStartedAt] = useState(() => Date.now());
   const [previousCustomer, setPreviousCustomer] = useState<any>(null);
   const [customerLookupLoading, setCustomerLookupLoading] = useState(false);
+  const bookingStartedRef = useRef(false);
 
   useEffect(() => {
     const phone = formData.phone.trim();
@@ -83,6 +84,10 @@ export default function BookingForm({ defaultService, title, description }: Book
     if (step === 1 && (!formData.device_type && !isOtherDevice)) return alert("يرجى اختيار نوع الجهاز");
     if (step === 1 && (!formData.brand && !isOtherBrand)) return alert("يرجى اختيار الماركة");
     if (step === 2 && (!formData.customer_name || !formData.phone || !formData.address)) return alert("يرجى إكمال البيانات المطلوبة");
+    if (step === 1 && !bookingStartedRef.current) {
+      bookingStartedRef.current = true;
+      trackBookingStart({ device_type: isOtherDevice ? customDevice : formData.device_type, brand: isOtherBrand ? customBrand : formData.brand });
+    }
     setStep(step + 1);
   };
 

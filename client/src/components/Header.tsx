@@ -71,6 +71,7 @@ export default function Header() {
                 ))}
               </div>
             </div>
+            <Link href="/service-areas" className="text-gray-200 hover:text-orange-400 font-bold transition-colors">مناطق الخدمة</Link>
             <button onClick={scrollToContact} className="text-gray-200 hover:text-orange-400 font-bold transition-colors">اتصل بنا</button>
           </nav>
 
@@ -142,6 +143,7 @@ export default function Header() {
                 </div>
               )}
               
+              <Link href="/service-areas" onClick={() => setIsOpen(false)} className="block text-white font-bold p-3 hover:bg-slate-700 rounded-xl">مناطق الخدمة</Link>
               <button onClick={scrollToContact} className="w-full text-right text-white font-bold p-3 hover:bg-slate-700 rounded-xl">اتصل بنا</button>
               
               <div className="grid grid-cols-2 gap-2 pt-4">

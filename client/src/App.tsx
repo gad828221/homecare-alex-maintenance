@@ -11,6 +11,7 @@ import PresenceManager from "./components/PresenceManager";
 import { readAuthSession } from './utils/authSession';
 import { syncOneSignalIdentity } from './utils/oneSignalIdentity';
 import ApplianceService, { applianceServices } from './pages/ApplianceService';
+import ServiceAreas from './pages/ServiceAreas';
 
 const PUBLIC_PATHS = new Set([
   '/', '/login', '/invoice', '/pickup-receipt', '/feedback', '/track',
@@ -19,7 +20,7 @@ const PUBLIC_PATHS = new Set([
   '/fresh-service', '/white-whale-service', '/ariston-service',
   '/beko-service', '/hoover-service', '/indesit-service',
   '/refrigerator-service', '/washing-machine-service', '/air-conditioner-service',
-  '/stove-service', '/water-heater-service'
+  '/stove-service', '/water-heater-service', '/service-areas'
 ]);
 
 const Home = lazy(() => import("./pages/Home"));
@@ -79,6 +80,7 @@ function Router() {
         <Route path="/air-conditioner-service"><ApplianceService service={applianceServices.airConditioner} /></Route>
         <Route path="/stove-service"><ApplianceService service={applianceServices.stove} /></Route>
         <Route path="/water-heater-service"><ApplianceService service={applianceServices.waterHeater} /></Route>
+        <Route path="/service-areas" component={ServiceAreas} />
         <Route path="/orders" component={ProtectedOrders} />
         <Route path="/login" component={Login} />
         <Route path="/tech-portal" component={TechPortal} />

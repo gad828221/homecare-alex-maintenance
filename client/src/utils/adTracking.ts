@@ -37,6 +37,26 @@ export function trackPhoneClick(): void {
   }
 }
 
+export function trackWhatsAppClick(): void {
+  if (typeof window === 'undefined') return;
+  const trackingWindow = window as TrackingWindow;
+  const event = { event: 'whatsapp_click', lead_type: 'whatsapp_contact', page_path: window.location.pathname };
+  trackingWindow.dataLayer = trackingWindow.dataLayer || [];
+  trackingWindow.dataLayer.push(event);
+  if (typeof trackingWindow.gtag === 'function') {
+    trackingWindow.gtag('event', 'whatsapp_click', event);
+  }
+}
+
+export function trackBookingStart(params: AdEventParams = {}): void {
+  if (typeof window === 'undefined') return;
+  const trackingWindow = window as TrackingWindow;
+  const event = { event: 'begin_booking', lead_type: 'maintenance_booking_start', page_path: window.location.pathname, ...params };
+  trackingWindow.dataLayer = trackingWindow.dataLayer || [];
+  trackingWindow.dataLayer.push(event);
+  if (typeof trackingWindow.gtag === 'function') trackingWindow.gtag('event', 'begin_booking', event);
+}
+
 export function trackBookingConversion(params: AdEventParams = {}): void {
   if (typeof window === 'undefined') return;
   const trackingWindow = window as TrackingWindow;
