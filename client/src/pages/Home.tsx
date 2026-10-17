@@ -18,10 +18,10 @@ export default function Home() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
 
   const services = [
-    { icon: Zap, title: "صيانة الثلاجات", description: "إصلاح فوري لجميع أنواع الثلاجات والديب فريزر بقطع غيار أصلية وضمان معتمد." },
-    { icon: Droplet, title: "صيانة الغسالات", description: "تصليح غسالات الملابس والأطباق، أوتوماتيك وفوق أوتوماتيك، بأحدث المعدات." },
-    { icon: Wind, title: "صيانة المكيفات", description: "تنظيف، شحن فريون، وإصلاح جميع أنواع التكييفات والسبليت لضمان أفضل أداء." },
-    { icon: Flame, title: "صيانة الأفران", description: "صيانة شاملة للبوتاجازات والأفران الكهربائية والميكروويف مع فحص الأمان." },
+    { icon: Zap, title: "صيانة الثلاجات", href: "/refrigerator-service", description: "إصلاح فوري لجميع أنواع الثلاجات والديب فريزر بقطع غيار أصلية وضمان معتمد." },
+    { icon: Droplet, title: "صيانة الغسالات", href: "/washing-machine-service", description: "تصليح غسالات الملابس والأطباق، أوتوماتيك وفوق أوتوماتيك، بأحدث المعدات." },
+    { icon: Wind, title: "صيانة المكيفات", href: "/air-conditioner-service", description: "تنظيف، شحن فريون، وإصلاح جميع أنواع التكييفات والسبليت لضمان أفضل أداء." },
+    { icon: Flame, title: "صيانة الأفران", href: "/stove-service", description: "صيانة شاملة للبوتاجازات والأفران الكهربائية والميكروويف مع فحص الأمان." },
   ];
 
   const features = [
@@ -64,9 +64,9 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col bg-white overflow-x-hidden font-sans" dir="rtl">
       <SEO
-        title="صيانة أجهزة منزلية بالإسكندرية | فني يصل إلى المنزل بسرعة"
-        description="اطلب فني صيانة أجهزة منزلية في الإسكندرية للثلاجات والغسالات والتكييفات والبوتاجازات. حجز سريع من المنزل، قطع غيار موثوقة وضمان على الخدمة."
-        keywords="صيانة أجهزة منزلية الإسكندرية, فني ثلاجات, صيانة غسالات, صيانة تكييفات, صيانة بوتاجازات, حجز فني صيانة"
+        title="صيانة أجهزة منزلية بالإسكندرية | فني ثلاجات وغسالات وتكييفات بالمنزل"
+        description="اطلب فني صيانة أجهزة منزلية في الإسكندرية لإصلاح الثلاجات والغسالات والتكييفات والبوتاجازات والسخانات في المنزل. حجز سريع، فحص واضح، قطع غيار موثوقة وضمان على الخدمة."
+        keywords="صيانة أجهزة منزلية الإسكندرية, فني صيانة منزلية, صيانة ثلاجات الإسكندرية, صيانة غسالات الإسكندرية, صيانة تكييفات الإسكندرية, صيانة بوتاجازات, صيانة سخانات, حجز فني صيانة"
       />
       <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
       <Header />
@@ -99,7 +99,7 @@ export default function Home() {
               </div>
 
               <h1 className="text-[2.35rem] sm:text-5xl lg:text-7xl font-black text-white leading-[1.15] mb-5 lg:mb-8">
-                صيانة أجهزتك <br />
+                فني صيانة أجهزة منزلية <br />
                 <span className="text-orange-500">في منزلك اليوم</span> <br />
                 <span className="text-xl sm:text-3xl lg:text-5xl text-slate-300">بحجز سريع وضمان على الخدمة</span>
               </h1>
@@ -231,7 +231,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {services.map((service, index) => (
-              <div key={index} className="group relative overflow-hidden rounded-[3rem] bg-slate-900 h-[400px]">
+              <a href={service.href} key={index} className="group relative block overflow-hidden rounded-[3rem] bg-slate-900 h-[400px]">
                 <img
                   src={`/images/services/${index === 0 ? 'refrigerator-repair-pro.webp' : index === 1 ? 'washing-machine-repair-pro.webp' : index === 2 ? 'ac-repair-pro.webp' : 'stove-repair-pro.webp'}`}
                   alt={service.title}
@@ -247,7 +247,7 @@ export default function Home() {
                   <h3 className="text-3xl font-black text-white mb-4">{service.title}</h3>
                   <p className="text-slate-300 font-bold text-lg max-w-md">{service.description}</p>
                 </div>
-              </div>
+              </a>
             ))}
           </div>
         </div>

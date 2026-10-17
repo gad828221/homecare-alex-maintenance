@@ -10,13 +10,16 @@ import PresenceManager from "./components/PresenceManager";
 // EmployeeChat removed as per user request (v3.2.8)
 import { readAuthSession } from './utils/authSession';
 import { syncOneSignalIdentity } from './utils/oneSignalIdentity';
+import ApplianceService, { applianceServices } from './pages/ApplianceService';
 
 const PUBLIC_PATHS = new Set([
   '/', '/login', '/invoice', '/pickup-receipt', '/feedback', '/track',
   '/samsung-service', '/lg-service', '/sharp-service',
   '/toshiba-service', '/zanussi-service', '/unionaire-service',
   '/fresh-service', '/white-whale-service', '/ariston-service',
-  '/beko-service', '/hoover-service', '/indesit-service'
+  '/beko-service', '/hoover-service', '/indesit-service',
+  '/refrigerator-service', '/washing-machine-service', '/air-conditioner-service',
+  '/stove-service', '/water-heater-service'
 ]);
 
 const Home = lazy(() => import("./pages/Home"));
@@ -71,6 +74,11 @@ function Router() {
         <Route path="/beko-service" component={BekoService} />
         <Route path="/hoover-service" component={HooverService} />
         <Route path="/indesit-service" component={IndesitService} />
+        <Route path="/refrigerator-service"><ApplianceService service={applianceServices.refrigerator} /></Route>
+        <Route path="/washing-machine-service"><ApplianceService service={applianceServices.washing} /></Route>
+        <Route path="/air-conditioner-service"><ApplianceService service={applianceServices.airConditioner} /></Route>
+        <Route path="/stove-service"><ApplianceService service={applianceServices.stove} /></Route>
+        <Route path="/water-heater-service"><ApplianceService service={applianceServices.waterHeater} /></Route>
         <Route path="/orders" component={ProtectedOrders} />
         <Route path="/login" component={Login} />
         <Route path="/tech-portal" component={TechPortal} />
