@@ -4,9 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { EnhancedNotificationProvider } from "./components/EnhancedNotificationSystem";
 import { Phone, MessageCircle, Calendar } from "lucide-react";
-import PresenceManager from "./components/PresenceManager";
 // EmployeeChat removed as per user request (v3.2.8)
 import { readAuthSession } from './utils/authSession';
 import { syncOneSignalIdentity } from './utils/oneSignalIdentity';
@@ -46,6 +44,7 @@ const HooverService = lazy(() => import("./pages/HooverService"));
 const IndesitService = lazy(() => import("./pages/IndesitService"));
 const ApplianceServiceRoute = lazy(() => import("./pages/ApplianceServiceRoute"));
 const ServiceAreas = lazy(() => import("./pages/ServiceAreas"));
+const StaffRuntime = lazy(() => import("./components/StaffRuntime"));
 
 function LoadingFallback() {
   return (
@@ -186,8 +185,6 @@ function AppContent() {
         <Router />
       </Suspense>
       {!hideFloatingButtons && <FloatingButtons />}
-
-      <PresenceManager />
     </>
   );
 }
@@ -236,14 +233,14 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <EnhancedNotificationProvider>
-        <ThemeProvider defaultTheme="light">
-          <TooltipProvider>
-            <Toaster position="top-center" richColors />
-            <AppContent />
-          </TooltipProvider>
-        </ThemeProvider>
-      </EnhancedNotificationProvider>
+      <ThemeProvider defaultTheme="light">
+        <TooltipProvider>
+          <Toaster position="top-center" richColors />
+          {['/login', '/orders', '/tech-portal', '/data-entry'].some((path) => window.location.pathname.startsWith(path)) ? (
+            <Suspense fallback={<LoadingFallback />}><StaffRuntime><AppContent /></StaffRuntime></Suspense>
+          ) : <AppContent />}
+        </TooltipProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }
