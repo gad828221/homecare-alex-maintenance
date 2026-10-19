@@ -167,6 +167,9 @@ export default function Home() {
                    احجز صيانة فورية الآن ⚡
                    <span className="block text-xs sm:text-sm font-bold text-orange-100 mt-1">نراجع طلبك ونتواصل معك لتأكيد التفاصيل</span>
                 </div>
+                <div className="grid grid-cols-3 gap-2 px-3 pt-3 text-center text-[10px] font-black text-slate-600 sm:text-xs">
+                  <span>فحص واضح</span><span>موعد مناسب</span><span>تأكيد قبل الإصلاح</span>
+                </div>
                 <BookingForm />
               </div>
             </motion.div>

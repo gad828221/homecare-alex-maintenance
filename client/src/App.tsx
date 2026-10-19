@@ -5,7 +5,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { EnhancedNotificationProvider } from "./components/EnhancedNotificationSystem";
-import { Phone, MessageCircle } from "lucide-react";
+import { Phone, MessageCircle, Calendar } from "lucide-react";
 import PresenceManager from "./components/PresenceManager";
 // EmployeeChat removed as per user request (v3.2.8)
 import { readAuthSession } from './utils/authSession';
@@ -97,25 +97,35 @@ function Router() {
 }
 
 function FloatingButtons() {
+  const path = window.location.pathname;
+  const bookingHref = path === '/' ? '#booking-form' : path.endsWith('-service') ? '#booking' : '/#booking-form';
   return (
-    <div className="fixed bottom-6 left-0 right-0 flex justify-between px-4 pointer-events-none z-50">
+    <div className="fixed bottom-3 left-0 right-0 flex justify-center px-3 pointer-events-none z-50 md:bottom-6">
+      <div className="pointer-events-auto flex w-full max-w-lg items-center gap-2 rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-2xl backdrop-blur md:max-w-md">
+      <a
+        href={bookingHref}
+        className="flex min-h-12 flex-1 items-center justify-center gap-1 rounded-xl bg-orange-600 px-2 text-xs font-black text-white transition-colors hover:bg-orange-700 sm:text-sm"
+        aria-label="حجز فني صيانة"
+      >
+        <Calendar className="h-4 w-4" /> احجز فني
+      </a>
       <a 
         href="tel:01278885772"
-        className="pointer-events-auto bg-blue-600 hover:bg-blue-700 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 ml-auto" 
-        style={{ marginRight: '10px' }} 
+        className="flex min-h-12 flex-1 items-center justify-center gap-1 rounded-xl bg-blue-600 px-2 text-xs font-black text-white transition-colors hover:bg-blue-700 sm:text-sm"
         aria-label="اتصال"
       >
-        <Phone className="w-6 h-6" />
+        <Phone className="h-4 w-4" /> اتصال
       </a>
       <a 
         href="https://wa.me/201558625259"
         target="_blank" 
         rel="noopener noreferrer" 
-        className="pointer-events-auto bg-green-600 hover:bg-green-700 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110" 
+        className="flex min-h-12 flex-1 items-center justify-center gap-1 rounded-xl bg-green-600 px-2 text-xs font-black text-white transition-colors hover:bg-green-700 sm:text-sm"
         aria-label="واتساب"
       >
-        <MessageCircle className="w-6 h-6" />
+        <MessageCircle className="h-4 w-4" /> واتساب
       </a>
+      </div>
     </div>
   );
 }
