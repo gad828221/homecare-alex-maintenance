@@ -10,8 +10,6 @@ import PresenceManager from "./components/PresenceManager";
 // EmployeeChat removed as per user request (v3.2.8)
 import { readAuthSession } from './utils/authSession';
 import { syncOneSignalIdentity } from './utils/oneSignalIdentity';
-import ApplianceService, { applianceServices } from './pages/ApplianceService';
-import ServiceAreas from './pages/ServiceAreas';
 
 const PUBLIC_PATHS = new Set([
   '/', '/login', '/invoice', '/pickup-receipt', '/feedback', '/track',
@@ -46,6 +44,8 @@ const AristonService = lazy(() => import("./pages/AristonService"));
 const BekoService = lazy(() => import("./pages/BekoService"));
 const HooverService = lazy(() => import("./pages/HooverService"));
 const IndesitService = lazy(() => import("./pages/IndesitService"));
+const ApplianceServiceRoute = lazy(() => import("./pages/ApplianceServiceRoute"));
+const ServiceAreas = lazy(() => import("./pages/ServiceAreas"));
 
 function LoadingFallback() {
   return (
@@ -75,11 +75,11 @@ function Router() {
         <Route path="/beko-service" component={BekoService} />
         <Route path="/hoover-service" component={HooverService} />
         <Route path="/indesit-service" component={IndesitService} />
-        <Route path="/refrigerator-service"><ApplianceService service={applianceServices.refrigerator} /></Route>
-        <Route path="/washing-machine-service"><ApplianceService service={applianceServices.washing} /></Route>
-        <Route path="/air-conditioner-service"><ApplianceService service={applianceServices.airConditioner} /></Route>
-        <Route path="/stove-service"><ApplianceService service={applianceServices.stove} /></Route>
-        <Route path="/water-heater-service"><ApplianceService service={applianceServices.waterHeater} /></Route>
+        <Route path="/refrigerator-service"><ApplianceServiceRoute serviceKey="refrigerator" /></Route>
+        <Route path="/washing-machine-service"><ApplianceServiceRoute serviceKey="washing" /></Route>
+        <Route path="/air-conditioner-service"><ApplianceServiceRoute serviceKey="airConditioner" /></Route>
+        <Route path="/stove-service"><ApplianceServiceRoute serviceKey="stove" /></Route>
+        <Route path="/water-heater-service"><ApplianceServiceRoute serviceKey="waterHeater" /></Route>
         <Route path="/service-areas" component={ServiceAreas} />
         <Route path="/orders" component={ProtectedOrders} />
         <Route path="/login" component={Login} />
