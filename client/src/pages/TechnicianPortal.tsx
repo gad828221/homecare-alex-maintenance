@@ -1492,7 +1492,7 @@ export default function TechnicianPortal() {
   );
 
   return (
-    <div className={`operations-light-theme ${staffNightMode ? 'staff-night-theme' : ''} min-h-screen bg-slate-900 text-slate-200 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`}>
+    <div className={`technician-portal-theme operations-light-theme ${staffNightMode ? 'staff-night-theme' : ''} min-h-screen bg-slate-900 text-slate-200 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`}>
       
       {/* ✅ قفل الشاشة الإجباري لتفعيل الصوت */}
       {!audioEnabled && (
