@@ -356,3 +356,50 @@
 .floating-scroll-buttons:hover {
   opacity: 1;
 }
+
+/* ===== Technician Portal: unified dark operations palette =====
+   The technician UI is intentionally dark; keep the manager dashboard light. */
+.operations-light-theme {
+  --ops-bg: #0f172a;
+  --ops-surface: #1e293b;
+  --ops-ink: #e2e8f0;
+  --ops-muted: #94a3b8;
+  --ops-border: #334155;
+  --ops-blue: #60a5fa;
+  background-color: var(--ops-bg);
+  color: var(--ops-ink);
+}
+
+.operations-light-theme .order-card-3d {
+  background: rgba(15, 23, 42, 0.72) !important;
+  border-color: rgba(71, 85, 105, 0.72) !important;
+}
+
+.operations-light-theme .order-card-3d:hover {
+  border-color: rgba(148, 163, 184, 0.9) !important;
+}
+
+.operations-light-theme input,
+.operations-light-theme select,
+.operations-light-theme textarea {
+  background-color: #0f172a !important;
+  border-color: #475569 !important;
+  color: #f8fafc !important;
+}
+
+.operations-light-theme input::placeholder,
+.operations-light-theme textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.operations-light-theme input:focus,
+.operations-light-theme select:focus,
+.operations-light-theme textarea:focus {
+  border-color: #fb923c !important;
+  box-shadow: 0 0 0 3px rgb(249 115 22 / 18%) !important;
+}
+
+.operations-light-theme .order-timeline-section {
+  background: #0f172a;
+  border-color: #334155;
+}
