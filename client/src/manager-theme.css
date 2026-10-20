@@ -940,6 +940,78 @@
   border: 1px solid rgba(245, 158, 11, 0.42) !important;
 }
 
+/* ==========================================================
+   v6.0.2 — Night-mode text contrast for technician portal
+   These rules are isolated from day mode and visitor pages.
+   ========================================================== */
+.staff-night-theme .text-rose-100,
+.staff-night-theme .text-rose-200,
+.staff-night-theme .text-rose-300,
+.staff-night-theme .text-red-100,
+.staff-night-theme .text-red-200,
+.staff-night-theme .text-red-300 {
+  color: #fda4af !important;
+}
+
+.staff-night-theme .text-amber-100,
+.staff-night-theme .text-amber-200,
+.staff-night-theme .text-amber-300,
+.staff-night-theme .text-yellow-100,
+.staff-night-theme .text-yellow-200,
+.staff-night-theme .text-yellow-300 {
+  color: #fcd34d !important;
+}
+
+.staff-night-theme .text-orange-100,
+.staff-night-theme .text-orange-200,
+.staff-night-theme .text-orange-300 {
+  color: #fdba74 !important;
+}
+
+.staff-night-theme .text-emerald-100,
+.staff-night-theme .text-emerald-200,
+.staff-night-theme .text-emerald-300,
+.staff-night-theme .text-green-100,
+.staff-night-theme .text-green-200,
+.staff-night-theme .text-green-300 {
+  color: #6ee7b7 !important;
+}
+
+.staff-night-theme .text-blue-100,
+.staff-night-theme .text-blue-200,
+.staff-night-theme .text-blue-300,
+.staff-night-theme .text-cyan-100,
+.staff-night-theme .text-cyan-200,
+.staff-night-theme .text-cyan-300 {
+  color: #7dd3fc !important;
+}
+
+.staff-night-theme .text-violet-100,
+.staff-night-theme .text-violet-200,
+.staff-night-theme .text-violet-300,
+.staff-night-theme .text-purple-100,
+.staff-night-theme .text-purple-200,
+.staff-night-theme .text-purple-300 {
+  color: #c4b5fd !important;
+}
+
+.staff-night-theme [class*="bg-rose-500/"],
+.staff-night-theme [class*="bg-red-500/"],
+.staff-night-theme [class*="bg-amber-500/"],
+.staff-night-theme [class*="bg-yellow-500/"],
+.staff-night-theme [class*="bg-emerald-500/"],
+.staff-night-theme [class*="bg-blue-500/"],
+.staff-night-theme [class*="bg-violet-500/"] {
+  color: #e2e8f0 !important;
+}
+
+.staff-night-theme .order-card-3d button[class*="bg-slate-"] {
+  background: #1e293b !important;
+  color: #cbd5e1 !important;
+  border-color: #475569 !important;
+  box-shadow: 0 3px 0 #0f172a, 0 8px 16px rgb(0 0 0 / 24%) !important;
+}
+
 .staff-night-theme .staff-theme-toggle {
   color: #fde68a !important;
   background: rgba(245, 158, 11, 0.18) !important;
