@@ -9,22 +9,27 @@ const services = {
   'refrigerator-service': {
     title: 'صيانة ثلاجات بالإسكندرية | فني ثلاجات في المنزل | Maintenance Guide',
     description: 'اطلب فني ثلاجات في الإسكندرية لإصلاح ضعف التبريد وتسريب المياه وتراكم الثلج وأعطال الديب فريزر في المنزل، مع فحص واضح وضمان على الخدمة.',
+    heading: 'صيانة ثلاجات بالإسكندرية',
   },
   'washing-machine-service': {
     title: 'صيانة غسالات بالإسكندرية | تصليح غسالات في المنزل | Maintenance Guide',
     description: 'خدمة تصليح غسالات في الإسكندرية للغسالات الأوتوماتيك وفوق الأوتوماتيك وغسالات الأطباق. فني متخصص يصل إلى المنزل لفحص العطل وتأكيد التكلفة.',
+    heading: 'صيانة غسالات بالإسكندرية',
   },
   'air-conditioner-service': {
     title: 'صيانة تكييفات بالإسكندرية | فني تكييف وشحن فريون | Maintenance Guide',
     description: 'اطلب فني تكييف في الإسكندرية لتنظيف وصيانة التكييفات والسبليت، وفحص ضعف التبريد وتسريب الفريون والأعطال الكهربائية في المنزل.',
+    heading: 'صيانة تكييفات بالإسكندرية',
   },
   'stove-service': {
     title: 'صيانة بوتاجازات وأفران بالإسكندرية | فني في المنزل | Maintenance Guide',
     description: 'خدمة صيانة بوتاجازات وأفران في الإسكندرية لفحص ضعف اللهب ومشاكل الإشعال وتسريب الغاز وأعطال الأفران والميكروويف مع مراعاة عوامل الأمان.',
+    heading: 'صيانة بوتاجازات وأفران بالإسكندرية',
   },
   'water-heater-service': {
     title: 'صيانة سخانات بالإسكندرية | فني سخانات في المنزل | Maintenance Guide',
     description: 'اطلب فني سخانات في الإسكندرية لفحص السخان الكهربائي أو الغاز ومشاكل عدم التسخين وتسريب المياه والثرموستات في المنزل.',
+    heading: 'صيانة سخانات بالإسكندرية',
   },
 };
 
@@ -51,6 +56,8 @@ for (const [slug, seo] of Object.entries(services)) {
   html = html.replace(/(<meta\s+property="og:description"\s+content=")[^"]*("\s*\/?>)/i, `$1${escapeHtml(seo.description)}$2`);
   html = html.replace(/(<meta\s+name="twitter:title"\s+content=")[^"]*("\s*\/?>)/i, `$1${escapeHtml(seo.title)}$2`);
   html = html.replace(/(<meta\s+name="twitter:description"\s+content=")[^"]*("\s*\/?>)/i, `$1${escapeHtml(seo.description)}$2`);
+  const fallback = `<main dir="rtl" lang="ar" style="max-width:960px;margin:0 auto;padding:48px 20px;font-family:Cairo,Arial,sans-serif;color:#0f172a"><h1>${escapeHtml(seo.heading)}</h1><p style="font-size:18px;line-height:1.9">${escapeHtml(seo.description)}</p><h2>خدمة فني متخصص يصل إلى منزلك</h2><p>نقدم فحصًا واضحًا للأعطال وتأكيدًا للتكلفة قبل الإصلاح، مع إمكانية حجز موعد مناسب داخل الإسكندرية.</p><p><a href="/#booking-form">احجز فني الآن</a> أو <a href="tel:01278885772">اتصل بنا</a>.</p></main>`;
+  html = html.replace('<div id="root"></div>', `<div id="root">${fallback}</div>`);
 
   const routeDir = path.join(distDir, slug);
   fs.mkdirSync(routeDir, { recursive: true });
