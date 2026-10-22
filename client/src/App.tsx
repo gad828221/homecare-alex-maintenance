@@ -1,5 +1,6 @@
 import React, { useEffect, lazy, Suspense } from 'react';
 import { Toaster } from "sonner";
+import { Helmet } from 'react-helmet-async';
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -181,6 +182,11 @@ function AppContent() {
 
   return (
     <>
+      {isStaffPath && (
+        <Helmet>
+          <meta name="robots" content="noindex,nofollow,noarchive" />
+        </Helmet>
+      )}
       <Suspense fallback={<LoadingFallback />}>
         <Router />
       </Suspense>
