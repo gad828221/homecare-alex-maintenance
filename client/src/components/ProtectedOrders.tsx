@@ -384,6 +384,9 @@ const calculateCashLedgerBalance = (entries: any[]) => entries.reduce((total: nu
   return total;
 }, 0);
 
+// يضاف للدخل اليدوي الجديد فقط؛ القيود القديمة لا تحمل العلامة حتى لا تدخل التوزيعات بأثر رجعي.
+const DISTRIBUTABLE_MANUAL_INCOME_MARKER = '[دخل يدوي قابل للتوزيع]';
+
 const fetchAllCashLedgerEntries = async () => {
   const pageSize = 1000;
   const allEntries: any[] = [];
@@ -1424,12 +1427,29 @@ export default function ProtectedOrders() {
         return showToast(`يوم ${closeDate} مغلق بالفعل ولا يمكن إغلاقه مرة أخرى`, 'info');
       }
 
-      const entries = cashLedger.filter((entry: any) => entry.date === closeDate);
+      const latestEntries = await fetchAllCashLedgerEntries();
+      const entries = (Array.isArray(latestEntries) ? latestEntries : []).filter((entry: any) => entry.date === closeDate);
+      const latestOrders = await fetchAPIWithRetry('orders?select=id,order_number,is_paid,status,deleted_at');
+      const knownOrders = Array.isArray(latestOrders) ? latestOrders : [...orders, ...archivedOrders, ...deletedOrders];
+      const ordersById = new Map(knownOrders.map((order: any) => [String(order.id), order]));
+      const ordersByNumber = new Map(knownOrders.filter((order: any) => order.order_number).map((order: any) => [String(order.order_number), order]));
+      const unpaidIncome = entries.filter((entry: any) => {
+        if (entry.type !== 'income' || !String(entry.description || '').includes('أرباح شركة من أوردر')) return false;
+        const linked = entry.related_order_id ? ordersById.get(String(entry.related_order_id)) : null;
+        const byDescription = linked || [...ordersByNumber.entries()].find(([orderNumber]) => String(entry.description || '').includes(orderNumber))?.[1];
+        return Boolean(byDescription && !byDescription.is_paid);
+      });
+      if (unpaidIncome.length > 0) {
+        const unpaidTotal = unpaidIncome.reduce((sum: number, entry: any) => sum + (Number(entry.amount) || 0), 0);
+        showToast(`لا يمكن إغلاق يوم ${closeDate}: يوجد دخل أوردر غير محصل بقيمة ${unpaidTotal.toLocaleString()} ج.م`, 'error');
+        return;
+      }
       const income = entries.filter((entry: any) => entry.type === 'income').reduce((sum: number, entry: any) => sum + (Number(entry.amount) || 0), 0);
       const expenses = entries.filter((entry: any) => entry.type === 'expense').reduce((sum: number, entry: any) => sum + (Number(entry.amount) || 0), 0);
       const distributions = entries.filter((entry: any) => entry.type === 'profit_distribution').reduce((sum: number, entry: any) => sum + (Number(entry.amount) || 0), 0);
       const closing = Number((income - expenses - distributions).toFixed(2));
-      const details = JSON.stringify({ audit: true, close_date: closeDate, income, expenses, distributions, closing, entry_count: entries.length, closed_by: currentUser?.name || 'مدير النظام', closed_at: new Date().toISOString() });
+      const manualDistributableIncome = entries.filter((entry: any) => entry.type === 'income' && String(entry.description || '').includes(DISTRIBUTABLE_MANUAL_INCOME_MARKER)).reduce((sum: number, entry: any) => sum + (Number(entry.amount) || 0), 0);
+      const details = JSON.stringify({ audit: true, close_date: closeDate, income, expenses, distributions, manual_distributable_income: manualDistributableIncome, uncollected_income: 0, closing, entry_count: entries.length, closed_by: currentUser?.name || 'مدير النظام', closed_at: new Date().toISOString() });
 
       await addNotification('إغلاق يومي للخزنة', details);
       await addAuditLog('إغلاق يومي للخزنة', 'cash_ledger', `closing:${closeDate}`, {}, { close_date: closeDate, income, expenses, distributions, closing, entry_count: entries.length }, currentUser?.name || 'مدير النظام');
@@ -1449,7 +1469,13 @@ export default function ProtectedOrders() {
     if (isCashDateClosed(String(cashForm.date || '')) && !isAdmin) return showToast('هذا اليوم مغلق ولا يمكن إضافة حركة إلا بواسطة مدير النظام', 'error');
     try {
       const amount = Number(Number(cashForm.amount).toFixed(2));
-      const entryData = { ...cashForm, amount };
+      const entryData = {
+        ...cashForm,
+        amount,
+        description: cashForm.type === 'income' && !editingCash
+          ? `${String(cashForm.description || '').trim()} ${DISTRIBUTABLE_MANUAL_INCOME_MARKER}`.trim()
+          : cashForm.description
+      };
       const previousCash = editingCash ? cashLedger.find((entry: any) => entry.id === editingCash.id) : null;
       if (editingCash) await fetchAPI(`cash_ledger?id=eq.${editingCash.id}`, { method: 'PATCH', body: JSON.stringify(entryData) });
       else await fetchAPI('cash_ledger', { method: 'POST', body: JSON.stringify(entryData) });
@@ -1580,7 +1606,7 @@ export default function ProtectedOrders() {
         if (entry.type !== 'income' || !entryDate || entryDate < profitDistributionTrackingStartDate || entryDate > normalizedTargetDate) return false;
         // دخل الأوردر فقط قابل للتوزيع، أما الأيام السابقة لبداية السجل الحالي فهي مغلقة ضمن التوزيعات السابقة.
         const description = String(entry.description || '');
-        return description.includes('أرباح شركة من أوردر') || description.includes('ربح أوردر');
+        return description.includes('أرباح شركة من أوردر') || description.includes('ربح أوردر') || description.includes(DISTRIBUTABLE_MANUAL_INCOME_MARKER);
       }).forEach((entry: any) => {
         const entryDate = normalizeLedgerDate(entry.date);
         incomeByDate.set(entryDate, (incomeByDate.get(entryDate) || 0) + (Number(entry.amount) || 0));
