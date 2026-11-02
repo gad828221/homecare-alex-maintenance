@@ -27,11 +27,22 @@ export default function BookingForm({ defaultService, title, description }: Book
   const brandId = `${formId}-brand`;
   const customDeviceId = `${formId}-custom-device`;
   const customBrandId = `${formId}-custom-brand`;
+  const defaultDeviceType = defaultService?.includes("ثلاجات")
+    ? "ثلاجة"
+    : defaultService?.includes("غسالات")
+      ? "غسالة"
+      : defaultService?.includes("مكيفات")
+        ? "تكييف"
+        : defaultService?.includes("أفران") || defaultService?.includes("بوتاجازات")
+          ? "بوتاجاز"
+          : defaultService?.includes("سخانات")
+            ? "سخان"
+            : "";
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     customer_name: "",
     phone: "",
-    device_type: "",
+    device_type: defaultDeviceType,
     address: "",
     brand: "",
     problem_description: "",
