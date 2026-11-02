@@ -38,7 +38,7 @@ export default function BookingForm({ defaultService, title, description }: Book
           : defaultService?.includes("سخانات")
             ? "سخان"
             : "";
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(defaultDeviceType ? 2 : 1);
   const [formData, setFormData] = useState({
     customer_name: "",
     phone: "",
@@ -93,9 +93,8 @@ export default function BookingForm({ defaultService, title, description }: Book
 
   const nextStep = () => {
     if (step === 1 && (!formData.device_type && !isOtherDevice)) return alert("يرجى اختيار نوع الجهاز");
-    if (step === 1 && (!formData.brand && !isOtherBrand)) return alert("يرجى اختيار الماركة");
     if (step === 2 && (!formData.customer_name || !formData.phone || !formData.address)) return alert("يرجى إكمال البيانات المطلوبة");
-    if (step === 1 && !bookingStartedRef.current) {
+    if ((step === 1 || (step === 2 && Boolean(defaultDeviceType))) && !bookingStartedRef.current) {
       bookingStartedRef.current = true;
       trackBookingStart({ device_type: isOtherDevice ? customDevice : formData.device_type, brand: isOtherBrand ? customBrand : formData.brand });
     }
@@ -450,6 +449,23 @@ export default function BookingForm({ defaultService, title, description }: Book
                   <span className="text-slate-900 font-black">{isOtherBrand ? customBrand : formData.brand}</span>
                 </div>
               </div>
+
+              {defaultDeviceType && (
+                <div className="space-y-2">
+                  <label htmlFor={`${formId}-service-brand`} className="flex items-center gap-2 text-sm font-black text-slate-700">
+                    <Star className="w-5 h-5 text-orange-600" /> الماركة <span className="text-xs font-bold text-slate-400">(اختياري)</span>
+                  </label>
+                  <select
+                    id={`${formId}-service-brand`}
+                    value={formData.brand}
+                    onChange={(event) => setFormData((current) => ({ ...current, brand: event.target.value }))}
+                    className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg text-slate-900 font-medium outline-none focus:border-orange-500 appearance-none transition-all"
+                  >
+                    <option value="">اختر الماركة إن رغبت</option>
+                    {BRAND_OPTIONS.map((brand) => <option key={brand} value={brand}>{brand}</option>)}
+                  </select>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-black text-slate-700">

@@ -356,3 +356,9 @@
 .floating-scroll-buttons:hover {
   opacity: 1;
 }
+
+/* Keep below-the-fold public sections from competing with the hero during first paint. */
+.public-lazy-section {
+  content-visibility: auto;
+  contain-intrinsic-size: 800px;
+}

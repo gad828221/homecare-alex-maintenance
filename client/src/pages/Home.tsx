@@ -77,6 +77,8 @@ export default function Home() {
           <img
             src="/images/hero-bg-professional.webp"
             alt="صيانة أجهزة منزلية احترافية بالإسكندرية"
+            width={1600}
+            height={900}
             className="w-full h-full object-cover opacity-40 scale-105"
             loading="eager"
             fetchPriority="high"
@@ -189,7 +191,7 @@ export default function Home() {
       </div>
 
       {/* WHY US SECTION */}
-      <section className="py-32 bg-slate-50 relative overflow-hidden">
+      <section className="public-lazy-section py-32 bg-slate-50 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/5 rounded-full blur-3xl -mr-48 -mt-48"></div>
         <div className="container mx-auto px-4 relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-24">
@@ -216,7 +218,7 @@ export default function Home() {
       </section>
 
       {/* SERVICES SHOWCASE */}
-      <section className="py-32 bg-white">
+      <section className="public-lazy-section py-32 bg-white">
         <div className="container mx-auto px-4">
           <div className="flex flex-col lg:flex-row items-end justify-between mb-24 gap-8">
             <div className="max-w-2xl text-right">
@@ -238,6 +240,8 @@ export default function Home() {
                 <img
                   src={`/images/services/${index === 0 ? 'refrigerator-repair-pro.webp' : index === 1 ? 'washing-machine-repair-pro.webp' : index === 2 ? 'ac-repair-pro.webp' : 'stove-repair-pro.webp'}`}
                   alt={service.title}
+                  width={800}
+                  height={533}
                   className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:scale-110 transition-transform duration-700"
                   loading="lazy"
                   decoding="async"
@@ -257,7 +261,7 @@ export default function Home() {
       </section>
 
       {/* BRANCHES SECTION */}
-      <section className="py-32 bg-white relative overflow-hidden">
+      <section className="public-lazy-section py-32 bg-white relative overflow-hidden">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-3xl mx-auto mb-20">
             <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-8">فروعنا في الإسكندرية</h2>
@@ -329,7 +333,7 @@ export default function Home() {
       </section>
 
       {/* TESTIMONIALS */}
-      <section className="py-32 bg-orange-600 rounded-[4rem] md:rounded-[6rem] mx-4 md:mx-10 my-20 overflow-hidden relative">
+      <section className="public-lazy-section py-32 bg-orange-600 rounded-[4rem] md:rounded-[6rem] mx-4 md:mx-10 my-20 overflow-hidden relative">
         <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
           <Sparkles className="absolute top-10 right-20 w-20 h-20" />
           <Sparkles className="absolute bottom-20 left-10 w-32 h-32" />
@@ -365,7 +369,7 @@ export default function Home() {
       </section>
 
       {/* FAQ SECTION */}
-      <section className="py-32 bg-white">
+      <section className="public-lazy-section py-32 bg-white">
         <div className="container mx-auto px-4 max-w-4xl">
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-6">الأسئلة الشائعة</h2>
@@ -401,7 +405,7 @@ export default function Home() {
       </section>
 
       {/* FINAL CTA SECTION */}
-      <section id="contact" className="py-32 bg-slate-900 text-white relative overflow-hidden">
+      <section id="contact" className="public-lazy-section py-32 bg-slate-900 text-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(249,115,22,0.2),transparent_70%)]"></div>
         </div>
