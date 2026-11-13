@@ -334,6 +334,37 @@ export default function Home() {
         </div>
       </section>
 
+      {/* GOOGLE BUSINESS MAP */}
+      <section className="public-lazy-section py-24 bg-slate-50">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-8 mb-12">
+            <div className="text-right">
+              <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-4">موقعنا على خرائط Google</h2>
+              <p className="text-lg text-slate-600 font-bold leading-relaxed">اعرف موقعنا وشاهد ملف النشاط التجاري والتقييمات قبل طلب الخدمة.</p>
+            </div>
+            <a
+              href={GOOGLE_BUSINESS_PROFILE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-orange-600 px-7 py-4 text-base font-black text-white shadow-lg shadow-orange-200 hover:bg-orange-700 transition-colors"
+            >
+              <MapPin className="w-5 h-5" aria-hidden="true" />
+              فتح الاتجاهات في Google Maps
+            </a>
+          </div>
+          <div className="overflow-hidden rounded-[2rem] border-4 border-white bg-white shadow-2xl">
+            <iframe
+              src="https://www.google.com/maps?q=Service%20guide%20Montaza%202%2C%20San%20Stefano%2C%20Alexandria%2C%20Egypt&output=embed"
+              title="موقع Maintenance Guide على خرائط Google"
+              className="block h-[320px] w-full md:h-[440px]"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      </section>
+
       {/* TESTIMONIALS */}
       <section className="public-lazy-section py-32 bg-orange-600 rounded-[4rem] md:rounded-[6rem] mx-4 md:mx-10 my-20 overflow-hidden relative">
         <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
