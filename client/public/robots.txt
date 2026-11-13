@@ -12,7 +12,7 @@ Disallow: /feedback
 Disallow: /track/
 
 # Sitemap location
-Sitemap: https://maintenanceguide.life/sitemap.xml
+Sitemap: https://www.maintenanceguide.life/sitemap.xml
 
 # Allow search engines to crawl
 User-agent: Googlebot

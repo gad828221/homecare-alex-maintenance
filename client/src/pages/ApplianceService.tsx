@@ -92,10 +92,10 @@ export default function ApplianceService({ service }: { service: ApplianceServic
     provider: { "@type": "LocalBusiness", name: "Maintenance Guide", telephone: "+201278885772" },
     areaServed: { "@type": "City", name: "Alexandria" },
     description: service.description,
-    url: `https://maintenanceguide.life/${service.slug}`,
+    url: `https://www.maintenanceguide.life/${service.slug}`,
   };
   const faqSchema = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: service.faqs.map((faq) => ({ "@type": "Question", name: faq.question, acceptedAnswer: { "@type": "Answer", text: faq.answer } })) };
-  const breadcrumbSchema = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "الرئيسية", item: "https://maintenanceguide.life/" }, { "@type": "ListItem", position: 2, name: service.shortTitle, item: `https://maintenanceguide.life/${service.slug}` }] };
+  const breadcrumbSchema = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "الرئيسية", item: "https://www.maintenanceguide.life/" }, { "@type": "ListItem", position: 2, name: service.shortTitle, item: `https://www.maintenanceguide.life/${service.slug}` }] };
 
   return (
     <div className="min-h-screen flex flex-col bg-white" dir="rtl">

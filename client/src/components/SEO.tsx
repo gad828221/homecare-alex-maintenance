@@ -8,7 +8,7 @@ interface SEOProps {
   brand?: string;
 }
 
-const SITE_URL = 'https://maintenanceguide.life';
+const SITE_URL = 'https://www.maintenanceguide.life';
 const SITE_NAME = 'Maintenance Guide';
 const DEFAULT_IMAGE = `${SITE_URL}/images/hero-bg-professional.webp`;
 

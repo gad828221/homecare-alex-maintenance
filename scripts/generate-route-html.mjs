@@ -46,7 +46,7 @@ const escapeHtml = (value) => value
 const template = fs.readFileSync(templatePath, 'utf8');
 
 for (const [slug, seo] of Object.entries(services)) {
-  const canonical = `https://maintenanceguide.life/${slug}`;
+  const canonical = `https://www.maintenanceguide.life/${slug}`;
   let html = template;
   html = html.replace(/<title>[^<]*<\/title>/i, `<title>${escapeHtml(seo.title)}</title>`);
   html = html.replace(/(<meta\s+name="description"\s+content=")[^"]*("\s*\/?>)/i, `$1${escapeHtml(seo.description)}$2`);
