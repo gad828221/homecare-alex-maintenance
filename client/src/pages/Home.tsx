@@ -36,6 +36,7 @@ export default function Home() {
   const testimonials = [
     { name: "Coach Ahmed Elsayed", city: "تقييم على Google", comment: "عمل رائع 👏 — مقتطف مترجم من تقييم Google المنشور على ملف النشاط التجاري.", rating: 5 },
     { name: "سيد محمد", city: "تقييم على Google", comment: "من أفضل خدمات إصلاح الثلاجات في المنطقة، مع قطع غيار أصلية وضمان حقيقي — مقتطف مترجم من تقييم Google.", rating: 5 },
+    { name: "Maiada Omer", city: "تقييم على Google", comment: "من أفضل الأماكن بصراحة، فريق لديه خبرة وتعامل راقٍ جدًا وخدمة ممتازة — مقتطف مترجم من تقييم Google.", rating: 5 },
   ];
 
   const faqs = [
