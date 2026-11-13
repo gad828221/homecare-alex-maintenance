@@ -202,17 +202,22 @@ function App() {
     const checkAuth = () => {
       const { role } = readAuthSession();
       
-      if (role && (currentPath === '/login' || currentPath === '/')) {
+      if (role && currentPath === '/login') {
         const params = new URLSearchParams(window.location.search);
         const redirectPath = params.get('redirect');
-        
+
         if (redirectPath && !PUBLIC_PATHS.has(redirectPath)) {
           window.location.replace(`${redirectPath}${window.location.search}`);
-        } else {
-          if (role === 'tech') window.location.replace('/tech-portal');
-          else if (role === 'data-entry') window.location.replace('/data-entry');
-          else window.location.replace('/orders');
-        }
+        } else if (role === 'tech') window.location.replace('/tech-portal');
+        else if (role === 'data-entry') window.location.replace('/data-entry');
+        else window.location.replace('/orders');
+        return;
+      }
+
+      // المدير والمدير العام يستطيعان مراجعة واجهة الزوار، بينما الفني ومدخل البيانات داخل بوابتهما فقط.
+      if (role && currentPath === '/') {
+        if (role === 'tech') window.location.replace(`/tech-portal${window.location.search}`);
+        else if (role === 'data-entry') window.location.replace(`/data-entry${window.location.search}`);
         return;
       }
 
