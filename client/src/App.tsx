@@ -218,6 +218,14 @@ function App() {
 
       if (currentPath === '/') return;
 
+      // الفنيون يعملون داخل البوابة فقط ولا يمكنهم فتح واجهة الزوار أو صفحات التتبع العامة.
+      // يظل الوصول العام متاحًا للزائر غير المسجّل كالمعتاد.
+      const isVisitorPath = PUBLIC_PATHS.has(currentPath) || currentPath.startsWith('/track/');
+      if (role === 'tech' && isVisitorPath) {
+        window.location.replace(`/tech-portal${window.location.search}`);
+        return;
+      }
+
       if ((PUBLIC_PATHS.has(currentPath) || currentPath.startsWith('/track/')) && !window.location.search.includes('source=pwa')) return;
 
       if (!role && !PUBLIC_PATHS.has(currentPath)) {
