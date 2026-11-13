@@ -34,9 +34,8 @@ export default function Home() {
   ];
 
   const testimonials = [
-    { name: "محمد أحمد", city: "سموحة", comment: "خدمة ممتازة وسريعة جداً. الفني وصل في الموعد وصلح الغسالة في أقل من ساعة. شكراً لكم!", rating: 5 },
-    { name: "سارة محمود", city: "لوران", comment: "أفضل مركز صيانة تعاملت معه في الإسكندرية. احترافية في التعامل وضمان حقيقي على التصليح.", rating: 5 },
-    { name: "إبراهيم علي", city: "العجمي", comment: "الثلاجة كانت بتسرب فريون والمهندس شحنها وغير الفلتر وشغالة زي الجديدة تماماً. أنصح بهم بشدة.", rating: 5 },
+    { name: "Coach Ahmed Elsayed", city: "تقييم على Google", comment: "عمل رائع 👏 — مقتطف مترجم من تقييم Google المنشور على ملف النشاط التجاري.", rating: 5 },
+    { name: "سيد محمد", city: "تقييم على Google", comment: "من أفضل خدمات إصلاح الثلاجات في المنطقة، مع قطع غيار أصلية وضمان حقيقي — مقتطف مترجم من تقييم Google.", rating: 5 },
   ];
 
   const faqs = [
@@ -377,6 +376,7 @@ export default function Home() {
             <div className="flex justify-center gap-2">
               {[1,2,3,4,5].map(i => <Star key={i} className="w-8 h-8 text-yellow-300 fill-yellow-300" />)}
             </div>
+            <p className="mt-4 text-sm font-bold text-orange-100">مقتطفات من التقييمات العامة المنشورة على ملفنا التجاري في Google</p>
             <a
               href={GOOGLE_BUSINESS_PROFILE_URL}
               target="_blank"
