@@ -14,6 +14,8 @@ import { useEffect, useState } from "react";
 
 import { motion, AnimatePresence } from "framer-motion";
 
+const GOOGLE_BUSINESS_PROFILE_URL = "https://www.google.com/maps/place/Service+guide+Montaza+2/data=!4m2!3m1!1s0x14f5db723bebbd65:0xd4108ebedaac095e";
+
 export default function Home() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
 
@@ -344,6 +346,16 @@ export default function Home() {
             <div className="flex justify-center gap-2">
               {[1,2,3,4,5].map(i => <Star key={i} className="w-8 h-8 text-yellow-300 fill-yellow-300" />)}
             </div>
+            <a
+              href={GOOGLE_BUSINESS_PROFILE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 mt-6 rounded-full bg-white/15 px-5 py-3 text-sm font-black text-white hover:bg-white/25 transition-colors"
+            >
+              <Star className="w-4 h-4 text-yellow-300 fill-yellow-300" />
+              شاهد التقييمات الحقيقية على Google
+              <ArrowRight className="w-4 h-4" />
+            </a>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

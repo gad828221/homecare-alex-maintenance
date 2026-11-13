@@ -1,4 +1,6 @@
-import { Phone, MapPin, Clock, Mail, MessageCircle } from "lucide-react";
+import { Phone, MapPin, Clock, Mail, MessageCircle, Star } from "lucide-react";
+
+const GOOGLE_BUSINESS_PROFILE_URL = "https://www.google.com/maps/place/Service+guide+Montaza+2/data=!4m2!3m1!1s0x14f5db723bebbd65:0xd4108ebedaac095e";
 
 export default function Footer() {
   return (
@@ -23,7 +25,26 @@ export default function Footer() {
               <a href="tel:01278885772" aria-label="الاتصال بمركز الصيانة" className="w-10 h-10 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center transition-all transform hover:scale-110">
                 <Phone className="w-5 h-5" />
               </a>
+              <a
+                href={GOOGLE_BUSINESS_PROFILE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="مشاهدة ملفنا التجاري وتقييماتنا على Google"
+                title="ملفنا التجاري على Google"
+                className="w-10 h-10 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center transition-all transform hover:scale-110"
+              >
+                <Star className="w-5 h-5 fill-current" />
+              </a>
             </div>
+            <a
+              href={GOOGLE_BUSINESS_PROFILE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm font-bold text-yellow-300 hover:text-yellow-200 transition-colors"
+            >
+              <Star className="w-4 h-4 fill-current" />
+              شاهد ملفنا التجاري وتقييمات العملاء على Google
+            </a>
           </div>
 
           {/* Contact Info */}
