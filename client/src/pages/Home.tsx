@@ -108,8 +108,8 @@ export default function Home() {
                 <span className="text-xl sm:text-3xl lg:text-5xl text-slate-300">بحجز سريع وضمان على الخدمة</span>
               </h1>
 
-              <p className="text-base sm:text-xl md:text-2xl text-slate-300 mb-7 lg:mb-10 max-w-2xl font-bold leading-relaxed">
-                لا داعي لنقل جهازك. اطلب فنيًا إلى منزلك لإصلاح الثلاجات والغسالات والتكييفات والبوتاجازات في مختلف مناطق الإسكندرية.
+              <p className="text-base sm:text-xl md:text-2xl text-slate-200 mb-7 lg:mb-10 max-w-2xl font-bold leading-relaxed">
+                لا داعي لنقل جهازك. اطلب فنيًا إلى منزلك لإصلاح الثلاجات والغسالات والتكييفات والبوتاجازات في مختلف مناطق الإسكندرية، واحصل على تأكيد واضح قبل الإصلاح.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-8 lg:mb-12">
@@ -125,11 +125,11 @@ export default function Home() {
 
                 <a
                   href="tel:01278885772"
-                  className="flex items-center justify-center gap-3 bg-white/10 hover:bg-white/20 backdrop-blur-xl border-2 border-white/20 text-white text-lg sm:text-xl font-black px-5 py-5 sm:py-7 rounded-2xl transition-all"
+                  className="flex items-center justify-center gap-3 bg-white text-slate-900 hover:bg-orange-50 border-2 border-white text-lg sm:text-xl font-black px-5 py-5 sm:py-7 rounded-2xl shadow-xl shadow-black/20 transition-all active:scale-95"
                   aria-label="الاتصال بمركز الصيانة"
                 >
-                  <Phone className="w-6 h-6" aria-hidden="true" />
-                  اتصل الآن
+                  <Phone className="w-6 h-6 text-orange-600" aria-hidden="true" />
+                  <span>اتصل الآن</span>
                 </a>
               </div>
 
@@ -167,9 +167,12 @@ export default function Home() {
             >
               <div className="absolute -inset-4 bg-orange-500/30 rounded-[3rem] blur-3xl animate-pulse-slow"></div>
               <div id="booking-form" className="relative bg-white p-1 rounded-[2.5rem] shadow-2xl border-4 border-orange-500/20 scroll-mt-24">
-                <div className="bg-orange-500 text-white py-3 px-4 rounded-t-[2.2rem] text-center font-black text-lg sm:text-xl mb-1">
-                   احجز صيانة فورية الآن ⚡
-                   <span className="block text-xs sm:text-sm font-bold text-orange-100 mt-1">نراجع طلبك ونتواصل معك لتأكيد التفاصيل</span>
+                <div className="bg-gradient-to-l from-orange-700 via-orange-600 to-amber-500 text-white py-4 px-4 rounded-t-[2.2rem] text-center font-black text-lg sm:text-xl mb-1">
+                  <div className="flex items-center justify-center gap-2">احجز صيانة فورية الآن <Sparkles className="h-5 w-5 text-yellow-200" aria-hidden="true" /></div>
+                  <span className="block text-xs sm:text-sm font-bold text-orange-50 mt-1">أرسل الطلب أو اتصل مباشرة لتأكيد الموعد</span>
+                  <a href="tel:01278885772" className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-1.5 text-sm font-black text-white transition-colors hover:bg-white/30">
+                    <Phone className="h-4 w-4" aria-hidden="true" /> 01278885772
+                  </a>
                 </div>
                 <div className="grid grid-cols-3 gap-2 px-3 pt-3 text-center text-[10px] font-black text-slate-600 sm:text-xs">
                   <span>فحص واضح</span><span>موعد مناسب</span><span>تأكيد قبل الإصلاح</span>
@@ -177,6 +180,42 @@ export default function Home() {
                 <BookingForm />
               </div>
             </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* QUICK SERVICE CHOOSER */}
+      <section className="public-lazy-section relative z-10 -mt-6 px-4 pb-8 md:-mt-10" aria-labelledby="quick-service-heading">
+        <div className="mx-auto max-w-6xl rounded-[2rem] border border-slate-200 bg-white p-5 shadow-2xl shadow-slate-300/30 md:p-7">
+          <div className="mb-5 flex flex-col gap-2 text-right md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-sm font-black text-orange-600">ابدأ من نوع جهازك</p>
+              <h2 id="quick-service-heading" className="text-2xl font-black text-slate-900 md:text-3xl">اختر الخدمة الأقرب لمشكلتك</h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => document.getElementById("booking-form")?.scrollIntoView({ behavior: "smooth", block: "center" })}
+              className="inline-flex items-center gap-2 self-start rounded-xl px-3 py-2 text-sm font-black text-slate-600 transition-colors hover:bg-orange-50 hover:text-orange-700 md:self-auto"
+            >
+              لا تعرف نوع العطل؟ احجز فحصًا <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {services.map((service) => (
+              <a
+                key={service.href}
+                href={service.href}
+                className="group flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-3 text-right transition-all hover:-translate-y-1 hover:border-orange-200 hover:bg-orange-50 hover:shadow-lg md:p-4"
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-orange-600 shadow-sm transition-colors group-hover:bg-orange-600 group-hover:text-white">
+                  <service.icon className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-black text-slate-900 md:text-base">{service.title.replace("صيانة ", "")}</span>
+                  <span className="mt-1 block text-[11px] font-bold text-slate-500">اعرف التفاصيل</span>
+                </span>
+              </a>
+            ))}
           </div>
         </div>
       </section>
@@ -258,6 +297,32 @@ export default function Home() {
                 </div>
               </a>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SIMPLE SERVICE JOURNEY */}
+      <section className="public-lazy-section bg-slate-900 py-20 text-white" aria-labelledby="service-journey-heading">
+        <div className="container mx-auto px-4">
+          <div className="grid items-center gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+            <div className="text-right">
+              <p className="mb-3 text-sm font-black text-orange-400">بدون خطوات معقدة</p>
+              <h2 id="service-journey-heading" className="mb-5 text-3xl font-black leading-tight md:text-5xl">من طلب الصيانة إلى الحل في 3 خطوات</h2>
+              <p className="text-lg font-bold leading-relaxed text-slate-300">أرسل بيانات بسيطة، نراجع طلبك، ثم يصلك الفني في الموعد المتفق عليه.</p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {[
+                { number: "01", title: "أرسل الطلب", text: "اختر الجهاز واكتب بيانات التواصل والعنوان." },
+                { number: "02", title: "نؤكد التفاصيل", text: "يتواصل معك فريقنا لتأكيد الموعد والمشكلة." },
+                { number: "03", title: "يصل الفني", text: "فحص في المنزل ثم عرض واضح قبل الإصلاح." },
+              ].map((step) => (
+                <div key={step.number} className="rounded-3xl border border-white/10 bg-white/5 p-5 text-right backdrop-blur-sm">
+                  <span className="mb-5 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-orange-600 text-sm font-black">{step.number}</span>
+                  <h3 className="mb-2 text-lg font-black">{step.title}</h3>
+                  <p className="text-sm font-bold leading-relaxed text-slate-400">{step.text}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -505,6 +570,25 @@ export default function Home() {
       </section>
 
       <Footer />
+
+      {/* MOBILE CONVERSION BAR - PUBLIC HOME ONLY */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 p-2 shadow-[0_-8px_30px_rgba(15,23,42,0.12)] backdrop-blur md:hidden">
+        <div className="grid grid-cols-3 gap-2" dir="rtl">
+          <button
+            type="button"
+            onClick={() => document.getElementById("booking-form")?.scrollIntoView({ behavior: "smooth", block: "center" })}
+            className="flex min-h-12 items-center justify-center gap-1 rounded-xl bg-orange-600 px-2 text-xs font-black text-white active:scale-95"
+          >
+            <Calendar className="h-4 w-4" aria-hidden="true" /> احجز
+          </button>
+          <a href="tel:01278885772" className="flex min-h-12 items-center justify-center gap-1 rounded-xl bg-slate-900 px-2 text-xs font-black text-white active:scale-95">
+            <Phone className="h-4 w-4" aria-hidden="true" /> اتصل
+          </a>
+          <a href="https://wa.me/201558625259" target="_blank" rel="noopener noreferrer" className="flex min-h-12 items-center justify-center gap-1 rounded-xl bg-green-600 px-2 text-xs font-black text-white active:scale-95">
+            <MessageCircle className="h-4 w-4" aria-hidden="true" /> واتساب
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
