@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { sendExternalPush } from "../utils/pushNotifications";
-import { estimateLeadValue, trackBookingConversion } from "../utils/adTracking";
+import { trackBookingConversion } from "../utils/adTracking";
 import { DEVICE_TYPES, BRAND_OPTIONS } from "../constants/catalog";
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
@@ -92,7 +92,6 @@ export default function BookingFormEnhanced() {
           device_type: finalDeviceType,
           brand: finalBrand,
           transaction_id: orderNumber,
-          lead_value: estimateLeadValue(finalDeviceType),
         });
         
         const publicOrderMessage = `عميل جديد: ${formData.customer_name}\nالجهاز: ${finalDeviceType}\nالعنوان: ${formData.address}\nرقم الأوردر: ${orderNumber}`;
