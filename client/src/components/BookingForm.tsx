@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { sendExternalPush } from "../utils/pushNotifications";
-import { estimateLeadValue, trackBookingConversion, trackBookingStart } from "../utils/adTracking";
+import { trackBookingConversion, trackBookingStart } from "../utils/adTracking";
 import { DEVICE_TYPES, BRAND_OPTIONS } from "../constants/catalog";
 import { createClient } from '@supabase/supabase-js';
 
@@ -146,7 +146,6 @@ export default function BookingForm({ defaultService, title, description }: Book
           device_type: finalDeviceType,
           brand: finalBrand,
           transaction_id: orderNumber,
-          lead_value: estimateLeadValue(finalDeviceType),
         });
         
         const publicOrderMessage = `عميل جديد: ${formData.customer_name}\nالجهاز: ${finalDeviceType}\nالعنوان: ${formData.address}\nرقم الأوردر: ${orderNumber}`;
