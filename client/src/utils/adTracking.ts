@@ -5,8 +5,8 @@ type TrackingWindow = Window & {
   gtag?: (...args: unknown[]) => void;
 };
 
-const GOOGLE_ADS_SEND_TO = 'AW-16803756129/UeUnCOvx05AdEOHw08w-';
-const PHONE_CLICK_SEND_TO = 'AW-16803756129/XcX9CJekr4IcEOHw08w-';
+const GOOGLE_ADS_SEND_TO = 'AW-16803756129/VKiiCJbVvbwdEOHw08w-';
+const PHONE_CLICK_SEND_TO = 'AW-16803756129/92liCN34vrwdEOHw08w-';
 const WHATSAPP_CLICK_SEND_TO = 'AW-16803756129/_sCuCIu1vrwdEOHw08w-';
 
 export function trackPhoneClick(): void {
