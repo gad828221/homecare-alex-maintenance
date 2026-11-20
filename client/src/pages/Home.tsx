@@ -571,25 +571,6 @@ export default function Home() {
       </section>
 
       <Footer />
-
-      {/* MOBILE CONVERSION BAR - PUBLIC HOME ONLY */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 p-2 shadow-[0_-8px_30px_rgba(15,23,42,0.12)] backdrop-blur md:hidden">
-        <div className="grid grid-cols-3 gap-2" dir="rtl">
-          <button
-            type="button"
-            onClick={() => document.getElementById("booking-form")?.scrollIntoView({ behavior: "smooth", block: "center" })}
-            className="flex min-h-12 items-center justify-center gap-1 rounded-xl bg-orange-600 px-2 text-xs font-black text-white active:scale-95"
-          >
-            <Calendar className="h-4 w-4" aria-hidden="true" /> احجز
-          </button>
-          <a href="tel:01278885772" className="flex min-h-12 items-center justify-center gap-1 rounded-xl bg-slate-900 px-2 text-xs font-black text-white active:scale-95">
-            <Phone className="h-4 w-4" aria-hidden="true" /> اتصل
-          </a>
-          <a href="https://wa.me/201558625259" target="_blank" rel="noopener noreferrer" className="flex min-h-12 items-center justify-center gap-1 rounded-xl bg-green-600 px-2 text-xs font-black text-white active:scale-95">
-            <MessageCircle className="h-4 w-4" aria-hidden="true" /> واتساب
-          </a>
-        </div>
-      </div>
     </div>
   );
 }
