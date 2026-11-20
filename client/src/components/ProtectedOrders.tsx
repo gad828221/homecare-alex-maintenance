@@ -1,3 +1,4 @@
+import { HeadTitle } from "./SEO";
 import React, { useState, useEffect, useMemo, useRef, useCallback, useDeferredValue } from 'react';
 import {
   Plus, Search, LayoutDashboard, Users, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
@@ -9,7 +10,6 @@ import {
   ClipboardList, FileCheck, Camera, Navigation, ExternalLink, Pin, PinOff, History, MessageCircle, Sun, Moon
 } from "lucide-react";
 import { createClient } from '@supabase/supabase-js';
-import { Helmet } from 'react-helmet-async';
 import { sendExternalPush } from '../utils/pushNotifications';
 import { useScreenWakeLock } from '../hooks/useScreenWakeLock';
 import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, getOrderCreatedValue, parseOrderDate, getEgyptTodayString } from '../utils/orderTiming';
@@ -3740,9 +3740,7 @@ ${trackingUrl}
           </button>
         </div>
       )}
-      <Helmet>
-        <title>لوحة التحكم | Homecare Alex Maintenance</title>
-      </Helmet>
+      <HeadTitle title="لوحة التحكم | Homecare Alex Maintenance" />
       <IOSPushEnablePrompt />
       {toast && (
         <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-xl text-white font-bold shadow-lg ${
