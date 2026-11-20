@@ -1,6 +1,5 @@
 import React, { useEffect, lazy, Suspense } from 'react';
 import { Toaster } from "sonner";
-import { Helmet } from 'react-helmet-async';
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -175,6 +174,18 @@ function AppContent() {
     }
   }, [currentPath, isStaffPath]);
 
+  // Keep staff pages noindex without duplicating the static robots meta.
+  useEffect(() => {
+    if (!isStaffPath) return;
+    let robots = document.head.querySelector<HTMLMetaElement>('meta[name="robots"]');
+    if (!robots) {
+      robots = document.createElement('meta');
+      robots.name = 'robots';
+      document.head.appendChild(robots);
+    }
+    robots.setAttribute('content', 'noindex,nofollow,noarchive');
+  }, [isStaffPath]);
+
   // إخفاء أزرار الاتصال في صفحات الإدارة والعمل
   const hideFloatingButtons = [
     "/orders", "/tech-portal", "/data-entry", "/login"
@@ -182,11 +193,6 @@ function AppContent() {
 
   return (
     <>
-      {isStaffPath && (
-        <Helmet>
-          <meta name="robots" content="noindex,nofollow,noarchive" />
-        </Helmet>
-      )}
       <Suspense fallback={<LoadingFallback />}>
         <Router />
       </Suspense>
