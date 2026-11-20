@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 import BookingForm from "@/components/BookingForm";
 import SEO from "@/components/SEO";
 import {
-  Zap, Droplet, Wind, Flame, Star, Clock, Shield, Users,
+  Zap, Droplet, Wind, Flame, Heater, Star, Clock, Shield, Users,
   Phone, MessageCircle, CheckCircle, Award, Truck,
   Settings, Heart, MapPin, Sparkles, ChevronDown, ShieldCheck, Headphones,
   Calendar, ArrowRight
@@ -24,6 +24,7 @@ export default function Home() {
     { icon: Droplet, title: "صيانة الغسالات", href: "/washing-machine-service", description: "تصليح غسالات الملابس والأطباق، أوتوماتيك وفوق أوتوماتيك، بأحدث المعدات." },
     { icon: Wind, title: "صيانة المكيفات", href: "/air-conditioner-service", description: "تنظيف، شحن فريون، وإصلاح جميع أنواع التكييفات والسبليت لضمان أفضل أداء." },
     { icon: Flame, title: "صيانة الأفران", href: "/stove-service", description: "صيانة شاملة للبوتاجازات والأفران الكهربائية والميكروويف مع فحص الأمان." },
+    { icon: Heater, title: "صيانة السخانات", href: "/water-heater-service", description: "إصلاح السخان الكهربائي أو الغاز ومشكلة عدم التسخين وتسريب المياه في المنزل." },
   ];
 
   const features = [
@@ -211,7 +212,7 @@ export default function Home() {
                   <service.icon className="h-5 w-5" aria-hidden="true" />
                 </span>
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-black text-slate-900 md:text-base">{service.title.replace("صيانة ", "")}</span>
+                  <span className="block text-sm font-black leading-snug text-slate-900 md:text-base">{service.title.replace("صيانة ", "")}</span>
                   <span className="mt-1 block text-[11px] font-bold text-slate-500">اعرف التفاصيل</span>
                 </span>
               </a>
@@ -276,7 +277,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {services.map((service, index) => (
+            {services.slice(0, 4).map((service, index) => (
               <a href={service.href} key={index} className="group relative block overflow-hidden rounded-[3rem] bg-slate-900 h-[400px]">
                 <img
                   src={`/images/services/${index === 0 ? 'refrigerator-repair-pro.webp' : index === 1 ? 'washing-machine-repair-pro.webp' : index === 2 ? 'ac-repair-pro.webp' : 'stove-repair-pro.webp'}`}
