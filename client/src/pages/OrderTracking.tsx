@@ -1,3 +1,4 @@
+import { HeadTitle } from "@/components/SEO";
 import React, { useState, useEffect } from 'react';
 import { useRoute } from "wouter";
 import { 
@@ -6,7 +7,6 @@ import {
   Star, FileCheck, ClipboardList
 } from "lucide-react";
 import { createClient } from '@supabase/supabase-js';
-import { Helmet } from 'react-helmet-async';
 import { formatOrderDateTime } from '../utils/orderTiming';
 import { getTechnicianDisplayName, getTechnicianPhotoUrl, getTechnicianSpecialty, getDeviceSpecialty } from '../utils/technicianProfile';
 import { getPickupTypeLabel, parsePickupReceipt } from '../utils/pickupReceipt';
@@ -110,9 +110,7 @@ export default function OrderTracking() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-20" dir="rtl">
-      <Helmet>
-        <title>تتبع الأوردر | {order.order_number}</title>
-      </Helmet>
+      <HeadTitle title={`تتبع الأوردر | ${order.order_number}`} />
 
       {/* Header */}
       <div className="bg-white border-b border-slate-100 px-6 py-5 sticky top-0 z-10 shadow-sm">
