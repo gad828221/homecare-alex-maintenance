@@ -1,5 +1,5 @@
+import { HeadTitle } from "@/components/SEO";
 import { useEffect, useState, type FormEvent } from "react";
-import { Helmet } from "react-helmet-async";
 import { CheckCircle2, Loader2, MessageSquare, Star } from "lucide-react";
 import { sendExternalPush } from "../utils/pushNotifications";
 
@@ -65,7 +65,7 @@ export default function FeedbackPage() {
   if (submitted) {
     return (
       <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-5" dir="rtl">
-        <Helmet><title>شكراً لتقييمك | Maintenance Guide</title></Helmet>
+        <HeadTitle title="شكراً لتقييمك | Maintenance Guide" />
         <section className="w-full max-w-lg rounded-3xl bg-slate-900 border border-emerald-500/30 p-8 text-center shadow-2xl">
           <CheckCircle2 className="mx-auto text-emerald-400" size={64} />
           <h1 className="text-2xl font-black mt-5">شكراً لتقييمك</h1>
@@ -79,10 +79,7 @@ export default function FeedbackPage() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-5" dir="rtl">
-      <Helmet>
-        <title>تقييم الخدمة | Maintenance Guide</title>
-        <meta name="description" content="شاركنا تقييمك لخدمة الصيانة من Maintenance Guide." />
-      </Helmet>
+      <HeadTitle title="تقييم الخدمة | Maintenance Guide" description="شاركنا تقييمك لخدمة الصيانة من Maintenance Guide." />
       <section className="w-full max-w-lg rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 shadow-2xl">
         <div className="text-center">
           <div className="mx-auto w-16 h-16 rounded-2xl bg-orange-500/15 flex items-center justify-center">
