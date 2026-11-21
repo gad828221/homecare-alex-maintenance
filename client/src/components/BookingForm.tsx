@@ -184,6 +184,7 @@ export default function BookingForm({ defaultService, title, description }: Book
               animate={{ width: `${((step - 1) / 2) * 100}%` }}
             />
           </div>
+          <p className="mt-4 text-center text-sm font-bold text-slate-500">بنعرفك تكلفة الكشف قبل الزيارة، وبتتخصم من تكلفة الإصلاح لو وافقت عليه.</p>
         </div>
       )}
 
