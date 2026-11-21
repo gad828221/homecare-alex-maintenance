@@ -122,6 +122,19 @@ export default function ApplianceService({ service }: { service: ApplianceServic
         <section className="bg-white py-20"><div className="container mx-auto px-4"><div className="grid gap-8 md:grid-cols-3"><div className="rounded-3xl border border-slate-100 p-8 text-center shadow-lg"><Clock className="mx-auto mb-4 h-10 w-10 text-orange-600" /><h3 className="mb-2 text-xl font-black">حجز سريع</h3><p className="font-bold text-slate-600">نراجع بياناتك ونتواصل لتأكيد الموعد.</p></div><div className="rounded-3xl border border-slate-100 p-8 text-center shadow-lg"><ShieldCheck className="mx-auto mb-4 h-10 w-10 text-orange-600" /><h3 className="mb-2 text-xl font-black">ضمان على الخدمة</h3><p className="font-bold text-slate-600">نوضح تفاصيل الضمان قبل بدء الإصلاح.</p></div><div className="rounded-3xl border border-slate-100 p-8 text-center shadow-lg"><Wrench className="mx-auto mb-4 h-10 w-10 text-orange-600" /><h3 className="mb-2 text-xl font-black">فني متخصص</h3><p className="font-bold text-slate-600">فحص مناسب لنوع الجهاز والعطل والماركة.</p></div></div></div></section>
         <section className="bg-slate-50 py-16"><div className="container mx-auto px-4"><div className="mx-auto max-w-3xl"><h2 className="mb-8 text-center text-3xl font-black text-slate-900">أسئلة شائعة عن {service.shortTitle}</h2><div className="space-y-4">{service.faqs.map((faq) => <details key={faq.question} className="rounded-2xl bg-white p-5 shadow-sm"><summary className="cursor-pointer text-lg font-black text-slate-900">{faq.question}</summary><p className="mt-3 leading-8 font-bold text-slate-600">{faq.answer}</p></details>)}</div></div></div></section>
 
+        <section className="bg-white py-16" aria-labelledby="related-services-heading">
+          <div className="container mx-auto px-4">
+            <h2 id="related-services-heading" className="mb-8 text-center text-3xl font-black text-slate-900">خدمات ذات صلة</h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {Object.values(applianceServices).filter((related) => related.slug !== service.slug).map((related) => (
+                <a key={related.slug} href={`/${related.slug}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center text-lg font-black text-slate-900 transition-colors hover:border-orange-500 hover:text-orange-600">
+                  {related.shortTitle}
+                </a>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section id="booking" className="bg-slate-50 py-20 scroll-mt-20"><div className="container mx-auto px-4"><h2 className="mb-5 text-center text-4xl font-black text-slate-900">احجز {service.shortTitle} الآن</h2><p className="mx-auto mb-8 max-w-2xl text-center font-bold leading-relaxed text-slate-600">أرسل بياناتك وسنتواصل معك لتأكيد المنطقة والموعد والتفاصيل قبل بدء الإصلاح.</p><div className="mx-auto max-w-2xl rounded-3xl bg-white p-2 shadow-2xl"><div className="grid grid-cols-3 gap-2 px-3 pt-3 text-center text-[10px] font-black text-slate-600 sm:text-xs"><span>فحص واضح</span><span>موعد مناسب</span><span>تأكيد قبل الإصلاح</span></div><BookingForm defaultService={service.shortTitle} /></div></div></section>
       </main>
       <Footer />
