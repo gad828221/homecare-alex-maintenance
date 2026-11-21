@@ -3765,7 +3765,7 @@ ${trackingUrl}
       return <div className="min-h-screen bg-[#F4F6F8] flex items-center justify-center text-slate-700" dir="rtl"><div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-5 text-sm font-black shadow-2xl">جاري تحميل بيانات لوحة المدير…</div></div>;
     }
     return (
-    <div id="manager-dashboard" className={`manager-light-theme ${staffNightMode ? 'staff-night-theme' : ''} min-h-screen overflow-x-hidden bg-[#F4F6F8] text-slate-700 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`}>
+    <div id="manager-dashboard" className={`manager-light-theme tech-distribution-dashboard ${staffNightMode ? 'staff-night-theme' : ''} min-h-screen overflow-x-hidden bg-[#F4F6F8] text-slate-700 transition-all duration-500 ${isUrgentAlert ? 'ring-inset ring-[12px] ring-red-600/50' : ''}`}>
       {loading && (
         <div className="fixed top-2 left-1/2 -translate-x-1/2 z-[210] rounded-full border border-blue-400/40 bg-slate-900/95 px-4 py-2 text-xs font-black text-blue-200 shadow-xl" role="status">
           جاري تحديث البيانات…
@@ -3814,7 +3814,7 @@ ${trackingUrl}
       )}
 
 
-      <div className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 px-4 py-3">
+      <div style={{ position: 'relative' }} className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 px-4 py-3">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3"><LayoutDashboard className="w-6 h-6 text-orange-500" /><div><h1 className="text-lg font-bold text-white">لوحة تحكم المدير</h1><p className="text-xs text-slate-400">{currentUser?.name || 'مدير النظام'}</p></div></div>
 
@@ -3870,8 +3870,10 @@ ${trackingUrl}
         </div>
       </div>
 
+      <style>{`#manager-dashboard.tech-distribution-dashboard { overflow-x: clip; } .manager-sticky-workspace { position: sticky; top: 0; z-index: 40; background: #fff; box-shadow: 0 5px 18px #0f172a12; }`}</style>
+      <div className="manager-sticky-workspace">
       {/* Compact icon navigation: one section at a time to keep the dashboard short on mobile. */}
-      <div role="tablist" aria-label="أقسام لوحة المدير" className="sticky top-[60px] z-30 border-b border-[#D8DEE6] bg-white/95 px-2.5 py-2.5 shadow-[0_12px_35px_rgba(2,8,23,0.45)] backdrop-blur-xl overflow-x-auto no-scrollbar flex gap-2">
+      <div role="tablist" aria-label="أقسام لوحة المدير" className="border-b border-[#D8DEE6] bg-white/95 px-2.5 py-2.5 shadow-[0_12px_35px_rgba(2,8,23,0.45)] backdrop-blur-xl overflow-x-auto no-scrollbar flex gap-2">
         {[
           { id: 'orders', label: 'الأوردرات', icon: <ClipboardList size={16} />, color: 'orange' },
 	          { id: 'archived', label: `الأرشيف (${archivedOrders.length})`, icon: <LayoutDashboard size={16} />, color: 'indigo' },
@@ -3908,6 +3910,15 @@ ${trackingUrl}
             <span className="pointer-events-none absolute -bottom-1 left-1/2 z-40 hidden -translate-x-1/2 translate-y-full whitespace-nowrap rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-[9px] font-black text-white shadow-xl group-hover:block">{tab.label}</span>
           </button>
         ))}
+      </div>
+
+      {activeTab === 'orders' && !showDeleted && <TechnicianDistributionBar
+        cards={technicianOrderCards}
+        selected={filterTechnician}
+        onSelect={setFilterTechnician}
+        expanded={showTechnicianDistribution}
+        onToggle={() => setShowTechnicianDistribution(value => !value)}
+      />}
       </div>
 
 	      <div className="mx-auto w-full max-w-[1440px] min-w-0 px-2.5 py-3 sm:px-4 sm:py-4">
@@ -4241,7 +4252,7 @@ ${trackingUrl}
 	            )}
 
             {/* نظام التبويبات الذكي (Kanban Mobile) */}
-	                <div className="flex flex-nowrap gap-3 overflow-x-auto no-scrollbar pb-3 mb-4 sticky top-[60px] z-30 bg-slate-950/80 backdrop-blur-md py-2 -mx-4 px-4">
+	                <div className="flex flex-nowrap gap-3 overflow-x-auto no-scrollbar pb-3 mb-4 bg-slate-950/80 backdrop-blur-md py-2 -mx-4 px-4">
 	                  {[
 	                    { id: 'live', label: 'العمل الحالي ⚡', color: 'emerald' },
 	                    { id: 'all', label: 'الكل', color: 'slate' },
@@ -4321,36 +4332,7 @@ ${trackingUrl}
                       <button type="button" onClick={() => { setSearchTerm(''); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); setFilterWarranty('all'); setShowCompletedOrders(true); setFilterStatus('completed'); }} className="rounded-2xl border border-emerald-400/50 bg-emerald-500/10 p-3 text-right transition hover:-translate-y-0.5 hover:bg-emerald-500/20"><div className="flex items-center justify-between text-[10px] font-black text-emerald-200"><span>مكتمل</span><CheckCircle2 size={15} /></div><div className="mt-2 text-2xl font-black text-emerald-300">{commandCenterStats.completed}</div><div className="text-[9px] font-bold text-emerald-200/60">مخفي افتراضيًا</div></button>
                     </div>
                   </section>
-                  <section className={`${showTechnicianDistribution ? 'mb-6' : 'hidden'} rounded-3xl border border-white/10 bg-slate-950/40 p-4`} aria-label="ملخص أوردرات الفنيين">
-                    <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <h3 className="flex items-center gap-2 text-sm font-black text-white"><Users size={17} className="text-orange-400" /> توزيع الأوردرات على الفنيين</h3>
-                        <p className="mt-1 text-[10px] font-bold text-slate-500">اضغط على أي كارت لعرض أوردرات الفني فقط</p>
-                      </div>
-                      {filterStatus !== 'live' && <span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-[10px] font-bold text-slate-400">حسب الفلتر الحالي</span>}
-                    </div>
-                    <div className="mb-4 flex justify-end">
-                      <button type="button" onClick={() => setShowTechnicianDistribution((value) => !value)} className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-[10px] font-black text-slate-300 hover:bg-slate-700">
-                        {showTechnicianDistribution ? 'إخفاء توزيع الفنيين' : 'عرض توزيع الفنيين'}
-                      </button>
-                    </div>
-                    {showTechnicianDistribution && <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                      {technicianOrderCards.unassigned.total > 0 && (
-                        <button type="button" onClick={() => setFilterTechnician('__NONE__')} className="rounded-2xl border border-amber-400/60 bg-amber-500/10 p-4 text-right transition hover:-translate-y-0.5 hover:bg-amber-500/20">
-                          <div className="flex items-center justify-between"><span className="text-xs font-black text-amber-200">بدون فني</span><AlertCircle size={18} className="text-amber-300" /></div>
-                          <div className="mt-3 text-3xl font-black text-amber-300">{technicianOrderCards.unassigned.total}</div>
-                          <div className="mt-1 text-[10px] font-bold text-amber-200/70">أوردر يحتاج تعيين{technicianOrderCards.unassigned.collection ? ` · ${technicianOrderCards.unassigned.collection} تحصيل` : ''}</div>
-                        </button>
-                      )}
-                      {technicianOrderCards.technicians.filter(({ stats }) => stats.total > 0).map(({ tech, stats }) => (
-                        <button type="button" key={tech.id} onClick={() => setFilterTechnician(tech.name)} className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 text-right transition hover:-translate-y-0.5 hover:border-orange-500/60 hover:bg-slate-900">
-                          <div className="flex items-center justify-between gap-2"><span className="truncate text-xs font-black text-white">{tech.name}</span><span className={`h-2.5 w-2.5 shrink-0 rounded-full ${tech.is_active === false ? 'bg-slate-600' : 'bg-emerald-400'}`} /></div>
-                          <div className="mt-3 flex items-end justify-between"><span className="text-3xl font-black text-orange-300">{stats.total}</span><span className="text-[10px] font-bold text-slate-500">أوردر</span></div>
-                          <div className="mt-2 flex flex-wrap gap-1.5 text-[9px] font-bold"><span className="rounded-full bg-blue-500/10 px-2 py-1 text-blue-300">تنفيذ {stats.active}</span><span className="rounded-full bg-amber-500/10 px-2 py-1 text-amber-300">انتظار {stats.pending}</span>{stats.collection > 0 && <span className="rounded-full bg-rose-500/10 px-2 py-1 text-rose-300">تحصيل {stats.collection}</span>}</div>
-                        </button>
-                      ))}
-                    </div>}
-                  </section>
+
                   </>
                 )}
                 {!showDeleted && (
@@ -6015,5 +5997,80 @@ ${trackingUrl}
         </div>
       )}
     </div>
+  );
+}
+
+type Stats = { total: number; pending: number; active: number; collection: number };
+type Props = {
+  cards: { unassigned: { total: number; collection: number }; technicians: { tech: { id: string | number; name: string }; stats: Stats }[] };
+  selected: string;
+  onSelect: (name: string) => void;
+  expanded: boolean;
+  onToggle: () => void;
+};
+
+function TechnicianDistributionBar({ cards, selected, onSelect, expanded, onToggle }: Props) {
+  const visible = cards.technicians.filter(({ stats }) => stats.total > 0);
+  return (
+    <section className="tech-distribution" aria-label="توزيع أوردرات الفنيين">
+      <style>{`
+        #manager-dashboard.tech-distribution-dashboard { overflow-x: clip; }
+        .manager-sticky-workspace { position: sticky; top: 0; z-index: 40; background: #fff; box-shadow: 0 5px 18px #0f172a12; }
+        .tech-distribution { direction: rtl; border-top: 1px solid #e2e8f0; background: #fff; color: #0f172a; padding: 9px 12px; }
+        .tech-distribution button { font: inherit; cursor: pointer; box-shadow: none !important; transform: none !important; }
+        .tech-distribution button:focus-visible { outline: 3px solid #f97316; outline-offset: 2px; }
+        .tech-distribution-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
+        .tech-distribution-title { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 900; }
+        .tech-distribution-note { font-size: 10px; color: #64748b; font-weight: 600; }
+        .tech-distribution-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .tech-distribution-toggle, .tech-distribution-reset { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 32px; border: 1px solid #e2e8f0; border-radius: 9px; padding: 4px 8px; background: #f8fafc; color: #334155; font-size: 10px !important; font-weight: 800 !important; }
+        .tech-distribution-track { display: flex; gap: 7px; overflow-x: auto; padding: 2px 1px 5px; scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+        .tech-distribution-chip { display: inline-flex; align-items: center; justify-content: space-between; gap: 9px; flex: 0 0 auto; min-height: 38px; max-width: 210px; padding: 5px 10px; border: 1px solid #e2e8f0; border-radius: 11px; background: #f8fafc; color: #334155; font-size: 11px !important; font-weight: 800 !important; }
+        .tech-distribution-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .tech-distribution-chip b { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 5px; border-radius: 7px; background: #e2e8f0; color: #0f172a; font-size: 12px; }
+        .tech-distribution-chip[data-selected=true] { border-color: #ea580c; background: #fff7ed; color: #9a3412; box-shadow: inset 0 0 0 1px #ea580c !important; }
+        .tech-distribution-chip[data-unassigned=true] { border-color: #fcd34d; background: #fffbeb; color: #92400e; }
+        .tech-distribution-chip[data-unassigned=true] b { background: #fef3c7; color: #92400e; }
+        .tech-distribution-details { max-height: min(34dvh, 270px); overflow-y: auto; overscroll-behavior: contain; margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 8px; }
+        .tech-distribution-details-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 7px; }
+        .tech-distribution-row { display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; color: #334155; text-align: right; font-size: 11px !important; }
+        .tech-distribution-row-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 900; }
+        .tech-distribution-statuses { display: flex; flex-wrap: wrap; gap: 8px; font-size: 10px; color: #64748b; }
+        .tech-distribution-empty { padding: 7px; color: #64748b; font-size: 11px; }
+        .staff-night-theme .manager-sticky-workspace, .staff-night-theme .tech-distribution { background: #0f172a; color: #f1f5f9; border-color: #334155; }
+        .staff-night-theme .tech-distribution-chip, .staff-night-theme .tech-distribution-row, .staff-night-theme .tech-distribution-toggle, .staff-night-theme .tech-distribution-reset { background: #1e293b; border-color: #475569; color: #e2e8f0; }
+        .staff-night-theme .tech-distribution-chip[data-selected=true] { border-color: #fb923c; color: #fdba74; }
+        .staff-night-theme .tech-distribution-chip[data-unassigned=true] { background: #422006; color: #fde68a; border-color: #a16207; }
+        .staff-night-theme .tech-distribution-note, .staff-night-theme .tech-distribution-statuses { color: #94a3b8; }
+        @media (max-width: 639px) {
+          .manager-sticky-workspace [role=tablist] { padding: 6px 10px; gap: 6px; }
+          .manager-sticky-workspace [role=tab] { width: 42px; height: 42px; border-radius: 12px; }
+          .manager-sticky-workspace [role=tab] > span:first-child { width: 34px; height: 34px; }
+          .manager-sticky-workspace [role=tab] svg { width: 20px; height: 20px; }
+          .tech-distribution { padding: 7px 10px 4px; }
+          .tech-distribution-title { font-size: 11px; }
+          .tech-distribution-note { font-size: 9px; }
+        }
+      `}</style>
+      <div className="tech-distribution-heading">
+        <div>
+          <h3 className="tech-distribution-title"><Users size={15} color="#ea580c" /> توزيع الفنيين</h3>
+          <p className="tech-distribution-note">حسب الفلاتر الحالية · اسحب واضغط للتصفية</p>
+        </div>
+        <div className="tech-distribution-actions">
+          {selected && <button type="button" className="tech-distribution-reset" onClick={() => onSelect('')} aria-label="إلغاء فلتر الفني"><X size={13} /> الكل</button>}
+          <button type="button" className="tech-distribution-toggle" onClick={onToggle} aria-expanded={expanded} aria-controls="technician-distribution-details">{expanded ? 'اختصار' : 'التفاصيل'}{expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}</button>
+        </div>
+      </div>
+      <div className="tech-distribution-track" role="group" aria-label="تصفية الأوردرات حسب الفني">
+        <button type="button" className="tech-distribution-chip" data-unassigned="true" data-selected={selected === '__NONE__'} aria-pressed={selected === '__NONE__'} onClick={() => onSelect(selected === '__NONE__' ? '' : '__NONE__')}><AlertCircle size={14} /><span>بدون فني</span><b>{cards.unassigned.total}</b></button>
+        {visible.map(({ tech, stats }) => <button type="button" className="tech-distribution-chip" key={tech.id} data-selected={selected === tech.name} aria-pressed={selected === tech.name} title={tech.name} onClick={() => onSelect(selected === tech.name ? '' : tech.name)}><span>{tech.name}</span><b>{stats.total}</b></button>)}
+        {visible.length === 0 && cards.unassigned.total === 0 && <p className="tech-distribution-empty">لا توجد أوردرات حسب الفلاتر الحالية</p>}
+      </div>
+      {expanded && <div className="tech-distribution-details" id="technician-distribution-details"><div className="tech-distribution-details-grid">
+        <button type="button" className="tech-distribution-row" onClick={() => onSelect('__NONE__')}><span className="tech-distribution-row-top"><span>بدون فني</span><span>{cards.unassigned.total} أوردر</span></span><span className="tech-distribution-statuses">يحتاج تعيين{cards.unassigned.collection > 0 ? ` · تحصيل ${cards.unassigned.collection}` : ''}</span></button>
+        {visible.map(({ tech, stats }) => <button type="button" key={tech.id} className="tech-distribution-row" onClick={() => onSelect(tech.name)}><span className="tech-distribution-row-top"><span>{tech.name}</span><span>{stats.total} أوردر</span></span><span className="tech-distribution-statuses"><span>تنفيذ {stats.active}</span><span>انتظار {stats.pending}</span>{stats.collection > 0 && <span>تحصيل {stats.collection}</span>}</span></button>)}
+      </div></div>}
+    </section>
   );
 }
