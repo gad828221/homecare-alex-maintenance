@@ -1,11 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Check, CheckCheck, Lock, MessageCircle, Send, Trash2, Users, X } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabaseClient';
 import { useNotification } from './EnhancedNotificationSystem';
-
-const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
-const supabase = createClient(supabaseUrl, supabaseKey);
 const CHAT_ACTION = 'employee_chat';
 const CHAT_STORAGE_PREFIX = 'employee_chat_read_';
 
@@ -151,12 +147,8 @@ export default function EmployeeChat() {
       conversationId: message.conversationId
     };
     try {
-      const response = await fetch(`${supabaseUrl}/rest/v1/notifications`, {
-        method: 'POST',
-        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: CHAT_ACTION, details: JSON.stringify(payload), user_name: currentName, created_at: new Date().toISOString() })
-      });
-      if (!response.ok) throw new Error(await response.text());
+      const { error: receiptError } = await supabase.from('notifications').insert({ action: CHAT_ACTION, details: JSON.stringify(payload), user_name: currentName, created_at: new Date().toISOString() });
+      if (receiptError) throw new Error(receiptError.message);
       localStorage.setItem(receiptKey, new Date().toISOString());
     } catch (error) {
       localStorage.removeItem(receiptKey);
@@ -235,20 +227,14 @@ export default function EmployeeChat() {
     if (!canUseChat) return;
     try {
       const responses = await Promise.allSettled([
-        fetch(`${supabaseUrl}/rest/v1/notifications?select=*&action=eq.${CHAT_ACTION}&order=created_at.asc&limit=500`, {
-          headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }
-        }),
-        fetch(`${supabaseUrl}/rest/v1/users?select=id,name,username,role,is_active&is_active=eq.true&order=name.asc`, {
-          headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }
-        }),
-        fetch(`${supabaseUrl}/rest/v1/technicians?select=id,name,username,is_active&is_active=eq.true&order=name.asc`, {
-          headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }
-        })
+        supabase.from('notifications').select('*').eq('action', CHAT_ACTION).order('created_at', { ascending: true }).limit(500),
+        supabase.from('users').select('id,name,username,role,is_active').eq('is_active', true).order('name', { ascending: true }),
+        supabase.from('technicians').select('id,name,username,is_active').eq('is_active', true).order('name', { ascending: true })
       ]);
-      const readJson = async (result: PromiseSettledResult<Response>) => result.status === 'fulfilled' && result.value.ok ? result.value.json() : [];
-      const rows = await readJson(responses[0]);
-      const userRows = await readJson(responses[1]);
-      const technicianRows = await readJson(responses[2]);
+      const readData = (result: PromiseSettledResult<any>) => result.status === 'fulfilled' && !result.value.error && Array.isArray(result.value.data) ? result.value.data : [];
+      const rows = readData(responses[0]);
+      const userRows = readData(responses[1]);
+      const technicianRows = readData(responses[2]);
       const parsed = (Array.isArray(rows) ? rows : []).map(parseChatMessage).filter(Boolean) as ChatMessage[];
       const parsedReceipts = (Array.isArray(rows) ? rows : []).map(parseChatReceipt).filter(Boolean) as ChatReceipt[];
       const participants = new Map<string, ChatUser>();
@@ -406,12 +392,8 @@ export default function EmployeeChat() {
       text: cleanText
     };
     try {
-      const response = await fetch(`${supabaseUrl}/rest/v1/notifications`, {
-        method: 'POST',
-        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
-        body: JSON.stringify({ action: CHAT_ACTION, details: JSON.stringify(payload), user_name: currentName, created_at: new Date().toISOString() })
-      });
-      if (!response.ok) throw new Error(await response.text());
+      const { error: sendError } = await supabase.from('notifications').insert({ action: CHAT_ACTION, details: JSON.stringify(payload), user_name: currentName, created_at: new Date().toISOString() });
+      if (sendError) throw new Error(sendError.message);
       setText('');
       await fetchChatData();
       markConversationRead(targetConversationId);
@@ -430,11 +412,10 @@ export default function EmployeeChat() {
 
     setDeletingMessageId(String(message.id));
     try {
-      const response = await fetch(`${supabaseUrl}/rest/v1/notifications?id=eq.${encodeURIComponent(String(message.id))}&action=eq.${CHAT_ACTION}`, {
-        method: 'DELETE',
-        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, Prefer: 'return=minimal' }
-      });
-      if (!response.ok) throw new Error(await response.text());
+      // Management-only delete (UI-gated by isManagement; notifications_staff_delete
+      // policy allows admin/manager/tech post-flip).
+      const { error: deleteError } = await supabase.from('notifications').delete().eq('id', String(message.id)).eq('action', CHAT_ACTION);
+      if (deleteError) throw new Error(deleteError.message);
       setMessages((previous) => previous.filter((item) => String(item.id) !== String(message.id)));
       setReceipts((previous) => previous.filter((receipt) => receipt.messageId !== String(message.id)));
       addNotification({ type: 'success', title: 'تم حذف الرسالة', message: 'تم حذف الرسالة من شات الموظفين بنجاح.', duration: 3000 });
