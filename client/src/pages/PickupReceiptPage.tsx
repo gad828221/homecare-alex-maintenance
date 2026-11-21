@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import jsPDF from "jspdf";
 import { openWhatsAppDirectly } from '../utils/whatsapp';
+import { authedHeaders } from '../lib/authedFetch';
+import { supabase } from '../lib/supabaseClient';
 import { createPickupMarker, getPickupTypeLabel, parsePickupReceipt, stripPickupMarker, type PickupReceiptData, type PickupType } from '../utils/pickupReceipt';
 import { Download, Printer, Send, Copy, Check, MapPin, Phone, MessageCircle, Clock, ShieldCheck, User, Wrench, AlertCircle, Edit2, Save, X, ClipboardList, Camera, Package } from "lucide-react";
 
@@ -41,7 +43,8 @@ export default function PickupReceiptPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const orderId = params.get("id");
-    if (!orderId) {
+    const publicToken = params.get("token");
+    if (!orderId && !publicToken) {
       setError("رقم الأوردر غير موجود");
       setLoading(false);
       return;
@@ -49,10 +52,19 @@ export default function PickupReceiptPage() {
 
     const fetchOrder = async () => {
       try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${orderId}`, {
-          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
-        });
-        const data = await response.json();
+        let row: any = null;
+        if (publicToken) {
+          // Public customer link: token capability + trimmed RPC only.
+          const { data, error: rpcErr } = await supabase.rpc('get_public_order', { p_token: publicToken });
+          if (rpcErr) throw rpcErr;
+          row = data;
+        } else {
+          // Staff link (?id=): authenticated staff read via the shared client.
+          const { data, error: selErr } = await supabase.from('orders').select('*').eq('id', orderId).limit(1);
+          if (selErr) throw selErr;
+          row = data?.[0] ?? null;
+        }
+        const data = row ? [row] : [];
         if (data && data.length > 0) {
           const orderData = data[0];
           setOrder(orderData);
@@ -124,26 +136,16 @@ export default function PickupReceiptPage() {
         receipt_updated_at: new Date().toISOString()
       };
 
+      // Staff-only edit (gated by canEdit = admin/manager/tech): must carry the
+      // staff session post-flip; public reads use the token RPC above.
       const response = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${order.id}`, {
         method: 'PATCH',
-        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+        headers: { ...(await authedHeaders()) },
         body: JSON.stringify(updatedFields)
       });
 
       if (response.ok) {
         try {
-          await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${order.id}`, {
-            method: 'PATCH',
-            headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              pickup_type: pickupRecord.type,
-              pickup_part_name: pickupRecord.partName,
-              pickup_notes: pickupRecord.notes,
-              pickup_photos: pickupRecord.photos,
-              pickup_date: pickupRecord.pickupDate,
-              pickup_status: pickupRecord.status
-            })
-          });
         } catch (optionalError) {
           console.warn('أعمدة السحب الاختيارية غير متاحة؛ تم حفظ النوع داخل علامة الإيصال.', optionalError);
         }

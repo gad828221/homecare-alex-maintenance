@@ -5,6 +5,8 @@ import { Download, Printer, Send, Copy, Check, Link, ShieldCheck, MessageCircle,
 
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
+import { authedHeaders } from '../lib/authedFetch';
+import { supabase } from '../lib/supabaseClient';
 
 export default function InvoicePageNew() {
   const [invoice, setInvoice] = useState<any>(null);
@@ -32,7 +34,8 @@ export default function InvoicePageNew() {
     }
     const params = new URLSearchParams(window.location.search);
     const orderId = params.get("id");
-    if (!orderId) {
+    const publicToken = params.get("token");
+    if (!orderId && !publicToken) {
       setError("رقم الأوردر غير موجود");
       setLoading(false);
       return;
@@ -40,10 +43,21 @@ export default function InvoicePageNew() {
 
     const fetchInvoice = async () => {
       try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${orderId}`, {
-          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
-        });
-        const data = await response.json();
+        let row: any = null;
+        if (publicToken) {
+          // Public customer link: the token is the capability; the trimmed RPC
+          // is the only public read path after the security flip.
+          const { data, error: rpcErr } = await supabase.rpc('get_public_order', { p_token: publicToken });
+          if (rpcErr) throw rpcErr;
+          row = data;
+        } else {
+          // Staff link (?id=): authenticated staff read via the shared client
+          // (session attached; RLS decides).
+          const { data, error: selErr } = await supabase.from('orders').select('*').eq('id', orderId).limit(1);
+          if (selErr) throw selErr;
+          row = data?.[0] ?? null;
+        }
+        const data = row ? [row] : [];
         if (data && data.length > 0) {
           setInvoice(data[0]);
           setManagerForm({
@@ -98,12 +112,12 @@ export default function InvoicePageNew() {
         receipt_updated_by: currentUser?.name || currentUser?.username || 'المدير',
         receipt_updated_at: new Date().toISOString()
       };
+      // Manager-only edit (gated by canManagerEdit): must carry the staff
+      // session post-flip; public reads use the token RPC above.
       const response = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${invoice.id}`, {
         method: 'PATCH',
         headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
-          'Content-Type': 'application/json'
+          ...(await authedHeaders())
         },
         body: JSON.stringify(updatedFields)
       });

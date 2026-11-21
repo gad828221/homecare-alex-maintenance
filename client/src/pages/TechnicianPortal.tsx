@@ -13,7 +13,8 @@ import ScrollButtons from "../components/ScrollButtons";
 
 import { clearAuthSession } from "../utils/authSession";
 import { syncOneSignalIdentity } from "../utils/oneSignalIdentity";
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabaseClient';
+import { authedFetch as fetchAPI } from '../lib/authedFetch';
 import { openWhatsAppDirectly } from '../utils/whatsapp';
 import { sendExternalPush } from '../utils/pushNotifications';
 import { useScreenWakeLock } from '../hooks/useScreenWakeLock';
@@ -26,9 +27,6 @@ import { ORDER_WORKFLOW_ACTIONS, ORDER_WORKFLOW_STAGES, getOrderWorkflowIndex, n
 
 
 
-const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
-const supabase = createClient(supabaseUrl, supabaseKey);
 const normalizeCustomerPhone = (phone: any) => {
   const digits = String(phone || '').replace(/\D/g, '');
   return digits.startsWith('20') ? `0${digits.slice(2)}` : digits;
@@ -107,20 +105,6 @@ const removeTechnicianFollowUpMarker = (adminNotes: any) => String(adminNotes ||
 const buildTechnicianFollowUpMarker = (data: TechnicianFollowUp) => {
   const cleaned = Object.fromEntries(Object.entries(data).map(([key, value]) => [key, String(value || '').trim()]));
   return Object.values(cleaned).some(Boolean) ? `\n[${FOLLOW_UP_MARKER} ${JSON.stringify(cleaned)}]` : '';
-};
-
-const fetchAPI = async (endpoint: string, options?: RequestInit) => {
-  const res = await fetch(`${supabaseUrl}/rest/v1/${endpoint}`, {
-    headers: {
-      'apikey': supabaseKey,
-      'Authorization': `Bearer ${supabaseKey}`,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=representation'
-    },
-    ...options,
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
 };
 
 export default function TechnicianPortal() {
@@ -261,15 +245,13 @@ export default function TechnicianPortal() {
 
   const notifyAdmin = async (action: string, order: any, details: string = "") => {
     try {
-      await fetch(`${supabaseUrl}/rest/v1/notifications`, {
-        method: 'POST',
-        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: action,
-          details: `الفني: ${techName}\nالأوردر: ${order.order_number}\nالعميل: ${order.customer_name}\n${details}`,
-          user_name: 'نظام',
-          created_at: new Date().toISOString()
-        })
+      // Authenticated staff insert (notifications_staff_insert); the old anon
+      // POST is rejected post-flip for actions outside the public whitelist.
+      await supabase.from('notifications').insert({
+        action: action,
+        details: `الفني: ${techName}\nالأوردر: ${order.order_number}\nالعميل: ${order.customer_name}\n${details}`,
+        user_name: 'نظام',
+        created_at: new Date().toISOString()
       });
     } catch (err) { console.error(err); }
     // تم إيقاف واتساب الإداري؛ تسجيل الحدث داخل notifications هو قناة الإدارة المعتمدة.
@@ -285,15 +267,11 @@ export default function TechnicianPortal() {
         // إرسال إشارة نجاح (Heartbeat) لتأكيد جاهزية الإشعارات للمدير
         const sendHeartbeat = async () => {
           try {
-            await fetch(`${supabaseUrl}/rest/v1/notifications`, {
-              method: 'POST',
-              headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                action: "🔔 جاهز للاستلام",
-                details: `الفني ${user.techName} متصل الآن وجاهز لاستقبال التنبيهات.`,
-                user_name: user.techName,
-                created_at: new Date().toISOString()
-              })
+            await supabase.from('notifications').insert({
+              action: "🔔 جاهز للاستلام",
+              details: `الفني ${user.techName} متصل الآن وجاهز لاستقبال التنبيهات.`,
+              user_name: user.techName,
+              created_at: new Date().toISOString()
             });
           } catch (e) { console.error('Heartbeat error:', e); }
         };
@@ -318,7 +296,9 @@ export default function TechnicianPortal() {
     const checkActiveStatus = async () => {
       if (!techName) return;
       try {
-        const data = await fetchAPI(`technicians?select=*&name=eq.${encodeURIComponent(techName)}`);
+        // Explicit columns: select=* would fail post-flip because the password
+        // column is revoked from API reads (S6b).
+        const data = await fetchAPI(`technicians?select=id,username,name,phone,is_active,profit_percentage,specialization,created_at&name=eq.${encodeURIComponent(techName)}`);
         if (data && data[0]) {
           setIsActive(data[0].is_active !== false);
           setTechProfilePhoto((currentPhoto) => currentPhoto || getTechnicianPhotoUrl(data[0]));
@@ -685,7 +665,13 @@ export default function TechnicianPortal() {
         updateData.technician_note = `${oldOrder?.technician_note || ''}${gpsMarker}`;
       }
       if (newStatus === 'completed' && oldOrder?.status !== 'completed') updateData.completed_at = new Date().toISOString();
-      await fetchAPI(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify(updateData) });
+      // Post-flip technicians have no direct UPDATE on orders: route through
+      // the RPCs. Any settlement/financial key -> tech_settle_order (its
+      // whitelist covers status/dates/notes too); otherwise tech_update_order.
+      const SETTLEMENT_KEYS = ['total_amount','parts_cost','transport_cost','net_amount','company_share','technician_share','parts_used','warranty_period','invoice_approved','invoice_date'];
+      const rpcName = Object.keys(updateData).some((k) => SETTLEMENT_KEYS.includes(k)) ? 'tech_settle_order' : 'tech_update_order';
+      const { error: updateError } = await supabase.rpc(rpcName, { p_order_id: id, p_patch: updateData });
+      if (updateError) throw updateError;
       addNotification({ type: 'success', title: '✅ تم التحديث', message: 'تم حفظ التغييرات وإرسال إشعار للمدير', duration: 3000 });
       fetchData();
       if (options.notifyManagers !== false && oldOrder && oldOrder.status !== newStatus) {
@@ -781,10 +767,8 @@ export default function TechnicianPortal() {
     try {
       const baseNotes = removeTechnicianFollowUpMarker(followUpOrder.admin_notes);
       const adminNotes = `${baseNotes}${buildTechnicianFollowUpMarker(followUpForm)}`.trim();
-      await fetchAPI(`orders?id=eq.${followUpOrder.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ admin_notes: adminNotes })
-      });
+      const { error: followUpError } = await supabase.rpc('tech_update_order', { p_order_id: followUpOrder.id, p_patch: { admin_notes: adminNotes } });
+      if (followUpError) throw followUpError;
       await notifyAdmin('تحديث متابعة من الفني', followUpOrder, `المرحلة: ${FOLLOW_UP_STAGES.find((item) => item.value === followUpForm.stage)?.label || followUpForm.stage}\nالإجراء التالي: ${followUpForm.nextAction}${followUpForm.blocker ? `\nسبب التعطيل: ${followUpForm.blocker}` : ''}`);
       await sendExternalPush({
         event: 'system_alert',
@@ -815,10 +799,8 @@ export default function TechnicianPortal() {
     const oldNote = order.technician_note || '';
     const newNote = oldNote ? `${oldNote}\n${note}` : note;
     try {
-      await fetchAPI(`orders?id=eq.${order.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ technician_note: newNote })
-      });
+      const { error: noteError } = await supabase.rpc('tech_update_order', { p_order_id: order.id, p_patch: { technician_note: newNote } });
+      if (noteError) throw noteError;
       addNotification({ type: 'info', title: '📝 ملاحظة فنية', message: `أضاف الفني ملاحظة للأوردر رقم ${order.order_number}: ${note}`, duration: 5000 });
       await notifyAdmin('📝 ملاحظة فنية جديدة', order, `النص: ${note}`);
       await sendExternalPush({
@@ -862,10 +844,8 @@ export default function TechnicianPortal() {
 
     try {
       // حفظ أساسي يعتمد على الحقول الموجودة بالفعل في النظام.
-      await fetchAPI(`orders?id=eq.${order.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ technician_notes: finalNotes, technician_note: finalNotes, status: 'in-progress' })
-      });
+      const { error: pickupError } = await supabase.rpc('tech_update_order', { p_order_id: order.id, p_patch: { technician_notes: finalNotes, technician_note: finalNotes, status: 'in-progress' } });
+      if (pickupError) throw pickupError;
 
       const savedNotesRows = await fetchAPI(`orders?id=eq.${order.id}&select=technician_note,technician_notes`);
       const savedNotes = savedNotesRows?.[0];
@@ -874,22 +854,15 @@ export default function TechnicianPortal() {
         throw new Error('pickup-receipt-marker-was-not-saved');
       }
 
-      // حفظ الحقول الجديدة عند توفرها، مع بقاء العلامة النصية كخطة توافق احتياطية.
+      // العربون عبر الـ RPC. أعمدة pickup_* غير موجودة فعلياً في قاعدة
+      // البيانات (تم التحقق مباشرة 2026-11-21)، لذلك كانت هذه الكتابة تفشل
+      // كاملة حتى اليوم ولم يُحفظ العربون قط؛ الآن يُحفظ فعلياً. بيانات
+      // السحب تبقى في علامة الإيصال النصية كما هو معمول به فعلياً اليوم.
       try {
-        await fetchAPI(`orders?id=eq.${order.id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({
-            pickup_type: pickupForm.type,
-            pickup_part_name: partName,
-            pickup_notes: pickupForm.notes.trim(),
-            pickup_photos: pickupForm.photos,
-            pickup_date: pickupDate,
-            pickup_status: 'active',
-            deposit_amount: Number(pickupForm.deposit) || 0
-          })
-        });
+        const { error: depositError } = await supabase.rpc('tech_update_order', { p_order_id: order.id, p_patch: { deposit_amount: Number(pickupForm.deposit) || 0 } });
+        if (depositError) throw depositError;
       } catch (optionalError) {
-        console.warn('Optional pickup columns are not available; marker data was saved in technician_notes.', optionalError);
+        console.warn('Deposit could not be saved; pickup marker data was saved in technician_notes.', optionalError);
       }
 
       const details = `نوع السحب: ${typeAr}${partName ? `\\nالقطعة: ${partName}` : ''}\\nالعربون: ${Number(pickupForm.deposit) || 0} ج.م\\nعدد الصور: ${pickupForm.photos.length}\\nرابط الإيصال: ${window.location.origin}/pickup-receipt?id=${order.id}`;
@@ -1090,8 +1063,9 @@ export default function TechnicianPortal() {
       parts_used: isInspectionVisit ? 'لا توجد — كشف/زيارة فقط' : settleForm.parts_used,
       invoice_approved: true,
       invoice_date: new Date().toISOString().split('T')[0],
-      is_paid: false,
-      profit_added_to_cash: false,
+      // is_paid / profit_added_to_cash are deliberately NOT sent: they are
+      // manager-only flags outside the tech_settle_order whitelist (two-step
+      // control), and resetting them here could clear a manager confirmation.
       technician_note: finalNote
     };
 
@@ -1112,15 +1086,11 @@ export default function TechnicianPortal() {
       : expenseWarnings.length > 0 ? '⚠️ تصفية بمصاريف مرتفعة — تحويل بانتظار التأكيد' : '💰 الفني أكد تحويل نصيب الشركة';
     const settlementDetails = `${settlementTitle}\nالفني: ${techName}\nرقم الأوردر: ${selectedOrder.order_number}\nالعميل: ${selectedOrder.customer_name}\nالجهاز: ${selectedOrder.device_type}\nإجمالي الفاتورة: ${settlementTotal} ج.م\nنصيب الشركة المحول: ${Number(settleForm.company_share) || 0} ج.م\nنوع الخدمة: ${isInspectionVisit ? 'كشف/زيارة فقط — العميل رفض الإصلاح' : 'إصلاح'}\nالحالة: بانتظار تأكيد استلام المدير\nقطع الغيار: ${isInspectionVisit ? 0 : settleForm.parts_cost} ج.م (${partsPercent.toFixed(1)}%)\nالمواصلات: ${settleForm.transport_cost} ج.م (${transportPercent.toFixed(1)}%)${expenseWarnings.length > 0 ? `\n${expenseWarnings.join('\n')}` : ''}\nالوقت: ${new Date().toLocaleString('ar-EG')}`;
     try {
-      await fetch(`${supabaseUrl}/rest/v1/notifications`, {
-        method: 'POST',
-        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-        body: JSON.stringify({
-          action: 'settlement_alert',
-          details: settlementDetails,
-          user_name: techName,
-          created_at: new Date().toISOString()
-        })
+      await supabase.from('notifications').insert({
+        action: 'settlement_alert',
+        details: settlementDetails,
+        user_name: techName,
+        created_at: new Date().toISOString()
       });
       await sendExternalPush({
         event: 'system_alert',
@@ -1301,13 +1271,11 @@ export default function TechnicianPortal() {
         const newNote = oldNote ? `${oldNote}
 [صورة مرفقة]` : '[صورة مرفقة]';
 
-        await fetchAPI(`orders?id=eq.${orderId}`, {
-          method: 'PATCH',
-          body: JSON.stringify({
-            technician_note: newNote,
-            attachment_url: photoUrl
-          })
-        });
+        // attachment_url is not a real column (verified live 2026-11-21), so
+        // this PATCH always failed in full before; the note marker now saves
+        // via the RPC. The photo itself stays in the order-photos bucket.
+        const { error: attachError } = await supabase.rpc('tech_update_order', { p_order_id: orderId, p_patch: { technician_note: newNote } });
+        if (attachError) throw attachError;
         fetchData();
       }
 

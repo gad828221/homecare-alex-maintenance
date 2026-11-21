@@ -9,7 +9,8 @@ import {
   RotateCcw, Clock, MapPin, Star, Cpu, ShieldCheck, Wrench, UserCircle, Wallet,
   ClipboardList, FileCheck, Camera, Navigation, ExternalLink, Pin, PinOff, History, MessageCircle, Sun, Moon
 } from "lucide-react";
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabaseClient';
+import { authedHeaders } from '../lib/authedFetch';
 import { sendExternalPush } from '../utils/pushNotifications';
 import { useScreenWakeLock } from '../hooks/useScreenWakeLock';
 import { formatElapsed, formatOrderDay, formatOrderDateTime, getElapsedTone, getOrderCreatedValue, parseOrderDate, getEgyptTodayString } from '../utils/orderTiming';
@@ -27,8 +28,6 @@ import { DEVICE_TYPES, BRAND_OPTIONS } from '../constants/catalog';
 
 // ==================== الإعدادات الأساسية ====================
 const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 const REPORT_TIME_OFFSET_MS = 8 * 60 * 60 * 1000;
 const ORDER_ARCHIVE_AFTER_DAYS = 15;
@@ -205,7 +204,7 @@ function AdminPermissions({ users, onEdit, onDelete, onToggle, canEdit, onSync }
             <div className="space-y-2 mb-4">
               <div className="flex justify-between text-[10px]">
                 <span className="text-slate-500">كلمة المرور:</span>
-                <span className="text-slate-300 font-mono">{user.password}</span>
+                <span className="text-slate-300 font-mono">{user.password || '••••••'}</span>
               </div>
               <div className="flex justify-between text-[10px]">
                 <span className="text-slate-500">الحالة:</span>
@@ -356,9 +355,7 @@ const fetchAPI = async (endpoint: string, options?: RequestInit) => {
       cache: 'no-store',
       ...options,
       headers: {
-        'apikey': supabaseKey,
-        'Authorization': `Bearer ${supabaseKey}`,
-        'Content-Type': 'application/json',
+        ...(await authedHeaders()),
         'Cache-Control': 'no-cache',
         'Pragma': 'no-cache',
         ...(options?.headers || {})
@@ -411,7 +408,7 @@ const addNotification = async (action: string, details: string, userName = 'ال
   try {
     await fetch('https://hjrnfsdvrrwgyppqhwml.supabase.co/rest/v1/notifications', {
       method: 'POST',
-      headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+      headers: { ...(await authedHeaders()) },
       body: JSON.stringify({ action, details, user_name: userName, created_at: new Date().toISOString() })
     });
   } catch (err) { console.error(err); }
@@ -982,33 +979,65 @@ export default function ProtectedOrders() {
 
     try {
       if (editingUserAccount) {
-        await fetchAPI(`users?id=eq.${editingUserAccount.id}`, { method: 'PATCH', body: JSON.stringify(userForm) });
+        // Post-flip: password+username are auth-owned. The table PATCH carries
+        // neither; password changes go through the reset RPC per context.
+        const { password: userPw, username: _u0, ...userBody } = userForm as any;
+        await fetchAPI(`users?id=eq.${editingUserAccount.id}`, { method: 'PATCH', body: JSON.stringify(userBody) });
+        if (userPw) {
+          const { error: pwErr } = await supabase.rpc('manager_set_staff_password', {
+            p_context: 's', p_username: editingUserAccount.username, p_new_password: userPw
+          });
+          if (pwErr) throw new Error(pwErr.message);
+        }
 
         if (userForm.role === 'tech') {
-          const techData = { name: userForm.name, username: userForm.username, password: userForm.password, is_active: userForm.is_active };
+          const techData = { name: userForm.name, is_active: userForm.is_active };
           const existingTechs = await fetchAPI(`technicians?username=eq.${encodeURIComponent(userForm.username)}`);
           if (existingTechs && existingTechs.length > 0) {
             await fetchAPI(`technicians?id=eq.${existingTechs[0].id}`, { method: 'PATCH', body: JSON.stringify(techData) });
+            if (userPw) {
+              const { error: tPwErr } = await supabase.rpc('manager_set_staff_password', {
+                p_context: 't', p_username: userForm.username, p_new_password: userPw
+              });
+              if (tPwErr) throw new Error(tPwErr.message);
+            }
           } else {
-            await fetchAPI('technicians', { method: 'POST', body: JSON.stringify({ ...techData, specialization: 'عام', profit_percentage: 50 }) });
+            // No fixed fallback password: use the entered one, else a
+            // generated one-time temp shown to the admin once.
+            const techPw = userPw || generateTempPassword();
+            const { error: tCreateErr } = await supabase.rpc('manager_create_staff', {
+              p_username: userForm.username, p_name: userForm.name,
+              p_password: techPw, p_role: 'tech', p_is_active: userForm.is_active
+            });
+            if (tCreateErr) throw new Error(tCreateErr.message);
+            if (!userPw) alert(`بيانات دخول الفني المؤقتة (تظهر مرة واحدة فقط):\n\n${userForm.name}: ${userForm.username} / ${techPw}`);
+            const created = await fetchAPI(`technicians?username=eq.${encodeURIComponent(userForm.username)}`);
+            if (created && created.length > 0) {
+              await fetchAPI(`technicians?id=eq.${created[0].id}`, { method: 'PATCH', body: JSON.stringify({ specialization: 'عام', profit_percentage: 50 }) });
+            }
           }
         }
         showToast("✅ تم تحديث المستخدم", "success");
       } else {
-        await fetchAPI('users', { method: 'POST', body: JSON.stringify(userForm) });
+        // Post-flip: create goes through the provisioning RPC (auth + row,
+        // bcrypt on both sides) - a direct table insert would leave the new
+        // account unable to log in.
+        const { error: createErr } = await supabase.rpc('manager_create_staff', {
+          p_username: userForm.username, p_name: userForm.name, p_password: userForm.password,
+          p_role: userForm.role, p_is_active: userForm.is_active, p_context: 's'
+        });
+        if (createErr) throw new Error(createErr.message);
 
         if (userForm.role === 'tech') {
-          await fetchAPI('technicians', {
-            method: 'POST',
-            body: JSON.stringify({
-              name: userForm.name,
-              username: userForm.username,
-              password: userForm.password,
-              is_active: userForm.is_active,
-              specialization: 'عام',
-              profit_percentage: 50
-            })
+          const { error: tErr } = await supabase.rpc('manager_create_staff', {
+            p_username: userForm.username, p_name: userForm.name, p_password: userForm.password,
+            p_role: 'tech', p_is_active: userForm.is_active
           });
+          if (tErr) throw new Error(tErr.message);
+          const createdTechs = await fetchAPI(`technicians?username=eq.${encodeURIComponent(userForm.username)}`);
+          if (createdTechs && createdTechs.length > 0) {
+            await fetchAPI(`technicians?id=eq.${createdTechs[0].id}`, { method: 'PATCH', body: JSON.stringify({ specialization: 'عام', profit_percentage: 50 }) });
+          }
         }
         showToast("✅ تم إضافة المستخدم بنجاح", "success");
       }
@@ -1031,23 +1060,21 @@ export default function ProtectedOrders() {
   const syncTechnicianLoginStatus = async (account: any, isActive: boolean) => {
     if (account?.role !== 'tech') return true;
     const username = String(account.username || '').trim();
-    const name = String(account.name || '').trim();
-    const filter = username
-      ? `username=eq.${encodeURIComponent(username)}`
-      : `name=eq.${encodeURIComponent(name)}`;
-    const result = await fetchAPI(`technicians?${filter}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ is_active: isActive })
+    if (!username) return true;
+    const { error } = await supabase.rpc('manager_set_staff_active', {
+      p_context: 't', p_username: username, p_active: isActive
     });
-    return result !== null;
+    return !error;
   };
 
   const toggleUserAccountStatus = async (user: any) => {
     if (userRole !== 'admin') return showToast("ليس لديك صلاحية", "error");
     try {
       const nextIsActive = !user.is_active;
-      const userResult = await fetchAPI(`users?id=eq.${user.id}`, { method: 'PATCH', body: JSON.stringify({ is_active: nextIsActive }) });
-      if (userResult === null) return showToast("❌ تعذر تحديث حساب الموظف", "error");
+      const { error } = await supabase.rpc('manager_set_staff_active', {
+        p_context: 's', p_username: user.username, p_active: nextIsActive
+      });
+      if (error) return showToast("❌ تعذر تحديث حساب الموظف", "error");
       const technicianSynced = await syncTechnicianLoginStatus(user, nextIsActive);
       if (!technicianSynced) return showToast("⚠️ تم تحديث الحساب لكن تعذر مزامنة دخول الفني", "error");
       showToast(nextIsActive ? "✅ تم تفعيل الحساب ودخول الفني" : "⚠️ تم إيقاف الحساب ودخول الفني", "info");
@@ -1055,28 +1082,48 @@ export default function ProtectedOrders() {
     } catch (err) { console.error(err); }
   };
 
+  // One-time temporary passwords for RPC-provisioned accounts: CSPRNG only
+  // (crypto.getRandomValues), shown to the admin exactly once, never stored
+  // or logged. The technicians password column is unreadable post-flip, so a
+  // fixed fallback ('123456'/'000000') would be the only credential - forbidden.
+  const generateTempPassword = () => {
+    const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    const buf = new Uint32Array(12);
+    crypto.getRandomValues(buf);
+    return 'mg-' + Array.from(buf, n => chars[n % chars.length]).join('');
+  };
+
   const syncTechniciansToUsers = async () => {
     if (userRole !== 'admin') return;
     setLoading(true);
     let syncCount = 0;
     try {
+      const issued: string[] = [];
+      const failed: string[] = [];
       for (const tech of technicians) {
         // التحقق إذا كان الفني موجود بالفعل في جدول المستخدمين
         const existingUser = users.find(u => u.username === tech.username || u.name === tech.name);
         if (!existingUser) {
-          await fetchAPI('users', {
-            method: 'POST',
-            body: JSON.stringify({
-              name: tech.name,
-              username: tech.username || tech.name.replace(/\s+/g, '_').toLowerCase(),
-              password: tech.password || '123456',
-              role: 'tech',
-              is_active: tech.is_active !== false
-            })
-          });
-          syncCount++;
+          // Non-blocking: one failure must not strand the remaining
+          // technicians (or the accounts already created in this run).
+          try {
+            const tempPassword = generateTempPassword();
+            const uname = tech.username || tech.name.replace(/\s+/g, '_').toLowerCase();
+            const { error } = await supabase.rpc('manager_create_staff', {
+              p_username: uname, p_name: tech.name, p_password: tempPassword,
+              p_role: 'tech', p_is_active: tech.is_active !== false, p_context: 's'
+            });
+            if (error) throw new Error(error.message);
+            issued.push(`${tech.name}: ${uname} / ${tempPassword}`);
+            syncCount++;
+          } catch (itemErr) {
+            console.error('sync failed for technician', tech?.name, itemErr);
+            failed.push(String(tech?.name || '?'));
+          }
         }
       }
+      if (issued.length > 0) alert(`بيانات دخول مؤقتة (تظهر مرة واحدة فقط):\n\n${issued.join('\n')}`);
+      if (failed.length > 0) showToast(`⚠️ تعذر إنشاء ${failed.length} حساب: ${failed.join('، ')}`, "error");
       if (syncCount > 0) {
         showToast(`✅ تم مزامنة ${syncCount} فني بنجاح`, "success");
         fetchData();
@@ -1104,7 +1151,7 @@ export default function ProtectedOrders() {
 
   const sendWhatsAppToCustomerOnCreate = (order: any) => {
     if (isViewer) return;
-    const trackingUrl = `https://www.maintenanceguide.life/track/${order.order_number}`;
+    const trackingUrl = `https://www.maintenanceguide.life/track/${order.public_token}`;
     const message = `📝 *تم استلام طلب الصيانة بنجاح* 📝\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n🔧 *الجهاز:* ${order.device_type} - ${order.brand}\n📍 *العنوان:* ${order.address || 'غير محدد'}\n\n✅ تم تسجيل طلبك وسيتم التواصل معك قريباً.\n\n📍 *يمكنك تتبع حالة طلبك من هنا:*\n${trackingUrl}`;
     openWhatsApp(order.phone, message);
   };
@@ -1133,7 +1180,7 @@ export default function ProtectedOrders() {
     const profile = getOrderTechnicianProfile(technicianIdentity);
     // تخصص الرسالة للعميل يتبع جهاز هذا الأوردر، وليس التخصص العام المسجل في ملف الفني.
     const specialty = getDeviceSpecialty(order.device_type);
-    const trackingUrl = `https://www.maintenanceguide.life/track/${order.order_number}`;
+    const trackingUrl = `https://www.maintenanceguide.life/track/${order.public_token}`;
     const photoLine = profile.photoUrl ? `🖼️ *صورة الفني:*\n${profile.photoUrl}\n` : '';
     const message = `👨‍🔧 *تم تعيين الفني المسؤول عن طلبك* 👨‍🔧\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الأوردر:* ${order.order_number}\n👤 *العميل:* ${order.customer_name}\n\n✅ *الفني المتوجه إليك:* ${profile.displayName}\n🛠️ *التخصص:* متخصص ${specialty}\n${photoLine}\n📍 سيقوم الفني بالتواصل معك والتوجه إلى العنوان المسجل في الطلب.\n\n📍 *تتبع طلبك والضمان من هنا:*\n${trackingUrl}\n\n🏢 *Maintenance Guide (MG)*\nشكراً لثقتكم.`;
     openWhatsApp(order.phone, message);
@@ -1382,7 +1429,8 @@ export default function ProtectedOrders() {
       if (section === 'partners') await fetchPartners();
       if (section === 'notifications' || section === 'systemHealth') await fetchNotifications();
       if (section === 'permissions') {
-        const usersData = await fetchAPI('users?select=*&order=created_at.desc');
+        // Explicit columns: select=* fails post-flip (password column revoked).
+        const usersData = await fetchAPI('users?select=id,username,name,role,is_active,created_at,phone&order=created_at.desc');
         if (Array.isArray(usersData)) setUsers(usersData);
       }
       if (section === 'reports' || section === 'analytics') {
@@ -1390,7 +1438,7 @@ export default function ProtectedOrders() {
       }
       if (section === 'technicians' || section === 'performance') {
         if (!technicians.length) {
-          const techsData = await fetchAPI('technicians?select=*');
+          const techsData = await fetchAPI('technicians?select=id,username,name,phone,is_active,profit_percentage,specialization,created_at');
           if (Array.isArray(techsData)) setTechnicians(techsData);
         }
       }
@@ -1556,7 +1604,7 @@ export default function ProtectedOrders() {
       const incomeDate = String(order.completed_at || order.actual_completion_date || order.date || new Date().toISOString()).slice(0, 10);
       const response = await fetch(`${supabaseUrl}/rest/v1/cash_ledger`, {
         method: 'POST',
-        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+        headers: { ...(await authedHeaders()), 'Prefer': 'return=representation' },
         body: JSON.stringify({ type: 'income', amount: roundedShare, description: `أرباح شركة من أوردر ${order.customer_name} (رقم ${order.order_number})`, date: incomeDate, related_order_id: orderId })
       });
       if (!response.ok) { const error = await response.text(); throw new Error(`cash-ledger-insert-failed: ${error}`); }
@@ -1564,7 +1612,7 @@ export default function ProtectedOrders() {
       const insertedEntry = Array.isArray(insertedPayload) ? insertedPayload[0] : insertedPayload;
       if (!insertedEntry?.id) throw new Error('cash-ledger-insert-returned-no-row');
       const patchResponse = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${orderId}`, {
-        method: 'PATCH', headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+        method: 'PATCH', headers: { ...(await authedHeaders()) },
         body: JSON.stringify({ profit_added_to_cash: true })
       });
       if (!patchResponse.ok) {
@@ -1754,7 +1802,7 @@ export default function ProtectedOrders() {
     let loadedAllDashboardData = false;
     try {
       const orderFields = isViewer
-        ? 'id,order_number,customer_name,device_type,address,brand,problem_description,technician,status,total_amount,parts_cost,transport_cost,net_amount,company_share,technician_share,is_paid,created_at,date,action_date,actual_completion_date,deleted_at,technician_note,warranty_period,invoice_approved,invoice_date,parts_used,completed_at'
+        ? 'id,order_number,customer_name,device_type,address,brand,problem_description,technician,status,total_amount,parts_cost,transport_cost,net_amount,company_share,technician_share,is_paid,created_at,date,action_date,actual_completion_date,deleted_at,technician_note,warranty_period,invoice_approved,invoice_date,parts_used,completed_at,public_token'
         : '*';
       const allOrders = await fetchAPIWithRetry(`orders?select=${orderFields}&order=created_at.desc`);
       if (requestId !== latestFetchRequestRef.current) return;
@@ -1801,7 +1849,7 @@ export default function ProtectedOrders() {
       // التحديث الدوري يجلب الأوردرات فقط. البيانات الثقيلة تُحمّل عند فتح تبويبها.
       if (!isAutoRefresh) {
         const [techsData, notificationsData] = await Promise.all([
-          fetchAPIWithRetry('technicians?select=*'),
+          fetchAPIWithRetry('technicians?select=id,username,name,phone,is_active,profit_percentage,specialization,created_at'),
           fetchAPIWithRetry('notifications?select=*&action=neq.employee_chat&order=created_at.desc')
         ]);
         if (requestId !== latestFetchRequestRef.current) return;
@@ -1979,9 +2027,7 @@ export default function ProtectedOrders() {
         const response = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${order.id}`, {
           method: 'PATCH',
           headers: {
-            apikey: supabaseKey,
-            Authorization: `Bearer ${supabaseKey}`,
-            'Content-Type': 'application/json'
+            ...(await authedHeaders())
           },
           body: JSON.stringify({ technician_notes: finalNotes, technician_note: finalNotes })
         });
@@ -2224,7 +2270,7 @@ export default function ProtectedOrders() {
       case 'cancelled': statusMessage = "❌ تم إلغاء طلب الصيانة. للاستفسار، يرجى الاتصال بنا."; break;
       default: return;
     }
-    const trackingUrl = `https://www.maintenanceguide.life/track/${order.order_number}`;
+    const trackingUrl = `https://www.maintenanceguide.life/track/${order.public_token}`;
     const message = `📢 *تحديث هام بخصوص طلب الصيانة* 📢\n━━━━━━━━━━━━━━━━━━━━━━\n🔢 *رقم الطلب:* ${order.order_number}\n👤 *عزيزنا العميل:* ${order.customer_name}\n\n${statusMessage}\n\n📍 *يمكنك تتبع حالة طلبك مباشرة من هنا:*\n${trackingUrl}\n\n🌟 *شكراً لثقتكم في HomeCare Maintenance. نحن دائماً في خدمتكم.*`;
     openWhatsApp(order.phone, message);
   };
@@ -2527,7 +2573,7 @@ export default function ProtectedOrders() {
     }
   };
 
-  const getTrackingUrl = (order: any) => `${window.location.origin}/track/${encodeURIComponent(String(order.order_number || order.id))}`;
+  const getTrackingUrl = (order: any) => `${window.location.origin}/track/${encodeURIComponent(String(order.public_token))}`;
 
   const sendTrackingLinkToCustomer = (order: any) => {
     const trackingUrl = getTrackingUrl(order);
@@ -2690,11 +2736,28 @@ ${trackingUrl}
     const percentageChanged = oldTech && oldTech.profit_percentage !== techForm.profit_percentage;
     try {
       if (editingTech) {
-        await fetchAPI(`technicians?id=eq.${editingTech.id}`, { method: 'PATCH', body: JSON.stringify({ ...techForm, profit_percentage: techForm.profit_percentage }) });
+        // Post-flip: password+username are auth-owned (see user editor above).
+        const { password: techPw, username: _t0, ...techFormRest } = techForm as any;
+        const techBody = { ...techFormRest, profit_percentage: techForm.profit_percentage };
+        await fetchAPI(`technicians?id=eq.${editingTech.id}`, { method: 'PATCH', body: JSON.stringify(techBody) });
+        if (techPw) {
+          const { error: pwErr } = await supabase.rpc('manager_set_staff_password', {
+            p_context: 't', p_username: editingTech.username, p_new_password: techPw
+          });
+          if (pwErr) throw new Error(pwErr.message);
+        }
         await addNotification('تعديل فني', `تم تعديل بيانات الفني ${techForm.name}`);
         if (percentageChanged && confirm(`هل تريد تحديث الأوردرات غير المكتملة للفني "${techForm.name}" لتطبيق النسبة الجديدة (${techForm.profit_percentage}%)؟`)) await updateAllPendingOrdersProfit(techForm.name, techForm.profit_percentage);
       } else {
-        await fetchAPI('technicians', { method: 'POST', body: JSON.stringify({ ...techForm, profit_percentage: techForm.profit_percentage }) });
+        const { error: createErr } = await supabase.rpc('manager_create_staff', {
+          p_username: techForm.username, p_name: techForm.name, p_password: techForm.password,
+          p_role: 'tech', p_phone: techForm.phone || null, p_is_active: techForm.is_active
+        });
+        if (createErr) throw new Error(createErr.message);
+        const createdTechs = await fetchAPI(`technicians?username=eq.${encodeURIComponent(techForm.username)}`);
+        if (createdTechs && createdTechs.length > 0) {
+          await fetchAPI(`technicians?id=eq.${createdTechs[0].id}`, { method: 'PATCH', body: JSON.stringify({ specialization: techForm.specialization, profit_percentage: techForm.profit_percentage }) });
+        }
         await addNotification('إضافة فني', `تم إضافة فني جديد: ${techForm.name}`);
       }
       setShowTechModal(false); setEditingTech(null);
@@ -2725,7 +2788,7 @@ ${trackingUrl}
 
   const copyTechLink = async (tech: any) => {
     const loginUrl = `${window.location.origin}/login`;
-    const message = `🔧 *بيانات الدخول الرسمية - بوابة الفنيين* 🔧\n━━━━━━━━━━━━━━━━━━━━━━\n👤 *الفني:* ${tech.name}\n🔗 *رابط الدخول:* ${loginUrl}\n👤 *اسم المستخدم:* ${tech.username || tech.name}\n🔑 *كلمة المرور:* ${tech.password}\n━━━━━━━━━━━━━━━━━━━━━━\n\n📖 *دليل البدء السريع:*\n1️⃣ افتح الرابط واختر دور "🔧 الفني".\n2️⃣ سجل دخولك بالبيانات أعلاه.\n3️⃣ ابدأ بمتابعة الأوردرات الموكلة إليك فوراً.\n\n✨ *HomeCare Team - معاً للقمة* ✨`;
+    const message = `🔧 *بيانات الدخول الرسمية - بوابة الفنيين* 🔧\n━━━━━━━━━━━━━━━━━━━━━━\n👤 *الفني:* ${tech.name}\n🔗 *رابط الدخول:* ${loginUrl}\n👤 *اسم المستخدم:* ${tech.username || tech.name}\n🔑 *كلمة المرور:* ${tech.password || '— غير قابلة للعرض؛ عيّن كلمة مرور جديدة من صفحة تعديل الفني أولاً —'}\n━━━━━━━━━━━━━━━━━━━━━━\n\n📖 *دليل البدء السريع:*\n1️⃣ افتح الرابط واختر دور "🔧 الفني".\n2️⃣ سجل دخولك بالبيانات أعلاه.\n3️⃣ ابدأ بمتابعة الأوردرات الموكلة إليك فوراً.\n\n✨ *HomeCare Team - معاً للقمة* ✨`;
     await navigator.clipboard.writeText(message);
     setCopiedId(tech.id);
     setTimeout(() => setCopiedId(null), 3000);
@@ -4703,7 +4766,7 @@ ${trackingUrl}
 		                                <button 
 		                                  onClick={(e) => {
 		                                    e.stopPropagation();
-		                                    const invoiceUrl = `${window.location.origin}/invoice?id=${order.id}`;
+		                                    const invoiceUrl = `${window.location.origin}/invoice?token=${order.public_token}`;
 		                                    const message = `شكراً لتعاملك مع مركز الصيانة أ/ ${order.customer_name} ✨\n\nتم إتمام صيانة جهازك (${order.device_type}) بنجاح.\n\n📄 رابط الفاتورة والضمان الرقمي الخاص بك:\n${invoiceUrl}\n\nنرجو منك تقييم الخدمة من خلال الرابط بأسفل الفاتورة لضمان تقديم أفضل جودة دائماً. 🌹`;
 		                                    sendWhatsApp(order.phone, message);
 		                                  }} 
@@ -5839,8 +5902,8 @@ ${trackingUrl}
               <input type="text" placeholder="الاسم" value={techForm.name} onChange={e => setTechForm({...techForm, name: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required />
               <input type="text" placeholder="رقم الهاتف" value={techForm.phone} onChange={e => setTechForm({...techForm, phone: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" />
               <input type="text" placeholder="التخصص" value={techForm.specialization} onChange={e => setTechForm({...techForm, specialization: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" />
-              <input type="text" placeholder="اسم المستخدم" value={techForm.username} onChange={e => setTechForm({...techForm, username: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" />
-              <input type="password" placeholder="كلمة المرور" value={techForm.password} onChange={e => setTechForm({...techForm, password: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required />
+              <input type="text" placeholder="اسم المستخدم" value={techForm.username} onChange={e => setTechForm({...techForm, username: e.target.value})} readOnly={!!editingTech} title={editingTech ? "اسم المستخدم هو هوية الدخول ولا يمكن تغييره" : ""} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" />
+              <input type="password" placeholder={editingTech ? 'كلمة المرور (اتركها فارغة بدون تغيير)' : 'كلمة المرور'} value={techForm.password} onChange={e => setTechForm({...techForm, password: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" required={!editingTech} />
               <input type="number" placeholder="نسبة الفني (%)" value={techForm.profit_percentage} onChange={e => setTechForm({...techForm, profit_percentage: parseInt(e.target.value)})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" />
               <label className="flex items-center gap-2 text-slate-300"><input type="checkbox" checked={techForm.is_active} onChange={e => setTechForm({...techForm, is_active: e.target.checked})} /> نشط</label>
               <button type="submit" className="w-full bg-orange-600 text-white py-2 rounded-lg font-bold">حفظ</button>
@@ -5924,11 +5987,11 @@ ${trackingUrl}
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mr-2">اسم المستخدم (للدخول)</label>
-                <input type="text" value={userForm.username} onChange={e => setUserForm({...userForm, username: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-orange-500 transition-all" placeholder="username" required />
+                <input type="text" value={userForm.username} onChange={e => setUserForm({...userForm, username: e.target.value})} readOnly={!!editingUserAccount} title={editingUserAccount ? "اسم المستخدم هو هوية الدخول ولا يمكن تغييره" : ""} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-orange-500 transition-all" placeholder="username" required />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mr-2">كلمة المرور</label>
-                <input type="text" value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-orange-500 transition-all" placeholder="123456" required />
+                <input type="text" value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-orange-500 transition-all" placeholder={editingUserAccount ? 'اتركها فارغة بدون تغيير' : '123456'} required={!editingUserAccount} />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mr-2">الصلاحية (الدور)</label>
