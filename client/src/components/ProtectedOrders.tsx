@@ -2928,7 +2928,7 @@ ${trackingUrl}
       }
     }
   };
-  const clearFilters = () => { setSearchTerm(''); setFilterStatus('live'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); setFilterWarranty('all'); };
+  const clearFilters = () => { setFocusedPriorityOrderId(null); setPendingPriorityOrderId(null); setSearchTerm(''); setFilterStatus('live'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); setFilterWarranty('all'); };
 
   // علامة صريحة للأوردرات التي تم إنهاء تحصيلها يدوياً خارج البرنامج.
   const MANUAL_COLLECTION_CLOSED_MARKER = '[COLLECTION_MANUAL_CLOSED]';
