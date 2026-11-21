@@ -57,40 +57,11 @@ export default function BookingForm({ defaultService, title, description }: Book
   const [submitMessage, setSubmitMessage] = useState("");
   const [honeypot, setHoneypot] = useState("");
   const [formStartedAt] = useState(() => Date.now());
-  const [previousCustomer, setPreviousCustomer] = useState<any>(null);
-  const [customerLookupLoading, setCustomerLookupLoading] = useState(false);
   const bookingStartedRef = useRef(false);
 
-  useEffect(() => {
-    const phone = formData.phone.trim();
-    const digits = phone.replace(/\D/g, '');
-    if (digits.length < 10) {
-      setPreviousCustomer(null);
-      setCustomerLookupLoading(false);
-      return;
-    }
-
-    const variants = Array.from(new Set([
-      phone,
-      digits,
-      digits.startsWith('0') ? `+20${digits.slice(1)}` : '',
-      digits.startsWith('0') ? `20${digits.slice(1)}` : '',
-      digits.startsWith('20') ? `0${digits.slice(2)}` : ''
-    ].filter(Boolean)));
-    let cancelled = false;
-    setCustomerLookupLoading(true);
-    Promise.all(variants.map((variant) => supabase.from('orders').select('customer_name,address,phone').eq('phone', variant).order('created_at', { ascending: false }).limit(1)))
-      .then((responses) => {
-        if (cancelled) return;
-        const match = responses.map((response) => response.data?.[0]).find(Boolean) || null;
-        setPreviousCustomer(match);
-      })
-      .catch(() => { if (!cancelled) setPreviousCustomer(null); })
-      .finally(() => { if (!cancelled) setCustomerLookupLoading(false); });
-
-    return () => { cancelled = true; };
-  }, [formData.phone]);
-
+  // The anonymous returning-customer phone lookup was removed: post-flip anon
+  // has no orders SELECT, and the lookup was a customer-data oracle (any visitor
+  // could probe any phone number). Returning customers retype name/address.
   const nextStep = () => {
     if (step === 1 && (!formData.device_type && !isOtherDevice)) return alert("يرجى اختيار نوع الجهاز");
     if (step === 2 && (!formData.customer_name || !formData.phone || !formData.address)) return alert("يرجى إكمال البيانات المطلوبة");
@@ -370,7 +341,6 @@ export default function BookingForm({ defaultService, title, description }: Book
                     className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg text-slate-900 font-medium outline-none focus:border-orange-500 transition-all text-left" 
                     placeholder="01xxxxxxxxx" 
                   />
-                  {customerLookupLoading && <p className="text-xs text-slate-400 font-bold">جاري التحقق من الرقم...</p>}
                   <div className="mt-3 space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-xs font-black text-slate-600">أرقام إضافية للعميل <span className="font-bold text-slate-400">(اختياري)</span></p>
@@ -382,11 +352,6 @@ export default function BookingForm({ defaultService, title, description }: Book
                       <button type="button" onClick={() => setAdditionalPhones((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="rounded-xl p-2 text-rose-500 hover:bg-rose-50" aria-label="حذف الرقم الإضافي"><Trash2 className="w-4 h-4" /></button>
                     </div>)}
                   </div>
-                  {previousCustomer && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 space-y-2" role="status">
-                    <p className="text-sm font-black text-emerald-700">✨ عميل سابق</p>
-                    <p className="text-xs text-emerald-700">تم تسجيل هذا الرقم من قبل{previousCustomer.customer_name ? ` باسم ${previousCustomer.customer_name}` : ''}.</p>
-                    {(previousCustomer.customer_name || previousCustomer.address) && <button type="button" onClick={() => setFormData((current) => ({ ...current, customer_name: previousCustomer.customer_name || current.customer_name, address: previousCustomer.address || current.address }))} className="text-xs font-black text-emerald-800 underline">استخدام البيانات السابقة</button>}
-                  </div>}
                 </div>
               </div>
               
