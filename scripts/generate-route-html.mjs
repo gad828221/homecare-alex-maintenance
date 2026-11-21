@@ -1,138 +1,103 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import http from 'node:http';
+import { createRequire } from 'node:module';
+import { execFileSync } from 'node:child_process';
 
-const root = process.cwd();
-const distDir = path.join(root, 'dist');
-const templatePath = path.join(distDir, 'index.html');
+// Isolated, locked build-only packages do not change the app's dependencies.
+execFileSync('npm', ['ci', '--prefix', 'scripts/prerender', '--ignore-scripts', '--no-audit', '--no-fund'], { stdio: 'inherit' });
+const require = createRequire(new URL('./prerender/package.json', import.meta.url));
+const puppeteer = require('puppeteer-core');
+const chromium = require('@sparticuz/chromium');
 
-const services = {
-  'refrigerator-service': {
-    title: 'صيانة ثلاجات بالإسكندرية | احجز فني للمنزل الآن | Maintenance Guide',
-    description: 'احجز فني ثلاجات بالإسكندرية لإصلاح ضعف التبريد وتسريب المياه وأعطال الديب فريزر في المنزل. فحص واضح وتأكيد للتكلفة قبل الإصلاح.',
-    heading: 'صيانة ثلاجات بالإسكندرية',
-  },
-  'washing-machine-service': {
-    title: 'صيانة غسالات بالإسكندرية | احجز فني للمنزل الآن | Maintenance Guide',
-    description: 'احجز فني غسالات بالإسكندرية لإصلاح الغسالة الأوتوماتيك أو فوق الأوتوماتيك في المنزل. فحص العطل وتأكيد التكلفة قبل بدء الإصلاح.',
-    heading: 'صيانة غسالات بالإسكندرية',
-  },
-  'air-conditioner-service': {
-    title: 'صيانة تكييفات بالإسكندرية | فني تكييف وشحن فريون | Maintenance Guide',
-    description: 'احجز فني تكييف بالإسكندرية لتنظيف وإصلاح تكييفات السبليت وفحص ضعف التبريد وتسريب الفريون والأعطال الكهربائية في المنزل.',
-    heading: 'صيانة تكييفات بالإسكندرية',
-  },
-  'stove-service': {
-    title: 'صيانة بوتاجازات وأفران بالإسكندرية | فني للمنزل | Maintenance Guide',
-    description: 'احجز فني بوتاجازات وأفران بالإسكندرية لفحص ضعف اللهب والإشعال وتسريب الغاز وأعطال الفرن والميكروويف مع إجراءات أمان واضحة.',
-    heading: 'صيانة بوتاجازات وأفران بالإسكندرية',
-  },
-  'water-heater-service': {
-    title: 'صيانة سخانات بالإسكندرية | احجز فني للمنزل | Maintenance Guide',
-    description: 'احجز فني سخانات بالإسكندرية لفحص السخان الكهربائي أو الغاز ومشكلة عدم التسخين وتسريب المياه والثرموستات في المنزل.',
-    heading: 'صيانة سخانات بالإسكندرية',
-  },
-};
-
-
-const brandPages = {
-  'samsung-service': {
-    title: 'صيانة سامسونج بالإسكندرية | إصلاح أجهزة Samsung في المنزل | Maintenance Guide',
-    description: 'اطلب صيانة سامسونج في الإسكندرية لإصلاح الثلاجات والغسالات والتكييفات في المنزل. حجز سريع، فني متخصص وضمان على الخدمة.',
-    heading: 'صيانة سامسونج بالإسكندرية',
-  },
-  'lg-service': {
-    title: 'صيانة LG بالإسكندرية | إصلاح غسالات وثلاجات LG | Maintenance Guide',
-    description: 'خدمة صيانة LG في الإسكندرية لإصلاح الغسالات والثلاجات والتكييفات في المنزل. احجز فنيًا متخصصًا وتواصل معنا لتأكيد الموعد.',
-    heading: 'صيانة LG بالإسكندرية',
-  },
-  'sharp-service': {
-    title: 'صيانة شارب بالإسكندرية | إصلاح أجهزة Sharp في المنزل | Maintenance Guide',
-    description: 'اطلب صيانة شارب في الإسكندرية لإصلاح الثلاجات والغسالات والتكييفات في المنزل. خدمة سريعة وفني متخصص وضمان على الخدمة.',
-    heading: 'صيانة شارب بالإسكندرية',
-  },
-  'toshiba-service': {
-    title: 'صيانة توشيبا بالإسكندرية | إصلاح أجهزة Toshiba في المنزل | Maintenance Guide',
-    description: 'خدمة صيانة توشيبا في الإسكندرية لإصلاح الثلاجات والغسالات والتكييفات في المنزل. احجز موعدك وسنتواصل معك لتأكيد التفاصيل.',
-    heading: 'صيانة توشيبا بالإسكندرية',
-  },
-  'zanussi-service': {
-    title: 'صيانة زانوسي بالإسكندرية | إصلاح غسالات وثلاجات Zanussi | Maintenance Guide',
-    description: 'اطلب صيانة زانوسي في الإسكندرية لإصلاح الغسالات والثلاجات في المنزل. فني متخصص، حجز سريع وضمان على الخدمة.',
-    heading: 'صيانة زانوسي بالإسكندرية',
-  },
-  'unionaire-service': {
-    title: 'صيانة يونيون إير بالإسكندرية | إصلاح تكييفات Unionaire | Maintenance Guide',
-    description: 'خدمة صيانة يونيون إير في الإسكندرية لإصلاح التكييفات والثلاجات في المنزل. احجز فنيًا متخصصًا وسنتواصل معك لتأكيد الموعد.',
-    heading: 'صيانة يونيون إير بالإسكندرية',
-  },
-  'fresh-service': {
-    title: 'صيانة فريش بالإسكندرية | إصلاح غسالات وثلاجات Fresh | Maintenance Guide',
-    description: 'اطلب صيانة فريش في الإسكندرية لإصلاح الغسالات والثلاجات في المنزل. خدمة سريعة وفني متخصص وضمان على الخدمة.',
-    heading: 'صيانة فريش بالإسكندرية',
-  },
-  'white-whale-service': {
-    title: 'صيانة وايت ويل بالإسكندرية | إصلاح غسالات وثلاجات White Whale | Maintenance Guide',
-    description: 'خدمة صيانة وايت ويل في الإسكندرية لإصلاح الغسالات والثلاجات في المنزل. احجز فنيًا متخصصًا وسنتواصل معك لتأكيد الموعد.',
-    heading: 'صيانة وايت ويل بالإسكندرية',
-  },
-  'ariston-service': {
-    title: 'صيانة أريستون بالإسكندرية | إصلاح غسالات وسخانات Ariston | Maintenance Guide',
-    description: 'اطلب صيانة أريستون في الإسكندرية لإصلاح الغسالات والسخانات في المنزل. فني متخصص وحجز سريع وضمان على الخدمة.',
-    heading: 'صيانة أريستون بالإسكندرية',
-  },
-  'beko-service': {
-    title: 'صيانة بيكو بالإسكندرية | إصلاح غسالات وثلاجات Beko | Maintenance Guide',
-    description: 'خدمة صيانة بيكو في الإسكندرية لإصلاح الغسالات والثلاجات في المنزل. احجز موعدك وسنتواصل معك لتأكيد التفاصيل.',
-    heading: 'صيانة بيكو بالإسكندرية',
-  },
-  'hoover-service': {
-    title: 'صيانة هوفر بالإسكندرية | إصلاح غسالات وأجهزة Hoover | Maintenance Guide',
-    description: 'اطلب صيانة هوفر في الإسكندرية لإصلاح الغسالات والأجهزة المنزلية في المنزل. فني متخصص وحجز سريع وضمان على الخدمة.',
-    heading: 'صيانة هوفر بالإسكندرية',
-  },
-  'indesit-service': {
-    title: 'صيانة إنديست بالإسكندرية | إصلاح غسالات وثلاجات Indesit | Maintenance Guide',
-    description: 'خدمة صيانة إنديست في الإسكندرية لإصلاح الغسالات والثلاجات في المنزل. احجز فنيًا متخصصًا وسنتواصل معك لتأكيد الموعد.',
-    heading: 'صيانة إنديست بالإسكندرية',
-  },
-  'service-areas': {
-    title: 'مناطق خدمة الصيانة في الإسكندرية | فني أجهزة منزلية قريب منك | Maintenance Guide',
-    description: 'نقدم صيانة أجهزة منزلية في سموحة وسيدي جابر وسيدي بشر ولوران وسان ستيفانو وميامي والعجمي ومناطق الإسكندرية. احجز فني ثلاجات أو غسالات أو تكييفات في المنزل.',
-    heading: 'مناطق خدمة الصيانة في الإسكندرية',
-  },
-};
-
-Object.assign(services, brandPages);
-
-if (!fs.existsSync(templatePath)) {
-  throw new Error(`Build template not found: ${templatePath}`);
-}
-
-const escapeHtml = (value) => value
-  .replaceAll('&', '&amp;')
-  .replaceAll('"', '&quot;')
-  .replaceAll('<', '&lt;')
-  .replaceAll('>', '&gt;');
-
-const template = fs.readFileSync(templatePath, 'utf8');
-
-for (const [slug, seo] of Object.entries(services)) {
-  const canonical = `https://www.maintenanceguide.life/${slug}`;
-  let html = template;
-  html = html.replace(/<title[^>]*>[^<]*<\/title>/i, `<title data-rh="true">${escapeHtml(seo.title)}</title>`);
-  html = html.replace(/(<meta\s+name="description"\s+content=")[^"]*("[^>]*\/?>)/i, `$1${escapeHtml(seo.description)}$2`);
-  html = html.replace(/(<link\s+rel="canonical"\s+href=")[^"]*("[^>]*\/?>)/i, `$1${canonical}$2`);
-  html = html.replace(/(<meta\s+property="og:url"\s+content=")[^"]*("[^>]*\/?>)/i, `$1${canonical}$2`);
-  html = html.replace(/(<meta\s+property="og:title"\s+content=")[^"]*("[^>]*\/?>)/i, `$1${escapeHtml(seo.title)}$2`);
-  html = html.replace(/(<meta\s+property="og:description"\s+content=")[^"]*("[^>]*\/?>)/i, `$1${escapeHtml(seo.description)}$2`);
-  html = html.replace(/(<meta\s+property="twitter:title"\s+content=")[^"]*("[^>]*\/?>)/i, `$1${escapeHtml(seo.title)}$2`);
-  html = html.replace(/(<meta\s+property="twitter:description"\s+content=")[^"]*("[^>]*\/?>)/i, `$1${escapeHtml(seo.description)}$2`);
-  const fallback = `<main dir="rtl" lang="ar" style="max-width:960px;margin:0 auto;padding:48px 20px;font-family:Cairo,Arial,sans-serif;color:#0f172a"><h1>${escapeHtml(seo.heading)}</h1><p style="font-size:18px;line-height:1.9">${escapeHtml(seo.description)}</p><h2>خدمة فني متخصص يصل إلى منزلك</h2><p>نقدم فحصًا واضحًا للأعطال وتأكيدًا للتكلفة قبل الإصلاح، مع إمكانية حجز موعد مناسب داخل الإسكندرية.</p><p><a href="/#booking-form">احجز فني الآن</a> أو <a href="tel:01278885772">اتصل بنا</a>.</p></main>`;
-  html = html.replace('<div id="root"></div>', `<div id="root">${fallback}</div>`);
-
-  const routeDir = path.join(distDir, slug);
-  fs.mkdirSync(routeDir, { recursive: true });
-  fs.writeFileSync(path.join(routeDir, 'index.html'), html);
-}
-
-console.log(`Generated route HTML for ${Object.keys(services).length} service pages.`);
+// Render the built public app in an isolated, signed-out browser. No production
+// services are contacted, and an incomplete render fails the deployment.
+const dist = path.resolve('dist');
+const template = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
+const sitemap = fs.readFileSync(path.join(dist, 'sitemap.xml'), 'utf8');
+const routes = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname);
+if (routes.length !== 19 || new Set(routes).size !== 19) throw new Error('Unexpected public route list');
+fs.writeFileSync(path.join(dist, 'spa.html'), template);
+const mime = { '.js': 'application/javascript', '.css': 'text/css', '.html': 'text/html', '.json': 'application/json', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.png': 'image/png' };
+const server = http.createServer((req, res) => {
+  const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+  const file = path.resolve(dist, '.' + pathname);
+  if (!file.startsWith(dist + path.sep) && file !== dist) { res.writeHead(403); res.end(); return; }
+  if (fs.existsSync(file) && fs.statSync(file).isFile()) {
+    res.setHeader('Content-Type', mime[path.extname(file)] || 'application/octet-stream');
+    fs.createReadStream(file).pipe(res);
+  } else {
+    res.setHeader('Content-Type', 'text/html');
+    // Always use the untouched shell, never a previously generated snapshot.
+    res.end(template);
+  }
+});
+await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+const origin = `http://127.0.0.1:${server.address().port}`;
+let browser;
+const esc = (s) => s.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+try {
+  const systemChrome = process.env.CI ? undefined : ['/usr/bin/google-chrome', '/usr/bin/chromium'].find((p) => fs.existsSync(p));
+  browser = await puppeteer.launch({ executablePath: systemChrome || await chromium.executablePath(), args: systemChrome ? ['--no-sandbox', '--disable-dev-shm-usage'] : chromium.args, headless: systemChrome ? true : 'shell' });
+  const page = await browser.newPage();
+  await page.setViewport({ width: 1280, height: 900 });
+  await page.setRequestInterception(true);
+  page.on('request', (req) => {
+    // No analytics, Maps embeds, push, account APIs, or external writes at build time.
+    if (!req.url().startsWith(origin + '/') || !['GET', 'HEAD'].includes(req.method())) req.abort();
+    else req.continue();
+  });
+  for (const route of routes) {
+    await page.goto(origin + route, { waitUntil: 'networkidle0', timeout: 45000 });
+    await page.waitForSelector('#root h1', { timeout: 20000 });
+    if (route !== '/service-areas') await page.waitForSelector('#root input, #root select', { timeout: 20000 });
+    const snapshot = await page.evaluate(() => {
+      const root = document.getElementById('root').cloneNode(true);
+      // Scroll-reveal animations must not hide content when JS is unavailable.
+      root.querySelectorAll('[style]').forEach((el) => {
+        if (el.style.opacity === '0' && el.style.transform) {
+          el.style.opacity = '1';
+          el.style.transform = 'none';
+        }
+      });
+      const metas = [...document.head.querySelectorAll('meta[name],meta[property]')].map((el) => ({ key: el.hasAttribute('name') ? 'name' : 'property', name: el.getAttribute('name') || el.getAttribute('property'), content: el.getAttribute('content') }));
+      const schemas = [...document.head.querySelectorAll('script[type="application/ld+json"]')].map((el) => JSON.parse(el.textContent));
+      return { root: root.outerHTML, title: document.title, metas, schemas, canonical: document.querySelector('link[rel="canonical"]').href, words: root.textContent.trim().split(/\s+/).length, links: root.querySelectorAll('a[href]').length };
+    });
+    const canonical = `https://www.maintenanceguide.life${route}`;
+    if (snapshot.words < 200 || snapshot.links < 10 || snapshot.canonical !== canonical) throw new Error(`Incomplete snapshot: ${route}`);
+    if (route !== '/service-areas' && !snapshot.root.includes('بنعرفك تكلفة الكشف قبل الزيارة')) throw new Error(`Fee line missing: ${route}`);
+    let html = template;
+    html = html.replace(/<title[^>]*>[\s\S]*?<\/title>/i, `<title data-rh="true">${esc(snapshot.title)}</title>`);
+    for (const meta of snapshot.metas) {
+      const tag = `<meta ${meta.key}="${esc(meta.name)}" content="${esc(meta.content || '')}" />`;
+      const re = new RegExp(`<meta\\s+${meta.key}="${meta.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*>`, 'i');
+      html = re.test(html) ? html.replace(re, () => tag) : html.replace('</head>', tag + '</head>');
+    }
+    html = html.replace(/<link\s+rel="canonical"[^>]*>/i, `<link rel="canonical" href="${esc(snapshot.canonical)}" />`);
+    // Include exactly the app's existing head schemas, including effect-created ones.
+    html = html.replace(/<script[^>]*type="application\/ld\+json"[^>]*>[\s\S]*?<\/script>/gi, '');
+    const originalSchemas = [...template.matchAll(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi)].map((m) => JSON.stringify(JSON.parse(m[1])));
+    const schemas = snapshot.schemas.map((s) => {
+      const temporary = originalSchemas.includes(JSON.stringify(s)) ? '' : ' data-mg-prerender-schema';
+      return `<script type="application/ld+json"${temporary}>${JSON.stringify(s).replaceAll('<', '\\u003c')}</script>`;
+    }).join('\n');
+    html = html.replace('</head>', schemas + '\n</head>');
+    html = html.replace(/<div id="root"><\/div>/, () => snapshot.root);
+    // Existing page effects recreate their head schemas when JS runs.
+    html = html.replace('</body>', `<script>document.querySelectorAll('script[data-mg-prerender-schema]').forEach(function(s){s.remove()})</script></body>`);
+    if (!html.includes(snapshot.root)) throw new Error(`Root replacement failed: ${route}`);
+    const output = route === '/' ? path.join(dist, 'index.html') : path.join(dist, route.slice(1), 'index.html');
+    fs.mkdirSync(path.dirname(output), { recursive: true });
+    fs.writeFileSync(output, html);
+    console.log(`Prerendered ${route}: ${snapshot.words} words, ${snapshot.links} links`);
+  }
+} finally {
+  if (browser) {
+    const process = browser.process();
+    await browser.disconnect();
+    if (process && process.exitCode === null) process.kill('SIGKILL');
+  }
+  server.closeAllConnections();
+  await new Promise((resolve) => server.close(resolve));
+      }
