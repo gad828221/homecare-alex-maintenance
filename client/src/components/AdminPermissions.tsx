@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Edit2, Trash2, Eye, EyeOff, Plus, X, Lock, Unlock, Copy, Check, Key } from 'lucide-react';
 
-const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
+import { supabase, supabaseUrl } from '../lib/supabaseClient';
+import { authedHeaders } from '../lib/authedFetch';
 
 interface User {
   id: number;
   username: string;
   name: string;
-  password: string;
+  // password is write-only post-flip: never returned by the API (S6b).
+  password?: string;
   role: 'admin' | 'data-entry' | 'user' | 'manager' | 'viewer' | 'tech';
   is_active: boolean;
   created_at: string;
@@ -17,7 +18,7 @@ interface User {
 const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   const url = `${supabaseUrl}/rest/v1/${endpoint}`;
   const res = await fetch(url, {
-    headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+    headers: { ...(await authedHeaders()) },
     ...options,
   });
   if (res.status === 204 || options?.method === 'DELETE') return { success: true };
@@ -43,7 +44,8 @@ export default function AdminPermissions() {
 
   const fetchUsers = async () => {
     try {
-      const data = await fetchAPI('users?select=*&order=created_at.desc');
+      // Explicit columns: select=* fails post-flip (password column revoked).
+      const data = await fetchAPI('users?select=id,username,name,role,is_active,created_at,phone&order=created_at.desc');
       setUsers(data || []);
     } catch (err) { console.error('خطأ في جلب المستخدمين:', err); } finally { setLoading(false); }
   };
@@ -51,14 +53,15 @@ export default function AdminPermissions() {
   // ✅ دالة حفظ وتعديل المستخدم (مع تحسين معالجة الأخطاء والتأكد من تحديث الدور)
   const handleSaveUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.username || !formData.name || !formData.password) {
+    if (!formData.username || !formData.name || (!editingUser && !formData.password)) {
       alert('⚠️ يرجى ملء جميع الحقول المطلوبة');
       return;
     }
-    const body = {
-      username: formData.username,
+    // Password is write-only: blank while editing = leave unchanged.
+    // Post-flip: passwords live in Supabase Auth, so create + password changes
+    // go through the provisioning RPCs; the table PATCH never carries them.
+    const body: any = {
       name: formData.name,
-      password: formData.password,
       role: formData.role,
       is_active: formData.is_active
     };
@@ -66,16 +69,26 @@ export default function AdminPermissions() {
       if (editingUser) {
         const response = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${editingUser.id}`, {
           method: 'PATCH',
-          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+          headers: { ...(await authedHeaders()) },
           body: JSON.stringify(body)
         });
         if (!response.ok) {
           const errorText = await response.text();
           throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
+        if (formData.password) {
+          const { error: pwErr } = await supabase.rpc('manager_set_staff_password', {
+            p_context: 's', p_username: editingUser.username, p_new_password: formData.password
+          });
+          if (pwErr) throw new Error(pwErr.message);
+        }
         alert('✅ تم تحديث المستخدم بنجاح');
       } else {
-        await fetchAPI('users', { method: 'POST', body: JSON.stringify(body) });
+        const { error: createErr } = await supabase.rpc('manager_create_staff', {
+          p_username: formData.username, p_name: formData.name, p_password: formData.password,
+          p_role: formData.role, p_is_active: formData.is_active, p_context: 's'
+        });
+        if (createErr) throw new Error(createErr.message);
         alert('✅ تم إضافة المستخدم بنجاح');
       }
       setShowModal(false);
@@ -100,7 +113,10 @@ export default function AdminPermissions() {
 
   const handleToggleActive = async (user: User) => {
     try {
-      await fetchAPI(`users?id=eq.${user.id}`, { method: 'PATCH', body: JSON.stringify({ is_active: !user.is_active }) });
+      const { error } = await supabase.rpc('manager_set_staff_active', {
+        p_context: 's', p_username: user.username, p_active: !user.is_active
+      });
+      if (error) throw error;
       alert(`✅ تم ${!user.is_active ? 'تفعيل' : 'تعطيل'} المستخدم بنجاح`);
       fetchUsers();
     } catch (err) { console.error('خطأ في تحديث حالة المستخدم:', err); }
@@ -108,7 +124,8 @@ export default function AdminPermissions() {
 
   const handleEditUser = (user: User) => {
     setEditingUser(user);
-    setFormData({ username: user.username, name: user.name, password: user.password, role: user.role, is_active: user.is_active });
+    // Password is never readable post-flip; start blank (blank = unchanged).
+    setFormData({ username: user.username, name: user.name, password: '', role: user.role, is_active: user.is_active });
     setShowModal(true);
   };
 
@@ -151,7 +168,7 @@ export default function AdminPermissions() {
               <span className={`px-2 py-1 rounded text-xs font-bold ${user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{user.is_active ? '✅ نشط' : '❌ معطل'}</span>
             </div>
             <div className="mb-3"><p className="text-xs text-gray-500">الدور</p><p className="text-sm font-semibold">{getRoleLabel(user.role)}</p></div>
-            <div className="mb-3"><p className="text-xs text-gray-500">كلمة المرور</p><div className="flex items-center gap-2"><input type={showPasswords[user.id] ? 'text' : 'password'} value={user.password} readOnly className="flex-1 bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded" /><button onClick={() => setShowPasswords({ ...showPasswords, [user.id]: !showPasswords[user.id] })} className="text-gray-500 hover:text-gray-700">{showPasswords[user.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button></div></div>
+            <div className="mb-3"><p className="text-xs text-gray-500">كلمة المرور</p><div className="flex items-center gap-2"><input type={showPasswords[user.id] ? 'text' : 'password'} value={user.password || '••••••'} readOnly className="flex-1 bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded" /><button onClick={() => setShowPasswords({ ...showPasswords, [user.id]: !showPasswords[user.id] })} className="text-gray-500 hover:text-gray-700">{showPasswords[user.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button></div></div>
             <div className="flex gap-2 flex-wrap">
               <button onClick={() => handleToggleActive(user)} className={`flex-1 p-2 rounded text-xs font-bold flex items-center justify-center gap-1 ${user.is_active ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}>{user.is_active ? <><Lock className="w-3 h-3" /> تعطيل</> : <><Unlock className="w-3 h-3" /> تفعيل</>}</button>
               <button onClick={() => handleEditUser(user)} className="flex-1 p-2 rounded text-xs font-bold bg-blue-100 text-blue-700 hover:bg-blue-200 flex items-center justify-center gap-1"><Edit2 className="w-3 h-3" /> تعديل</button>
@@ -184,9 +201,9 @@ export default function AdminPermissions() {
             <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-bold">🔑 بيانات الدخول لـ {selectedUser.name}</h3><button onClick={() => setShowCredentialsModal(false)} className="text-gray-500 hover:text-gray-700"><X className="w-5 h-5" /></button></div>
             <div className="space-y-4">
               <div className="bg-gray-50 p-3 rounded-lg"><p className="text-xs text-gray-500">اسم المستخدم (Username)</p><div className="flex justify-between items-center"><code className="text-lg font-mono">{selectedUser.username}</code><button onClick={() => copyToClipboard(selectedUser.username, 'username')} className="text-blue-500 hover:text-blue-700"><Copy className="w-4 h-4" /></button></div>{copiedField === 'username' && <span className="text-xs text-green-600">تم النسخ!</span>}</div>
-              <div className="bg-gray-50 p-3 rounded-lg"><p className="text-xs text-gray-500">كلمة المرور (Password)</p><div className="flex justify-between items-center"><code className="text-lg font-mono">{selectedUser.password}</code><button onClick={() => copyToClipboard(selectedUser.password, 'password')} className="text-blue-500 hover:text-blue-700"><Copy className="w-4 h-4" /></button></div>{copiedField === 'password' && <span className="text-xs text-green-600">تم النسخ!</span>}</div>
+              <div className="bg-gray-50 p-3 rounded-lg"><p className="text-xs text-gray-500">كلمة المرور (Password)</p><div className="flex justify-between items-center"><code className="text-lg font-mono">{selectedUser.password || '— غير قابلة للعرض؛ عيّن كلمة جديدة من تعديل المستخدم —'}</code><button onClick={() => copyToClipboard(selectedUser.password || '(غير قابلة للعرض)', 'password')} className="text-blue-500 hover:text-blue-700"><Copy className="w-4 h-4" /></button></div>{copiedField === 'password' && <span className="text-xs text-green-600">تم النسخ!</span>}</div>
               <div className="bg-gray-50 p-3 rounded-lg"><p className="text-xs text-gray-500">الدور (Role)</p><div className="text-md font-semibold">{getRoleLabel(selectedUser.role)}</div></div>
-              <button onClick={() => copyToClipboard(`Username: ${selectedUser.username}\nPassword: ${selectedUser.password}`, 'all')} className="w-full bg-orange-500 text-white py-2 rounded font-bold flex items-center justify-center gap-2"><Copy className="w-4 h-4" /> نسخ البيانات كاملة</button>
+              <button onClick={() => copyToClipboard(`Username: ${selectedUser.username}\nPassword: ${selectedUser.password || '(غير قابلة للعرض)'}`, 'all')} className="w-full bg-orange-500 text-white py-2 rounded font-bold flex items-center justify-center gap-2"><Copy className="w-4 h-4" /> نسخ البيانات كاملة</button>
             </div>
           </div>
         </div>
