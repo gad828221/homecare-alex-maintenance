@@ -1,0 +1,9 @@
+{
+  "name": "maintenance-guide-prerender",
+  "private": true,
+  "version": "1.0.0",
+  "dependencies": {
+    "@sparticuz/chromium": "138.0.2",
+    "puppeteer-core": "24.15.0"
+  }
+}
