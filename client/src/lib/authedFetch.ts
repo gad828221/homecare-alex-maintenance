@@ -4,6 +4,7 @@
 // supabase-js refreshes the token itself.
 
 import { supabase, supabaseUrl, supabaseAnonKey } from './supabaseClient';
+import { clearAuthSession } from '../utils/authSession';
 
 // Headers for files that keep their own fetch wrapper (e.g. ProtectedOrders'
 // non-throwing helper). Redirects to /login when there is no staff session:
@@ -11,6 +12,11 @@ import { supabase, supabaseUrl, supabaseAnonKey } from './supabaseClient';
 export const authedHeaders = async (): Promise<Record<string, string>> => {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
+    // A stale pre-Supabase legacy session (currentUser/userRole in localStorage)
+    // makes App.tsx's guard bounce /login back to a staff page, while this
+    // branch sends the staff page to /login: a deterministic redirect loop.
+    // Clear the legacy keys first so the /login render is stable.
+    clearAuthSession();
     window.location.href = '/login';
     throw new Error('no session');
   }
