@@ -521,6 +521,8 @@ export default function ProtectedOrders() {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [trackingShareOrderId, setTrackingShareOrderId] = useState<number | null>(null);
   const [expandedOrderIds, setExpandedOrderIds] = useState<Set<number>>(new Set());
+  const [focusedPriorityOrderId, setFocusedPriorityOrderId] = useState<string | null>(null);
+  const [pendingPriorityOrderId, setPendingPriorityOrderId] = useState<string | null>(null);
   const [showWorkAnalysis, setShowWorkAnalysis] = useState(false);
   const [showTechnicianDistribution, setShowTechnicianDistribution] = useState(false);
   const [showQuickAnalysis, setShowQuickAnalysis] = useState(false);
@@ -3374,6 +3376,34 @@ ${trackingUrl}
       setFilterStatus('in-progress');
     }
   };
+  // View-only navigation: reveal the requested order, without editing it.
+  const openPriorityOrder = (order: any) => {
+    clearFilters();
+    setFilterOperationStage('');
+    setActiveTab('orders');
+    setShowDeleted(false);
+    setShowTechnicianDistribution(false);
+    setSearchTerm(String(order.order_number || order.customer_name || order.phone || ''));
+    setFilterStatus(order.order_number || order.customer_name || order.phone ? 'all' : String(order.status || 'all'));
+    setVisibleOrdersCount(Math.max(15, orders.length));
+    setFocusedPriorityOrderId(String(order.id));
+    setPendingPriorityOrderId(String(order.id));
+  };
+
+  useEffect(() => {
+    if (!pendingPriorityOrderId || searchTerm !== deferredSearchTerm) return;
+    const card = document.getElementById(`manager-order-${pendingPriorityOrderId}`);
+    if (!card) return;
+    const frame = requestAnimationFrame(() => {
+      const stickyHeight = document.querySelector('.manager-sticky-workspace')?.getBoundingClientRect().height || 0;
+      const top = window.scrollY + card.getBoundingClientRect().top - stickyHeight - 16;
+      window.scrollTo({ top: Math.max(0, top), behavior: 'instant' as ScrollBehavior });
+      card.focus({ preventScroll: true });
+      setPendingPriorityOrderId(null);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [pendingPriorityOrderId, filteredOrders, searchTerm, deferredSearchTerm]);
+
   // ========== دوال التقارير ==========
   const fetchCashReport = async () => {
     setReportLoading(true);
@@ -3870,7 +3900,24 @@ ${trackingUrl}
         </div>
       </div>
 
-      <style>{`#manager-dashboard.tech-distribution-dashboard { overflow-x: clip; } .manager-sticky-workspace { position: sticky; top: 0; z-index: 40; background: #fff; box-shadow: 0 5px 18px #0f172a12; }`}</style>
+      <style>{`#manager-dashboard.tech-distribution-dashboard { overflow-x: clip; } .manager-sticky-workspace { position: sticky; top: 0; z-index: 40; background: #fff; box-shadow: 0 5px 18px #0f172a12; }
+        #manager-dashboard .order-card-3d[data-priority-focused=true] { outline: 3px solid #ea580c !important; outline-offset: 3px; }
+        .order-followup-summary { margin: 0 0 10px; padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 11px; background: #f8fafc; color: #334155; font-size: 11px; line-height: 1.65; }
+        .order-followup-action { display: flex; align-items: baseline; gap: 6px; }
+        .order-followup-summary dt { color: #64748b; font-size: 9px; font-weight: 700; flex-shrink: 0; }
+        .order-followup-summary dd { margin: 0; font-weight: 800; min-width: 0; overflow-wrap: anywhere; }
+        .order-followup-meta { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 5px 10px; margin-top: 4px; }
+        .order-followup-meta > div { display: flex; flex-wrap: wrap; gap: 3px 5px; align-items: baseline; min-width: 0; }
+        .order-followup-summary [data-due=true] dd { color: #be123c; }
+        .order-followup-blocker { margin-top: 5px; padding-top: 5px; border-top: 1px solid #e2e8f0; }
+        .order-followup-blocker dd { color: #9a3412; }
+        .order-followup-summary:not([data-expanded=true]) .order-followup-action dd, .order-followup-summary:not([data-expanded=true]) .order-followup-blocker dd { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+        .staff-night-theme .order-followup-summary { background: #1e293b; border-color: #475569; color: #e2e8f0; }
+        .staff-night-theme .order-followup-summary dt { color: #94a3b8; }
+        .staff-night-theme .order-followup-blocker { border-color: #475569; }
+        .staff-night-theme .order-followup-blocker dd { color: #fdba74; }
+        .staff-night-theme .order-followup-summary [data-due=true] dd { color: #fda4af; }
+`}</style>
       <div className="manager-sticky-workspace">
       {/* Compact icon navigation: one section at a time to keep the dashboard short on mobile. */}
       <div role="tablist" aria-label="أقسام لوحة المدير" className="border-b border-[#D8DEE6] bg-white/95 px-2.5 py-2.5 shadow-[0_12px_35px_rgba(2,8,23,0.45)] backdrop-blur-xl overflow-x-auto no-scrollbar flex gap-2">
@@ -3981,7 +4028,7 @@ ${trackingUrl}
                 </div>
                 {!showDeleted && !searchTerm && !filterTechnician && managerPriorityQueue.length > 0 && <section className="mt-4 rounded-[1.5rem] border border-orange-400/30 bg-slate-950/45 p-4 shadow-lg" aria-label="مطلوب الآن للمدير">
                   <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><h3 className="flex items-center gap-2 text-sm font-black text-white"><AlertCircle size={17} className="text-orange-300" /> مطلوب الآن</h3><p className="mt-1 text-[10px] font-bold text-slate-500">الأرشيف منفصل؛ هذه القائمة تعرض الأوردرات المفتوحة فقط مرتبة حسب الأولوية.</p></div><span className="rounded-full bg-orange-500/15 px-3 py-1 text-[10px] font-black text-orange-200">{managerPriorityQueue.length} أوردر</span></div>
-                  <div className="grid gap-2 md:grid-cols-2">{managerPriorityQueue.slice(0, 6).map(({ order, action, tone }) => { const toneClass = tone === 'amber' ? 'border-amber-400/40 bg-amber-500/10 text-amber-200' : tone === 'rose' ? 'border-rose-400/40 bg-rose-500/10 text-rose-200' : tone === 'red' ? 'border-red-400/40 bg-red-500/10 text-red-200' : 'border-orange-400/30 bg-orange-500/10 text-orange-200'; const command = tone === 'amber' ? 'unassigned' : tone === 'rose' ? 'collection' : tone === 'red' ? 'delayed' : 'active'; return <button key={`manager-priority-${order.id}`} type="button" onClick={() => openCommandCenter(command)} className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-3 text-right transition hover:-translate-y-0.5 ${toneClass}`}><span className="min-w-0"><span className="block truncate text-xs font-black text-white">#{order.order_number} — {order.customer_name}</span><span className="mt-1 block truncate text-[10px] font-black">{action}</span></span><span className="shrink-0 rounded-lg bg-slate-950/40 px-2 py-1 text-[9px] font-black">فتح</span></button>; })}</div>
+                  <div className="grid gap-2 md:grid-cols-2">{managerPriorityQueue.slice(0, 6).map(({ order, action, tone }) => { const toneClass = tone === 'amber' ? 'border-amber-400/40 bg-amber-500/10 text-amber-200' : tone === 'rose' ? 'border-rose-400/40 bg-rose-500/10 text-rose-200' : tone === 'red' ? 'border-red-400/40 bg-red-500/10 text-red-200' : 'border-orange-400/30 bg-orange-500/10 text-orange-200'; return <button key={`manager-priority-${order.id}`} type="button" onClick={() => openPriorityOrder(order)} aria-label={`فتح أوردر ${order.order_number} ${order.customer_name}`}  className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-3 text-right transition hover:-translate-y-0.5 ${toneClass}`}><span className="min-w-0"><span className="block truncate text-xs font-black text-white">#{order.order_number} — {order.customer_name}</span><span className="mt-1 block truncate text-[10px] font-black">{action}</span></span><span className="shrink-0 rounded-lg bg-slate-950/40 px-2 py-1 text-[9px] font-black">فتح</span></button>; })}</div>
                   {managerPriorityQueue.length > 6 && <p className="mt-3 text-center text-[10px] font-bold text-slate-500">{managerPriorityQueue.length - 6} أوردرات أخرى في القائمة</p>}
                 </section>}
                 {/* Smart Stats Grid */}
@@ -4373,7 +4420,6 @@ ${trackingUrl}
                   const isOrderExpanded = expandedOrderIds.has(order.id);
                   const followUpDue = Boolean(followUp.followUpDate && followUp.followUpDate <= getEgyptTodayString());
                   const followUpLabel = followUp.nextAction || (noTechnician ? 'تعيين فني مسؤول' : delayed ? 'مراجعة الطلب المتأخر' : 'تحديد الإجراء التالي');
-                  const followUpTone = followUpDue || delayed ? 'border-rose-400/40 bg-rose-500/10 text-rose-100' : followUp.nextAction ? 'border-cyan-400/30 bg-cyan-500/10 text-cyan-100' : 'border-amber-400/30 bg-amber-500/10 text-amber-100';
                   
                   // تحديد لون التوهج بناءً على الحالة
                   const glowColors: Record<string, string> = {
@@ -4388,7 +4434,9 @@ ${trackingUrl}
 
                   return (
 	                                          <div 
-		                      key={order.id} 
+		                      key={order.id}
+                              id={`manager-order-${order.id}`}
+                              data-priority-focused={focusedPriorityOrderId === String(order.id)}
 		                      role="button"
 		                      tabIndex={0}
 		                      aria-label={`تعديل أوردر ${order.customer_name}`}
@@ -4467,29 +4515,12 @@ ${trackingUrl}
                                 <div className="order-summary-item"><Cpu size={16} /><div><span>الجهاز</span><strong>{order.device_type || 'غير محدد'}{order.brand ? ` · ${order.brand}` : ''}</strong></div></div>
                                 <div className="order-summary-item"><Clock size={16} /><div><span>التاريخ والوقت</span><strong>{formatOrderDateTime(orderCreatedValue)}</strong></div></div>
                               </div>
-{isOrderExpanded && (<div className={`relative mb-2 overflow-hidden rounded-xl border px-2.5 py-2 ${followUpTone}`}>
-                                <div className="absolute -left-6 -top-8 h-20 w-20 rounded-full bg-white/10 blur-2xl" />
-                                <div className="relative flex items-center justify-between gap-3">
-                                  <div className="flex min-w-0 items-center gap-2">
-                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-slate-950/50 shadow-inner">
-                                      <Navigation size={14} />
-                                    </div>
-                                    <div className="min-w-0">
-                                      <p className="text-[8px] font-black uppercase tracking-[0.16em] opacity-70">الإجراء التالي</p>
-                                      <p className="truncate text-[11px] font-black">{followUpLabel}</p>
-                                    </div>
-                                  </div>
-                                  <div className="shrink-0 text-left">
-                                    <p className="text-[8px] font-black opacity-70">الموعد</p>
-                                    <p className="text-[10px] font-black">{followUp.followUpDate || 'غير محدد'}</p>
-                                  </div>
-                                </div>
-                                {isOrderExpanded && (followUp.owner || followUp.blocker) && <div className="relative mt-2 flex flex-wrap gap-1.5 text-[8px] font-bold opacity-80">
-                                  {followUp.owner && <span className="rounded-full border border-white/10 bg-slate-950/40 px-2 py-1">المسؤول: {followUp.owner}</span>}
-                                  {followUp.blocker && <span className="rounded-full border border-rose-300/20 bg-rose-500/10 px-2 py-1">تعطيل: {followUp.blocker}</span>}
-                                </div>}
-                              </div>
-                              )}
+<OrderFollowUpSummary
+                                followUp={followUp}
+                                nextAction={followUpLabel}
+                                due={followUpDue}
+                                expanded={isOrderExpanded}
+                              />
 <div className={isOrderExpanded ? 'space-y-3' : 'hidden'}>
                             <div className="mb-3 relative z-10 flex items-center justify-between gap-2 bg-slate-950/30 px-3 py-1.5 rounded-xl border border-white/5">
                               <div className="flex items-center gap-1.5 overflow-hidden">
@@ -6072,5 +6103,23 @@ function TechnicianDistributionBar({ cards, selected, onSelect, expanded, onTogg
         {visible.map(({ tech, stats }) => <button type="button" key={tech.id} className="tech-distribution-row" onClick={() => onSelect(tech.name)}><span className="tech-distribution-row-top"><span>{tech.name}</span><span>{stats.total} أوردر</span></span><span className="tech-distribution-statuses"><span>تنفيذ {stats.active}</span><span>انتظار {stats.pending}</span>{stats.collection > 0 && <span>تحصيل {stats.collection}</span>}</span></button>)}
       </div></div>}
     </section>
+  );
+}
+
+function OrderFollowUpSummary({ followUp, nextAction, due, expanded }: {
+  followUp: FollowUpData;
+  nextAction: string;
+  due: boolean;
+  expanded: boolean;
+}) {
+  return (
+    <dl className="order-followup-summary" aria-label="ملخص متابعة الأوردر" data-expanded={expanded}>
+      <div className="order-followup-action"><dt>التالي:</dt><dd title={nextAction}>{nextAction}</dd></div>
+      <div className="order-followup-meta">
+        <div><dt>المسؤول:</dt><dd>{followUp.owner || 'غير محدد'}</dd></div>
+        <div data-due={due}><dt>المتابعة:</dt><dd>{followUp.followUpDate || 'غير محددة'}</dd></div>
+      </div>
+      {followUp.blocker && <div className="order-followup-blocker"><dt>سبب التعطيل:</dt><dd title={followUp.blocker}>{followUp.blocker}</dd></div>}
+    </dl>
   );
 }
