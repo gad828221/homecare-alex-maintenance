@@ -1,9 +1,16 @@
 import React, { useState } from 'react';
 import { LogIn, User, Lock, AlertCircle, Wrench, LayoutDashboard, Download, Share2 } from 'lucide-react';
 import { usePwaInstall } from '../hooks/usePwaInstall';
+import { supabase } from '../lib/supabaseClient';
 
-const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
+// Must match the migration byte-for-byte: the username EXACTLY as stored
+// (case-sensitive, no trim/lower) -> UTF-8 bytes -> lowercase hex, namespaced
+// per login context: 's.' for the staff tab (users table), 't.' for the
+// technician tab (technicians table). Same person can hold both, as today.
+const toHex = (s: string): string =>
+  [...new TextEncoder().encode(s)].map(b => b.toString(16).padStart(2, '0')).join('');
+const staffEmail = (context: 's' | 't', username: string): string =>
+  context + '.' + toHex(username) + '@staff.maintenanceguide.life';
 
 export default function Login() {
   const [role, setRole] = useState<'admin' | 'tech'>('admin');
@@ -28,103 +35,80 @@ export default function Login() {
       sessionStorage.setItem('audio_forced_enabled', 'true');
     } catch (err) { console.warn("Audio activation failed", err); }
 
+    // Tab-scoped login (same as today): the admin tab authenticates a
+    // users-table identity, the tech tab a technicians-table identity.
+    // Supabase Auth verifies the password server-side; the client never
+    // reads any password column. Username is used exactly as typed —
+    // case-sensitive, same as today's `eq` lookup.
+    const context: 's' | 't' = role === 'admin' ? 's' : 't';
     try {
-      if (role === 'admin') {
-        const res = await fetch(`${supabaseUrl}/rest/v1/users?select=*&username=eq.${encodeURIComponent(username)}`, {
-          headers: {
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        const data = await res.json();
-        if (data && data.length > 0 && data[0].password === password) {
-          const user = data[0];
-          if (user.is_active === false) {
-            setError('❌ الحساب غير نشط. يرجى التواصل مع الإدارة.');
-            setLoading(false);
-            return;
-          }
-          localStorage.setItem('currentUser', JSON.stringify({
-            id: user.id,
-            username: user.username,
-            name: user.name,
-            role: user.role,
-            techName: user.role === 'tech' ? user.name : undefined
-          }));
-          localStorage.setItem('userRole', user.role);
-          if (user.role === 'tech') {
-            localStorage.setItem('techName', user.name);
-          }
-          
-          // تسجيل دخول المستخدم في الإشعارات
-          try {
-            await fetch(`${supabaseUrl}/rest/v1/notifications`, {
-              method: 'POST',
-              headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                action: user.role === 'tech' ? 'تسجيل دخول فني' : 'تسجيل دخول',
-                details: `المستخدم ${user.name} (${user.role === 'tech' ? 'فني' : 'إدارة'}) قام بفتح البرنامج الآن`,
-                user_name: user.name,
-                created_at: new Date().toISOString()
-              })
-            });
-          } catch (err) { console.error(err); }
-          
-          if (user.role === 'tech') {
-            window.location.href = '/tech-portal';
-          } else if (user.role === 'data-entry') {
-            window.location.href = '/data-entry';
-          } else {
-            window.location.href = '/orders';
-          }
-        } else {
-          setError('❌ اسم المستخدم أو كلمة المرور غير صحيحة');
-        }
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: staffEmail(context, username),
+        password,
+      });
+      if (authError || !authData.session) {
+        setError('❌ اسم المستخدم أو كلمة المرور غير صحيحة');
+        setLoading(false);
+        return;
+      }
+      const authId = authData.user.id;
+
+      // Identity resolves ONLY in the tab's table — each auth account is
+      // linked to exactly one row there (migration Plan E).
+      let u: any = null;
+      let t: any = null;
+      if (context === 's') {
+        const { data: uRows } = await supabase
+          .from('users').select('id,username,name,role,is_active')
+          .eq('auth_user_id', authId).limit(1);
+        u = uRows?.[0] ?? null;
       } else {
-        const res = await fetch(`${supabaseUrl}/rest/v1/technicians?select=*&username=eq.${encodeURIComponent(username)}`, {
-          headers: {
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Content-Type': 'application/json'
-          }
+        const { data: tRows } = await supabase
+          .from('technicians').select('id,username,name,is_active')
+          .eq('auth_user_id', authId).limit(1);
+        t = tRows?.[0] ?? null;
+      }
+      const activeU = context === 's' && !!u && u.is_active !== false;
+      const activeT = context === 't' && !!t && t.is_active !== false;
+
+      if (!activeU && !activeT) {
+        await supabase.auth.signOut();
+        setError('❌ الحساب غير نشط. يرجى التواصل مع الإدارة.');
+        setLoading(false);
+        return;
+      }
+
+      const role2 = activeU ? u!.role : 'tech';
+      const name = activeU ? u!.name : t!.name;
+      const id = activeU ? u!.id : t!.id;
+      const uname2 = activeU ? u!.username : t!.username;
+
+      localStorage.setItem('currentUser', JSON.stringify({
+        id, username: uname2, name, role: role2,
+        techName: role2 === 'tech' ? name : undefined,
+      }));
+      localStorage.setItem('userRole', role2);
+      if (role2 === 'tech') localStorage.setItem('techName', name);
+
+      // Same login notification as today — now inserted as authenticated staff
+      // (allowed by notifications_staff_insert). Ordering matters: after sign-in.
+      try {
+        await supabase.from('notifications').insert({
+          action: role2 === 'tech' ? 'تسجيل دخول فني' : 'تسجيل دخول',
+          details: role2 === 'tech'
+            ? `الفني ${name} قام بفتح البرنامج الآن`
+            : `المستخدم ${name} (${role2 === 'tech' ? 'فني' : 'إدارة'}) قام بفتح البرنامج الآن`,
+          user_name: name,
+          created_at: new Date().toISOString(),
         });
-        const data = await res.json();
-        if (data && data.length > 0 && data[0].password === password) {
-          const tech = data[0];
-          if (tech.is_active === false) {
-            setError('❌ الحساب غير نشط. يرجى التواصل مع الإدارة.');
-            setLoading(false);
-            return;
-          }
-          localStorage.setItem('currentUser', JSON.stringify({
-            id: tech.id,
-            username: tech.username,
-            name: tech.name,
-            role: 'tech',
-            techName: tech.name
-          }));
-                    localStorage.setItem('userRole', 'tech');
-          localStorage.setItem('techName', tech.name);
-          
-          // تسجيل دخول الفني في الإشعارات
-          try {
-            await fetch(`${supabaseUrl}/rest/v1/notifications`, {
-              method: 'POST',
-              headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                action: 'تسجيل دخول فني',
-                details: `الفني ${tech.name} قام بفتح البرنامج الآن`,
-                user_name: tech.name,
-                created_at: new Date().toISOString()
-              })
-            });
-          } catch (err) { console.error(err); }
-          
-          window.location.href = '/tech-portal';
-        } else {
-          setError('❌ اسم المستخدم أو كلمة المرور غير صحيحة');
-        }
+      } catch (err) { console.error(err); }
+
+      if (role2 === 'tech') {
+        window.location.href = '/tech-portal';
+      } else if (role2 === 'data-entry') {
+        window.location.href = '/data-entry';
+      } else {
+        window.location.href = '/orders';
       }
     } catch (err) {
       console.error(err);

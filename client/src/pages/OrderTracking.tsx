@@ -6,39 +6,33 @@ import {
   ChevronLeft, ShieldCheck, AlertCircle, RotateCcw, LayoutDashboard,
   Star, FileCheck, ClipboardList
 } from "lucide-react";
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabaseClient';
 import { formatOrderDateTime } from '../utils/orderTiming';
 import { getTechnicianDisplayName, getTechnicianPhotoUrl, getTechnicianSpecialty, getDeviceSpecialty } from '../utils/technicianProfile';
 import { getPickupTypeLabel, parsePickupReceipt } from '../utils/pickupReceipt';
 
-const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
-const supabase = createClient(supabaseUrl, supabaseKey);
-
 export default function OrderTracking() {
+  // The URL segment is the order's unguessable public_token (uuid), not the
+  // order number: tracking links are built with public_token and the only
+  // public read path is the trimmed get_public_order RPC.
   const [, params] = useRoute("/track/:orderNumber");
-  const orderNumber = params?.orderNumber;
+  const publicToken = params?.orderNumber;
   
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!orderNumber) return;
-    
+    if (!publicToken) return;
+
     const fetchOrder = async () => {
-      setLoading(true);
       try {
-        const { data, error: err } = await supabase
-          .from('orders')
-          .select('*')
-          .eq('order_number', orderNumber)
-          .single();
-          
+        const { data, error: err } = await supabase.rpc('get_public_order', { p_token: publicToken });
         if (err) throw err;
         if (!data) throw new Error("لم يتم العثور على الأوردر");
-        
+
         setOrder(data);
+        setError(null);
       } catch (e: any) {
         console.error(e);
         setError(e.message || "حدث خطأ أثناء تحميل البيانات");
@@ -48,19 +42,12 @@ export default function OrderTracking() {
     };
 
     fetchOrder();
-    
-    // الاشتراك في التحديثات اللحظية
-    const channel = supabase
-      .channel(`track-${orderNumber}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `order_number=eq.${orderNumber}` }, (payload) => {
-        setOrder(payload.new);
-      })
-      .subscribe();
-      
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [orderNumber]);
+
+    // Realtime is not available for anonymous visitors after the security
+    // flip (no anon SELECT on orders), so poll the trimmed RPC instead.
+    const interval = setInterval(fetchOrder, 30000);
+    return () => clearInterval(interval);
+  }, [publicToken]);
 
   if (loading) {
     return (
@@ -110,7 +97,7 @@ export default function OrderTracking() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-20" dir="rtl">
-      <HeadTitle title={`تتبع الأوردر | ${order.order_number}`} />
+      <HeadTitle title={`تتبع الأوردر | ${order.order_number || ''}`} />
 
       {/* Header */}
       <div className="bg-white border-b border-slate-100 px-6 py-5 sticky top-0 z-10 shadow-sm">
@@ -254,7 +241,7 @@ export default function OrderTracking() {
             <div className="space-y-3">
               {(order.status === 'completed' || order.invoice_approved) && (
                 <a 
-                  href={`/invoice?id=${order.id}`} 
+                  href={`/invoice?token=${publicToken}`} 
                   target="_blank"
                   className="w-full bg-emerald-50 text-emerald-700 border border-emerald-100 py-4 rounded-2xl font-black flex items-center justify-center gap-3 shadow-sm active:scale-95 transition-all"
                 >
@@ -263,7 +250,7 @@ export default function OrderTracking() {
               )}
               {hasPickupReceipt && (
                 <a 
-                  href={`/pickup-receipt?id=${order.id}`} 
+                  href={`/pickup-receipt?token=${publicToken}`} 
                   target="_blank"
                   className="w-full bg-indigo-50 text-indigo-700 border border-indigo-100 py-4 rounded-2xl font-black flex items-center justify-center gap-3 shadow-sm active:scale-95 transition-all"
                 >

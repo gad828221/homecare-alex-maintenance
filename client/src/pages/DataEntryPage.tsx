@@ -4,22 +4,7 @@ import { useLocation } from "wouter";
 import BookingForm from "@/components/BookingForm";
 import { clearAuthSession } from "@/utils/authSession";
 
-const supabaseUrl = 'https://hjrnfsdvrrwgyppqhwml.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqcm5mc2R2cnJ3Z3lwcHFod21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjMwNjgsImV4cCI6MjA5MDgzOTA2OH0.1l5C5QnWP-BfqM3GRyAXskkj9JvrlD2ucOtnUkgRVKE';
-
-const fetchAPI = async (endpoint: string, options?: RequestInit) => {
-  const res = await fetch(`${supabaseUrl}/rest/v1/${endpoint}`, {
-    headers: { 
-      'apikey': supabaseKey, 
-      'Authorization': `Bearer ${supabaseKey}`, 
-      'Content-Type': 'application/json',
-      'Prefer': 'return=representation'
-    },
-    ...options,
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
-};
+import { authedFetch as fetchAPI } from '../lib/authedFetch';
 
 export default function DataEntryPage() {
   const [, setLocation] = useLocation();
