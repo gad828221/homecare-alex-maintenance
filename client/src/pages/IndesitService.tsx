@@ -74,7 +74,7 @@ export default function IndesitService() {
             <h1 className="text-4xl md:text-7xl font-black text-white leading-tight mb-6">
               رقم صيانة <span className="text-blue-400">انديست</span> <br />
               <span className="text-white">بمنزلك الآن</span> <br />
-              <span className="text-2xl md:text-4xl text-slate-300">قطع غيار أصلية 100% + ضمان سنة</span>
+              <span className="text-2xl md:text-4xl text-slate-300">قطع غيار أصلية 100% + مدة الضمان: ٦ شهور أو سنة.</span>
             </h1>
 
             <p className="text-xl text-slate-200 mb-10 font-medium leading-relaxed max-w-2xl">
@@ -123,7 +123,7 @@ export default function IndesitService() {
             </div>
             <div className="p-6 bg-slate-50 rounded-3xl text-center group hover:bg-blue-600 transition-all duration-300">
               <Award className="w-10 h-10 text-blue-600 mx-auto mb-4 group-hover:text-white" />
-              <h4 className="font-black text-slate-900 mb-1 group-hover:text-white">ضمان عام</h4>
+              <h4 className="font-black text-slate-900 mb-1 group-hover:text-white">مدة الضمان: ٦ شهور أو سنة.</h4>
               <p className="text-slate-500 text-xs font-bold group-hover:text-white/80">على كافة الإصلاحات</p>
             </div>
             <div className="p-6 bg-slate-50 rounded-3xl text-center group hover:bg-blue-600 transition-all duration-300">
