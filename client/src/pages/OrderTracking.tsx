@@ -266,7 +266,7 @@ export default function OrderTracking() {
         {/* Footer */}
         <div className="text-center pt-4">
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Maintenance Guide © 2026</p>
-          <p className="text-[9px] text-slate-300 mt-1">جميع الحقوق محفوظة لمركز الصيانة المعتمد</p>
+          <p className="text-[9px] text-slate-300 mt-1">جميع الحقوق محفوظة لمركز صيانة الأجهزة المنزلية</p>
         </div>
       </div>
 
