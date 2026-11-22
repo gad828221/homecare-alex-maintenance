@@ -504,7 +504,7 @@ export default function BookingFormEnhanced() {
               transition={{ delay: 0.3 }}
             >
               <div className="flex items-center gap-3 text-green-700 font-black text-lg">
-                <ShieldCheck className="w-6 h-6" /> ✅ ضمان معتمد لمدة عام
+                <ShieldCheck className="w-6 h-6" /> ✅ مدة الضمان: ٦ شهور أو سنة.
               </div>
               <div className="flex items-center gap-3 text-blue-700 font-black text-lg">
                 <Clock className="w-6 h-6" /> ⚡ فني متخصص يصلك خلال ساعة
