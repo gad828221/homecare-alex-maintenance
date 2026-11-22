@@ -125,6 +125,7 @@ export default function ApplianceService({ service }: { service: ApplianceServic
         <section className="bg-white py-16" aria-labelledby="related-services-heading">
           <div className="container mx-auto px-4">
             <h2 id="related-services-heading" className="mb-8 text-center text-3xl font-black text-slate-900">خدمات ذات صلة</h2>
+            <p className="mb-8 text-center text-lg font-bold leading-relaxed text-slate-600">للتعرف على مناطق الزيارة، راجع <a href="/service-areas" className="font-black text-orange-700 underline underline-offset-4 hover:text-orange-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-600">مناطق خدمة الصيانة في الإسكندرية</a>.</p>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {Object.values(applianceServices).filter((related) => related.slug !== service.slug).map((related) => (
                 <a key={related.slug} href={`/${related.slug}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center text-lg font-black text-slate-900 transition-colors hover:border-orange-500 hover:text-orange-600">
