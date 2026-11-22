@@ -103,6 +103,13 @@ function FloatingButtons() {
       <div className="pointer-events-auto flex w-full max-w-lg items-center gap-2 rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-2xl backdrop-blur md:max-w-md">
       <a
         href={bookingHref}
+        onClick={(e) => {
+          const target = document.getElementById('booking') || document.getElementById('booking-form') || document.getElementById('contact');
+          if (target) {
+            e.preventDefault();
+            target.scrollIntoView({ behavior: 'smooth' });
+          }
+        }}
         className="flex min-h-12 flex-1 items-center justify-center gap-1 rounded-xl bg-orange-600 px-2 text-xs font-black text-white transition-colors hover:bg-orange-700 sm:text-sm"
         aria-label="حجز فني صيانة"
       >
