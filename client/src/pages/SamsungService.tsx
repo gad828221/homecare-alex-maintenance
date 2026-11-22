@@ -120,7 +120,7 @@ export default function SamsungService() {
           <h2 className="text-4xl md:text-5xl font-black text-slate-900 text-center mb-16">لماذا نحن؟</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             {[
-              { icon: Award, title: "ضمان معتمد", desc: "ضمان شامل لمدة عام على جميع الإصلاحات" },
+              { icon: Award, title: "ضمان معتمد", desc: "مدة الضمان: ٦ شهور أو سنة." },
               { icon: Clock, title: "وصول سريع", desc: "وصول الفني خلال 60 دقيقة من الطلب" },
               { icon: CheckCircle, title: "قطع أصلية", desc: "استخدام قطع غيار أصلية من الوكيل" },
               { icon: ShieldCheck, title: "فنيين خبراء", desc: "فريق متخصص ومدرب على أحدث الموديلات" },
