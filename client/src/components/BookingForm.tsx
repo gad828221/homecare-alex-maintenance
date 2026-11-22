@@ -504,8 +504,8 @@ export default function BookingForm({ defaultService, title, description }: Book
       {step < 4 && (
         <div className="mt-10 flex flex-wrap justify-center gap-4 text-xs text-slate-400 font-bold border-t border-slate-50 pt-6">
           <span className="flex items-center gap-1"><Sparkles className="w-3 h-3 text-orange-400" /> ضمان شامل</span>
-          <span className="flex items-center gap-1"><Sparkles className="w-3 h-3 text-orange-400" /> قطع غيار أصلية</span>
-          <span className="flex items-center gap-1"><Sparkles className="w-3 h-3 text-orange-400" /> فنيين معتمدين</span>
+          <span className="flex items-center gap-1"><Sparkles className="w-3 h-3 text-orange-400" /> قطع غيار أصلية أو بديلة</span>
+          <span className="flex items-center gap-1"><Sparkles className="w-3 h-3 text-orange-400" /> فنيين متخصصين</span>
         </div>
       )}
     </div>
