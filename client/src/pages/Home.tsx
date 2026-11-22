@@ -20,7 +20,7 @@ export default function Home() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
 
   const services = [
-    { icon: Zap, title: "صيانة الثلاجات", href: "/refrigerator-service", description: "إصلاح فوري لجميع أنواع الثلاجات والديب فريزر بقطع غيار أصلية وضمان معتمد." },
+    { icon: Zap, title: "صيانة الثلاجات", href: "/refrigerator-service", description: "إصلاح جميع أنواع الثلاجات والديب فريزر مع ضمان على الإصلاح." },
     { icon: Droplet, title: "صيانة الغسالات", href: "/washing-machine-service", description: "تصليح غسالات الملابس والأطباق، أوتوماتيك وفوق أوتوماتيك، بأحدث المعدات." },
     { icon: Wind, title: "صيانة المكيفات", href: "/air-conditioner-service", description: "تنظيف، شحن فريون، وإصلاح جميع أنواع التكييفات والسبليت لضمان أفضل أداء." },
     { icon: Flame, title: "صيانة الأفران", href: "/stove-service", description: "صيانة شاملة للبوتاجازات والأفران الكهربائية والميكروويف مع فحص الأمان." },
@@ -31,7 +31,7 @@ export default function Home() {
     { icon: Truck, title: "وصول خلال ساعة", description: "نصلك في أي مكان بالإسكندرية خلال 60 دقيقة فقط من طلب الخدمة." },
     { icon: Award, title: "مدة الضمان: ٦ شهور أو سنة.", description: "شهادة ضمان شاملة وموثقة على كافة أعمال الصيانة وقطع الغيار المستبدلة." },
     { icon: Users, title: "مهندسون خبراء", description: "طاقم فني متخصص ومدرب على أحدث الموديلات العالمية لضمان جودة الإصلاح." },
-    { icon: Shield, title: "قطع غيار أصلية", description: "نستخدم فقط قطع الغيار الأصلية من الوكيل لضمان طول عمر جهازك وكفاءته." },
+    { icon: Shield, title: "قطع غيار أصلية", description: "نستخدم قطعًا أصلية أو بديلة حسب المتاح، ونوضح النوع والتكلفة قبل الإصلاح." },
   ];
 
   const testimonials = [
@@ -44,7 +44,7 @@ export default function Home() {
     { q: "ما هي المناطق التي تغطيها خدمة الصيانة؟", a: "نحن نغطي كافة مناطق الإسكندرية (سموحة، سيدي جابر، لوران، العجمي، السيوف، المنتزه، العصافرة، محرم بك، وكافة المناطق المجاورة)." },
     { q: "هل تقدمون ضماناً على الصيانة؟", a: "مدة الضمان: ٦ شهور أو سنة." },
     { q: "كم يستغرق الفني للوصول إلى منزلي؟", a: "نلتزم بالوصول خلال 60 دقيقة من تأكيد الطلب، أو في الموعد الذي يحدده العميل بما يناسب وقته." },
-    { q: "هل قطع الغيار المستخدمة أصلية؟", a: "بكل تأكيد، نستخدم قطع غيار أصلية 100% لضمان كفاءة الجهاز وعدم تكرار العطل مرة أخرى." },
+    { q: "هل قطع الغيار المستخدمة أصلية؟", a: "نستخدم قطع غيار أصلية أو بديلة حسب المتاح وحالة الجهاز، ونوضح نوع القطعة وتكلفتها قبل الإصلاح." },
     { q: "إمتى بعرف تكلفة الكشف؟", a: "بنعرفك تكلفة الكشف قبل الزيارة، وبتتخصم من تكلفة الإصلاح لو وافقت عليه." }
   ];
 
@@ -150,7 +150,7 @@ export default function Home() {
                   <div className="w-10 h-10 bg-orange-500/20 rounded-full flex items-center justify-center border border-orange-500/30">
                     <ShieldCheck className="w-6 h-6 text-orange-500" />
                   </div>
-                  ضمان معتمد
+                  ضمان على الإصلاح
                 </div>
                 <div className="flex items-center gap-3 text-white font-black">
                   <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center border border-blue-500/30">
@@ -266,7 +266,7 @@ export default function Home() {
           <div className="flex flex-col lg:flex-row items-end justify-between mb-24 gap-8">
             <div className="max-w-2xl text-right">
               <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-8">خدماتنا المتخصصة</h2>
-              <p className="text-xl text-slate-600 font-bold leading-relaxed">نقدم حلولاً متكاملة لكافة الأجهزة المنزلية بأعلى معايير الجودة العالمية وقطع غيار أصلية.</p>
+              <p className="text-xl text-slate-600 font-bold leading-relaxed">نقدم حلولاً متكاملة لكافة الأجهزة المنزلية، ونوضح نوع القطعة والتكلفة قبل الإصلاح.</p>
             </div>
             <Button
               size="lg"
