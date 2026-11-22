@@ -74,7 +74,7 @@ export default function SamsungService() {
                 احترافية بالإسكندرية
               </h1>
               <p className="text-xl md:text-2xl text-slate-300 mb-8 font-bold">
-                متخصصون في إصلاح جميع أجهزة سامسونج (ثلاجات، غسالات، تكييفات) بقطع غيار أصلية وضمان معتمد.
+                متخصصون في إصلاح جميع أجهزة سامسونج (ثلاجات، غسالات، تكييفات) مع ضمان على الإصلاح وتوضيح نوع القطعة وتكلفتها قبل التصليح.
               </p>
               <Button
                 size="lg"
@@ -122,7 +122,7 @@ export default function SamsungService() {
             {[
               { icon: Award, title: "ضمان معتمد", desc: "مدة الضمان: ٦ شهور أو سنة." },
               { icon: Clock, title: "وصول سريع", desc: "وصول الفني خلال 60 دقيقة من الطلب" },
-              { icon: CheckCircle, title: "قطع أصلية", desc: "استخدام قطع غيار أصلية من الوكيل" },
+              { icon: CheckCircle, title: "قطع الغيار", desc: "أصلية أو بديلة حسب المتاح، مع توضيح النوع والتكلفة قبل الإصلاح" },
               { icon: ShieldCheck, title: "فنيين خبراء", desc: "فريق متخصص ومدرب على أحدث الموديلات" },
             ].map((item, i) => (
               <div key={i} className="flex gap-6">
