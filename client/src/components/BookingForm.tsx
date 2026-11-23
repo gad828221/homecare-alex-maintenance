@@ -85,12 +85,6 @@ export default function BookingForm({ defaultService, title, description }: Book
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // PREVIEW BRANCH ONLY — never merge this guard to main: booking submit is disabled
-    // outside the production domain so an isolated preview cannot create real orders.
-    if (!['maintenanceguide.life', 'www.maintenanceguide.life'].includes(window.location.hostname)) {
-      setFieldError("دي نسخة معاينة للمراجعة بس — إرسال الطلب متعطّل هنا عشان ميتسجّلش أوردر حقيقي.");
-      return;
-    }
     if (!formData.customer_name.trim() || !formData.phone.trim() || !formData.address.trim()) {
       setFieldError("كمّل الاسم ورقم الموبايل والعنوان عشان نقدر نأكد طلبك.");
       return;
