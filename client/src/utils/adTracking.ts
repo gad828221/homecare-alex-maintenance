@@ -1,9 +1,3 @@
-// PREVIEW BRANCH ONLY - never merge this guard to main: preview/test hosts must not pollute live Ads conversions.
-const PRODUCTION_HOSTS = new Set(['maintenanceguide.life', 'www.maintenanceguide.life']);
-function isTrackingAllowed(): boolean {
-  return typeof window !== 'undefined' && PRODUCTION_HOSTS.has(window.location.hostname);
-}
-
 type AdEventParams = Record<string, string | number | boolean | undefined>;
 
 type TrackingWindow = Window & {
@@ -16,7 +10,7 @@ const PHONE_CLICK_SEND_TO = 'AW-16803756129/92liCN34vrwdEOHw08w-';
 const WHATSAPP_CLICK_SEND_TO = 'AW-16803756129/_sCuCIu1vrwdEOHw08w-';
 
 export function trackPhoneClick(): void {
-  if (!isTrackingAllowed()) return;
+  if (typeof window === 'undefined') return;
   const trackingWindow = window as TrackingWindow;
   const event = { event: 'phone_click', lead_type: 'phone_number_click', page_path: window.location.pathname };
   trackingWindow.dataLayer = trackingWindow.dataLayer || [];
@@ -30,7 +24,7 @@ export function trackPhoneClick(): void {
 }
 
 export function trackWhatsAppClick(): void {
-  if (!isTrackingAllowed()) return;
+  if (typeof window === 'undefined') return;
   const trackingWindow = window as TrackingWindow;
   const event = { event: 'whatsapp_click', lead_type: 'whatsapp_contact', page_path: window.location.pathname };
   trackingWindow.dataLayer = trackingWindow.dataLayer || [];
@@ -45,7 +39,7 @@ export function trackWhatsAppClick(): void {
 }
 
 export function trackBookingStart(params: AdEventParams = {}): void {
-  if (!isTrackingAllowed()) return;
+  if (typeof window === 'undefined') return;
   const trackingWindow = window as TrackingWindow;
   const event = { event: 'begin_booking', lead_type: 'maintenance_booking_start', page_path: window.location.pathname, ...params };
   trackingWindow.dataLayer = trackingWindow.dataLayer || [];
@@ -54,7 +48,7 @@ export function trackBookingStart(params: AdEventParams = {}): void {
 }
 
 export function trackBookingConversion(params: AdEventParams = {}): void {
-  if (!isTrackingAllowed()) return;
+  if (typeof window === 'undefined') return;
   const trackingWindow = window as TrackingWindow;
   const event = {
     event: 'generate_lead',
