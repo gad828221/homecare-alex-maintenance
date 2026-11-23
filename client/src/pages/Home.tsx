@@ -1,44 +1,187 @@
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BookingForm from "@/components/BookingForm";
 import SEO from "@/components/SEO";
 import {
-  Zap, Droplet, Wind, Flame, Heater, Star, Clock, Shield, Users,
-  Phone, MessageCircle, CheckCircle, Award, Truck,
-  Settings, Heart, MapPin, Sparkles, ChevronDown, ShieldCheck, Headphones,
-  Calendar, ArrowRight
+  Star, MapPin, ShieldCheck, Headphones, Award,
+  Phone, MessageCircle, ChevronDown, Truck, Users, Shield,
+  Facebook
 } from "lucide-react";
 import { useEffect, useState } from "react";
-
 import { motion, AnimatePresence } from "framer-motion";
 
 const GOOGLE_BUSINESS_PROFILE_URL = "https://www.google.com/maps/place/Service+guide+Montaza+2/data=!4m2!3m1!1s0x14f5db723bebbd65:0xd4108ebedaac095e";
+const FACEBOOK_PAGE_URL = "https://www.facebook.com/Maintenance.Guide";
+const PHONE_DISPLAY = "01278885772";
+const PHONE_TEL = "tel:01278885772";
+const WHATSAPP_URL = "https://wa.me/201558625259";
+
+const scrollToBooking = () => {
+  document.getElementById("booking-form")?.scrollIntoView({ behavior: "smooth", block: "center" });
+};
+
+const deviceChooser = [
+  {
+    title: "غسالات",
+    href: "/washing-machine-service",
+    icon: <svg viewBox="0 0 40 40" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><rect x="6" y="3" width="28" height="34" rx="3" /><circle cx="20" cy="23" r="9" /><path d="M6 11h28M11 7h2m3 0h2" /></svg>,
+  },
+  {
+    title: "ثلاجات",
+    href: "/refrigerator-service",
+    icon: <svg viewBox="0 0 40 40" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><rect x="9" y="2" width="22" height="36" rx="3" /><path d="M9 16h22M14 7v5m0 9v8" /></svg>,
+  },
+  {
+    title: "تكييفات",
+    href: "/air-conditioner-service",
+    icon: <svg viewBox="0 0 40 40" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><rect x="2" y="7" width="36" height="17" rx="3" /><path d="M6 18h28M10 29v5m10-5v8m10-8v5" /></svg>,
+  },
+  {
+    title: "بوتاجازات",
+    href: "/stove-service",
+    icon: <svg viewBox="0 0 40 40" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><rect x="6" y="4" width="28" height="33" rx="3" /><rect x="10" y="17" width="20" height="14" rx="2" /><path d="M11 10h2m6 0h2m6 0h2" /></svg>,
+  },
+  {
+    title: "سخانات",
+    href: "/water-heater-service",
+    icon: <svg viewBox="0 0 40 40" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><rect x="9" y="3" width="22" height="30" rx="8" /><path d="M15 33v5m10-5v5M15 12h10M20 17v8" /></svg>,
+  },
+  {
+    title: "غسالات أطباق",
+    href: "#booking-form",
+    icon: <svg viewBox="0 0 40 40" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><rect x="5" y="3" width="30" height="34" rx="3" /><path d="M5 11h30M10 7h2m4 0h2M11 19h18M11 25h18M11 31h18" /></svg>,
+  },
+];
+
+const serviceCards = [
+  {
+    title: "الغسالات",
+    href: "/washing-machine-service",
+    description: "أعطال الغسيل والعصر والصرف، نحدد المشكلة ونوضح الحل.",
+    img: "/images/redesign/repair.webp",
+    srcSet: "/images/redesign/repair-640.webp 640w, /images/redesign/repair-1280.webp 1280w",
+    sizes: "(max-width: 768px) 42vw, 360px",
+    width: 1280,
+    height: 720,
+    featured: true,
+    eager: false,
+  },
+  {
+    title: "الثلاجات والديب فريزر",
+    href: "/refrigerator-service",
+    description: "مشاكل التبريد والتجميد ومتابعة أداء الجهاز.",
+    img: "/images/redesign/fridge.webp",
+    srcSet: "/images/redesign/fridge-360.webp 360w, /images/redesign/fridge-720.webp 720w",
+    sizes: "(max-width: 768px) 42vw, 360px",
+    width: 720,
+    height: 540,
+    featured: false,
+    eager: false,
+  },
+  {
+    title: "التكييفات",
+    href: "/air-conditioner-service",
+    description: "صيانة وتنظيف وفحص أعطال التكييف.",
+    img: "/images/redesign/ac.webp",
+    srcSet: "/images/redesign/ac-360.webp 360w, /images/redesign/ac-720.webp 720w",
+    sizes: "(max-width: 768px) 42vw, 360px",
+    width: 720,
+    height: 540,
+    featured: false,
+    eager: false,
+  },
+  {
+    title: "البوتاجازات والأفران",
+    href: "/stove-service",
+    description: "صيانة البوتاجازات والأفران والميكروويف.",
+    img: "/images/redesign/stove.webp",
+    srcSet: "/images/redesign/stove-360.webp 360w, /images/redesign/stove-720.webp 720w",
+    sizes: "(max-width: 768px) 42vw, 360px",
+    width: 720,
+    height: 540,
+    featured: false,
+    eager: false,
+  },
+  {
+    title: "السخانات",
+    href: "/water-heater-service",
+    description: "صيانة سخانات المياه الكهربائية والغاز.",
+    img: "/images/redesign/heater.webp",
+    srcSet: "/images/redesign/heater-360.webp 360w, /images/redesign/heater-720.webp 720w",
+    sizes: "(max-width: 768px) 42vw, 360px",
+    width: 720,
+    height: 540,
+    featured: false,
+    eager: false,
+  },
+  {
+    title: "غسالات الأطباق",
+    href: "#booking-form",
+    description: "صيانة أعطال الغسيل والصرف في غسالة الأطباق.",
+    img: "/images/redesign/dishwasher.webp",
+    srcSet: "/images/redesign/dishwasher-360.webp 360w, /images/redesign/dishwasher-720.webp 720w",
+    sizes: "(max-width: 768px) 42vw, 360px",
+    width: 720,
+    height: 540,
+    featured: false,
+    eager: false,
+  },
+];
+
+const brands = [
+  { name: "SAMSUNG", path: "/samsung-service" },
+  { name: "LG", path: "/lg-service" },
+  { name: "SHARP", path: "/sharp-service" },
+  { name: "TOSHIBA", path: "/toshiba-service" },
+  { name: "ZANUSSI", path: "/zanussi-service" },
+  { name: "FRESH", path: "/fresh-service" },
+  { name: "BEKO", path: "/beko-service" },
+  { name: "ARISTON", path: "/ariston-service" },
+];
+
+const features = [
+  { icon: Truck, title: "وصول خلال ساعة", description: "نصلك في أي مكان بالإسكندرية خلال 60 دقيقة فقط من طلب الخدمة." },
+  { icon: Award, title: "مدة الضمان: ٦ شهور أو سنة.", description: "شهادة ضمان شاملة وموثقة على كافة أعمال الصيانة وقطع الغيار المستبدلة." },
+  { icon: Users, title: "مهندسون خبراء", description: "طاقم فني متخصص ومدرب على أحدث الموديلات العالمية لضمان جودة الإصلاح." },
+  { icon: Shield, title: "قطع غيار أصلية", description: "نستخدم قطعًا أصلية أو بديلة حسب المتاح، ونوضح النوع والتكلفة قبل الإصلاح." },
+];
+
+const testimonials = [
+  { name: "Coach Ahmed Elsayed", city: "تقييم على Google", comment: "عمل رائع 👏 — مقتطف مترجم من تقييم Google المنشور على ملف النشاط التجاري.", rating: 5 },
+  { name: "سيد محمد", city: "تقييم على Google", comment: "من أفضل خدمات إصلاح الثلاجات في المنطقة، مع قطع غيار أصلية وضمان حقيقي — مقتطف مترجم من تقييم Google.", rating: 5 },
+  { name: "Maiada Omer", city: "تقييم على Google", comment: "من أفضل الأماكن بصراحة، فريق لديه خبرة وتعامل راقٍ جدًا وخدمة ممتازة — مقتطف مترجم من تقييم Google.", rating: 5 },
+];
+
+const branches = [
+  {
+    name: "فرع سان ستيفانو",
+    note: "المركز الرئيسي - سان ستيفانو، الإسكندرية.",
+    href: "https://maps.app.goo.gl/TFccizUnkw4YeZBm6",
+    color: "bg-orange-600",
+  },
+  {
+    name: "فرع سيدي بشر",
+    note: "شارع العاشر - سيدي بشر، الإسكندرية.",
+    href: "https://maps.app.goo.gl/TFccizUnkw4YeZBm6",
+    color: "bg-blue-600",
+  },
+  {
+    name: "فرع 45 بحر",
+    note: "شارع 45 بحر - جاد، الإسكندرية.",
+    href: "https://maps.app.goo.gl/MgH5xfjExHg1UwLE8",
+    color: "bg-green-600",
+  },
+];
+
+const processSteps = [
+  { number: "01", title: "قول لنا المشكلة", text: "نوع الجهاز والعطل اللي لاحظته، بالتليفون أو واتساب أو نموذج الحجز." },
+  { number: "02", title: "نرتب الزيارة", text: "نراجع معاك بيانات الطلب والعنوان والموعد المناسب." },
+  { number: "03", title: "نفحص ونوضح لك الحل", text: "تفهم العطل والتكلفة ونوع قطع الغيار قبل بدء الإصلاح." },
+];
 
 export default function Home() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
-
-  const services = [
-    { icon: Zap, title: "صيانة الثلاجات", href: "/refrigerator-service", description: "إصلاح جميع أنواع الثلاجات والديب فريزر مع ضمان على الإصلاح." },
-    { icon: Droplet, title: "صيانة الغسالات", href: "/washing-machine-service", description: "تصليح غسالات الملابس والأطباق، أوتوماتيك وفوق أوتوماتيك، بأحدث المعدات." },
-    { icon: Wind, title: "صيانة المكيفات", href: "/air-conditioner-service", description: "تنظيف، شحن فريون، وإصلاح جميع أنواع التكييفات والسبليت لضمان أفضل أداء." },
-    { icon: Flame, title: "صيانة الأفران", href: "/stove-service", description: "صيانة شاملة للبوتاجازات والأفران الكهربائية والميكروويف مع فحص الأمان." },
-    { icon: Heater, title: "صيانة السخانات", href: "/water-heater-service", description: "إصلاح السخان الكهربائي أو الغاز ومشكلة عدم التسخين وتسريب المياه في المنزل." },
-  ];
-
-  const features = [
-    { icon: Truck, title: "وصول خلال ساعة", description: "نصلك في أي مكان بالإسكندرية خلال 60 دقيقة فقط من طلب الخدمة." },
-    { icon: Award, title: "مدة الضمان: ٦ شهور أو سنة.", description: "شهادة ضمان شاملة وموثقة على كافة أعمال الصيانة وقطع الغيار المستبدلة." },
-    { icon: Users, title: "مهندسون خبراء", description: "طاقم فني متخصص ومدرب على أحدث الموديلات العالمية لضمان جودة الإصلاح." },
-    { icon: Shield, title: "قطع غيار أصلية", description: "نستخدم قطعًا أصلية أو بديلة حسب المتاح، ونوضح النوع والتكلفة قبل الإصلاح." },
-  ];
-
-  const testimonials = [
-    { name: "Coach Ahmed Elsayed", city: "تقييم على Google", comment: "عمل رائع 👏 — مقتطف مترجم من تقييم Google المنشور على ملف النشاط التجاري.", rating: 5 },
-    { name: "سيد محمد", city: "تقييم على Google", comment: "من أفضل خدمات إصلاح الثلاجات في المنطقة، مع قطع غيار أصلية وضمان حقيقي — مقتطف مترجم من تقييم Google.", rating: 5 },
-    { name: "Maiada Omer", city: "تقييم على Google", comment: "من أفضل الأماكن بصراحة، فريق لديه خبرة وتعامل راقٍ جدًا وخدمة ممتازة — مقتطف مترجم من تقييم Google.", rating: 5 },
-  ];
 
   const faqs = [
     { q: "ما هي المناطق التي تغطيها خدمة الصيانة؟", a: "نحن نغطي كافة مناطق الإسكندرية (سموحة، سيدي جابر، لوران، العجمي، السيوف، المنتزه، العصافرة، محرم بك، وكافة المناطق المجاورة)." },
@@ -66,364 +209,356 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white overflow-x-hidden font-sans" dir="rtl">
+    <div className="min-h-screen flex flex-col bg-[#f6f7f7] overflow-x-hidden font-sans text-[#102c42]" dir="rtl">
       <SEO
         title="صيانة أجهزة منزلية بالإسكندرية | احجز فني للمنزل الآن"
         description="احجز فني صيانة أجهزة منزلية بالإسكندرية لإصلاح الثلاجات والغسالات والتكييفات والبوتاجازات والسخانات في المنزل. فحص واضح وتأكيد للتكلفة قبل الإصلاح."
         keywords="صيانة أجهزة منزلية الإسكندرية, فني صيانة منزلية, صيانة ثلاجات الإسكندرية, صيانة غسالات الإسكندرية, صيانة تكييفات الإسكندرية, صيانة بوتاجازات, صيانة سخانات, حجز فني صيانة"
       />
       <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
-      <Header />
 
-      {/* HERO SECTION - RE-DESIGNED */}
-      <section className="relative min-h-0 lg:min-h-[88vh] flex items-center overflow-hidden bg-slate-900 pt-16 lg:pt-20">
-        <div className="absolute inset-0 z-0">
-          <img
-            src="/images/hero-bg-professional.webp"
-            alt="صيانة أجهزة منزلية احترافية بالإسكندرية"
-            width={1600}
-            height={900}
-            className="w-full h-full object-cover opacity-40 scale-105"
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
-          />
-          <div className="absolute inset-0 bg-gradient-to-l from-slate-900 via-slate-900/60 to-transparent"></div>
-        </div>
-
-        <div className="container mx-auto px-4 relative z-10 py-8 md:py-12">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8 }}
-              className="text-right max-w-2xl mx-auto lg:mx-0"
-            >
-              <div className="inline-flex items-center gap-2 bg-orange-500/20 border border-orange-500/30 px-3 py-2 rounded-full mb-5 lg:mb-8">
-                <Sparkles className="w-4 h-4 text-orange-400" aria-hidden="true" />
-                <span className="text-orange-300 font-black text-xs md:text-base">خدمة صيانة منزلية داخل الإسكندرية</span>
-              </div>
-
-              <h1 className="text-[2.35rem] sm:text-5xl lg:text-7xl font-black text-white leading-[1.15] mb-5 lg:mb-8">
-                فني صيانة أجهزة منزلية <br />
-                <span className="text-orange-500">في منزلك اليوم</span> <br />
-                <span className="text-xl sm:text-3xl lg:text-5xl text-slate-300">بحجز سريع وضمان على الخدمة</span>
-              </h1>
-
-              <p className="text-base sm:text-xl md:text-2xl text-slate-200 mb-7 lg:mb-10 max-w-2xl font-bold leading-relaxed">
-                لا داعي لنقل جهازك. اطلب فنيًا إلى منزلك لإصلاح الثلاجات والغسالات والتكييفات والبوتاجازات في مختلف مناطق الإسكندرية، واحصل على تأكيد واضح قبل الإصلاح.
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-8 lg:mb-12">
-                <Button
-                  size="lg"
-                  type="button"
-                  className="bg-orange-600 hover:bg-orange-700 text-white text-lg sm:text-xl font-black px-5 py-5 sm:py-7 rounded-2xl shadow-xl shadow-orange-900/40 transition-all group"
-                  onClick={() => document.getElementById("booking-form")?.scrollIntoView({ behavior: "smooth", block: "center" })}
-                >
-                  <Calendar className="w-6 h-6 ml-2 group-hover:rotate-12 transition-transform" aria-hidden="true" />
-                  احجز موعدك الآن
-                </Button>
-
-                <a
-                  href="tel:01278885772"
-                  className="flex items-center justify-center gap-3 bg-white text-slate-900 hover:bg-orange-50 border-2 border-white text-lg sm:text-xl font-black px-5 py-5 sm:py-7 rounded-2xl shadow-xl shadow-black/20 transition-all active:scale-95"
-                  aria-label="الاتصال بمركز الصيانة"
-                >
-                  <Phone className="w-6 h-6 text-orange-600" aria-hidden="true" />
-                  <span>اتصل الآن</span>
-                </a>
-              </div>
-
-              <p className="text-sm sm:text-base text-slate-300/90 font-bold mb-6">
-                اترك بياناتك الآن وسنتواصل معك لتأكيد الموعد والتكلفة قبل الزيارة.
-              </p>
-
-              <div className="flex flex-wrap gap-8">
-                <div className="flex items-center gap-3 text-white font-black">
-                  <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center border border-green-500/30">
-                    <CheckCircle className="w-6 h-6 text-green-500" />
-                  </div>
-                  فحص فوري
-                </div>
-                <div className="flex items-center gap-3 text-white font-black">
-                  <div className="w-10 h-10 bg-orange-500/20 rounded-full flex items-center justify-center border border-orange-500/30">
-                    <ShieldCheck className="w-6 h-6 text-orange-500" />
-                  </div>
-                  ضمان على الإصلاح
-                </div>
-                <div className="flex items-center gap-3 text-white font-black">
-                  <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center border border-blue-500/30">
-                    <Users className="w-6 h-6 text-blue-500" />
-                  </div>
-                  فنيين خبراء
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="relative w-full max-w-xl mx-auto lg:mx-0"
-            >
-              <div className="absolute -inset-4 bg-orange-500/30 rounded-[3rem] blur-3xl animate-pulse-slow"></div>
-              <div id="booking-form" className="relative bg-white p-1 rounded-[2.5rem] shadow-2xl border-4 border-orange-500/20 scroll-mt-24">
-                <div className="bg-gradient-to-l from-orange-700 via-orange-600 to-amber-500 text-white py-4 px-4 rounded-t-[2.2rem] text-center font-black text-lg sm:text-xl mb-1">
-                  <div className="flex items-center justify-center gap-2">احجز صيانة فورية الآن <Sparkles className="h-5 w-5 text-yellow-200" aria-hidden="true" /></div>
-                  <span className="block text-xs sm:text-sm font-bold text-orange-50 mt-1">أرسل الطلب أو اتصل مباشرة لتأكيد الموعد</span>
-                  <a href="tel:01278885772" className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-1.5 text-sm font-black text-white transition-colors hover:bg-white/30">
-                    <Phone className="h-4 w-4" aria-hidden="true" /> 01278885772
-                  </a>
-                </div>
-                <div className="grid grid-cols-3 gap-2 px-3 pt-3 text-center text-[10px] font-black text-slate-600 sm:text-xs">
-                  <span>فحص واضح</span><span>موعد مناسب</span><span>تأكيد قبل الإصلاح</span>
-                </div>
-                <BookingForm />
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* QUICK SERVICE CHOOSER */}
-      <section className="public-lazy-section relative z-10 -mt-6 px-4 pb-8 md:-mt-10" aria-labelledby="quick-service-heading">
-        <div className="mx-auto max-w-6xl rounded-[2rem] border border-slate-200 bg-white p-5 shadow-2xl shadow-slate-300/30 md:p-7">
-          <div className="mb-5 flex flex-col gap-2 text-right md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="text-sm font-black text-orange-600">ابدأ من نوع جهازك</p>
-              <h2 id="quick-service-heading" className="text-2xl font-black text-slate-900 md:text-3xl">اختر الخدمة الأقرب لمشكلتك</h2>
-            </div>
-            <button
-              type="button"
-              onClick={() => document.getElementById("booking-form")?.scrollIntoView({ behavior: "smooth", block: "center" })}
-              className="inline-flex items-center gap-2 self-start rounded-xl px-3 py-2 text-sm font-black text-slate-600 transition-colors hover:bg-orange-50 hover:text-orange-700 md:self-auto"
-            >
-              لا تعرف نوع العطل؟ احجز فحصًا <ArrowRight className="h-4 w-4" />
-            </button>
-          </div>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {services.map((service) => (
-              <a
-                key={service.href}
-                href={service.href}
-                className="group flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-3 text-right transition-all hover:-translate-y-1 hover:border-orange-200 hover:bg-orange-50 hover:shadow-lg md:p-4"
-              >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-orange-600 shadow-sm transition-colors group-hover:bg-orange-600 group-hover:text-white">
-                  <service.icon className="h-5 w-5" aria-hidden="true" />
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-black leading-snug text-slate-900 md:text-base">{service.title.replace("صيانة ", "")}</span>
-                  <span className="mt-1 block text-[11px] font-bold text-slate-500">اعرف التفاصيل</span>
-                </span>
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* QUICK TRUST BAR */}
-      <div className="bg-white py-10 border-b border-slate-100">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-wrap justify-center items-center gap-8 md:gap-20 opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
-            {['SAMSUNG', 'LG', 'SHARP', 'TOSHIBA', 'ZANUSSI', 'FRESH', 'BEKO', 'ARISTON'].map(brand => (
-              <span key={brand} className="text-2xl md:text-4xl font-black tracking-tighter text-slate-900">{brand}</span>
-            ))}
-          </div>
+      {/* TOP MICRO STRIP */}
+      <div className="bg-[#09283d] text-[#c1d1dc] py-2 text-[11px] tracking-wide">
+        <div className="max-w-6xl mx-auto px-5 flex justify-center sm:justify-between gap-4">
+          <span>صيانة أجهزة منزلية في الإسكندرية</span>
+          <span dir="ltr" className="hidden sm:inline">MAINTENANCE GUIDE · ALEXANDRIA</span>
         </div>
       </div>
 
-      {/* WHY US SECTION */}
-      <section className="public-lazy-section py-32 bg-slate-50 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/5 rounded-full blur-3xl -mr-48 -mt-48"></div>
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center max-w-3xl mx-auto mb-24">
-            <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-8">لماذا نحن الخيار الأول بالإسكندرية؟</h2>
-            <p className="text-xl text-slate-600 font-bold">نجمع بين الخبرة الهندسية والسرعة في التنفيذ لنقدم لك تجربة صيانة لا مثيل لها.</p>
+      <Header />
+
+      {/* HERO */}
+      <section className="bg-[#09283d] text-white relative overflow-hidden">
+        <div className="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-[47%_53%]">
+          <div className="relative z-10 px-6 pt-10 pb-8 lg:py-16 lg:pl-9 lg:pr-[max(36px,calc((100vw-1088px)/2))]">
+            <div className="flex items-center gap-3 text-[11px] text-[#f3a06d] mb-5">
+              <span className="inline-block w-7 h-0.5 bg-[#f47832]" aria-hidden="true"></span>
+              MAINTENANCE GUIDE
+            </div>
+            <p className="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.42] tracking-tight" aria-label="بيتك يكمل. وإحنا نصلّح.">
+              بيتك يكمل.<br />
+              <span className="text-[#fa9b61]">وإحنا نصلّح.</span>
+            </p>
+            <h1 className="text-[13px] leading-8 text-[#b9cbd7] max-w-sm mt-6 font-bold">
+              فني صيانة أجهزة منزلية بالإسكندرية — في منزلك اليوم، بحجز سريع وضمان على الخدمة.
+            </h1>
+            <p className="text-[13px] leading-8 text-[#b9cbd7] max-w-sm mt-2 font-bold">
+              صيانة منزلية للغسالات والثلاجات والتكييفات وباقي أجهزة البيت. نوضح لك التفاصيل والتكلفة قبل الإصلاح.
+            </p>
+            <div className="flex flex-wrap items-center gap-3 mt-7">
+              <Button
+                type="button"
+                onClick={scrollToBooking}
+                className="bg-[#f47832] hover:bg-[#e06a26] text-white text-[13px] font-bold px-6 py-6 rounded-[3px] shadow-lg shadow-black/20"
+              >
+                احجز زيارة منزلية
+                <span aria-hidden="true" className="font-black">↙</span>
+              </Button>
+              <a
+                href={PHONE_TEL}
+                aria-label={`الاتصال بمركز الصيانة على ${PHONE_DISPLAY}`}
+                className="text-xs font-bold text-[#e1eaf0] px-3 py-4 border-b border-[#5e7585] hover:text-white transition-colors"
+              >
+                اتصل بينا <bdi dir="ltr">{PHONE_DISPLAY}</bdi>
+              </a>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-7 text-[10px] text-[#bdcdd8] font-bold">
+              <span>تكلفة واضحة قبل الإصلاح</span>
+              <span className="border-r border-[#345064] pr-5">خدمة في منزلك</span>
+              <span className="border-r border-[#345064] pr-5">ضمان على الإصلاح</span>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <motion.div
-                whileHover={{ y: -10 }}
-                key={index}
-                className="bg-white p-10 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 group transition-all"
+          <div className="relative min-h-[245px] lg:min-h-[590px] isolate">
+            <img
+              src="/images/redesign/repair.webp"
+              srcSet="/images/redesign/repair-640.webp 640w, /images/redesign/repair-1280.webp 1280w"
+              sizes="(max-width: 1024px) 100vw, 53vw"
+              width="1280"
+              height="720"
+              alt="صورة توضيحية لأعمال صيانة أجهزة منزلية"
+              className="absolute inset-0 h-full w-full object-cover object-[40%_50%]"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b lg:bg-gradient-to-l from-[#09283d] via-[#09283d]/0 to-transparent pointer-events-none" aria-hidden="true"></div>
+            <div className="absolute bottom-6 right-6 lg:-right-3 w-[70px] h-[70px] lg:w-[115px] lg:h-[115px] bg-[#f47832] text-[#09283d] z-10 flex items-center justify-center -rotate-[8deg] shadow-xl" aria-hidden="true">
+              <span className="rotate-[8deg] font-black text-3xl lg:text-5xl" dir="ltr">MG</span>
+            </div>
+            <small className="absolute bottom-3 left-3 lg:bottom-6 lg:left-7 text-[8px] lg:text-[10px] bg-[#09283d]/70 text-white px-2.5 py-1 z-10">
+              صورة توضيحية مولّدة للتصميم
+            </small>
+          </div>
+        </div>
+      </section>
+
+      {/* DEVICE CHOOSER */}
+      <section className="relative z-10 bg-white border-b border-[#dce3e7]" aria-labelledby="device-chooser-heading">
+        <div className="max-w-6xl mx-auto px-5 grid grid-cols-3 lg:grid-cols-[1.3fr_repeat(6,1fr)] items-stretch">
+          <div className="col-span-3 lg:col-span-1 py-6 lg:py-7 self-center flex lg:block items-center justify-between">
+            <small className="block text-[#bb5d2d] text-[10px] font-bold mb-1">نبدأ من هنا</small>
+            <h2 id="device-chooser-heading" className="text-lg lg:text-xl font-black">أنهي جهاز محتاجنا؟</h2>
+          </div>
+          {deviceChooser.map((device) => (
+            <a
+              key={device.title}
+              href={device.href}
+              className="flex flex-col items-center justify-center gap-2 py-5 px-2 text-[11px] lg:text-xs font-bold text-[#102c42] lg:border-r lg:border-[#e6ebed] hover:bg-orange-50 hover:text-[#e06a26] transition-colors"
+            >
+              <span className="text-[#315f7d]">{device.icon}</span>
+              <span>{device.title} <em className="not-italic text-[#ec752f] hidden lg:inline" aria-hidden="true">↙</em></span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      {/* SERVICES WITH PHOTOS */}
+      <section className="py-12 lg:py-20" aria-labelledby="services-heading">
+        <div className="max-w-6xl mx-auto px-5">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-8 lg:mb-9">
+            <div>
+              <p className="text-[10px] tracking-[2px] text-[#b65d31] font-bold mb-3">صيانة على قد احتياج بيتك</p>
+              <h2 id="services-heading" className="text-3xl lg:text-4xl font-black leading-relaxed">لكل جهاز، عناية.</h2>
+            </div>
+            <p className="text-xs text-[#6b7e8c] max-w-xs leading-6 font-bold">اختار الخدمة المناسبة لجهازك، وابدأ حجز الزيارة بخطوات بسيطة.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {serviceCards.map((card) => (
+              <a
+                key={card.title}
+                href={card.href}
+                className={`group bg-white overflow-hidden grid grid-cols-[42%_58%] md:block transition-shadow hover:shadow-xl ${card.featured ? "md:bg-[#e8eef2]" : ""}`}
               >
-                <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mb-8 group-hover:bg-orange-600 transition-colors duration-500 shadow-inner">
-                  <feature.icon className="w-10 h-10 text-orange-600 group-hover:text-white transition-colors duration-500" />
+                <div className="h-full min-h-[150px] md:h-[218px] overflow-hidden">
+                  <img
+                    src={card.img}
+                    srcSet={card.srcSet}
+                    sizes={card.sizes}
+                    width={card.width}
+                    height={card.height}
+                    alt={`صورة توضيحية لخدمة ${card.title}`}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                    decoding="async"
+                  />
                 </div>
-                <h3 className="text-2xl font-black text-slate-900 mb-4">{feature.title}</h3>
-                <p className="text-slate-500 font-bold leading-relaxed">{feature.description}</p>
-              </motion.div>
+                <div className="p-4 md:p-6 self-center">
+                  <h3 className="text-base md:text-lg font-black flex items-center justify-between gap-2">
+                    {card.title}
+                    <span className="text-[#e97635]" aria-hidden="true">↙</span>
+                  </h3>
+                  <p className="text-[11px] leading-5 text-[#6b7e8c] mt-2 font-bold">{card.description}</p>
+                </div>
+              </a>
+            ))}
+          </div>
+          <p className="text-[10px] text-[#81929b] mt-5 font-bold">صور الخدمات توضيحية مولّدة للتصميم، وليست صورًا لأعمال أو فريق المركز.</p>
+        </div>
+      </section>
+
+      {/* PROCESS */}
+      <section className="bg-white" aria-labelledby="process-heading">
+        <div className="max-w-6xl mx-auto px-5 py-12 lg:py-18 grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-8 lg:gap-16 lg:py-16">
+          <div>
+            <p className="text-[10px] tracking-[2px] text-[#b65d31] font-bold mb-3">من أول مكالمة لحد الإصلاح</p>
+            <h2 id="process-heading" className="text-3xl lg:text-4xl font-black leading-relaxed">الخطوات واضحة.<br />والقرار ليك.</h2>
+            <div className="w-10 h-1 bg-[#f47832] mt-6" aria-hidden="true"></div>
+            <p className="text-[10px] text-[#81929b] mt-6 leading-5 font-bold hidden lg:block">نوع قطعة الغيار وتكلفتها يتوضحوا لك قبل التركيب.</p>
+          </div>
+          <div>
+            {processSteps.map((step, index) => (
+              <div key={step.number} className={`grid grid-cols-[32px_1fr] lg:grid-cols-[40px_1fr] gap-4 lg:gap-5 py-5 ${index > 0 ? "border-t border-[#e2e7ea]" : "pt-0"}`}>
+                <span className="text-2xl lg:text-3xl text-[#d7753d]" aria-hidden="true">{step.number}</span>
+                <div>
+                  <h3 className="text-sm lg:text-base font-black">{step.title}</h3>
+                  <p className="text-[11px] text-[#6a7f8e] mt-1.5 leading-5 font-bold">{step.text}</p>
+                </div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* SERVICES SHOWCASE */}
-      <section className="public-lazy-section py-32 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col lg:flex-row items-end justify-between mb-24 gap-8">
-            <div className="max-w-2xl text-right">
-              <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-8">خدماتنا المتخصصة</h2>
-              <p className="text-xl text-slate-600 font-bold leading-relaxed">نقدم حلولاً متكاملة لكافة الأجهزة المنزلية، ونوضح نوع القطعة والتكلفة قبل الإصلاح.</p>
-            </div>
-            <Button
-              size="lg"
-              className="bg-slate-900 hover:bg-slate-800 text-white font-black px-10 py-8 rounded-2xl text-xl"
-              onClick={() => document.getElementById("booking-form")?.scrollIntoView({ behavior: "smooth", block: "center" })}
-            >
-              اطلب فني الآن
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {services.slice(0, 4).map((service, index) => (
-              <a href={service.href} key={index} className="group relative block overflow-hidden rounded-[3rem] bg-slate-900 h-[400px]">
-                <img
-                  src={`/images/services/${index === 0 ? 'refrigerator-repair-pro.webp' : index === 1 ? 'washing-machine-repair-pro.webp' : index === 2 ? 'ac-repair-pro.webp' : 'stove-repair-pro.webp'}`}
-                  alt={service.title}
-                  width={800}
-                  height={533}
-                  className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:scale-110 transition-transform duration-700"
-                  loading="lazy"
-                  decoding="async"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
-                <div className="absolute bottom-0 right-0 p-12 text-right">
-                  <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center mb-6">
-                    <service.icon className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="text-3xl font-black text-white mb-4">{service.title}</h3>
-                  <p className="text-slate-300 font-bold text-lg max-w-md">{service.description}</p>
-                </div>
+      {/* BOOKING */}
+      <section id="booking-form" className="bg-[#153a53] text-white scroll-mt-24" aria-labelledby="booking-heading">
+        <div className="max-w-6xl mx-auto px-5 py-11 lg:py-16 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-start">
+          <div>
+            <p className="text-[10px] tracking-[2px] text-[#f9ab7c] font-bold mb-3">معاك في الإسكندرية</p>
+            <h2 id="booking-heading" className="text-3xl lg:text-4xl font-black leading-relaxed">نرجّع يومك لطبيعته.</h2>
+            <p className="text-xs text-[#bacfdd] leading-6 mt-4 font-bold max-w-md">
+              احكي لنا عن الجهاز والمشكلة، وسيب بيانات التواصل لترتيب الزيارة. بنعرفك تكلفة الكشف قبل الزيارة، وبتتخصم من تكلفة الإصلاح لو وافقت عليه.
+            </p>
+            <div className="flex flex-wrap gap-3 mt-7">
+              <a
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="التواصل عبر واتساب على 01558625259"
+                className="inline-flex items-center gap-2 bg-white text-[#17374c] text-[13px] font-bold px-6 py-4 rounded-[3px] hover:bg-orange-50 transition-colors"
+              >
+                تواصل على واتساب
+                <MessageCircle className="w-4 h-4" aria-hidden="true" />
               </a>
+              <a
+                href={PHONE_TEL}
+                aria-label={`الاتصال بمركز الصيانة على ${PHONE_DISPLAY}`}
+                className="inline-flex items-center gap-2 border border-white/40 text-white text-[13px] font-bold px-6 py-4 rounded-[3px] hover:bg-white/10 transition-colors"
+              >
+                <Phone className="w-4 h-4" aria-hidden="true" />
+                <bdi dir="ltr">{PHONE_DISPLAY}</bdi>
+              </a>
+            </div>
+          </div>
+          <div className="bg-white text-[#153a53] rounded p-1.5 shadow-2xl">
+            <BookingForm />
+          </div>
+        </div>
+      </section>
+
+      {/* WHY US - preserved copy */}
+      <section className="py-12 lg:py-20" aria-labelledby="why-us-heading">
+        <div className="max-w-6xl mx-auto px-5">
+          <div className="mb-8 lg:mb-12">
+            <p className="text-[10px] tracking-[2px] text-[#b65d31] font-bold mb-3">ليه Maintenance Guide؟</p>
+            <h2 id="why-us-heading" className="text-3xl lg:text-4xl font-black leading-relaxed">لماذا نحن الخيار الأول بالإسكندرية؟</h2>
+            <p className="text-xs text-[#6b7e8c] max-w-md leading-6 mt-3 font-bold">نجمع بين الخبرة الهندسية والسرعة في التنفيذ لنقدم لك تجربة صيانة لا مثيل لها.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {features.map((feature) => (
+              <div key={feature.title} className="bg-white p-6 lg:p-8 border border-[#e6ebed]">
+                <div className="w-12 h-12 bg-[#09283d] flex items-center justify-center mb-5">
+                  <feature.icon className="w-6 h-6 text-[#f47832]" aria-hidden="true" />
+                </div>
+                <h3 className="text-base font-black mb-2">{feature.title}</h3>
+                <p className="text-[11px] text-[#6b7e8c] font-bold leading-5">{feature.description}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* SIMPLE SERVICE JOURNEY */}
-      <section className="public-lazy-section bg-slate-900 py-20 text-white" aria-labelledby="service-journey-heading">
-        <div className="container mx-auto px-4">
-          <div className="grid items-center gap-10 lg:grid-cols-[0.8fr_1.2fr]">
-            <div className="text-right">
-              <p className="mb-3 text-sm font-black text-orange-400">بدون خطوات معقدة</p>
-              <h2 id="service-journey-heading" className="mb-5 text-3xl font-black leading-tight md:text-5xl">من طلب الصيانة إلى الحل في 3 خطوات</h2>
-              <p className="text-lg font-bold leading-relaxed text-slate-300">أرسل بيانات بسيطة، نراجع طلبك، ثم يصلك الفني في الموعد المتفق عليه.</p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-3">
-              {[
-                { number: "01", title: "أرسل الطلب", text: "اختر الجهاز واكتب بيانات التواصل والعنوان." },
-                { number: "02", title: "نؤكد التفاصيل", text: "يتواصل معك فريقنا لتأكيد الموعد والمشكلة." },
-                { number: "03", title: "يصل الفني", text: "فحص في المنزل ثم عرض واضح قبل الإصلاح." },
-              ].map((step) => (
-                <div key={step.number} className="rounded-3xl border border-white/10 bg-white/5 p-5 text-right backdrop-blur-sm">
-                  <span className="mb-5 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-orange-600 text-sm font-black">{step.number}</span>
-                  <h3 className="mb-2 text-lg font-black">{step.title}</h3>
-                  <p className="text-sm font-bold leading-relaxed text-slate-400">{step.text}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+      {/* BRANDS */}
+      <section className="bg-white border-y border-[#e6ebed] py-8" aria-label="ماركات نخدمها">
+        <div className="max-w-6xl mx-auto px-5 flex flex-wrap justify-center items-center gap-x-8 gap-y-3">
+          {brands.map((brand) => (
+            <a
+              key={brand.path}
+              href={brand.path}
+              className="text-lg lg:text-2xl font-black tracking-tighter text-slate-300 hover:text-[#f47832] transition-colors"
+              aria-label={`صيانة ${brand.name} في الإسكندرية`}
+            >
+              {brand.name}
+            </a>
+          ))}
         </div>
       </section>
 
-      {/* BRANCHES SECTION */}
-      <section className="public-lazy-section py-32 bg-white relative overflow-hidden">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto mb-20">
-            <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-8">فروعنا في الإسكندرية</h2>
-            <p className="text-xl text-slate-600 font-bold">نحن قريبون منك دائماً لضمان أسرع خدمة صيانة.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Branch 1 */}
-            <motion.div
-              whileHover={{ y: -10 }}
-              className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 shadow-xl group transition-all"
-            >
-              <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-orange-200">
-                <MapPin className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-2xl font-black text-slate-900 mb-4">فرع سان ستيفانو</h3>
-              <p className="text-slate-500 font-bold mb-6">المركز الرئيسي - سان ستيفانو، الإسكندرية.</p>
-              <a
-                href="https://maps.app.goo.gl/TFccizUnkw4YeZBm6"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-orange-600 font-black hover:gap-4 transition-all"
-              >
-                عرض الموقع على الخريطة <ArrowRight className="w-5 h-5" />
-              </a>
-            </motion.div>
-
-            {/* Branch 2 */}
-            <motion.div
-              whileHover={{ y: -10 }}
-              className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 shadow-xl group transition-all"
-            >
-              <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-blue-200">
-                <MapPin className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-2xl font-black text-slate-900 mb-4">فرع سيدي بشر</h3>
-              <p className="text-slate-500 font-bold mb-6">شارع العاشر - سيدي بشر، الإسكندرية.</p>
-              <a
-                href="https://maps.app.goo.gl/TFccizUnkw4YeZBm6"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-blue-600 font-black hover:gap-4 transition-all"
-              >
-                عرض الموقع على الخريطة <ArrowRight className="w-5 h-5" />
-              </a>
-            </motion.div>
-
-            {/* Branch 3 */}
-            <motion.div
-              whileHover={{ y: -10 }}
-              className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 shadow-xl group transition-all"
-            >
-              <div className="w-16 h-16 bg-green-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-green-200">
-                <MapPin className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-2xl font-black text-slate-900 mb-4">فرع 45 بحر</h3>
-              <p className="text-slate-500 font-bold mb-6">شارع 45 بحر - جاد، الإسكندرية.</p>
-              <a
-                href="https://maps.app.goo.gl/MgH5xfjExHg1UwLE8"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-green-600 font-black hover:gap-4 transition-all"
-              >
-                عرض الموقع على الخريطة <ArrowRight className="w-5 h-5" />
-              </a>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* GOOGLE BUSINESS MAP */}
-      <section className="public-lazy-section py-24 bg-slate-50">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-8 mb-12">
-            <div className="text-right">
-              <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-4">موقعنا على خرائط Google</h2>
-              <p className="text-lg text-slate-600 font-bold leading-relaxed">اعرف موقعنا وشاهد ملف النشاط التجاري والتقييمات قبل طلب الخدمة.</p>
+      {/* TESTIMONIALS - preserved copy */}
+      <section className="py-12 lg:py-20 bg-[#09283d] text-white" aria-labelledby="testimonials-heading">
+        <div className="max-w-6xl mx-auto px-5">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-8 lg:mb-12">
+            <div>
+              <p className="text-[10px] tracking-[2px] text-[#f9ab7c] font-bold mb-3">آراء حقيقية</p>
+              <h2 id="testimonials-heading" className="text-3xl lg:text-4xl font-black leading-relaxed">ماذا يقول عملاؤنا؟</h2>
+              <p className="text-[11px] text-[#b9cbd7] font-bold mt-3">مقتطفات من التقييمات العامة المنشورة على ملفنا التجاري في Google</p>
             </div>
             <a
               href={GOOGLE_BUSINESS_PROFILE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-orange-600 px-7 py-4 text-base font-black text-white shadow-lg shadow-orange-200 hover:bg-orange-700 transition-colors"
+              className="inline-flex items-center gap-2 text-[12px] font-bold text-white border border-white/30 px-5 py-3 rounded-[3px] hover:bg-white/10 transition-colors self-start lg:self-auto"
             >
-              <MapPin className="w-5 h-5" aria-hidden="true" />
-              فتح الاتجاهات في Google Maps
+              <Star className="w-4 h-4 text-[#f9ab7c] fill-current" aria-hidden="true" />
+              شاهد التقييمات الحقيقية على Google
             </a>
           </div>
-          <div className="overflow-hidden rounded-[2rem] border-4 border-white bg-white shadow-2xl">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {testimonials.map((t) => (
+              <figure key={t.name} className="bg-white/5 border border-white/10 p-6 lg:p-8">
+                <div className="flex gap-1 mb-4" aria-label={`تقييم ${t.rating} من 5`}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star key={star} className="w-4 h-4 text-[#f9ab7c] fill-current" aria-hidden="true" />
+                  ))}
+                </div>
+                <blockquote className="text-[13px] font-bold leading-7 italic">"{t.comment}"</blockquote>
+                <figcaption className="mt-5">
+                  <p className="font-black text-sm">{t.name}</p>
+                  <p className="text-[10px] text-[#b9cbd7] font-bold">{t.city}</p>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* BRANCHES - preserved data */}
+      <section className="py-12 lg:py-20" aria-labelledby="branches-heading">
+        <div className="max-w-6xl mx-auto px-5">
+          <div className="mb-8 lg:mb-12">
+            <p className="text-[10px] tracking-[2px] text-[#b65d31] font-bold mb-3">قريبين منك</p>
+            <h2 id="branches-heading" className="text-3xl lg:text-4xl font-black leading-relaxed">فروعنا في الإسكندرية</h2>
+            <p className="text-xs text-[#6b7e8c] max-w-md leading-6 mt-3 font-bold">نحن قريبون منك دائماً لضمان أسرع خدمة صيانة.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {branches.map((branch) => (
+              <div key={branch.name} className="bg-white border border-[#e6ebed] p-6 lg:p-8">
+                <div className={`w-12 h-12 ${branch.color} flex items-center justify-center mb-5`}>
+                  <MapPin className="w-6 h-6 text-white" aria-hidden="true" />
+                </div>
+                <h3 className="text-base font-black mb-2">{branch.name}</h3>
+                <p className="text-[11px] text-[#6b7e8c] font-bold leading-5 mb-4">{branch.note}</p>
+                <a
+                  href={branch.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-[12px] font-black text-[#e06a26] hover:gap-3 transition-all"
+                >
+                  عرض الموقع على الخريطة
+                  <span aria-hidden="true">↙</span>
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* GOOGLE MAP */}
+      <section className="py-12 lg:py-16 bg-white border-y border-[#e6ebed]" aria-labelledby="map-heading">
+        <div className="max-w-6xl mx-auto px-5">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-7">
+            <div>
+              <h2 id="map-heading" className="text-2xl lg:text-3xl font-black">موقعنا على خرائط Google</h2>
+              <p className="text-[11px] text-[#6b7e8c] font-bold leading-5 mt-2">اعرف موقعنا وشاهد ملف النشاط التجاري والتقييمات قبل طلب الخدمة.</p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <a
+                href={GOOGLE_BUSINESS_PROFILE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-[#f47832] hover:bg-[#e06a26] text-white text-[12px] font-bold px-5 py-3 rounded-[3px] transition-colors"
+              >
+                <MapPin className="w-4 h-4" aria-hidden="true" />
+                فتح الاتجاهات في Google Maps
+              </a>
+              <a
+                href={FACEBOOK_PAGE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="صفحة Maintenance Guide على فيسبوك"
+                className="inline-flex items-center gap-2 bg-[#1877f2] hover:bg-[#0f66d6] text-white text-[12px] font-bold px-5 py-3 rounded-[3px] transition-colors"
+              >
+                <Facebook className="w-4 h-4" aria-hidden="true" />
+                تابعنا على فيسبوك
+              </a>
+            </div>
+          </div>
+          <div className="overflow-hidden border-4 border-white shadow-xl">
             <iframe
               src="https://www.google.com/maps?q=Service%20guide%20Montaza%202%2C%20San%20Stefano%2C%20Alexandria%2C%20Egypt&output=embed"
               title="موقع Maintenance Guide على خرائط Google"
-              className="block h-[320px] w-full md:h-[440px]"
+              className="block h-[300px] w-full md:h-[400px]"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
               allowFullScreen
@@ -432,70 +567,25 @@ export default function Home() {
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section className="public-lazy-section py-32 bg-orange-600 rounded-[4rem] md:rounded-[6rem] mx-4 md:mx-10 my-20 overflow-hidden relative">
-        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-          <Sparkles className="absolute top-10 right-20 w-20 h-20" />
-          <Sparkles className="absolute bottom-20 left-10 w-32 h-32" />
-        </div>
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-24">
-            <h2 className="text-4xl md:text-6xl font-black text-white mb-8">ماذا يقول عملاؤنا؟</h2>
-            <div className="flex justify-center gap-2">
-              {[1,2,3,4,5].map(i => <Star key={i} className="w-8 h-8 text-yellow-300 fill-yellow-300" />)}
-            </div>
-            <p className="mt-4 text-sm font-bold text-orange-100">مقتطفات من التقييمات العامة المنشورة على ملفنا التجاري في Google</p>
-            <a
-              href={GOOGLE_BUSINESS_PROFILE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 mt-6 rounded-full bg-white/15 px-5 py-3 text-sm font-black text-white hover:bg-white/25 transition-colors"
-            >
-              <Star className="w-4 h-4 text-yellow-300 fill-yellow-300" />
-              شاهد التقييمات الحقيقية على Google
-              <ArrowRight className="w-4 h-4" />
-            </a>
+      {/* FAQ - preserved copy + schema */}
+      <section className="py-12 lg:py-20" aria-labelledby="faq-heading">
+        <div className="max-w-4xl mx-auto px-5">
+          <div className="mb-8 lg:mb-12">
+            <p className="text-[10px] tracking-[2px] text-[#b65d31] font-bold mb-3">عندك سؤال؟</p>
+            <h2 id="faq-heading" className="text-3xl lg:text-4xl font-black leading-relaxed">الأسئلة الشائعة</h2>
+            <p className="text-xs text-[#6b7e8c] font-bold mt-3">كل ما تريد معرفته عن خدماتنا</p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((t, i) => (
-              <div key={i} className="bg-white/10 backdrop-blur-xl border border-white/20 p-10 rounded-[3rem] text-white">
-                <div className="flex gap-1 mb-6">
-                  {[1,2,3,4,5].map(star => <Star key={star} className="w-5 h-5 text-yellow-300 fill-yellow-300" />)}
-                </div>
-                <p className="text-xl font-bold mb-8 leading-relaxed italic">"{t.comment}"</p>
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center font-black text-2xl">
-                    {t.name[0]}
-                  </div>
-                  <div>
-                    <h4 className="font-black text-xl">{t.name}</h4>
-                    <p className="text-orange-200 font-bold">{t.city}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ SECTION */}
-      <section className="public-lazy-section py-32 bg-white">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-6">الأسئلة الشائعة</h2>
-            <p className="text-xl text-slate-600 font-bold">كل ما تريد معرفته عن خدماتنا</p>
-          </div>
-
-          <div className="space-y-4">
+          <div className="space-y-3">
             {faqs.map((faq, index) => (
-              <div key={index} className="border-2 border-slate-100 rounded-[2rem] overflow-hidden transition-all">
+              <div key={faq.q} className="bg-white border border-[#e6ebed] overflow-hidden">
                 <button
+                  type="button"
                   onClick={() => setActiveFaq(activeFaq === index ? null : index)}
-                  className="w-full flex items-center justify-between p-8 text-right bg-white hover:bg-slate-50 transition-colors"
+                  aria-expanded={activeFaq === index}
+                  className="w-full flex items-center justify-between gap-4 p-5 lg:p-6 text-right hover:bg-orange-50/50 transition-colors"
                 >
-                  <span className="text-xl font-black text-slate-900">{faq.q}</span>
-                  <ChevronDown className={`w-6 h-6 text-orange-600 transition-transform duration-300 ${activeFaq === index ? 'rotate-180' : ''}`} />
+                  <span className="text-sm lg:text-base font-black">{faq.q}</span>
+                  <ChevronDown className={`w-5 h-5 text-[#e06a26] shrink-0 transition-transform duration-300 ${activeFaq === index ? "rotate-180" : ""}`} aria-hidden="true" />
                 </button>
                 <AnimatePresence>
                   {activeFaq === index && (
@@ -503,7 +593,7 @@ export default function Home() {
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      className="bg-slate-50 px-8 pb-8 text-lg text-slate-600 font-bold leading-relaxed"
+                      className="px-5 lg:px-6 pb-5 text-[13px] text-[#6b7e8c] font-bold leading-7"
                     >
                       {faq.a}
                     </motion.div>
@@ -515,58 +605,62 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FINAL CTA SECTION */}
-      <section id="contact" className="public-lazy-section py-32 bg-slate-900 text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(249,115,22,0.2),transparent_70%)]"></div>
-        </div>
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-right">
-            <div className="text-right">
-              <h2 className="text-4xl sm:text-5xl md:text-7xl font-black mb-8 leading-tight">جاهز لإصلاح جهازك؟</h2>
-              <p className="text-lg sm:text-2xl text-slate-400 font-bold mb-8 leading-relaxed">
-                احجز الآن وسنتواصل معك لتأكيد الموعد، مع خدمة منزلية وقطع غيار موثوقة وضمان على الإصلاح.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mb-12">
-                <Button
-                  type="button"
-                  className="bg-orange-600 hover:bg-orange-700 text-white font-black py-6 rounded-2xl text-lg"
-                  onClick={() => document.getElementById("booking-form")?.scrollIntoView({ behavior: "smooth", block: "center" })}
-                >
-                  احجز موعدك الآن
-                </Button>
-                <a
-                  href="tel:01278885772"
-                  className="flex items-center justify-center gap-2 border border-slate-600 hover:bg-slate-800 text-white font-black py-6 rounded-2xl text-lg"
-                  aria-label="الاتصال بمركز الصيانة"
-                >
-                  <Phone className="w-5 h-5" aria-hidden="true" />
-                  اتصل الآن
-                </a>
-              </div>
-
-              <div className="space-y-8">
-                <div className="flex items-center gap-6">
-                  <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-900/40">
-                    <Headphones className="w-8 h-8 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="text-2xl font-black">دعم فني 24/7</h4>
-                    <p className="text-slate-500 font-bold">نحن معك في أي وقت، حتى في العطلات الرسمية.</p>
-                  </div>
+      {/* FINAL CTA */}
+      <section id="contact" className="py-12 lg:py-20 bg-[#09283d] text-white scroll-mt-24" aria-labelledby="contact-heading">
+        <div className="max-w-6xl mx-auto px-5">
+          <div className="max-w-3xl">
+            <p className="text-[10px] tracking-[2px] text-[#f9ab7c] font-bold mb-3">جاهز تبدأ؟</p>
+            <h2 id="contact-heading" className="text-3xl sm:text-4xl lg:text-5xl font-black leading-snug mb-5">جاهز لإصلاح جهازك؟</h2>
+            <p className="text-[13px] text-[#b9cbd7] font-bold leading-7 mb-7 max-w-xl">
+              احجز الآن وسنتواصل معك لتأكيد الموعد، مع خدمة منزلية وقطع غيار موثوقة وضمان على الإصلاح.
+            </p>
+            <div className="flex flex-wrap gap-3 mb-10">
+              <Button
+                type="button"
+                onClick={scrollToBooking}
+                className="bg-[#f47832] hover:bg-[#e06a26] text-white text-[13px] font-bold px-6 py-6 rounded-[3px]"
+              >
+                احجز موعدك الآن
+              </Button>
+              <a
+                href={PHONE_TEL}
+                aria-label={`الاتصال بمركز الصيانة على ${PHONE_DISPLAY}`}
+                className="inline-flex items-center gap-2 border border-[#5e7585] hover:bg-white/10 text-white text-[13px] font-bold px-6 py-4 rounded-[3px] transition-colors"
+              >
+                <Phone className="w-4 h-4" aria-hidden="true" />
+                اتصل الآن <bdi dir="ltr">{PHONE_DISPLAY}</bdi>
+              </a>
+              <a
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="التواصل عبر واتساب على 01558625259"
+                className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-[13px] font-bold px-6 py-4 rounded-[3px] transition-colors"
+              >
+                <MessageCircle className="w-4 h-4" aria-hidden="true" />
+                واتساب
+              </a>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-[#f47832] flex items-center justify-center shrink-0">
+                  <Headphones className="w-6 h-6 text-white" aria-hidden="true" />
                 </div>
-                <div className="flex items-center gap-6">
-                  <div className="w-16 h-16 bg-green-600 rounded-2xl flex items-center justify-center shadow-lg shadow-green-900/40">
-                    <Award className="w-8 h-8 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="text-2xl font-black">شهادة ضمان موثقة</h4>
-                    <p className="text-slate-500 font-bold">تضمن لك حقك في إعادة الصيانة مجاناً خلال فترة الضمان.</p>
-                  </div>
+                <div>
+                  <h3 className="text-base font-black">دعم فني 24/7</h3>
+                  <p className="text-[11px] text-[#b9cbd7] font-bold">نحن معك في أي وقت، حتى في العطلات الرسمية.</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-green-600 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-6 h-6 text-white" aria-hidden="true" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black">شهادة ضمان موثقة</h3>
+                  <p className="text-[11px] text-[#b9cbd7] font-bold">تضمن لك حقك في إعادة الصيانة مجاناً خلال فترة الضمان.</p>
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </section>
