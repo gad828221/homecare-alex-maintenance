@@ -12,7 +12,7 @@ import { syncOneSignalIdentity } from './utils/oneSignalIdentity';
 const WHATSAPP_MSG = `أهلًا، أنا جاي من موقع Maintenance Guide ومحتاج صيانة جهاز منزلي في الإسكندرية.
 نوع الجهاز:
 المنطقة:
-ممكن أعرف تفاصيل الحجز وتكلفة الكشف؟`;
+ممكن أعرف تفاصيل الحجز والكشف؟`;
 const WHATSAPP_URL = `https://wa.me/201558625259?text=${encodeURIComponent(WHATSAPP_MSG)}`;
 
 const PUBLIC_PATHS = new Set([
