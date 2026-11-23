@@ -230,7 +230,7 @@ export default function Home() {
       {/* HERO */}
       <section className="bg-[#09283d] text-white relative overflow-hidden">
         <div className="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-[47%_53%]">
-          <div className="relative z-10 px-6 pt-10 pb-8 lg:py-16 lg:pl-9 lg:pr-[max(36px,calc((100vw-1088px)/2))]">
+          <div className="relative z-10 px-6 pt-10 pb-8 lg:py-16 lg:pl-9 lg:pr-[max(36px,calc((min(100vw,1440px)-1088px)/2))]">
             <div className="flex items-center gap-3 text-[11px] text-[#f3a06d] mb-5">
               <span className="inline-block w-7 h-0.5 bg-[#f47832]" aria-hidden="true"></span>
               MAINTENANCE GUIDE
