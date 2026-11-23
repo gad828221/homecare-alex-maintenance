@@ -54,7 +54,7 @@ const deviceChooser = [
   },
   {
     title: "غسالات أطباق",
-    href: "#booking-form",
+    href: "/dishwasher-service",
     icon: <svg viewBox="0 0 40 40" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><rect x="5" y="3" width="30" height="34" rx="3" /><path d="M5 11h30M10 7h2m4 0h2M11 19h18M11 25h18M11 31h18" /></svg>,
   },
 ];
@@ -122,8 +122,8 @@ const serviceCards = [
   },
   {
     title: "غسالات الأطباق",
-    href: "#booking-form",
-    description: "صيانة أعطال الغسيل والصرف في غسالة الأطباق.",
+    href: "/dishwasher-service",
+    description: "صيانة أعطال الغسيل والصرف والتسخين في غسالة الأطباق.",
     img: "/images/redesign/dishwasher.webp",
     srcSet: "/images/redesign/dishwasher-360.webp 360w, /images/redesign/dishwasher-720.webp 720w",
     sizes: "(max-width: 768px) 42vw, 360px",
@@ -147,9 +147,9 @@ const brands = [
 
 const features = [
   { icon: Truck, title: "وصول خلال ساعة", description: "نصلك في أي مكان بالإسكندرية خلال 60 دقيقة فقط من طلب الخدمة." },
-  { icon: Award, title: "مدة الضمان: ٦ شهور أو سنة.", description: "شهادة ضمان شاملة وموثقة على كافة أعمال الصيانة وقطع الغيار المستبدلة." },
+  { icon: Award, title: "شهادة ضمان رقمية", description: "مع كل إصلاح، مدتها بتتحدد لكل حالة ومتسجلة عليها بتاريخ الانتهاء." },
   { icon: Users, title: "مهندسون خبراء", description: "طاقم فني متخصص ومدرب على أحدث الموديلات العالمية لضمان جودة الإصلاح." },
-  { icon: Shield, title: "قطع غيار أصلية", description: "نستخدم قطعًا أصلية أو بديلة حسب المتاح، ونوضح النوع والتكلفة قبل الإصلاح." },
+  { icon: Shield, title: "قطع غيار أصلية أو بديلة", description: "نستخدم قطعًا أصلية أو بديلة حسب المتاح، ونوضح النوع والتكلفة قبل الإصلاح." },
 ];
 
 const testimonials = [
@@ -190,7 +190,7 @@ export default function Home() {
 
   const faqs = [
     { q: "ما هي المناطق التي تغطيها خدمة الصيانة؟", a: "نحن نغطي كافة مناطق الإسكندرية (سموحة، سيدي جابر، لوران، العجمي، السيوف، المنتزه، العصافرة، محرم بك، وكافة المناطق المجاورة)." },
-    { q: "هل تقدمون ضماناً على الصيانة؟", a: "مدة الضمان: ٦ شهور أو سنة." },
+    { q: "هل تقدمون ضماناً على الصيانة؟", a: "مع كل إصلاح بتاخد شهادة ضمان رقمية، المدة بتتحدد لكل حالة ومتسجلة عليها بتاريخ الانتهاء." },
     { q: "كم يستغرق الفني للوصول إلى منزلي؟", a: "نلتزم بالوصول خلال 60 دقيقة من تأكيد الطلب، أو في الموعد الذي يحدده العميل بما يناسب وقته." },
     { q: "هل قطع الغيار المستخدمة أصلية؟", a: "نستخدم قطع غيار أصلية أو بديلة حسب المتاح وحالة الجهاز، ونوضح نوع القطعة وتكلفتها قبل الإصلاح." },
     { q: "إمتى بعرف تكلفة الكشف؟", a: "بنعرفك تكلفة الكشف قبل الزيارة، وبتتخصم من تكلفة الإصلاح لو وافقت عليه." }
@@ -655,8 +655,8 @@ export default function Home() {
                   <Headphones className="w-6 h-6 text-white" aria-hidden="true" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black">دعم فني 24/7</h3>
-                  <p className="text-[11px] text-[#b9cbd7] font-bold">نحن معك في أي وقت، حتى في العطلات الرسمية.</p>
+                  <h3 className="text-base font-black">استقبال طلبات ٢٤ ساعة</h3>
+                  <p className="text-[11px] text-[#b9cbd7] font-bold">ابعت طلبك في أي وقت وهنرجعلك نأكد الموعد.</p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
