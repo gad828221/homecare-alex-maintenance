@@ -46,12 +46,18 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Maintenance Guide" />
     <!-- Google tag for Ads conversion measurement -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-16803756129"></script>
+    <!-- PREVIEW BRANCH ONLY - never merge this host gate to main: no Ads analytics off production hosts -->
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'AW-16803756129');
+      if (/(^|\.)maintenanceguide\.life$/.test(window.location.hostname)) {
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=AW-16803756129';
+        document.head.appendChild(s);
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'AW-16803756129');
+      }
     </script>
     <link rel="preload" as="image" href="/images/redesign/repair-1280.webp" imagesrcset="/images/redesign/repair-640.webp 640w, /images/redesign/repair-1280.webp 1280w" imagesizes="(max-width: 1024px) 100vw, 53vw" type="image/webp" fetchpriority="high" />
 
