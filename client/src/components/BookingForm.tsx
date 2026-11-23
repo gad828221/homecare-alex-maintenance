@@ -503,7 +503,7 @@ export default function BookingForm({ defaultService, title, description }: Book
             <p className="text-xs font-bold text-slate-400">الطلب اتسجّل، والحجز النهائي بيتأكد في المكالمة.</p>
             <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 text-right space-y-3">
               <div className="flex items-center gap-3 text-green-700 font-bold">
-                <ShieldCheck className="w-5 h-5" /> مدة الضمان: ٦ شهور أو سنة.
+                <ShieldCheck className="w-5 h-5" /> شهادة ضمان رقمية
               </div>
               <div className="flex items-center gap-3 text-blue-700 font-bold">
                 <Clock className="w-5 h-5" /> فني متخصص يصلك خلال ساعة
