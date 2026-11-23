@@ -9,6 +9,13 @@ import { Phone, MessageCircle, Calendar } from "lucide-react";
 import { readAuthSession } from './utils/authSession';
 import { syncOneSignalIdentity } from './utils/oneSignalIdentity';
 
+const WHATSAPP_MSG = `أهلًا، أنا جاي من موقع Maintenance Guide ومحتاج صيانة جهاز منزلي في الإسكندرية.
+اسم العميل:
+نوع الجهاز:
+العنوان:
+وصف العطل:`;
+const WHATSAPP_URL = `https://wa.me/201558625259?text=${encodeURIComponent(WHATSAPP_MSG)}`;
+
 const PUBLIC_PATHS = new Set([
   '/', '/login', '/invoice', '/pickup-receipt', '/feedback', '/track',
   '/samsung-service', '/lg-service', '/sharp-service',
@@ -123,7 +130,7 @@ function FloatingButtons() {
         <Phone className="h-4 w-4" /> اتصال
       </a>
       <a 
-        href="https://wa.me/201558625259"
+        href={WHATSAPP_URL}
         target="_blank" 
         rel="noopener noreferrer" 
         className="flex min-h-12 flex-1 items-center justify-center gap-1 rounded-xl bg-green-600 px-2 text-xs font-black text-white transition-colors hover:bg-green-700 sm:text-sm"

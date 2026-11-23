@@ -1,0 +1,86 @@
+[
+  {
+    "name": "repair",
+    "width": 640,
+    "height": 360,
+    "bytes": 23306,
+    "file": "repair-640.webp"
+  },
+  {
+    "name": "repair",
+    "width": 1280,
+    "height": 720,
+    "bytes": 56222,
+    "file": "repair-1280.webp"
+  },
+  {
+    "name": "fridge",
+    "width": 360,
+    "height": 270,
+    "bytes": 13756,
+    "file": "fridge-360.webp"
+  },
+  {
+    "name": "fridge",
+    "width": 720,
+    "height": 540,
+    "bytes": 34402,
+    "file": "fridge-720.webp"
+  },
+  {
+    "name": "ac",
+    "width": 360,
+    "height": 270,
+    "bytes": 12222,
+    "file": "ac-360.webp"
+  },
+  {
+    "name": "ac",
+    "width": 720,
+    "height": 540,
+    "bytes": 35652,
+    "file": "ac-720.webp"
+  },
+  {
+    "name": "stove",
+    "width": 360,
+    "height": 270,
+    "bytes": 19212,
+    "file": "stove-360.webp"
+  },
+  {
+    "name": "stove",
+    "width": 720,
+    "height": 540,
+    "bytes": 48150,
+    "file": "stove-720.webp"
+  },
+  {
+    "name": "heater",
+    "width": 360,
+    "height": 270,
+    "bytes": 8096,
+    "file": "heater-360.webp"
+  },
+  {
+    "name": "heater",
+    "width": 720,
+    "height": 540,
+    "bytes": 19924,
+    "file": "heater-720.webp"
+  },
+  {
+    "name": "dishwasher",
+    "width": 360,
+    "height": 270,
+    "bytes": 19488,
+    "file": "dishwasher-360.webp"
+  },
+  {
+    "name": "dishwasher",
+    "width": 720,
+    "height": 540,
+    "bytes": 49832,
+    "file": "dishwasher-720.webp"
+  }
+]

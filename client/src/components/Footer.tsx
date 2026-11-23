@@ -1,25 +1,30 @@
-import { Phone, MapPin, Clock, Mail, MessageCircle, Star } from "lucide-react";
+import {Phone, MapPin, Clock, Mail, MessageCircle, Star, Bell} from "lucide-react";
+
+const WHATSAPP_MSG = `أهلًا، أنا جاي من موقع Maintenance Guide ومحتاج صيانة جهاز منزلي في الإسكندرية.
+اسم العميل:
+نوع الجهاز:
+العنوان:
+وصف العطل:`;
+const WHATSAPP_URL = `https://wa.me/201558625259?text=${encodeURIComponent(WHATSAPP_MSG)}`;
 
 const GOOGLE_BUSINESS_PROFILE_URL = "https://www.google.com/maps/place/Service+guide+Montaza+2/data=!4m2!3m1!1s0x14f5db723bebbd65:0xd4108ebedaac095e";
 
 export default function Footer() {
   return (
-    <footer className="bg-gradient-to-b from-slate-800 to-slate-900 text-white border-t-4 border-orange-500 shadow-2xl">
+    <footer className="bg-gradient-to-b from-slate-800 to-slate-900 text-white border-t-4 border-orange-500 shadow-2xl pb-28 md:pb-24">
       <div className="container py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center text-white font-bold">
-                ⚙️
-              </div>
+              <img src="/logo.png" alt="Maintenance Guide logo" className="w-10 h-10 rounded-lg object-contain bg-white p-0.5" />
               <h3 className="font-bold text-lg">Maintenance Guide</h3>
             </div>
             <p className="text-gray-300 text-sm leading-relaxed">
               نقدم خدمات صيانة احترافية وشاملة لجميع الأجهزة المنزلية بأسعار منافسة مع ضمان الجودة الشامل. فريقنا الفني مدرب على أعلى مستوى لخدمتكم على مدار الساعة.
             </p>
             <div className="flex gap-3 pt-4">
-              <a href="https://wa.me/201558625259" target="_blank" rel="noopener noreferrer" aria-label="التواصل عبر واتساب" className="w-10 h-10 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center transition-all transform hover:scale-110">
+              <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" aria-label="التواصل عبر واتساب" className="w-10 h-10 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center transition-all transform hover:scale-110">
                 <MessageCircle className="w-5 h-5" />
               </a>
               <a href="tel:01278885772" aria-label="الاتصال بمركز الصيانة" className="w-10 h-10 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center transition-all transform hover:scale-110">
@@ -60,7 +65,7 @@ export default function Footer() {
                   <span className="font-medium">01278885772</span>
                 </div>
               </a>
-              <a href="https://wa.me/201558625259" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 hover:text-green-400 transition-colors group">
+              <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 hover:text-green-400 transition-colors group">
                 <div className="w-10 h-10 bg-slate-800 group-hover:bg-green-500 rounded-lg flex items-center justify-center transition-all">
                   <MessageCircle className="w-5 h-5" />
                 </div>
@@ -115,7 +120,7 @@ export default function Footer() {
                 <span className="font-bold text-orange-400">10:00 - 18:00</span>
               </div>
               <div className="border-t border-slate-700 pt-3 mt-3">
-                <p className="text-orange-400 font-bold text-sm">🔔 خدمة طوارئ 24/7</p>
+                <p className="text-orange-400 font-bold text-sm flex items-center gap-2"><Bell className="w-4 h-4" /> خدمة طوارئ 24/7</p>
               </div>
             </div>
           </div>
