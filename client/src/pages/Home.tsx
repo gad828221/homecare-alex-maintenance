@@ -18,7 +18,7 @@ const PHONE_TEL = "tel:01278885772";
 const WHATSAPP_MSG = `أهلًا، أنا جاي من موقع Maintenance Guide ومحتاج صيانة جهاز منزلي في الإسكندرية.
 نوع الجهاز:
 المنطقة:
-ممكن أعرف تفاصيل الحجز وتكلفة الكشف؟`;
+ممكن أعرف تفاصيل الحجز والكشف؟`;
 const WHATSAPP_URL = `https://wa.me/201558625259?text=${encodeURIComponent(WHATSAPP_MSG)}`;
 
 const scrollToBooking = () => {
