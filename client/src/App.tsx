@@ -13,8 +13,7 @@ const WHATSAPP_MSG = `أهلًا، أنا جاي من موقع Maintenance Guide
 اسم العميل:
 نوع الجهاز:
 العنوان:
-وصف العطل:
-`;
+وصف العطل:`;
 const WHATSAPP_URL = `https://wa.me/201558625259?text=${encodeURIComponent(WHATSAPP_MSG)}`;
 
 const PUBLIC_PATHS = new Set([
