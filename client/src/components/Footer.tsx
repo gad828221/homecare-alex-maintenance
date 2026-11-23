@@ -1,10 +1,10 @@
-import { Phone, MapPin, Clock, Mail, MessageCircle, Star } from "lucide-react";
+import {Phone, MapPin, Clock, Mail, MessageCircle, Star, Bell} from "lucide-react";
 
 const GOOGLE_BUSINESS_PROFILE_URL = "https://www.google.com/maps/place/Service+guide+Montaza+2/data=!4m2!3m1!1s0x14f5db723bebbd65:0xd4108ebedaac095e";
 
 export default function Footer() {
   return (
-    <footer className="bg-gradient-to-b from-slate-800 to-slate-900 text-white border-t-4 border-orange-500 shadow-2xl">
+    <footer className="bg-gradient-to-b from-slate-800 to-slate-900 text-white border-t-4 border-orange-500 shadow-2xl pb-28 md:pb-24">
       <div className="container py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
           {/* Company Info */}
@@ -115,7 +115,7 @@ export default function Footer() {
                 <span className="font-bold text-orange-400">10:00 - 18:00</span>
               </div>
               <div className="border-t border-slate-700 pt-3 mt-3">
-                <p className="text-orange-400 font-bold text-sm">🔔 خدمة طوارئ 24/7</p>
+                <p className="text-orange-400 font-bold text-sm flex items-center gap-2"><Bell className="w-4 h-4" /> خدمة طوارئ 24/7</p>
               </div>
             </div>
           </div>
