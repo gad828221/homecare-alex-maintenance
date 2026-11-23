@@ -39,9 +39,7 @@ export default function Header() {
         <div className="flex items-center justify-between h-20">
           {/* Logo & Trust Signal */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-lg group-hover:shadow-orange-500/50 transition-all">
-              ⚙️
-            </div>
+            <img src="/logo.png" alt="Maintenance Guide logo" className="w-10 h-10 rounded-lg object-contain bg-white p-0.5 shadow-lg group-hover:shadow-orange-500/50 transition-all" />
             <div className="flex flex-col">
               <span className="font-black text-lg text-white leading-none group-hover:text-orange-400 transition-colors">Maintenance Guide</span>
               <span className="text-[10px] text-orange-500 font-bold uppercase tracking-tighter flex items-center gap-1">
