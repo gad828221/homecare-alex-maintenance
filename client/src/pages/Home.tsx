@@ -16,9 +16,11 @@ const FACEBOOK_PAGE_URL = "https://www.facebook.com/Maintenance.Guide";
 const PHONE_DISPLAY = "01278885772";
 const PHONE_TEL = "tel:01278885772";
 const WHATSAPP_MSG = `أهلًا، أنا جاي من موقع Maintenance Guide ومحتاج صيانة جهاز منزلي في الإسكندرية.
+اسم العميل:
 نوع الجهاز:
-المنطقة:
-ممكن أعرف تفاصيل الحجز والكشف؟`;
+العنوان:
+وصف العطل:
+`;
 const WHATSAPP_URL = `https://wa.me/201558625259?text=${encodeURIComponent(WHATSAPP_MSG)}`;
 
 const scrollToBooking = () => {
