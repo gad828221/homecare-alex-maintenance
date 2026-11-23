@@ -16,7 +16,7 @@ const dist = path.resolve('dist');
 const template = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
 const sitemap = fs.readFileSync(path.join(dist, 'sitemap.xml'), 'utf8');
 const routes = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname);
-if (routes.length !== 19 || new Set(routes).size !== 19) throw new Error('Unexpected public route list');
+if (routes.length !== 21 || new Set(routes).size !== 21) throw new Error('Unexpected public route list');
 fs.writeFileSync(path.join(dist, 'spa.html'), template);
 const mime = { '.js': 'application/javascript', '.css': 'text/css', '.html': 'text/html', '.json': 'application/json', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.png': 'image/png' };
 const server = http.createServer((req, res) => {
@@ -50,7 +50,8 @@ try {
   for (const route of routes) {
     await page.goto(origin + route, { waitUntil: 'networkidle0', timeout: 45000 });
     await page.waitForSelector('#root h1', { timeout: 20000 });
-    if (route !== '/service-areas') await page.waitForSelector('#root input, #root select', { timeout: 20000 });
+    const noFormRoutes = new Set(['/service-areas', '/articles/washer-not-draining']);
+    if (!noFormRoutes.has(route)) await page.waitForSelector('#root input, #root select', { timeout: 20000 });
     const snapshot = await page.evaluate(() => {
       const root = document.getElementById('root').cloneNode(true);
       // Scroll-reveal animations must not hide content when JS is unavailable.
@@ -66,7 +67,7 @@ try {
     });
     const canonical = `https://www.maintenanceguide.life${route}`;
     if (snapshot.words < 200 || snapshot.links < 10 || snapshot.canonical !== canonical) throw new Error(`Incomplete snapshot: ${route}`);
-    if (route !== '/service-areas' && !snapshot.root.includes('بنعرفك تكلفة الكشف قبل الزيارة')) throw new Error(`Fee line missing: ${route}`);
+    if (!noFormRoutes.has(route) && !snapshot.root.includes('بنعرفك تكلفة الكشف قبل الزيارة')) throw new Error(`Fee line missing: ${route}`);
     let html = template;
     html = html.replace(/<title[^>]*>[\s\S]*?<\/title>/i, `<title data-rh="true">${esc(snapshot.title)}</title>`);
     for (const meta of snapshot.metas) {

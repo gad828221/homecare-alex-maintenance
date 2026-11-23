@@ -21,7 +21,7 @@ export default function Footer() {
               <h3 className="font-bold text-lg">Maintenance Guide</h3>
             </div>
             <p className="text-gray-300 text-sm leading-relaxed">
-              نقدم خدمات صيانة احترافية وشاملة لجميع الأجهزة المنزلية بأسعار منافسة مع ضمان الجودة الشامل. فريقنا الفني مدرب على أعلى مستوى لخدمتكم على مدار الساعة.
+              نقدم خدمات صيانة احترافية وشاملة لجميع الأجهزة المنزلية بأسعار منافسة مع ضمان الجودة الشامل. فريقنا الفني مدرب على أعلى مستوى، واستقبال الطلبات متاح ٢٤ ساعة.
             </p>
             <div className="flex gap-3 pt-4">
               <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" aria-label="التواصل عبر واتساب" className="w-10 h-10 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center transition-all transform hover:scale-110">
@@ -108,19 +108,14 @@ export default function Footer() {
 
           {/* Hours */}
           <div>
-            <h4 className="font-bold text-lg mb-6 text-orange-400">ساعات العمل</h4>
+            <h4 className="font-bold text-lg mb-6 text-orange-400">استقبال الطلبات</h4>
             <div className="bg-slate-800 rounded-lg p-6 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-gray-300">السبت - الخميس</span>
-                <span className="font-bold text-orange-400">8:00 - 20:00</span>
-              </div>
-              <div className="border-t border-slate-700"></div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-300">الجمعة</span>
-                <span className="font-bold text-orange-400">10:00 - 18:00</span>
+                <span className="text-gray-300">كل أيام الأسبوع</span>
+                <span className="font-bold text-orange-400">٢٤ ساعة</span>
               </div>
               <div className="border-t border-slate-700 pt-3 mt-3">
-                <p className="text-orange-400 font-bold text-sm flex items-center gap-2"><Bell className="w-4 h-4" /> خدمة طوارئ 24/7</p>
+                <p className="text-orange-400 font-bold text-sm flex items-center gap-2"><Bell className="w-4 h-4" /> ابعت طلبك في أي وقت وهنرجعلك نأكد الموعد</p>
               </div>
             </div>
           </div>

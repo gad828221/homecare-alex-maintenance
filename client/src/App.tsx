@@ -23,7 +23,7 @@ const PUBLIC_PATHS = new Set([
   '/fresh-service', '/white-whale-service', '/ariston-service',
   '/beko-service', '/hoover-service', '/indesit-service',
   '/refrigerator-service', '/washing-machine-service', '/air-conditioner-service',
-  '/stove-service', '/water-heater-service', '/service-areas'
+  '/stove-service', '/water-heater-service', '/dishwasher-service', '/service-areas', '/articles/washer-not-draining'
 ]);
 
 const Home = lazy(() => import("./pages/Home"));
@@ -51,6 +51,7 @@ const HooverService = lazy(() => import("./pages/HooverService"));
 const IndesitService = lazy(() => import("./pages/IndesitService"));
 const ApplianceServiceRoute = lazy(() => import("./pages/ApplianceServiceRoute"));
 const ServiceAreas = lazy(() => import("./pages/ServiceAreas"));
+const ArticleWasherNotDraining = lazy(() => import("./pages/ArticleWasherNotDraining"));
 const StaffRuntime = lazy(() => import("./components/StaffRuntime"));
 
 function LoadingFallback() {
@@ -86,7 +87,9 @@ function Router() {
         <Route path="/air-conditioner-service"><ApplianceServiceRoute serviceKey="airConditioner" /></Route>
         <Route path="/stove-service"><ApplianceServiceRoute serviceKey="stove" /></Route>
         <Route path="/water-heater-service"><ApplianceServiceRoute serviceKey="waterHeater" /></Route>
+        <Route path="/dishwasher-service"><ApplianceServiceRoute serviceKey="dishwasher" /></Route>
         <Route path="/service-areas" component={ServiceAreas} />
+        <Route path="/articles/washer-not-draining" component={ArticleWasherNotDraining} />
         <Route path="/orders" component={ProtectedOrders} />
         <Route path="/login" component={Login} />
         <Route path="/tech-portal" component={TechPortal} />
