@@ -241,16 +241,16 @@ export default function Home() {
               MAINTENANCE GUIDE
             </div>
             <p className="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.42] tracking-tight" aria-label="بيتك يكمل. وإحنا نصلّح.">
-              بيتك يكمل.<br />
-              <span className="text-[#fa9b61]">وإحنا نصلّح.</span>
+              <span className="hero-line hero-d1 inline-block">بيتك يكمل.</span><br />
+              <span className="text-[#fa9b61] hero-line hero-d2 inline-block">وإحنا نصلّح.</span>
             </p>
-            <h1 className="text-[13px] leading-8 text-[#b9cbd7] max-w-sm mt-6 font-bold">
+            <h1 className="hero-fade hero-f1 text-[13px] leading-8 text-[#b9cbd7] max-w-sm mt-6 font-bold">
               فني صيانة أجهزة منزلية بالإسكندرية — في منزلك اليوم، بحجز سريع وضمان على الخدمة.
             </h1>
             <p className="text-[13px] leading-8 text-[#b9cbd7] max-w-sm mt-2 font-bold">
               صيانة منزلية للغسالات والثلاجات والتكييفات وباقي أجهزة البيت. نوضح لك التفاصيل والتكلفة قبل الإصلاح.
             </p>
-            <div className="flex flex-wrap items-center gap-3 mt-7">
+            <div className="hero-fade hero-f2 flex flex-wrap items-center gap-3 mt-7">
               <Button
                 type="button"
                 onClick={scrollToBooking}
@@ -267,28 +267,31 @@ export default function Home() {
                 اتصل بينا <bdi dir="ltr">{PHONE_DISPLAY}</bdi>
               </a>
             </div>
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-7 text-[10px] text-[#bdcdd8] font-bold">
+            <div className="hero-fade hero-f3 flex flex-wrap items-center gap-x-5 gap-y-2 mt-7 text-[10px] text-[#bdcdd8] font-bold">
               <span>تكلفة واضحة قبل الإصلاح</span>
               <span className="border-r border-[#345064] pr-5">خدمة في منزلك</span>
               <span className="border-r border-[#345064] pr-5">ضمان على الإصلاح</span>
             </div>
           </div>
 
-          <div className="relative min-h-[245px] lg:min-h-[590px] isolate">
-            <img
-              src="/images/redesign/repair.webp"
-              srcSet="/images/redesign/repair-640.webp 640w, /images/redesign/repair-1280.webp 1280w"
-              sizes="(max-width: 1024px) 100vw, 53vw"
-              width="1280"
-              height="720"
-              alt="صورة توضيحية لأعمال صيانة أجهزة منزلية"
-              className="absolute inset-0 h-full w-full object-cover object-[40%_50%]"
-              loading="eager"
-              fetchPriority="high"
-              decoding="async"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b lg:bg-gradient-to-l from-[#09283d] via-[#09283d]/0 to-transparent pointer-events-none" aria-hidden="true"></div>
-            <div className="absolute bottom-6 right-6 lg:-right-3 w-[70px] h-[70px] lg:w-[115px] lg:h-[115px] bg-[#f47832] text-[#09283d] z-10 flex items-center justify-center -rotate-[8deg] shadow-xl" aria-hidden="true">
+          <div className="absolute inset-0 lg:relative min-h-0 lg:min-h-[590px] isolate">
+            <picture>
+              <source media="(max-width: 1023px)" srcSet="/images/redesign/hero-mobile-828.webp 828w, /images/redesign/hero-mobile-1242.webp 1242w" sizes="100vw" />
+              <img
+                src="/images/redesign/repair.webp"
+                srcSet="/images/redesign/repair-640.webp 640w, /images/redesign/repair-1280.webp 1280w"
+                sizes="53vw"
+                width="1280"
+                height="720"
+                alt="صورة توضيحية لأعمال صيانة أجهزة منزلية"
+                className="absolute inset-0 h-full w-full object-cover object-[50%_30%]"
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+              />
+            </picture>
+            <div className="absolute inset-0 bg-[#09283d]/85 lg:bg-transparent lg:bg-gradient-to-l lg:from-[#09283d] lg:via-[#09283d]/0 lg:to-transparent pointer-events-none" aria-hidden="true"></div>
+            <div className="hidden lg:flex absolute bottom-6 lg:-right-3 w-[115px] h-[115px] bg-[#f47832] text-[#09283d] z-10 items-center justify-center -rotate-[8deg] shadow-xl" aria-hidden="true">
               <span className="rotate-[8deg] font-black text-3xl lg:text-5xl" dir="ltr">MG</span>
             </div>
             <small className="absolute bottom-3 left-3 lg:bottom-6 lg:left-7 text-[8px] lg:text-[10px] bg-[#09283d]/70 text-white px-2.5 py-1 z-10">
