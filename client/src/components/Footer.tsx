@@ -1,9 +1,11 @@
 import {Phone, MapPin, Clock, Mail, MessageCircle, Star, Bell} from "lucide-react";
 
 const WHATSAPP_MSG = `أهلًا، أنا جاي من موقع Maintenance Guide ومحتاج صيانة جهاز منزلي في الإسكندرية.
+اسم العميل:
 نوع الجهاز:
-المنطقة:
-ممكن أعرف تفاصيل الحجز والكشف؟`;
+العنوان:
+وصف العطل:
+`;
 const WHATSAPP_URL = `https://wa.me/201558625259?text=${encodeURIComponent(WHATSAPP_MSG)}`;
 
 const GOOGLE_BUSINESS_PROFILE_URL = "https://www.google.com/maps/place/Service+guide+Montaza+2/data=!4m2!3m1!1s0x14f5db723bebbd65:0xd4108ebedaac095e";
