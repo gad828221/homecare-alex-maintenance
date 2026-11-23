@@ -55,6 +55,7 @@ export default function BookingForm({ defaultService, title, description }: Book
   const [customBrand, setCustomBrand] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
+  const [submitError, setSubmitError] = useState<"rejected" | "ambiguous" | "">("");
   const [fieldError, setFieldError] = useState("");
   const [orderNumber, setOrderNumber] = useState("");
   const [honeypot, setHoneypot] = useState("");
@@ -106,6 +107,7 @@ export default function BookingForm({ defaultService, title, description }: Book
     }
     setIsSubmitting(true);
     setSubmitMessage("");
+    setSubmitError("");
 
     const finalDeviceType = isOtherDevice ? customDevice : formData.device_type;
     const finalBrand = isOtherBrand ? customBrand : formData.brand;
@@ -167,10 +169,13 @@ export default function BookingForm({ defaultService, title, description }: Book
 
         // التنبيه الداخلي تم عبر Push وقناة notifications؛ لا تُرسل تفاصيل الإدارة عبر واتساب.
       } else {
-        throw insertError;
+        console.error('[Public booking] Insert error:', insertError);
+        // PostgREST rejection has a code: الطلب اترفض صراحة ولم يُسجَّل. بدون code (شبكة/غير مؤكد): قد يكون وصل، لا نجزم بعدم التسجيل.
+        setSubmitError(insertError && (insertError as any).code ? "rejected" : "ambiguous");
       }
     } catch (err: any) {
-      setSubmitMessage(`❌ خطأ: ${err.message || 'فشل في إرسال الطلب'}`);
+      console.error('[Public booking] Submit failed:', err);
+      setSubmitError("ambiguous");
     } finally {
       setIsSubmitting(false);
     }
@@ -217,6 +222,17 @@ export default function BookingForm({ defaultService, title, description }: Book
       {fieldError && step < 4 && (
         <div role="alert" className="mb-6 flex items-center gap-2 rounded-2xl border-2 border-rose-200 bg-rose-50 px-4 py-3 text-sm font-black text-rose-700">
           <AlertCircle className="w-5 h-5 shrink-0" /> {fieldError}
+        </div>
+      )}
+
+      {(submitError || (submitMessage && step < 4)) && step < 4 && (
+        <div role="alert" className="mb-6 flex items-center gap-2 rounded-2xl border-2 border-rose-200 bg-rose-50 px-4 py-3 text-sm font-black text-rose-700">
+          <AlertCircle className="w-5 h-5 shrink-0" />
+          <span>
+            {submitError === "rejected" && <>الطلب ما اتسجّلش. جرّب تاني، أو اتصل بينا على <a href="tel:01278885772" dir="ltr" className="underline">01278885772</a>.</>}
+            {submitError === "ambiguous" && <>مش متأكدين إن طلبك وصل. قبل ما تجرب تاني، اتصل بينا على <a href="tel:01278885772" dir="ltr" className="underline">01278885772</a> للتأكيد.</>}
+            {!submitError && submitMessage}
+          </span>
         </div>
       )}
 
