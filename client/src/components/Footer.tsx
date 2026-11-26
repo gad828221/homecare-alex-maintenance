@@ -17,7 +17,7 @@ export default function Footer() {
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-4">
-              <img src="/logo.png" alt="Maintenance Guide logo" className="w-10 h-10 rounded-lg object-contain bg-white p-0.5" />
+              <img src="/images/logo-80.webp" srcSet="/images/logo-80.webp 80w, /images/logo-120.webp 120w" sizes="40px" width="40" height="40" loading="lazy" decoding="async" alt="Maintenance Guide logo" className="w-10 h-10 rounded-lg object-contain bg-white p-0.5" />
               <h3 className="font-bold text-lg">Maintenance Guide</h3>
             </div>
             <p className="text-gray-300 text-sm leading-relaxed">
