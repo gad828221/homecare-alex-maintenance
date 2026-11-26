@@ -222,7 +222,8 @@ function AppContent() {
 
 function App() {
   useEffect(() => {
-    const currentPath = window.location.pathname;
+    // A trailing slash (e.g. /service-areas/) must match the same route as /service-areas.
+    const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
 
     const checkAuth = () => {
       const { role } = readAuthSession();
