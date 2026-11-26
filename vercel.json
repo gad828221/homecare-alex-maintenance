@@ -23,7 +23,7 @@
       ]
     },
     {
-      "source": "/(login|orders|tech-portal|data-entry|track/.*)",
+      "source": "/(login|orders|tech-portal|data-entry|track/.*|invoice|pickup-receipt|feedback|admin|private)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -63,3 +63,4 @@
     }
   ]
 }
+
