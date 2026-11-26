@@ -49,6 +49,13 @@
       ]
     }
   ],
+  "redirects": [
+    {
+      "source": "/:path((?!api/).+)/",
+      "destination": "/:path",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/((?!api/).*)",
