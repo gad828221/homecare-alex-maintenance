@@ -39,7 +39,7 @@ export default function Header() {
         <div className="flex items-center justify-between h-20">
           {/* Logo & Trust Signal */}
           <Link href="/" className="flex items-center gap-2 group">
-            <img src="/logo.png" alt="Maintenance Guide logo" className="w-10 h-10 rounded-lg object-contain bg-white p-0.5 shadow-lg group-hover:shadow-orange-500/50 transition-all" />
+            <img src="/images/logo-80.webp" srcSet="/images/logo-80.webp 80w, /images/logo-120.webp 120w" sizes="40px" width="40" height="40" loading="eager" decoding="async" alt="Maintenance Guide logo" className="w-10 h-10 rounded-lg object-contain bg-white p-0.5 shadow-lg group-hover:shadow-orange-500/50 transition-all" />
             <div className="flex flex-col">
               <span className="font-black text-lg text-white leading-none group-hover:text-orange-400 transition-colors">Maintenance Guide</span>
               <span className="text-[10px] text-orange-500 font-bold uppercase tracking-tighter flex items-center gap-1">
