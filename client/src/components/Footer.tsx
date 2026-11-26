@@ -123,6 +123,13 @@ export default function Footer() {
 
         {/* Divider */}
         <div className="border-t border-slate-700 pt-12">
+          <nav aria-label="أدلة مفيدة" className="text-center text-sm text-gray-300 mb-8">
+            <p className="font-semibold text-orange-400 mb-3">أدلة مفيدة</p>
+            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+              <a href="/articles/fridge-not-cooling" className="hover:text-orange-400 underline underline-offset-4">التلاجة مش بتبرد كويس؟ الأسباب وإمتى تحتاج فني</a>
+              <a href="/articles/washer-not-draining" className="hover:text-orange-400 underline underline-offset-4">الغسالة مش بتصرف الميه؟ الأسباب وإمتى تحتاج فني</a>
+            </div>
+          </nav>
           <div className="text-center text-gray-400 text-sm mb-8">
             <p>&copy; 2026 Maintenance Guide - جميع الحقوق محفوظة</p>
           </div>
