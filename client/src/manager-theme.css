@@ -2067,3 +2067,112 @@ html.dark.operations-light-theme .rounded-xl {
     box-shadow: 0 5px 18px rgba(0, 0, 0, 0.34) !important;
   }
 }
+
+
+/* ==========================================================
+   Maintenance Guide — Brand Theme v7.0.0
+   Goal: align the staff/admin panel with the brand identity
+   (deep navy + orange, same as the redesigned homepage and
+   the Facebook page) and fix white-text contrast bugs.
+   ========================================================== */
+
+/* ---- 1. Brand design tokens ---- */
+.operations-light-theme,
+.manager-light-theme {
+  --blue: #0f4266;            /* brand navy (replaces generic bright blue) */
+  --blue-dark: #09283d;
+  --orange: #f47832;          /* brand orange (from the homepage) */
+  --orange-dark: #e06a26;
+
+  --grad-blue: linear-gradient(135deg, #14547f 0%, #09283d 100%);
+  --grad-orange: linear-gradient(135deg, #f47832 0%, #e06a26 100%);
+  --grad-hero: linear-gradient(135deg, #09283d 0%, #0d3a56 55%, #135078 100%);
+
+  --shadow-glow-blue: 0 8px 24px rgba(9, 40, 61, 0.30);
+  --shadow-glow-orange: 0 8px 24px rgba(244, 120, 50, 0.32);
+}
+
+/* ---- 2. FIX: white text must stay white on strong-color buttons ----
+   Current theme forces .text-white to near-black everywhere, which makes
+   labels unreadable on orange/green/blue buttons (e.g. "تقرير اليوم"). */
+.operations-light-theme button[class*="bg-orange-"]:not([role="tab"]),
+.operations-light-theme button[class*="bg-emerald-6"]:not([role="tab"]),
+.operations-light-theme button[class*="bg-green-6"]:not([role="tab"]),
+.operations-light-theme button[class*="bg-blue-6"]:not([role="tab"]),
+.operations-light-theme button[class*="bg-rose-6"]:not([role="tab"]),
+.operations-light-theme button[class*="bg-red-6"]:not([role="tab"]),
+.operations-light-theme button[class*="bg-gradient"]:not([role="tab"]),
+.manager-light-theme button[class*="bg-orange-"]:not([role="tab"]),
+.manager-light-theme button[class*="bg-emerald-6"]:not([role="tab"]),
+.manager-light-theme button[class*="bg-green-6"]:not([role="tab"]),
+.manager-light-theme button[class*="bg-blue-6"]:not([role="tab"]),
+.manager-light-theme button[class*="bg-rose-6"]:not([role="tab"]),
+.manager-light-theme button[class*="bg-red-6"]:not([role="tab"]),
+.manager-light-theme button[class*="bg-gradient"]:not([role="tab"]) {
+  color: #ffffff !important;
+}
+.operations-light-theme button[class*="bg-orange-"]:not([role="tab"]) *,
+.operations-light-theme button[class*="bg-emerald-6"]:not([role="tab"]) *,
+.operations-light-theme button[class*="bg-green-6"]:not([role="tab"]) *,
+.operations-light-theme button[class*="bg-blue-6"]:not([role="tab"]) *,
+.operations-light-theme button[class*="bg-rose-6"]:not([role="tab"]) *,
+.operations-light-theme button[class*="bg-red-6"]:not([role="tab"]) *,
+.operations-light-theme button[class*="bg-gradient"]:not([role="tab"]) *,
+.manager-light-theme button[class*="bg-orange-"]:not([role="tab"]) *,
+.manager-light-theme button[class*="bg-emerald-6"]:not([role="tab"]) *,
+.manager-light-theme button[class*="bg-green-6"]:not([role="tab"]) *,
+.manager-light-theme button[class*="bg-blue-6"]:not([role="tab"]) *,
+.manager-light-theme button[class*="bg-rose-6"]:not([role="tab"]) *,
+.manager-light-theme button[class*="bg-red-6"]:not([role="tab"]) *,
+.manager-light-theme button[class*="bg-gradient"]:not([role="tab"]) * {
+  color: #ffffff !important;
+}
+
+/* ---- 3. Brand-orange primary buttons (subtle 3D, readable) ---- */
+.manager-light-theme button[class*="bg-orange-600"]:not([role="tab"]),
+.operations-light-theme button[class*="bg-orange-600"]:not([role="tab"]) {
+  background: var(--grad-orange) !important;
+  border-color: transparent !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.30) inset,
+    0 -2px 0 rgba(0, 0, 0, 0.14) inset,
+    0 4px 0 #b65d31,
+    0 8px 18px rgba(224, 106, 38, 0.35) !important;
+}
+
+/* ---- 4. Tabs: hover/active in brand tints instead of bright blue ---- */
+.manager-light-theme [role="tab"]:hover,
+.operations-light-theme [role="tab"]:hover {
+  background: #fdf0e6 !important;
+  border-color: #f3b98f !important;
+  color: #c2410c !important;
+}
+
+/* ---- 5. Order cards: hover in navy instead of bright blue ---- */
+.operations-light-theme .order-card-3d:hover,
+.manager-light-theme .order-card-3d:hover {
+  border-color: #9db8c9 !important;
+  box-shadow: 0 16px 40px rgba(9, 40, 61, 0.16) !important;
+}
+
+/* ---- 6. Inputs: navy focus ring ---- */
+.operations-light-theme input:focus,
+.operations-light-theme select:focus,
+.operations-light-theme textarea:focus,
+.manager-light-theme input:focus,
+.manager-light-theme select:focus,
+.manager-light-theme textarea:focus {
+  box-shadow: 0 0 0 4px rgba(15, 66, 102, 0.14) !important;
+}
+
+/* ---- 7. Technician bottom-nav hover in brand tint ---- */
+.operations-light-theme nav[aria-label="تنقل الفني"] button:hover {
+  background: #fdf0e6 !important;
+  color: #c2410c !important;
+}
+
+/* ---- 8. Scrollbar in muted navy ---- */
+.operations-light-theme ::-webkit-scrollbar-thumb,
+.manager-light-theme ::-webkit-scrollbar-thumb {
+  background: #b6c6d1;
+}
