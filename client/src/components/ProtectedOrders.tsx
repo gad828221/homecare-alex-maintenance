@@ -535,9 +535,12 @@ export default function ProtectedOrders() {
     } catch {}
     return typeof window !== 'undefined' ? window.innerWidth >= 768 : true;
   });
-  useEffect(() => {
-    try { localStorage.setItem('mg_manager_day_summary', showDaySummary ? 'open' : 'closed'); } catch {}
-  }, [showDaySummary]);
+  // يُحفظ التفضيل فقط عندما يبدّله المستخدم بنفسه، لا عند التحميل الأول
+  const toggleDaySummary = () => setShowDaySummary(value => {
+    const next = !value;
+    try { localStorage.setItem('mg_manager_day_summary', next ? 'open' : 'closed'); } catch {}
+    return next;
+  });
   const [showCommandCenter, setShowCommandCenter] = useState(false);
   const [filterTechStatus, setFilterTechStatus] = useState<'all' | 'active' | 'inactive'>('active');
   const [cashFilterDate, setCashFilterDate] = useState(() => getEgyptTodayString());
@@ -4021,7 +4024,7 @@ ${trackingUrl}
 
               {/* ملخص اليوم وأدوات الإدارة — قابل للطي؛ مطوي افتراضياً على الموبايل */}
               <div className="rounded-[1.5rem] border border-slate-700/50 bg-slate-900/30 overflow-hidden">
-              <button type="button" onClick={() => setShowDaySummary(value => !value)} aria-expanded={showDaySummary} className="flex w-full items-center justify-between gap-2 px-4 py-3 text-right transition hover:bg-slate-800/40">
+              <button type="button" onClick={toggleDaySummary} aria-expanded={showDaySummary} className="flex w-full items-center justify-between gap-2 px-4 py-3 text-right transition hover:bg-slate-800/40">
                 <span className="flex min-w-0 items-center gap-2 text-xs font-black text-white"><LayoutDashboard size={16} className="shrink-0 text-orange-400" /><span className="truncate">ملخص اليوم وأدوات الإدارة</span><span className="hidden rounded-full bg-slate-800 px-2 py-0.5 text-[9px] font-black text-slate-400 sm:inline">الرصيد · وصول سريع · ملف اليوم</span></span>
                 <span className="shrink-0 rounded-lg bg-orange-500/15 px-2.5 py-1 text-[10px] font-black text-orange-300">{showDaySummary ? 'إخفاء ▲' : 'عرض ▼'}</span>
               </button>
