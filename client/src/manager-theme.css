@@ -2268,3 +2268,141 @@ html.dark.operations-light-theme .rounded-xl {
 .staff-night-theme h3[class*="font-black"] {
   color: #f8fafc !important;
 }
+
+/* ==========================================================
+   v7.3.0 — NIGHT CONTRAST SWEEP (order cards, chips, badges)
+   Day-mode "high contrast" rules (v6.x) force dark text colors
+   with !important; in night they become dark-on-dark.
+   These .staff-night-theme counterparts restore light text.
+   ========================================================== */
+
+/* Order-card slate text (order number chip, سجل بواسطة, labels) */
+.staff-night-theme .order-card-3d .text-slate-300,
+.staff-night-theme .order-card-3d .text-slate-200 {
+  color: #d6e0eb !important;
+}
+.staff-night-theme .order-card-3d .text-slate-400,
+.staff-night-theme .order-card-3d .text-slate-500,
+.staff-night-theme .order-card-3d .text-slate-600 {
+  color: #9fb0c3 !important;
+}
+
+/* Colored values the day theme darkens to #451a03 / #c2410c
+   (attribute selectors also catch group-hover:text-cyan-300 etc.) */
+.staff-night-theme .order-card-3d [class*="text-amber-300"],
+.staff-night-theme .order-card-3d [class*="text-amber-400"] {
+  color: #fcd34d !important;
+}
+.staff-night-theme .order-card-3d [class*="text-emerald-300"],
+.staff-night-theme .order-card-3d [class*="text-emerald-400"],
+.staff-night-theme .order-card-3d [class*="text-emerald-200"] {
+  color: #6ee7b7 !important;
+}
+.staff-night-theme .order-card-3d [class*="text-cyan-300"],
+.staff-night-theme .order-card-3d [class*="text-cyan-400"] {
+  color: #67e8f9 !important;
+}
+.staff-night-theme .order-card-3d [class*="text-orange-300"],
+.staff-night-theme .order-card-3d [class*="text-orange-400"],
+.staff-night-theme .order-card-3d [class*="text-orange-200"] {
+  color: #fdba74 !important;
+}
+.staff-night-theme .order-card-3d [class*="text-rose-300"],
+.staff-night-theme .order-card-3d [class*="text-rose-200"] {
+  color: #fda4af !important;
+}
+.staff-night-theme .order-card-3d [class*="text-blue-300"],
+.staff-night-theme .order-card-3d [class*="text-blue-200"] {
+  color: #93c5fd !important;
+}
+.staff-night-theme .order-card-3d .text-white {
+  color: #f8fafc !important;
+}
+
+/* Amber tint stat cards (day forces #92400e / #451a03) */
+.staff-night-theme [class*="bg-amber-500/10"] span[class*="text-amber"] {
+  color: #fcd34d !important;
+}
+
+/* v6.2 global typography dark-forces (reports, sizes) */
+.staff-night-theme [class*="text-[11px]"] {
+  color: #d6e0eb !important;
+}
+.staff-night-theme [class*="text-[10px]"] {
+  color: #a9b7c7 !important;
+}
+.staff-night-theme .text-orange-300 { color: #fdba74 !important; }
+.staff-night-theme .text-orange-400 { color: #fb923c !important; }
+.staff-night-theme .text-emerald-300 { color: #6ee7b7 !important; }
+.staff-night-theme .text-emerald-400 { color: #34d399 !important; }
+.staff-night-theme .text-cyan-300 { color: #67e8f9 !important; }
+.staff-night-theme .text-amber-300 { color: #fcd34d !important; }
+.staff-night-theme .text-amber-400 { color: #fbbf24 !important; }
+.staff-night-theme .text-blue-300 { color: #93c5fd !important; }
+.staff-night-theme .text-rose-300 { color: #fda4af !important; }
+.staff-night-theme .text-red-300 { color: #fca5a5 !important; }
+.staff-night-theme .text-violet-300 { color: #c4b5fd !important; }
+
+/* Report grid labels the day theme forces to slate-600 */
+.staff-night-theme .grid > div[class*="rounded-xl"] p[class*="text-slate-500"],
+.staff-night-theme .grid > div[class*="rounded-xl"] p[class*="text-[10px]"] {
+  color: #a9b7c7 !important;
+}
+
+/* Danger/rose tinted buttons and badges stay dark-tinted with light text
+   (day forces #9f1239 spans; pale rose fills go invisible in night) */
+.staff-night-theme button[class*="bg-rose-500/20"] span {
+  color: #fecdd3 !important;
+}
+.staff-night-theme [class*="bg-rose-500/"] {
+  background-color: rgba(244, 63, 94, 0.16) !important;
+  color: #fda4af !important;
+}
+.staff-night-theme .bg-rose-50,
+.staff-night-theme .bg-rose-100,
+.staff-night-theme .bg-rose-200 {
+  background-color: rgba(244, 63, 94, 0.18) !important;
+  color: #fecdd3 !important;
+}
+.staff-night-theme [class*="bg-red-500/"] {
+  background-color: rgba(239, 68, 68, 0.16) !important;
+  color: #fca5a5 !important;
+}
+
+/* Tables: keep night surface/text when v6.2 day rules target table directly */
+.staff-night-theme table th {
+  color: #d6e0eb !important;
+  background: #22344a !important;
+  border-bottom-color: #33475e !important;
+}
+.staff-night-theme table td {
+  color: #d6e0eb !important;
+  border-bottom-color: #22344a !important;
+}
+.staff-night-theme table tbody tr:hover {
+  background: rgba(34, 52, 74, 0.5) !important;
+}
+
+/* Order-card danger buttons (delete/trash): day theme makes them pale
+   pink with a thin dark-rose icon that washes out on night cards. */
+.staff-night-theme .order-card-3d button[class*="text-rose-"],
+.staff-night-theme .order-card-3d button[class*="text-red-"],
+.staff-night-theme .order-card-3d button[class*="bg-rose-5"] {
+  background: rgba(244, 63, 94, 0.18) !important;
+  color: #fda4af !important;
+  border-color: rgba(253, 164, 175, 0.4) !important;
+  box-shadow: 0 4px 0 rgba(190, 18, 60, 0.35), 0 8px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Purple/deferred accents */
+.staff-night-theme .text-purple-300 { color: #d8b4fe !important; }
+.staff-night-theme .text-purple-400 { color: #c084fc !important; }
+.staff-night-theme .order-card-3d [class*="text-purple-300"] { color: #d8b4fe !important; }
+
+/* Tinted stat chips (command center, summary): day section-9 forces
+   #0f172a container text; restore light tints in night. */
+.staff-night-theme [class*="bg-amber-500/"] { color: #fde68a !important; }
+.staff-night-theme [class*="bg-yellow-500/"] { color: #fef08a !important; }
+.staff-night-theme [class*="bg-emerald-500/"] { color: #6ee7b7 !important; }
+.staff-night-theme [class*="bg-blue-500/"] { color: #93c5fd !important; }
+.staff-night-theme [class*="bg-violet-500/"] { color: #c4b5fd !important; }
