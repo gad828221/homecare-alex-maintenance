@@ -2258,3 +2258,13 @@ html.dark.operations-light-theme .rounded-xl {
 .staff-night-theme [class*="bg-amber-500/10"] span.text-white {
   color: #f8fafc !important;
 }
+
+/* v7.2.2 — night: v6.2 day-typography rules force near-black headings;
+   restore light headings in night mode. */
+.staff-night-theme h2,
+.staff-night-theme h3,
+.staff-night-theme h4,
+.staff-night-theme h3[class*="text-base"],
+.staff-night-theme h3[class*="font-black"] {
+  color: #f8fafc !important;
+}
