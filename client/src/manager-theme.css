@@ -2141,8 +2141,8 @@ html.dark.operations-light-theme .rounded-xl {
 }
 
 /* ---- 4. Tabs: hover/active in brand tints instead of bright blue ---- */
-.manager-light-theme [role="tab"]:hover,
-.operations-light-theme [role="tab"]:hover {
+.manager-light-theme:not(.staff-night-theme) [role="tab"]:hover,
+.operations-light-theme:not(.staff-night-theme) [role="tab"]:hover {
   background: #fdf0e6 !important;
   border-color: #f3b98f !important;
   color: #c2410c !important;
@@ -2166,7 +2166,7 @@ html.dark.operations-light-theme .rounded-xl {
 }
 
 /* ---- 7. Technician bottom-nav hover in brand tint ---- */
-.operations-light-theme nav[aria-label="تنقل الفني"] button:hover {
+.operations-light-theme:not(.staff-night-theme) nav[aria-label="تنقل الفني"] button:hover {
   background: #fdf0e6 !important;
   color: #c2410c !important;
 }
@@ -2175,4 +2175,96 @@ html.dark.operations-light-theme .rounded-xl {
 .operations-light-theme ::-webkit-scrollbar-thumb,
 .manager-light-theme ::-webkit-scrollbar-thumb {
   background: #b6c6d1;
+}
+
+/* ==========================================================
+   Maintenance Guide — Brand Theme v7.1.0
+   Day/night repairs: hardcoded light surfaces must flip in
+   night mode so the light text tokens stay readable.
+   ========================================================== */
+
+/* Operations-center card uses a hardcoded light gradient
+   (from-white to #EEF1F4) with a light border; in night mode
+   --ink flips to near-white, so the card must go dark too. */
+.staff-night-theme .bg-gradient-to-br.from-white {
+  background: linear-gradient(135deg, #172432 0%, #121c27 100%) !important;
+  border-color: #2a3a4b !important;
+}
+.staff-night-theme .border-\[\#D8DEE6\] {
+  border-color: #2a3a4b !important;
+}
+
+/* ==========================================================
+   Maintenance Guide — Brand Theme v7.2.0
+   Night-mode repairs: the day "surface replacement" rules
+   flip slate surfaces to white and tint badges to dark text;
+   in night mode those same utilities must stay dark-on-dark.
+   ========================================================== */
+
+.staff-night-theme .bg-slate-900,
+.staff-night-theme .bg-slate-950,
+.staff-night-theme [class*="bg-slate-900/"],
+.staff-night-theme [class*="bg-slate-950/"] {
+  background-color: #172432 !important;
+}
+.staff-night-theme .bg-slate-800,
+.staff-night-theme [class*="bg-slate-800/"] {
+  background-color: #1e2d3d !important;
+}
+.staff-night-theme [class*="border-slate-"],
+.staff-night-theme [class*="border-white/"] {
+  border-color: #2a3a4b !important;
+}
+
+/* Translucent tint badges: day forces dark text; on night surfaces
+   the tints are dark, so keep the text light. */
+.staff-night-theme [class*="bg-rose-500/"],
+.staff-night-theme [class*="bg-red-500/"],
+.staff-night-theme [class*="bg-amber-500/"],
+.staff-night-theme [class*="bg-yellow-500/"],
+.staff-night-theme [class*="bg-emerald-500/"],
+.staff-night-theme [class*="bg-blue-500/"],
+.staff-night-theme [class*="bg-violet-500/"] {
+  color: #f1f5f9 !important;
+}
+
+/* Tabs: day forces near-white tabs; night gets its own tab skin. */
+.staff-night-theme [role="tab"] {
+  background: #172432 !important;
+  border-color: #2a3a4b !important;
+  color: #a9b7c7 !important;
+}
+.staff-night-theme [role="tab"]:hover {
+  background: #1e2d3d !important;
+  border-color: #3d5a76 !important;
+  color: #f8fafc !important;
+  transform: none !important;
+}
+.staff-night-theme [role="tab"][aria-selected="true"] {
+  background: linear-gradient(135deg, #14547f 0%, #09283d 100%) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+}
+
+/* v7.2.1 — night: amber tint cards must keep light text too
+   (day rules force amber-900 on the card and every child). */
+.staff-night-theme [class*="bg-amber-500/10"],
+.staff-night-theme [class*="bg-amber-500/10"] span,
+.staff-night-theme [class*="bg-amber-500/10"] p,
+.staff-night-theme [class*="bg-amber-500/10"] strong {
+  color: #fde68a !important;
+}
+.staff-night-theme [class*="bg-amber-500/10"] .text-white,
+.staff-night-theme [class*="bg-amber-500/10"] span.text-white {
+  color: #f8fafc !important;
+}
+
+/* v7.2.2 — night: v6.2 day-typography rules force near-black headings;
+   restore light headings in night mode. */
+.staff-night-theme h2,
+.staff-night-theme h3,
+.staff-night-theme h4,
+.staff-night-theme h3[class*="text-base"],
+.staff-night-theme h3[class*="font-black"] {
+  color: #f8fafc !important;
 }
