@@ -13,6 +13,7 @@ const SOCIAL_LINKS = [
   { label: "فيسبوك", href: "https://www.facebook.com/Maintenance.Guide", className: "bg-[#1877F2] hover:bg-[#0f63d0]" },
   { label: "انستجرام", href: "https://www.instagram.com/maintenanceguide", className: "bg-gradient-to-br from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90" },
   { label: "تيك توك", href: "https://www.tiktok.com/@maintenance.guide", className: "bg-black hover:bg-slate-700 ring-1 ring-slate-600" },
+  { label: "يوتيوب", href: "https://www.youtube.com/@maintenance-guide", className: "bg-[#FF0000] hover:bg-[#d90000]" },
 ];
 
 export default function Footer() {
