@@ -2245,3 +2245,16 @@ html.dark.operations-light-theme .rounded-xl {
   border-color: transparent !important;
   color: #ffffff !important;
 }
+
+/* v7.2.1 — night: amber tint cards must keep light text too
+   (day rules force amber-900 on the card and every child). */
+.staff-night-theme [class*="bg-amber-500/10"],
+.staff-night-theme [class*="bg-amber-500/10"] span,
+.staff-night-theme [class*="bg-amber-500/10"] p,
+.staff-night-theme [class*="bg-amber-500/10"] strong {
+  color: #fde68a !important;
+}
+.staff-night-theme [class*="bg-amber-500/10"] .text-white,
+.staff-night-theme [class*="bg-amber-500/10"] span.text-white {
+  color: #f8fafc !important;
+}
