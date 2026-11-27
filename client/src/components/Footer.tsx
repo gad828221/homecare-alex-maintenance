@@ -9,6 +9,13 @@ const WHATSAPP_URL = `https://wa.me/201558625259?text=${encodeURIComponent(WHATS
 
 const GOOGLE_BUSINESS_PROFILE_URL = "https://www.google.com/maps/place/Service+guide+Montaza+2/data=!4m2!3m1!1s0x14f5db723bebbd65:0xd4108ebedaac095e";
 
+const SOCIAL_LINKS = [
+  { label: "فيسبوك", href: "https://www.facebook.com/Maintenance.Guide", className: "bg-[#1877F2] hover:bg-[#0f63d0]" },
+  { label: "انستجرام", href: "https://www.instagram.com/maintenanceguide", className: "bg-gradient-to-br from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90" },
+  { label: "تيك توك", href: "https://www.tiktok.com/@maintenance.guide", className: "bg-black hover:bg-slate-700 ring-1 ring-slate-600" },
+  { label: "يوتيوب", href: "https://www.youtube.com/@maintenanceguide", className: "bg-[#FF0000] hover:bg-[#d90000]" },
+];
+
 export default function Footer() {
   return (
     <footer className="bg-gradient-to-b from-slate-800 to-slate-900 text-white border-t-4 border-orange-500 shadow-2xl pb-28 md:pb-24">
@@ -50,6 +57,23 @@ export default function Footer() {
               <Star className="w-4 h-4 fill-current" />
               شاهد ملفنا التجاري وتقييمات العملاء على Google
             </a>
+            <div className="pt-5">
+              <p className="text-xs font-bold text-gray-400 mb-2">تابعنا</p>
+              <div className="flex flex-wrap gap-2">
+                {SOCIAL_LINKS.map((link) => (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`صفحتنا على ${link.label}`}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold text-white transition-colors ${link.className}`}
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Contact Info */}
@@ -152,3 +176,4 @@ export default function Footer() {
     </footer>
   );
 }
+
