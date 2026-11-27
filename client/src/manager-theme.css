@@ -2406,7 +2406,6 @@ html.dark.operations-light-theme .rounded-xl {
 .staff-night-theme [class*="bg-emerald-500/"] { color: #6ee7b7 !important; }
 .staff-night-theme [class*="bg-blue-500/"] { color: #93c5fd !important; }
 .staff-night-theme [class*="bg-violet-500/"] { color: #c4b5fd !important; }
-portant; }
 
 /* v7.3.1 — beat span-level day forces (specificity 0,3,1) */
 .staff-night-theme span[class*="text-orange-300"],
