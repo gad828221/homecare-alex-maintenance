@@ -2406,3 +2406,64 @@ html.dark.operations-light-theme .rounded-xl {
 .staff-night-theme [class*="bg-emerald-500/"] { color: #6ee7b7 !important; }
 .staff-night-theme [class*="bg-blue-500/"] { color: #93c5fd !important; }
 .staff-night-theme [class*="bg-violet-500/"] { color: #c4b5fd !important; }
+portant; }
+
+/* v7.3.1 — beat span-level day forces (specificity 0,3,1) */
+.staff-night-theme span[class*="text-orange-300"],
+.staff-night-theme span[class*="text-orange-400"] {
+  color: #fdba74 !important;
+}
+.staff-night-theme .grid > div > div[class*="h-32"] span {
+  color: #d6e0eb !important;
+}
+.staff-night-theme [class*="grid-cols-1"][class*="lg:grid-cols-2"] > div,
+.staff-night-theme [class*="grid-cols-1"][class*="lg:grid-cols-2"] p {
+  color: #d6e0eb !important;
+}
+
+/* v7.3.1 — remaining day rules that escaped v7.3 */
+
+/* Light text variants (-100/-200) the day theme darkens */
+.staff-night-theme .text-orange-100, .staff-night-theme .text-orange-200 { color: #fed7aa !important; }
+.staff-night-theme .text-amber-100, .staff-night-theme .text-amber-200 { color: #fde68a !important; }
+.staff-night-theme .text-emerald-100, .staff-night-theme .text-emerald-200 { color: #a7f3d0 !important; }
+.staff-night-theme .text-green-100, .staff-night-theme .text-green-200, .staff-night-theme .text-green-300 { color: #86efac !important; }
+.staff-night-theme .text-blue-100, .staff-night-theme .text-blue-200 { color: #bfdbfe !important; }
+.staff-night-theme .text-cyan-100, .staff-night-theme .text-cyan-200 { color: #a5f3fc !important; }
+.staff-night-theme .text-rose-100, .staff-night-theme .text-rose-200 { color: #fecdd3 !important; }
+.staff-night-theme .text-red-100, .staff-night-theme .text-red-200 { color: #fecaca !important; }
+.staff-night-theme .text-violet-100, .staff-night-theme .text-violet-200 { color: #ddd6fe !important; }
+.staff-night-theme .text-purple-100, .staff-night-theme .text-purple-200 { color: #e9d5ff !important; }
+
+/* -400 variants the day theme darkens */
+.staff-night-theme .text-blue-400 { color: #60a5fa !important; }
+.staff-night-theme .text-rose-400 { color: #fb7185 !important; }
+.staff-night-theme .text-red-400 { color: #f87171 !important; }
+.staff-night-theme .text-violet-400 { color: #a78bfa !important; }
+.staff-night-theme .text-cyan-400 { color: #22d3ee !important; }
+.staff-night-theme .text-green-400 { color: #4ade80 !important; }
+
+/* Nested amber card accents (0,3,0) */
+.staff-night-theme [class*="bg-amber-500/10"] .text-amber-200,
+.staff-night-theme [class*="bg-amber-500/10"] .text-amber-300 {
+  color: #fcd34d !important;
+}
+
+/* Slate spans inside amber cards (0,4,1) */
+.staff-night-theme [class*="bg-amber-500/10"] span[class*="text-slate"] {
+  color: #e2e8f0 !important;
+}
+
+/* h2 headings (day h2 rule is 0,2,1) */
+.manager-light-theme.staff-night-theme h2,
+.operations-light-theme.staff-night-theme h2 {
+  color: #f1f5f9 !important;
+}
+
+/* White summary boxes inside order cards (day 0,4,1) */
+.staff-night-theme .order-card-3d .rounded-lg.bg-white strong {
+  color: #f1f5f9 !important;
+}
+.staff-night-theme .order-card-3d .rounded-lg.bg-white span {
+  color: #cbd5e1 !important;
+}
