@@ -7,7 +7,7 @@ const WHATSAPP_MSG = `أهلًا، أنا جاي من موقع Maintenance Guide
 وصف العطل:`;
 const WHATSAPP_URL = `https://wa.me/201558625259?text=${encodeURIComponent(WHATSAPP_MSG)}`;
 
-const GOOGLE_BUSINESS_PROFILE_URL = "https://www.google.com/maps/place/Service+guide+Montaza+2/data=!4m2!3m1!1s0x14f5db723bebbd65:0xd4108ebedaac095e";
+const GOOGLE_BUSINESS_PROFILE_URL = "https://www.google.com/maps/place/Maintenance+Guide/@31.2446596,29.9691632,17z/data=!3m1!4b1!4m6!3m5!1s0x14f5db723bebbd65:0xd4108ebedaac095e!8m2!3d31.2446596!4d29.9691632!16s%2Fg%2F11sc_zt403";
 
 const SOCIAL_LINKS = [
   { label: "فيسبوك", href: "https://www.facebook.com/Maintenance.Guide", className: "bg-[#1877F2] hover:bg-[#0f63d0]" },
@@ -105,7 +105,7 @@ export default function Footer() {
                   </div>
                   <div>
                     <p className="text-[10px] text-gray-400">فرع سان ستيفانو (الرئيسي)</p>
-                    <a href="https://maps.app.goo.gl/TFccizUnkw4YeZBm6" target="_blank" rel="noopener noreferrer" className="text-xs font-medium hover:text-orange-400 transition-colors">سان ستيفانو، الإسكندرية</a>
+                    <a href={GOOGLE_BUSINESS_PROFILE_URL} target="_blank" rel="noopener noreferrer" className="text-xs font-medium hover:text-orange-400 transition-colors">سان ستيفانو، الإسكندرية</a>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 group">
