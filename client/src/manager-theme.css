@@ -2141,8 +2141,8 @@ html.dark.operations-light-theme .rounded-xl {
 }
 
 /* ---- 4. Tabs: hover/active in brand tints instead of bright blue ---- */
-.manager-light-theme [role="tab"]:hover,
-.operations-light-theme [role="tab"]:hover {
+.manager-light-theme:not(.staff-night-theme) [role="tab"]:hover,
+.operations-light-theme:not(.staff-night-theme) [role="tab"]:hover {
   background: #fdf0e6 !important;
   border-color: #f3b98f !important;
   color: #c2410c !important;
@@ -2166,7 +2166,7 @@ html.dark.operations-light-theme .rounded-xl {
 }
 
 /* ---- 7. Technician bottom-nav hover in brand tint ---- */
-.operations-light-theme nav[aria-label="تنقل الفني"] button:hover {
+.operations-light-theme:not(.staff-night-theme) nav[aria-label="تنقل الفني"] button:hover {
   background: #fdf0e6 !important;
   color: #c2410c !important;
 }
@@ -2175,4 +2175,21 @@ html.dark.operations-light-theme .rounded-xl {
 .operations-light-theme ::-webkit-scrollbar-thumb,
 .manager-light-theme ::-webkit-scrollbar-thumb {
   background: #b6c6d1;
+}
+
+/* ==========================================================
+   Maintenance Guide — Brand Theme v7.1.0
+   Day/night repairs: hardcoded light surfaces must flip in
+   night mode so the light text tokens stay readable.
+   ========================================================== */
+
+/* Operations-center card uses a hardcoded light gradient
+   (from-white to #EEF1F4) with a light border; in night mode
+   --ink flips to near-white, so the card must go dark too. */
+.staff-night-theme .bg-gradient-to-br.from-white {
+  background: linear-gradient(135deg, #172432 0%, #121c27 100%) !important;
+  border-color: #2a3a4b !important;
+}
+.staff-night-theme .border-\[\#D8DEE6\] {
+  border-color: #2a3a4b !important;
 }

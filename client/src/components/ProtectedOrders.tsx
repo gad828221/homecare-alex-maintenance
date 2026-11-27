@@ -527,6 +527,17 @@ export default function ProtectedOrders() {
   const [showTechnicianDistribution, setShowTechnicianDistribution] = useState(false);
   const [showQuickAnalysis, setShowQuickAnalysis] = useState(false);
   const [showStageSummary, setShowStageSummary] = useState(false);
+  const [showDaySummary, setShowDaySummary] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem('mg_manager_day_summary');
+      if (stored === 'open') return true;
+      if (stored === 'closed') return false;
+    } catch {}
+    return typeof window !== 'undefined' ? window.innerWidth >= 768 : true;
+  });
+  useEffect(() => {
+    try { localStorage.setItem('mg_manager_day_summary', showDaySummary ? 'open' : 'closed'); } catch {}
+  }, [showDaySummary]);
   const [showCommandCenter, setShowCommandCenter] = useState(false);
   const [filterTechStatus, setFilterTechStatus] = useState<'all' | 'active' | 'inactive'>('active');
   const [cashFilterDate, setCashFilterDate] = useState(() => getEgyptTodayString());
@@ -552,6 +563,12 @@ export default function ProtectedOrders() {
   const [visibleNotificationsCount, setVisibleNotificationsCount] = useState(20);
   const [notificationCategory, setNotificationCategory] = useState<'all' | 'urgent' | 'orders' | 'money' | 'system'>('all');
   const [notificationSearch, setNotificationSearch] = useState('');
+  const [notifView, setNotifView] = useState<'action' | 'log'>(() => {
+    try { return localStorage.getItem('mg_notif_view') === 'log' ? 'log' : 'action'; } catch { return 'action'; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem('mg_notif_view', notifView); } catch {}
+  }, [notifView]);
   const [invoiceSearchTerm, setInvoiceSearchTerm] = useState('');
   const [invoiceDateFilter, setInvoiceDateFilter] = useState('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -654,6 +671,7 @@ export default function ProtectedOrders() {
   const [staffNightMode, setStaffNightMode] = useState(() => localStorage.getItem('mg_staff_theme') === 'night');
   useEffect(() => {
     localStorage.setItem('mg_staff_theme', staffNightMode ? 'night' : 'day');
+    document.documentElement.classList.toggle('staff-night-theme', staffNightMode);
   }, [staffNightMode]);
   const [isUrgentAlert, setIsUrgentAlert] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
@@ -3171,6 +3189,18 @@ ${trackingUrl}
     );
     return order?.technician && order.technician !== '-' ? String(order.technician) : '';
   };
+  // "مطلوب إجراء" = حدث يحتاج قراراً أو تدخلاً من المدير؛ الباقي سجل نشاط (تدقيق/تقارير/حركات تمت)
+  const isActionableNotification = (notification: any) => {
+    const action = String(notification?.action || '');
+    const text = `${action} ${notification?.details || ''}`;
+    if (action === 'new_order_alert' || action === 'tech_ping' || action === 'settlement_alert') return true;
+    if (text.includes('بانتظار التأكيد') || text.includes('بانتظار تعيين') || text.includes('بدون فني')) return true;
+    if (text.includes('إنذار') || text.includes('تنبيه إغلاق') || text.includes('عاجل')) return true;
+    if (text.includes('أوردر جديد') || text.includes('طلب جديد') || text.includes('طلب صيانة جديد')) return true;
+    if (text.includes('تقييم')) return true;
+    if (text.includes('كشف جديد') || text.includes('إيصال سحب') || text.includes('إلغاء الطلب') || text.includes('تأجيل الطلب') || text.includes('ملاحظة فنية') || text.includes('متابعة من الفني')) return true;
+    return false;
+  };
   const smartNotifications = useMemo(() => {
     const query = notificationSearch.trim().toLowerCase();
     const classify = (notification: any) => {
@@ -3181,6 +3211,7 @@ ${trackingUrl}
       return 'system';
     };
     return notifications
+      .filter(notification => (notifView === 'action') === isActionableNotification(notification))
       .filter(notification => notificationCategory === 'all' || classify(notification) === notificationCategory)
       .filter(notification => !query || `${notification.action || ''} ${notification.details || ''}`.toLowerCase().includes(query))
       .sort((a, b) => {
@@ -3191,7 +3222,15 @@ ${trackingUrl}
         if (priorityDiff !== 0) return priorityDiff;
         return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
       });
-  }, [notifications, notificationCategory, notificationSearch, readNotificationIds]);
+  }, [notifications, notificationCategory, notificationSearch, readNotificationIds, notifView]);
+  const notifViewCounts = useMemo(() => {
+    const actionable = notifications.filter(isActionableNotification);
+    return {
+      actionUnread: actionable.filter(n => !readNotificationIds.has(Number(n.id))).length,
+      action: actionable.length,
+      log: notifications.length - actionable.length,
+    };
+  }, [notifications, readNotificationIds]);
   const invoiceReviewOrders = useMemo(() => {
     const query = invoiceSearchTerm.trim().toLowerCase();
     return [...orders, ...archivedOrders]
@@ -3930,7 +3969,7 @@ ${trackingUrl}
           { id: 'invoicesReview', label: 'الفواتير', icon: <Printer size={16} />, color: 'orange', hide: userRole === 'viewer' },
           { id: 'cash', label: 'الخزنة', icon: <Wallet size={16} />, color: 'emerald' },
           { id: 'partners', label: 'الشركاء', icon: <Users size={16} />, color: 'orange', hide: userRole === 'viewer' },
-          { id: 'notifications', label: `الإشعارات (${notifications.length})`, icon: <Bell size={16} />, color: 'blue' },
+          { id: 'notifications', label: `الإشعارات${notifViewCounts.actionUnread > 0 ? ` (${notifViewCounts.actionUnread})` : ''}`, icon: <Bell size={16} />, color: 'blue' },
           { id: 'systemHealth', label: 'صحة النظام', icon: <ShieldCheck size={16} />, color: 'emerald', hide: userRole !== 'admin' },
           { id: 'feedback', label: 'التقييمات', icon: <Star size={16} />, color: 'yellow', hide: !canEditDelete() },
           { id: 'permissions', label: 'الصلاحيات', icon: <ShieldCheck size={16} />, color: 'orange', hide: userRole !== 'admin' },
@@ -3973,7 +4012,22 @@ ${trackingUrl}
 		        {/* تبويب الأوردرات */}
 		        {activeTab === 'orders' && (
                   <div className="space-y-3 sm:space-y-4">
-	              {/* Operations Center Header */}
+	              {/* مطلوب الآن — مثبّت أعلى تبويب الأوردرات مباشرة */}
+                {!showDeleted && !searchTerm && !filterTechnician && managerPriorityQueue.length > 0 && <section className="rounded-[1.5rem] border border-orange-400/30 bg-slate-950/45 p-4 shadow-lg" aria-label="مطلوب الآن للمدير">
+                  <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><h3 className="flex items-center gap-2 text-sm font-black text-white"><AlertCircle size={17} className="text-orange-300" /> مطلوب الآن</h3><p className="mt-1 text-[10px] font-bold text-slate-500">الأرشيف منفصل؛ هذه القائمة تعرض الأوردرات المفتوحة فقط مرتبة حسب الأولوية.</p></div><span className="rounded-full bg-orange-500/15 px-3 py-1 text-[10px] font-black text-orange-200">{managerPriorityQueue.length} أوردر</span></div>
+                  <div className="grid gap-2 md:grid-cols-2">{managerPriorityQueue.slice(0, 6).map(({ order, action, tone }) => { const toneClass = tone === 'amber' ? 'border-amber-400/40 bg-amber-500/10 text-amber-200' : tone === 'rose' ? 'border-rose-400/40 bg-rose-500/10 text-rose-200' : tone === 'red' ? 'border-red-400/40 bg-red-500/10 text-red-200' : 'border-orange-400/30 bg-orange-500/10 text-orange-200'; return <button key={`manager-priority-${order.id}`} type="button" onClick={() => openPriorityOrder(order)} aria-label={`فتح أوردر ${order.order_number} ${order.customer_name}`}  className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-3 text-right transition hover:-translate-y-0.5 ${toneClass}`}><span className="min-w-0"><span className="block truncate text-xs font-black text-white">#{order.order_number} — {order.customer_name}</span><span className="mt-1 block truncate text-[10px] font-black">{action}</span></span><span className="shrink-0 rounded-lg bg-slate-950/40 px-2 py-1 text-[9px] font-black">فتح</span></button>; })}</div>
+                  {managerPriorityQueue.length > 6 && <p className="mt-3 text-center text-[10px] font-bold text-slate-500">{managerPriorityQueue.length - 6} أوردرات أخرى في القائمة</p>}
+                </section>}
+
+              {/* ملخص اليوم وأدوات الإدارة — قابل للطي؛ مطوي افتراضياً على الموبايل */}
+              <div className="rounded-[1.5rem] border border-slate-700/50 bg-slate-900/30 overflow-hidden">
+              <button type="button" onClick={() => setShowDaySummary(value => !value)} aria-expanded={showDaySummary} className="flex w-full items-center justify-between gap-2 px-4 py-3 text-right transition hover:bg-slate-800/40">
+                <span className="flex min-w-0 items-center gap-2 text-xs font-black text-white"><LayoutDashboard size={16} className="shrink-0 text-orange-400" /><span className="truncate">ملخص اليوم وأدوات الإدارة</span><span className="hidden rounded-full bg-slate-800 px-2 py-0.5 text-[9px] font-black text-slate-400 sm:inline">الرصيد · وصول سريع · ملف اليوم</span></span>
+                <span className="shrink-0 rounded-lg bg-orange-500/15 px-2.5 py-1 text-[10px] font-black text-orange-300">{showDaySummary ? 'إخفاء ▲' : 'عرض ▼'}</span>
+              </button>
+              {showDaySummary && (
+              <div>
+              {/* Operations Center Header */}
 	              <div className="bg-gradient-to-br from-white to-[#EEF1F4] rounded-[1.25rem] p-4 sm:p-5 border border-[#D8DEE6] shadow-2xl relative overflow-hidden">
 	                <div className="absolute top-0 left-0 w-1.5 h-full bg-cyan-500"></div>
 	                <div className="absolute -top-24 -right-24 w-64 h-64 bg-orange-600/10 rounded-full blur-3xl"></div>
@@ -4026,11 +4080,6 @@ ${trackingUrl}
                   <div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"><div><h3 className="text-sm font-black text-white">ملف اليوم التشغيلي</h3><p className="mt-1 text-[10px] font-bold text-slate-500">ملخص سريع للمنجز والمتبقي اليوم</p></div><span className="rounded-full bg-orange-500/10 px-3 py-1 text-[10px] font-black text-orange-200">{todayOperationSummary.total} أوردر</span></div>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-5"><div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3"><div className="text-lg font-black text-white">{todayOperationSummary.active}</div><div className="text-[10px] font-bold text-slate-500">متبقي نشط</div></div><div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-3"><div className="text-lg font-black text-emerald-300">{todayOperationSummary.completed}</div><div className="text-[10px] font-bold text-slate-500">تم إنجازه</div></div><div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-3"><div className="text-lg font-black text-amber-300">{todayOperationSummary.unassigned}</div><div className="text-[10px] font-bold text-slate-500">بلا فني</div></div><div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-3"><div className="text-lg font-black text-blue-300">{todayOperationSummary.collected}</div><div className="text-[10px] font-bold text-slate-500">تم تحصيله</div></div><div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3"><div className="text-lg font-black text-slate-200">{todayOperationSummary.total - todayOperationSummary.completed}</div><div className="text-[10px] font-bold text-slate-500">يحتاج متابعة</div></div></div>
                 </div>
-                {!showDeleted && !searchTerm && !filterTechnician && managerPriorityQueue.length > 0 && <section className="mt-4 rounded-[1.5rem] border border-orange-400/30 bg-slate-950/45 p-4 shadow-lg" aria-label="مطلوب الآن للمدير">
-                  <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><h3 className="flex items-center gap-2 text-sm font-black text-white"><AlertCircle size={17} className="text-orange-300" /> مطلوب الآن</h3><p className="mt-1 text-[10px] font-bold text-slate-500">الأرشيف منفصل؛ هذه القائمة تعرض الأوردرات المفتوحة فقط مرتبة حسب الأولوية.</p></div><span className="rounded-full bg-orange-500/15 px-3 py-1 text-[10px] font-black text-orange-200">{managerPriorityQueue.length} أوردر</span></div>
-                  <div className="grid gap-2 md:grid-cols-2">{managerPriorityQueue.slice(0, 6).map(({ order, action, tone }) => { const toneClass = tone === 'amber' ? 'border-amber-400/40 bg-amber-500/10 text-amber-200' : tone === 'rose' ? 'border-rose-400/40 bg-rose-500/10 text-rose-200' : tone === 'red' ? 'border-red-400/40 bg-red-500/10 text-red-200' : 'border-orange-400/30 bg-orange-500/10 text-orange-200'; return <button key={`manager-priority-${order.id}`} type="button" onClick={() => openPriorityOrder(order)} aria-label={`فتح أوردر ${order.order_number} ${order.customer_name}`}  className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-3 text-right transition hover:-translate-y-0.5 ${toneClass}`}><span className="min-w-0"><span className="block truncate text-xs font-black text-white">#{order.order_number} — {order.customer_name}</span><span className="mt-1 block truncate text-[10px] font-black">{action}</span></span><span className="shrink-0 rounded-lg bg-slate-950/40 px-2 py-1 text-[9px] font-black">فتح</span></button>; })}</div>
-                  {managerPriorityQueue.length > 6 && <p className="mt-3 text-center text-[10px] font-bold text-slate-500">{managerPriorityQueue.length - 6} أوردرات أخرى في القائمة</p>}
-                </section>}
                 {/* Smart Stats Grid */}
 		                <div className="hidden grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 mt-8" aria-hidden="true">
 		                  <button type="button" className="bg-slate-950/60 p-4 rounded-3xl border border-white/5 hover:border-blue-500/30 transition-all group text-right active:scale-95" onClick={() => { clearFilters(); const today = getEgyptTodayString(); setFilterDateFrom(today); setFilterDateTo(today); }}>
@@ -4060,6 +4109,10 @@ ${trackingUrl}
 		                    <div className="text-2xl font-black text-emerald-400">{[...orders, ...archivedOrders].filter(o => getWarrantyStatus(o).status === 'active').length}</div>
                   </button>
                 </div>
+              </div>
+
+              </div>
+              )}
               </div>
 
               {showCollectionBanner && pendingCollectionOrders.length > 0 && (
@@ -5307,9 +5360,10 @@ ${trackingUrl}
         )}
         {activeTab === 'notifications' && (
           <div className="space-y-3 w-full max-w-full overflow-hidden">
-            <div className="flex justify-between items-center bg-slate-900/50 border border-slate-800 p-4 rounded-2xl">
+            <div className="flex flex-col gap-3 bg-slate-900/50 border border-slate-800 p-4 rounded-2xl">
+              <div className="flex justify-between items-center">
               <div><h2 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">🔔 مركز الإشعارات الذكي</h2><p className="mt-1 text-[10px] font-bold text-slate-500">الجديد يظهر أولًا، واضغط على الإشعار لفتح الحدث المرتبط</p></div>
-              {userRole === 'admin' && notifications.length > 0 && (
+              {userRole === 'admin' && notifView === 'log' && notifications.length > 0 && (
                 <button
                   onClick={deleteAllNotifications}
                   className="bg-red-500/20 hover:bg-red-500/30 text-red-400 px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all shadow-lg active:scale-95"
@@ -5317,6 +5371,11 @@ ${trackingUrl}
                   <Trash size={14}/> مسح الكل (فوري)
                 </button>
               )}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => { setNotifView('action'); setVisibleNotificationsCount(20); }} className={`rounded-xl px-3 py-2.5 text-xs font-black transition ${notifView === 'action' ? 'bg-orange-600 text-white shadow-lg' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>⚡ مطلوب إجراء{notifViewCounts.actionUnread > 0 ? ` (${notifViewCounts.actionUnread} جديد)` : ` (${notifViewCounts.action})`}</button>
+                <button type="button" onClick={() => { setNotifView('log'); setVisibleNotificationsCount(20); }} className={`rounded-xl px-3 py-2.5 text-xs font-black transition ${notifView === 'log' ? 'bg-orange-600 text-white shadow-lg' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>🗂️ سجل النشاط ({notifViewCounts.log})</button>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
               <div className="rounded-2xl border border-orange-400/30 bg-orange-500/10 p-3"><div className="text-2xl font-black text-orange-300">{notifications.filter(n => !readNotificationIds.has(Number(n.id))).length}</div><div className="text-[10px] font-bold text-orange-200/70">غير مقروء</div></div>
@@ -5365,7 +5424,7 @@ ${trackingUrl}
                 );
               })}
             </div>
-            {smartNotifications.length === 0 && <div className="text-center py-12 text-slate-500 text-sm">لا توجد إشعارات مطابقة</div>}
+            {smartNotifications.length === 0 && <div className="text-center py-12 text-slate-500 text-sm">{notifView === 'action' ? '✅ لا توجد إجراءات مطلوبة الآن' : 'لا توجد إشعارات مطابقة'}</div>}
             {smartNotifications.length > visibleNotificationsCount && <button type="button" onClick={() => setVisibleNotificationsCount(count => count + 20)} className="w-full rounded-2xl border border-slate-800 bg-slate-900 py-3 text-xs font-black text-orange-300 hover:bg-slate-800">عرض المزيد ({smartNotifications.length - visibleNotificationsCount})</button>}
           </div>
         )}

@@ -135,6 +135,7 @@ export default function TechnicianPortal() {
   const [staffNightMode, setStaffNightMode] = useState(() => localStorage.getItem('mg_staff_theme') === 'night');
   useEffect(() => {
     localStorage.setItem('mg_staff_theme', staffNightMode ? 'night' : 'day');
+    document.documentElement.classList.toggle('staff-night-theme', staffNightMode);
   }, [staffNightMode]);
   const [isUrgentAlert, setIsUrgentAlert] = useState(false);
   const [stageNotice, setStageNotice] = useState<{ orderNumber: string; customerName: string; stage: string; action: string } | null>(null);
