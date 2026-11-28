@@ -1216,6 +1216,17 @@ export default function ProtectedOrders() {
     .replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '')
     .trim();
 
+  // بحث موحد: الاسم أو رقم الأوردر أو الهاتف بأي صيغة (أرقام عربية، مسافات، +20). الهاتف لا يتوفر إلا لمن يراه أصلاً.
+  const matchesAnyOrderQuery = (o: any, term: string) => {
+    const q = String(term || '').trim().toLowerCase();
+    if (!q) return true;
+    const qd = normalizeArabicDigits(q).replace(/\D/g, '');
+    const phoneDigits = normalizeArabicDigits(o?.phone).replace(/\D/g, '');
+    return String(o?.customer_name || '').toLowerCase().includes(q)
+      || String(o?.order_number || '').toLowerCase().includes(q)
+      || (qd.length >= 3 && phoneDigits.length > 0 && (phoneDigits.includes(qd) || (qd.startsWith('20') && qd.length >= 11 && phoneDigits.includes(qd.slice(2)))));
+  };
+
   // نعتمد على أعمدة موجودة فعلياً في Supabase. لا نستخدم updated_at لأنها غير موجودة
   // في جدول orders وقد تجعل الأرشيف يبدو فارغاً أو تفشل استعلامات بعض الأدوار.
   const getOrderReferenceDate = (order: any) => {
@@ -2961,7 +2972,7 @@ ${trackingUrl}
     if (deferredSearchTerm) {
       const searchLower = deferredSearchTerm.toLowerCase();
       const matchesName = o.customer_name?.toLowerCase().includes(searchLower);
-      const matchesPhone = o.phone?.includes(deferredSearchTerm);
+      const matchesPhone = !!o.phone && (o.phone.includes(deferredSearchTerm) || matchesAnyOrderQuery({ phone: o.phone }, deferredSearchTerm));
       const matchesOrderNum = String(o.order_number).includes(deferredSearchTerm);
       if (!matchesName && !matchesPhone && !matchesOrderNum) return false;
     }
@@ -4171,6 +4182,19 @@ ${trackingUrl}
 	                  </div>
 	                </div>
 
+                {deferredSearchTerm.trim().length >= 3 && (() => {
+	                  const archiveHits = archivedOrders.filter((o: any) => matchesAnyOrderQuery(o, deferredSearchTerm)).length;
+	                  const deletedHits = deletedOrders.filter((o: any) => matchesAnyOrderQuery(o, deferredSearchTerm)).length;
+	                  if (!archiveHits && !deletedHits) return null;
+	                  return (
+	                    <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-300">
+	                      <span>نتائج أخرى لنفس البحث:</span>
+	                      {archiveHits > 0 && <button type="button" onClick={() => { setArchiveSearchTerm(searchTerm); setFilterStatus('all'); setFilterTechnician(''); setArchiveDateFilter(''); setActiveTab('archived'); }} className="rounded-full border border-indigo-500/40 bg-indigo-600/20 px-3 py-1 text-indigo-200">في الأرشيف ({archiveHits})</button>}
+	                      {deletedHits > 0 && <button type="button" onClick={() => setShowDeleted(true)} className="rounded-full border border-red-500/40 bg-red-600/20 px-3 py-1 text-red-300">في المحذوفة ({deletedHits})</button>}
+	                    </div>
+	                  );
+	                })()}
+
                 {/* Advanced Filters Panel */}
 	                {showAdvancedFilters && (
 	                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-slate-950/30 rounded-3xl border border-white/5 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -4906,7 +4930,7 @@ ${trackingUrl}
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {deletedOrders.length === 0 && <div className="col-span-full text-center py-8 text-slate-400">لا توجد أوردرات محذوفة</div>}
-                {deletedOrders.map(order => (
+                {deletedOrders.filter(order => matchesAnyOrderQuery(order, deferredSearchTerm)).map(order => (
                   <div key={order.id} className="bg-slate-800/50 rounded-xl border border-slate-700 p-4 opacity-70">
                     <div className="flex justify-between items-start">
                       <div><h3 className="font-bold text-white">{order.customer_name}</h3><p className="text-xs text-slate-400">رقم: {order.order_number}</p><p className="text-xs text-red-400">🗑️ محذوف في {new Date(order.deleted_at).toLocaleDateString('ar-EG')}</p></div>
