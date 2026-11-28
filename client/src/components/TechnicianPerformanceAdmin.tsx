@@ -189,7 +189,6 @@ export default function TechnicianPerformanceAdmin({ orders, technicians, onFilt
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-black text-slate-300">الفترة الزمنية للنتائج</p>
-            <p className="mt-1 text-[11px] text-slate-500">الوضع الافتراضي يعرض كل السجل، ولا يؤثر على الخزنة أو بيانات الأوردرات.</p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
             <label className="text-xs font-bold text-slate-400">الفترة<select value={periodPreset} onChange={(event) => setPeriodPreset(event.target.value as typeof periodPreset)} className="mt-1 block min-w-44 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm font-bold text-white"><option value="all">كل الوقت</option><option value="this_month">هذا الشهر</option><option value="last_month">الشهر السابق</option><option value="custom">فترة مخصصة</option></select></label>
@@ -205,17 +204,16 @@ export default function TechnicianPerformanceAdmin({ orders, technicians, onFilt
           <div>
             <p className="text-xs font-bold text-orange-300">لوحة المدير · نتائج فردية</p>
             <h2 className="mt-1 flex items-center gap-2 text-2xl font-black text-white"><Wrench className="text-orange-400" /> أداء كل فني</h2>
-            <p className="mt-2 text-xs leading-6 text-slate-400">كل فني في بطاقة مستقلة، مع احتساب المكتمل والملغي والكشف المؤرشفين داخل إجمالي النتائج ونسبة النجاح.</p>
             <p className="mt-1 text-[11px] font-bold text-orange-300">الفترة المعروضة: {dateBounds.label} · {periodOrders.length} أوردر</p>
-            <p className="mt-1 text-[10px] text-slate-500">الحساب المالي من الأوردرات المكتملة والمصفاة فقط؛ الملغي والكشف والنشط ضمن النتائج التشغيلية لا الأرباح.</p>
+            <p className="mt-1 text-[11px] leading-5 text-slate-400">الحساب المالي من الأوردرات المكتملة والمصفاة فقط؛ الملغي والكشف والنشط ضمن النتائج التشغيلية لا الأرباح.</p>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
-            <div className="rounded-xl bg-slate-800 px-3 py-2 text-center"><p className="text-[10px] text-slate-500">الفنيون</p><p className="text-lg font-black text-white">{cards.length}</p></div>
-	            <button type="button" onClick={() => onFilter?.('status', 'all')} className="rounded-xl bg-slate-800 px-3 py-2 text-center hover:bg-slate-700 transition-all active:scale-95"><p className="text-[10px] text-slate-500">الإجمالي</p><p className="text-lg font-black text-blue-300">{totals.total}</p></button>
-	            <button type="button" onClick={() => onFilter?.('status', 'completed')} className="rounded-xl bg-slate-800 px-3 py-2 text-center hover:bg-slate-700 transition-all active:scale-95"><p className="text-[10px] text-slate-500">مكتمل</p><p className="text-lg font-black text-emerald-300">{totals.completed}</p></button>
-	            <button type="button" onClick={() => onFilter?.('status', 'cancelled')} className="rounded-xl bg-slate-800 px-3 py-2 text-center hover:bg-slate-700 transition-all active:scale-95"><p className="text-[10px] text-slate-500">ملغى/كشف</p><p className="text-lg font-black text-yellow-300">{totals.cancelled + totals.inspected}</p></button>
-            <div className="rounded-xl bg-slate-800 px-3 py-2 text-center"><p className="text-[10px] text-slate-500">مجموع الدخل</p><p className="text-sm font-black text-cyan-300">{money(totals.totalInvoice)}</p></div>
-            <div className="col-span-2 rounded-xl border border-emerald-500/20 bg-emerald-950/20 px-3 py-2 text-center sm:col-span-1"><p className="text-[10px] text-slate-500">صافي الشركة</p><p className="text-sm font-black text-emerald-300">{money(totals.companyProfit)}</p></div>
+            <div className="rounded-xl bg-slate-800 px-3 py-2 text-center"><p className="text-[11px] text-slate-500">الفنيون</p><p className="text-lg font-black text-white">{cards.length}</p></div>
+	            <button type="button" onClick={() => onFilter?.('status', 'all')} className="rounded-xl bg-slate-800 px-3 py-2 text-center hover:bg-slate-700 transition-all active:scale-95"><p className="text-[11px] text-slate-500">الإجمالي</p><p className="text-lg font-black text-blue-300">{totals.total}</p></button>
+	            <button type="button" onClick={() => onFilter?.('status', 'completed')} className="rounded-xl bg-slate-800 px-3 py-2 text-center hover:bg-slate-700 transition-all active:scale-95"><p className="text-[11px] text-slate-500">مكتمل</p><p className="text-lg font-black text-emerald-300">{totals.completed}</p></button>
+	            <button type="button" onClick={() => onFilter?.('status', 'cancelled')} className="rounded-xl bg-slate-800 px-3 py-2 text-center hover:bg-slate-700 transition-all active:scale-95"><p className="text-[11px] text-slate-500">ملغى/كشف</p><p className="text-lg font-black text-yellow-300">{totals.cancelled + totals.inspected}</p></button>
+            <div className="rounded-xl bg-slate-800 px-3 py-2 text-center"><p className="text-[11px] text-slate-500">مجموع الدخل</p><p className="text-sm font-black text-cyan-300">{money(totals.totalInvoice)}</p></div>
+            <div className="col-span-2 rounded-xl border border-emerald-500/20 bg-emerald-950/20 px-3 py-2 text-center sm:col-span-1"><p className="text-[11px] text-slate-500">صافي الشركة</p><p className="text-sm font-black text-emerald-300">{money(totals.companyProfit)}</p></div>
           </div>
         </div>
       </section>
@@ -233,13 +231,13 @@ export default function TechnicianPerformanceAdmin({ orders, technicians, onFilt
 	                  <button type="button" onClick={() => onFilter?.('technician', card.displayName)} className="flex min-w-0 items-center gap-3 text-right hover:opacity-80 transition-all active:scale-[0.98]">
 	                    <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-orange-500/30 bg-orange-500/10">
 	                      {card.photo ? <img src={card.photo} alt={`صورة ${card.displayName}`} className="h-full w-full object-cover" /> : <Wrench className="text-orange-400" size={25} />}
-	                      {card.rank <= 3 && <span className="absolute bottom-0 left-0 rounded-tr-lg bg-orange-500 px-1.5 py-0.5 text-[9px] font-black text-white">#{card.rank}</span>}
+	                      {card.rank <= 3 && <span className="absolute bottom-0 left-0 rounded-tr-lg bg-orange-500 px-1.5 py-0.5 text-[11px] font-black text-white">#{card.rank}</span>}
 	                    </div>
 	                    <div className="min-w-0"><h3 className="truncate text-lg font-black text-white">{card.displayName}</h3><p className="mt-1 truncate text-[11px] text-slate-400">{specialtyLabel(card.specialty)} · {stats.total} أوردر</p></div>
 	                  </button>
-                  <div className={`shrink-0 rounded-xl px-2.5 py-1.5 text-center ${lowSuccess ? 'bg-rose-500/15 text-rose-300' : 'bg-emerald-500/15 text-emerald-300'}`}><p className="text-[10px]">نجاح</p><p className="text-lg font-black">{stats.successRate.toFixed(0)}%</p></div>
+                  <div className={`shrink-0 rounded-xl px-2.5 py-1.5 text-center ${lowSuccess ? 'bg-rose-500/15 text-rose-300' : 'bg-emerald-500/15 text-emerald-300'}`}><p className="text-[11px]">نجاح</p><p className="text-lg font-black">{stats.successRate.toFixed(0)}%</p></div>
                 </div>
-                {(expenseWarning || lowSuccess) && <div className="mt-3 flex flex-wrap gap-2">{expenseWarning && <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-1 text-[10px] font-bold text-amber-300"><AlertCircle size={12} /> مراجعة مصروفات</span>}{lowSuccess && <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 px-2 py-1 text-[10px] font-bold text-rose-300"><Target size={12} /> أقل من 70%</span>}</div>}
+                {(expenseWarning || lowSuccess) && <div className="mt-3 flex flex-wrap gap-2">{expenseWarning && <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-1 text-[11px] font-bold text-amber-300"><AlertCircle size={12} /> مراجعة مصروفات</span>}{lowSuccess && <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 px-2 py-1 text-[11px] font-bold text-rose-300"><Target size={12} /> أقل من 70%</span>}</div>}
               </div>
 
 	              <div className="grid grid-cols-3 gap-2 p-4 sm:grid-cols-6">
@@ -265,7 +263,7 @@ export default function TechnicianPerformanceAdmin({ orders, technicians, onFilt
               </div>
 
               <button type="button" onClick={() => setExpandedTech(isExpanded ? null : String(card.technician?.id || card.displayName))} className="flex w-full items-center justify-center gap-2 border-t border-slate-800 bg-slate-950/40 px-4 py-3 text-xs font-black text-slate-300 transition hover:bg-slate-800 hover:text-white"><Eye size={15} /> {isExpanded ? 'إخفاء تفاصيل الأوردرات' : 'عرض آخر أوردرات الفني'} {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}</button>
-              {isExpanded && <div className="divide-y divide-slate-800 border-t border-slate-800 bg-slate-950/50">{card.recentOrders.map((order) => <div key={order.id || order.order_number} className="flex items-center justify-between gap-3 px-4 py-3"><div className="min-w-0"><p className="truncate text-xs font-black text-white">{order.order_number || '—'} · {order.customer_name || 'عميل'}</p><p className="mt-1 text-[10px] text-slate-500">{order.device_type || 'جهاز'} · {dateOf(order)?.toLocaleDateString('ar-EG') || 'بدون تاريخ'}</p></div><div className="shrink-0 text-left"><span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-black ${statusClass(statusOf(order))}`}>{statusLabel(statusOf(order))}</span><p className="mt-1 text-[10px] text-slate-500">{numberValue(order.total_amount) ? money(numberValue(order.total_amount)) : '—'}</p></div></div>)}{!card.recentOrders.length && <p className="p-5 text-center text-xs text-slate-500">لا توجد أوردرات لهذا الفني</p>}</div>}
+              {isExpanded && <div className="divide-y divide-slate-800 border-t border-slate-800 bg-slate-950/50">{card.recentOrders.map((order) => <div key={order.id || order.order_number} className="flex items-center justify-between gap-3 px-4 py-3"><div className="min-w-0"><p className="truncate text-xs font-black text-white">{order.order_number || '—'} · {order.customer_name || 'عميل'}</p><p className="mt-1 text-[11px] text-slate-500">{order.device_type || 'جهاز'} · {dateOf(order)?.toLocaleDateString('ar-EG') || 'بدون تاريخ'}</p></div><div className="shrink-0 text-left"><span className={`inline-flex rounded-full border px-2 py-1 text-[11px] font-black ${statusClass(statusOf(order))}`}>{statusLabel(statusOf(order))}</span><p className="mt-1 text-[11px] text-slate-500">{numberValue(order.total_amount) ? money(numberValue(order.total_amount)) : '—'}</p></div></div>)}{!card.recentOrders.length && <p className="p-5 text-center text-xs text-slate-500">لا توجد أوردرات لهذا الفني</p>}</div>}
             </article>
           );
         })}
@@ -291,12 +289,12 @@ function Metric({ label, value, color, icon, onClick }: { label: string; value: 
         {icon}
         <span className="text-sm font-black">{value}</span>
       </div>
-      <p className="mt-1 text-[9px] text-slate-500">{label}</p>
+      <p className="mt-1 text-[11px] text-slate-500">{label}</p>
     </button>
   );
 }
 
 function MiniBar({ label, value, amount, limit, color, icon }: { label: string; value: number; amount: number; limit: number; color: 'orange' | 'blue'; icon: ReactNode }) {
   const exceeded = value > limit;
-  return <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-3"><div className="flex items-center justify-between gap-2"><span className="flex items-center gap-1.5 text-xs font-bold text-slate-300">{icon}{label}</span><span className={`text-sm font-black ${exceeded ? 'text-rose-400' : color === 'orange' ? 'text-orange-300' : 'text-blue-300'}`}>{value.toFixed(1)}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-800"><div className={`h-full rounded-full ${exceeded ? 'bg-rose-500' : color === 'orange' ? 'bg-orange-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(value, 100)}%` }} /></div><div className="mt-1 flex justify-between text-[9px] text-slate-500"><span>{money(amount)}</span><span>الحد {limit}%</span></div></div>;
+  return <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-3"><div className="flex items-center justify-between gap-2"><span className="flex items-center gap-1.5 text-xs font-bold text-slate-300">{icon}{label}</span><span className={`text-sm font-black ${exceeded ? 'text-rose-400' : color === 'orange' ? 'text-orange-300' : 'text-blue-300'}`}>{value.toFixed(1)}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-800"><div className={`h-full rounded-full ${exceeded ? 'bg-rose-500' : color === 'orange' ? 'bg-orange-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(value, 100)}%` }} /></div><div className="mt-1 flex justify-between text-[11px] text-slate-500"><span>{money(amount)}</span><span>الحد {limit}%</span></div></div>;
 }
