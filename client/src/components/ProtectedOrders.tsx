@@ -2908,6 +2908,15 @@ ${trackingUrl}
       return next;
     });
   };
+  const markAllNotificationsRead = () => {
+    const ids = notifications.filter(n => (notifView === 'action') === isActionableNotification(n)).map(n => Number(n.id)).filter(id => Number.isFinite(id));
+    setReadNotificationIds(previous => {
+      const next = new Set(previous);
+      ids.forEach(id => next.add(id));
+      try { localStorage.setItem('mg_read_notification_ids', JSON.stringify(Array.from(next).slice(-1000))); } catch { /* storage unavailable */ }
+      return next;
+    });
+  };
   const openNotificationTarget = (notif: any) => {
     if (notif?.id != null) markNotificationRead(Number(notif.id));
     const details = String(notif?.details || '');
@@ -5436,7 +5445,7 @@ ${trackingUrl}
           <div className="space-y-3 w-full max-w-full overflow-hidden">
             <div className="flex flex-col gap-3 bg-slate-900/50 border border-slate-800 p-4 rounded-2xl">
               <div className="flex justify-between items-center">
-              <div><h2 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">🔔 مركز الإشعارات الذكي</h2><p className="mt-1 text-[10px] font-bold text-slate-500">الجديد يظهر أولًا، واضغط على الإشعار لفتح الحدث المرتبط</p></div>
+              <div><h2 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">🔔 مركز الإشعارات الذكي</h2><p className="mt-1 text-[11px] font-bold text-slate-400">الجديد يظهر أولًا، واضغط على الإشعار لفتح الحدث المرتبط</p></div>
               {userRole === 'admin' && notifView === 'log' && notifications.length > 0 && (
                 <button
                   onClick={deleteAllNotifications}
@@ -5450,6 +5459,12 @@ ${trackingUrl}
                 <button type="button" onClick={() => { setNotifView('action'); setVisibleNotificationsCount(20); }} className={`rounded-xl px-3 py-2.5 text-xs font-black transition ${notifView === 'action' ? 'bg-orange-600 text-white shadow-lg' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>⚡ مطلوب إجراء{notifViewCounts.actionUnread > 0 ? ` (${notifViewCounts.actionUnread} جديد)` : ` (${notifViewCounts.action})`}</button>
                 <button type="button" onClick={() => { setNotifView('log'); setVisibleNotificationsCount(20); }} className={`rounded-xl px-3 py-2.5 text-xs font-black transition ${notifView === 'log' ? 'bg-orange-600 text-white shadow-lg' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>🗂️ سجل النشاط ({notifViewCounts.log})</button>
               </div>
+              {(() => {
+                const unreadInView = notifications.filter(n => (notifView === 'action') === isActionableNotification(n) && !readNotificationIds.has(Number(n.id))).length;
+                return unreadInView > 0 ? (
+                  <button type="button" onClick={markAllNotificationsRead} className="w-full rounded-xl border border-orange-500/40 bg-orange-500/10 px-3 py-2.5 text-xs font-black text-orange-300 transition hover:bg-orange-500/20">✓ تعليم الكل كمقروء ({unreadInView})</button>
+                ) : null;
+              })()}
             </div>
             <div className="hidden">
               <div className="rounded-2xl border border-orange-400/30 bg-orange-500/10 p-3"><div className="text-2xl font-black text-orange-300">{notifications.filter(n => !readNotificationIds.has(Number(n.id))).length}</div><div className="text-[10px] font-bold text-orange-200/70">غير مقروء</div></div>
@@ -5468,7 +5483,7 @@ ${trackingUrl}
                 const isMoney = notif.action?.includes('خزنة') || notif.action?.includes('أرباح');
 
                 return (
-                  <div key={notif.id} onClick={() => openNotificationTarget(notif)} role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') openNotificationTarget(notif); }} className={`${readNotificationIds.has(Number(notif.id)) ? 'bg-slate-900/60 opacity-80' : 'bg-slate-900'} rounded-2xl p-4 flex justify-between items-center border-l-4 w-full cursor-pointer hover:bg-slate-800/90 active:scale-[0.99] transition-all ${
+                  <div key={notif.id} onClick={() => openNotificationTarget(notif)} role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') openNotificationTarget(notif); }} className={`${readNotificationIds.has(Number(notif.id)) ? 'bg-slate-900/60' : 'bg-slate-900'} rounded-2xl p-4 flex justify-between items-center border-l-4 w-full cursor-pointer hover:bg-slate-800/90 active:scale-[0.99] transition-all ${
                     isLogin ? 'border-blue-500' : isOrder ? 'border-orange-500' : isMoney ? 'border-emerald-500' : 'border-slate-700'
                   }`}>
                     <div className="flex items-center gap-3 overflow-hidden">
@@ -5479,18 +5494,18 @@ ${trackingUrl}
                       </div>
                       <div className="overflow-hidden">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                          <span className={`text-[11px] font-black px-2 py-0.5 rounded-full ${
                             isLogin ? 'bg-blue-500/20 text-blue-400' : isOrder ? 'bg-orange-500/20 text-orange-400' : isMoney ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'
                           }`}>
                             {notif.action}
                           </span>
-                          <span className="text-[9px] text-slate-500">{new Date(notif.created_at).toLocaleString('ar-EG')}</span>{!readNotificationIds.has(Number(notif.id)) && <span className="rounded-full bg-orange-500/20 px-2 py-0.5 text-[9px] font-black text-orange-300">جديد</span>}
+                          <span className="text-[11px] font-bold text-slate-400">{new Date(notif.created_at).toLocaleString('ar-EG')}</span>{!readNotificationIds.has(Number(notif.id)) && <span className="rounded-full bg-orange-500/20 px-2 py-0.5 text-[11px] font-black text-orange-300">جديد</span>}
                         </div>
-                        <p className="text-xs md:text-sm text-slate-300 mt-1 font-medium truncate">{notif.details}</p>
+                        <p className="text-[13px] md:text-sm text-slate-200 mt-1 font-medium leading-6 line-clamp-2 break-words">{notif.details}</p>
                       </div>
                     </div>
                     {userRole === 'admin' && (
-                      <button onClick={(event)=>{ event.stopPropagation(); deleteNotification(notif.id); }} className="w-8 h-8 shrink-0 rounded-lg bg-slate-800 text-slate-500 hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center ml-2" title="حذف الإشعار">
+                      <button onClick={(event)=>{ event.stopPropagation(); deleteNotification(notif.id); }} className="w-9 h-9 shrink-0 rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-500 hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center ml-2" title="حذف الإشعار">
                         <Trash2 size={14}/>
                       </button>
                     )}
