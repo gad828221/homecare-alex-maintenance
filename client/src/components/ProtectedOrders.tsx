@@ -5022,7 +5022,7 @@ ${trackingUrl}
                   />
                 </div>
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-400 whitespace-nowrap">
-                  <span className="rounded-full bg-indigo-500/15 px-3 py-2 text-indigo-300">نتائج البحث: {filteredArchivedOrders.length}</span>
+                  {archiveSearchTerm && <span className="rounded-full bg-indigo-500/15 px-3 py-2 text-indigo-300">نتائج البحث: {filteredArchivedOrders.length}</span>}
                   {archiveSearchTerm && <button type="button" onClick={() => setArchiveSearchTerm('')} className="rounded-xl bg-slate-800 px-3 py-2 text-slate-300 transition hover:bg-slate-700">مسح البحث</button>}
                 </div>
               </div>
@@ -5448,7 +5448,7 @@ ${trackingUrl}
                 <button type="button" onClick={() => { setNotifView('log'); setVisibleNotificationsCount(20); }} className={`rounded-xl px-3 py-2.5 text-xs font-black transition ${notifView === 'log' ? 'bg-orange-600 text-white shadow-lg' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>🗂️ سجل النشاط ({notifViewCounts.log})</button>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+            <div className="hidden">
               <div className="rounded-2xl border border-orange-400/30 bg-orange-500/10 p-3"><div className="text-2xl font-black text-orange-300">{notifications.filter(n => !readNotificationIds.has(Number(n.id))).length}</div><div className="text-[10px] font-bold text-orange-200/70">غير مقروء</div></div>
               <div className="rounded-2xl border border-rose-400/30 bg-rose-500/10 p-3"><div className="text-2xl font-black text-rose-300">{notifications.filter(n => `${n.action || ''} ${n.details || ''}`.includes('تحصيل') || `${n.action || ''} ${n.details || ''}`.includes('متأخر')).length}</div><div className="text-[10px] font-bold text-rose-200/70">عاجل</div></div>
               <div className="rounded-2xl border border-blue-400/30 bg-blue-500/10 p-3"><div className="text-2xl font-black text-blue-300">{notifications.filter(n => `${n.action || ''} ${n.details || ''}`.includes('أوردر') || `${n.action || ''} ${n.details || ''}`.includes('طلب')).length}</div><div className="text-[10px] font-bold text-blue-200/70">أوردرات</div></div>
