@@ -7,7 +7,7 @@ import {
   Copy, Check, Trash, Bell,   DollarSign,
   Download, X, Printer, UserPlus, UserMinus, LogOut, Send, Play, LogIn,
   RotateCcw, Clock, MapPin, Star, Cpu, ShieldCheck, Wrench, UserCircle, Wallet,
-  ClipboardList, FileCheck, Camera, Navigation, ExternalLink, Pin, PinOff, History, MessageCircle, Sun, Moon
+  ClipboardList, FileCheck, Camera, Navigation, ExternalLink, Pin, PinOff, History, MessageCircle, Sun, Moon, Archive, BarChart3
 } from "lucide-react";
 import { supabase } from '../lib/supabaseClient';
 import { authedHeaders } from '../lib/authedFetch';
@@ -3335,6 +3335,7 @@ ${trackingUrl}
     active: filteredOrders.filter(order => order.status === 'in-progress' || order.status === 'in_progress').length,
     completed: dateFilteredOrders.filter(order => order.status === 'completed').length,
   }), [filteredOrders, dateFilteredOrders]);
+  const navOpenOrders = useMemo(() => orders.filter(o => !['completed', 'cancelled', 'canceled'].includes(String(o.status || '').toLowerCase())).length, [orders]);
   const quickChipCounts = useMemo(() => {
     const today = getEgyptTodayString();
     return {
@@ -4003,11 +4004,12 @@ ${trackingUrl}
         .staff-night-theme .order-followup-summary [data-due=true] dd { color: #fda4af; }
 `}</style>
       <div className="manager-sticky-workspace">
+      <style>{".manager-sticky-workspace .mg-nav-tab[role=tab]{width:4.1rem;height:4.4rem;padding:2px 0}.mg-nav-label{font-size:10px;line-height:1.1;font-weight:800;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px}.mg-nav-badge{position:absolute;top:3px;right:5px;min-width:18px;height:18px;padding:0 4px;border-radius:9999px;background:#e11d48;color:#fff;font-size:10px;font-weight:900;line-height:18px;text-align:center;box-shadow:0 0 0 2px #fff}@media (max-width:639px){.manager-sticky-workspace [role=tablist].mg-nav{position:fixed;left:0;right:0;bottom:0;z-index:60;border-top:1px solid #D8DEE6;border-bottom:0;box-shadow:0 -8px 24px rgba(2,8,23,.35);padding:6px 8px calc(6px + env(safe-area-inset-bottom))}.manager-sticky-workspace .mg-nav-tab[role=tab]{width:3.9rem;height:4.1rem}#manager-dashboard{padding-bottom:6rem}}"}</style>
       {/* Compact icon navigation: one section at a time to keep the dashboard short on mobile. */}
-      <div role="tablist" aria-label="أقسام لوحة المدير" className="border-b border-[#D8DEE6] bg-white/95 px-2.5 py-2.5 shadow-[0_12px_35px_rgba(2,8,23,0.45)] backdrop-blur-xl overflow-x-auto no-scrollbar flex gap-2">
+      <div role="tablist" aria-label="أقسام لوحة المدير" className="mg-nav border-b border-[#D8DEE6] bg-white/95 px-2.5 py-2.5 shadow-[0_12px_35px_rgba(2,8,23,0.45)] backdrop-blur-xl overflow-x-auto no-scrollbar flex gap-2">
         {[
           { id: 'orders', label: 'الأوردرات', icon: <ClipboardList size={16} />, color: 'orange' },
-	          { id: 'archived', label: `الأرشيف (${archivedOrders.length})`, icon: <LayoutDashboard size={16} />, color: 'indigo' },
+	          { id: 'archived', label: `الأرشيف (${archivedOrders.length})`, icon: <Archive size={16} />, color: 'indigo' },
           { id: 'technicians', label: 'الفنيين', icon: <Users size={16} />, color: 'orange', hide: userRole === 'viewer' },
           { id: 'reports', label: 'التقارير', icon: <FileCheck size={16} />, color: 'orange', hide: userRole === 'viewer' },
           { id: 'repeatCustomers', label: `المتكررون (${repeatCustomers.length})`, icon: <Star size={16} />, color: 'emerald', hide: userRole === 'viewer' },
@@ -4018,7 +4020,7 @@ ${trackingUrl}
           { id: 'systemHealth', label: 'صحة النظام', icon: <ShieldCheck size={16} />, color: 'emerald', hide: userRole !== 'admin' },
           { id: 'feedback', label: 'التقييمات', icon: <Star size={16} />, color: 'yellow', hide: !canEditDelete() },
           { id: 'permissions', label: 'الصلاحيات', icon: <ShieldCheck size={16} />, color: 'orange', hide: userRole !== 'admin' },
-          { id: 'analytics', label: 'الإحصائيات', icon: <LayoutDashboard size={16} />, color: 'orange' },
+          { id: 'analytics', label: 'الإحصائيات', icon: <BarChart3 size={16} />, color: 'orange' },
           { id: 'performance', label: 'أداء الفنيين', icon: <SlidersHorizontal size={16} />, color: 'orange', hide: userRole === 'viewer' }
         ].filter(tab => !tab.hide).map(tab => (
           <button
@@ -4029,16 +4031,16 @@ ${trackingUrl}
             aria-label={tab.label}
             aria-selected={activeTab === tab.id}
             role="tab"
-            className={`group relative shrink-0 flex items-center justify-center gap-2 w-[3.7rem] h-[3.7rem] rounded-[1.35rem] border text-xs font-black transition-all duration-300 active:scale-90 active:rotate-2 ${
+            className={`mg-nav-tab group relative shrink-0 flex flex-col items-center justify-center gap-0.5 w-[4.1rem] h-[4.4rem] rounded-[1.2rem] border text-xs font-black transition-all duration-300 active:scale-90 active:rotate-2 ${
               activeTab === tab.id 
                 ? `border-orange-300/70 bg-gradient-to-br from-orange-500 to-orange-700 text-white shadow-[0_0_24px_rgba(249,115,22,0.38)]` 
                 : 'border-slate-700/80 bg-gradient-to-br from-[#18243a] to-[#111b2e] text-slate-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:-translate-y-0.5 hover:border-slate-500 hover:text-white hover:shadow-[0_0_18px_rgba(59,130,246,0.15)]'
             }`}
           >
-            <span className={`relative flex h-10 w-10 items-center justify-center rounded-xl transition ${activeTab === tab.id ? 'bg-white/15 text-white' : 'bg-slate-950/20 text-slate-400 group-hover:text-slate-200'}`}>
-              {React.cloneElement(tab.icon as React.ReactElement<any>, { size: 23, strokeWidth: activeTab === tab.id ? 2.5 : 2 })}
+            <span className={`relative flex h-8 w-8 items-center justify-center rounded-xl transition ${activeTab === tab.id ? 'bg-white/15 text-white' : 'bg-slate-950/20 text-slate-400 group-hover:text-slate-200'}`}>
+              {React.cloneElement(tab.icon as React.ReactElement<any>, { size: 20, strokeWidth: activeTab === tab.id ? 2.5 : 2 })}
             </span>
-            <span className="pointer-events-none absolute -bottom-1 left-1/2 z-40 hidden -translate-x-1/2 translate-y-full whitespace-nowrap rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-[9px] font-black text-white shadow-xl group-hover:block">{tab.label}</span>
+            <span className="mg-nav-label">{MG_NAV_SHORT[tab.id] || tab.label}</span>{(tab.id === 'orders' ? navOpenOrders : tab.id === 'notifications' ? notifViewCounts.actionUnread : 0) > 0 && <span className="mg-nav-badge">{Math.min(tab.id === 'orders' ? navOpenOrders : notifViewCounts.actionUnread, 99)}</span>}<span className="pointer-events-none absolute -bottom-1 left-1/2 z-40 hidden -translate-x-1/2 translate-y-full whitespace-nowrap rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-[9px] font-black text-white shadow-xl group-hover:block">{tab.label}</span>
           </button>
         ))}
       </div>
@@ -6158,6 +6160,8 @@ ${trackingUrl}
     </div>
   );
 }
+
+const MG_NAV_SHORT: Record<string, string> = { orders: 'الأوردرات', archived: 'الأرشيف', technicians: 'الفنيين', reports: 'التقارير', repeatCustomers: 'المتكررون', invoicesReview: 'الفواتير', cash: 'الخزنة', partners: 'الشركاء', notifications: 'الإشعارات', systemHealth: 'الصحة', feedback: 'التقييمات', permissions: 'الصلاحيات', analytics: 'إحصائيات', performance: 'الأداء' };
 
 type Stats = { total: number; pending: number; active: number; collection: number };
 type Props = {
