@@ -3398,6 +3398,9 @@ ${trackingUrl}
   ].filter((task) => task.count > 0), [commandCenterStats]);
   useEffect(() => {
     const signature = dailyTaskQueue.map((task) => `${task.key}:${task.count}`).join('|');
+    // عدّادات مهام القيادة تتغير عند تطبيق أي فلتر أو بحث؛ هذا ليس مهمة جديدة، فلا نُطلق إنذاراً ولا إشعاراً ولا نحدّث المرجع.
+    const countsFilteredByUser = Boolean(deferredSearchTerm || filterTechnician || filterDeviceType || filterDateFrom || filterDateTo || filterDelay !== 'all' || quickFilter || filterWarranty !== 'all' || filterOperationStage || filterStatus !== 'live');
+    if (countsFilteredByUser) return;
     const previousSignature = previousUrgentTaskSignatureRef.current;
     previousUrgentTaskSignatureRef.current = signature;
     if (!initialLoadComplete || previousSignature === null || !signature || signature === previousSignature) return;
