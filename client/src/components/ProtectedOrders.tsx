@@ -7,7 +7,7 @@ import {
   Copy, Check, Trash, Bell,   DollarSign,
   Download, X, Printer, UserPlus, UserMinus, LogOut, Send, Play, LogIn,
   RotateCcw, Clock, MapPin, Star, Cpu, ShieldCheck, Wrench, UserCircle, Wallet,
-  ClipboardList, FileCheck, Camera, Navigation, ExternalLink, Pin, PinOff, History, MessageCircle, Sun, Moon
+  ClipboardList, FileCheck, Camera, Navigation, ExternalLink, Pin, PinOff, History, MessageCircle, Sun, Moon, Archive, BarChart3
 } from "lucide-react";
 import { supabase } from '../lib/supabaseClient';
 import { authedHeaders } from '../lib/authedFetch';
@@ -445,6 +445,14 @@ export default function ProtectedOrders() {
     });
     return new Set(Array.from(counts.entries()).filter(([, count]) => count > 1).map(([phone]) => phone));
   }, [archivedOrders, orders]);
+  const customerOrderCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    [...orders, ...archivedOrders].forEach((order) => {
+      const phone = normalizeCustomerPhone(order.phone);
+      if (phone.length >= 10) counts.set(phone, (counts.get(phone) || 0) + 1);
+    });
+    return counts;
+  }, [archivedOrders, orders]);
   const repeatCustomers = useMemo(() => {
     const groups = new Map<string, { phone: string; name: string; orders: any[] }>();
     [...orders, ...archivedOrders].forEach((order) => {
@@ -558,6 +566,7 @@ export default function ProtectedOrders() {
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
   const [filterDelay, setFilterDelay] = useState<'all' | 'delayed'>('all');
+  const [quickFilter, setQuickFilter] = useState<'' | 'due' | 'transfer'>('');
   const [filterWarranty, setFilterWarranty] = useState<'all' | 'active' | 'expired' | 'expiring'>('all');
   const [showCompletedOrders, setShowCompletedOrders] = useState(false);
   const [visibleOrdersCount, setVisibleOrdersCount] = useState(15);
@@ -2960,7 +2969,7 @@ ${trackingUrl}
       }
     }
   };
-  const clearFilters = () => { setFocusedPriorityOrderId(null); setPendingPriorityOrderId(null); setSearchTerm(''); setFilterStatus('live'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); setFilterWarranty('all'); };
+  const clearFilters = () => { setQuickFilter(''); setFocusedPriorityOrderId(null); setPendingPriorityOrderId(null); setSearchTerm(''); setFilterStatus('live'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); setFilterWarranty('all'); };
 
   // علامة صريحة للأوردرات التي تم إنهاء تحصيلها يدوياً خارج البرنامج.
   const MANUAL_COLLECTION_CLOSED_MARKER = '[COLLECTION_MANUAL_CLOSED]';
@@ -2995,6 +3004,12 @@ ${trackingUrl}
     }
 
     if (filterDelay === 'delayed' && !isDelayed(o)) return false;
+    if (quickFilter === 'due') {
+      if (['completed', 'cancelled', 'canceled'].includes(String(o.status || '').toLowerCase())) return false;
+      const dueDate = getFollowUpData(o.admin_notes).followUpDate;
+      if (!(dueDate && dueDate <= getEgyptTodayString())) return false;
+    }
+    if (quickFilter === 'transfer' && !(isCollectionPending(o) && parseCompanyTransfer(o.technician_note)?.status === 'pending')) return false;
 
     if (filterWarranty !== 'all') {
       const warrantyInfo = getWarrantyStatus(o);
@@ -3030,7 +3045,7 @@ ${trackingUrl}
       const isLive = (o.status === 'in-progress' || o.status === 'in_progress' || o.status === 'pending' || o.status === 'returned' || !o.technician || o.technician === '-' || o.technician === '');
 
       // أي فلتر إضافي يستدعي فقط النتائج المطابقة بعد تطبيق البحث والفترة والفني والجهاز.
-      if (deferredSearchTerm || filterTechnician || filterDateFrom || filterDateTo || filterDeviceType || filterDelay !== 'all' || filterWarranty !== 'all') return true;
+      if (deferredSearchTerm || filterTechnician || filterDateFrom || filterDateTo || filterDeviceType || filterDelay !== 'all' || quickFilter !== '' || filterWarranty !== 'all') return true;
       
       return isLive;
     }
@@ -3045,7 +3060,7 @@ ${trackingUrl}
     // عند «جميع الحالات» أو وضع التركيز نعرض التحصيل المعلق حتى لو كان المكتمل مخفياً افتراضياً.
     if (isCollectionPending(o) && (filterStatus === 'all' || filterStatus === 'live')) return true;
     if (o.status === 'completed' && filterStatus !== 'completed') return showCompletedOrders;
-    if (filterStatus !== 'all' || filterTechnician || filterDeviceType || filterDateFrom || filterDateTo || filterDelay !== 'all' || filterWarranty !== 'all' || deferredSearchTerm) return true;
+    if (filterStatus !== 'all' || filterTechnician || filterDeviceType || filterDateFrom || filterDateTo || filterDelay !== 'all' || quickFilter !== '' || filterWarranty !== 'all' || deferredSearchTerm) return true;
     return (o.status === 'in-progress' || o.status === 'pending' || o.status === 'returned' || !o.technician || o.technician === '-' || o.technician === '');
   });
 
@@ -3102,7 +3117,8 @@ ${trackingUrl}
       return String(b.order_number || '').localeCompare(String(a.order_number || ''), 'ar');
     };
 
-    const sorted = [...allFilteredOrders].sort(sortByPriority);
+    const oldestFirst = (a: any, b: any) => getOrderCreatedTime(a) - getOrderCreatedTime(b) || sortByPriority(a, b);
+    const sorted = [...allFilteredOrders].sort(filterTechnician === '__NONE__' || quickFilter ? oldestFirst : sortByPriority);
 
     if (!deferredSearchTerm) {
       if (filterStatus === 'completed') {
@@ -3111,7 +3127,7 @@ ${trackingUrl}
       return sorted.slice(0, visibleOrdersCount);
     }
     return sorted;
-  }, [allFilteredOrders, filterStatus, deferredSearchTerm, visibleCompletedCount, visibleOrdersCount, pinnedOrderIds]);
+  }, [allFilteredOrders, filterStatus, deferredSearchTerm, visibleCompletedCount, visibleOrdersCount, pinnedOrderIds, filterTechnician, quickFilter]);
 
   const pendingCollectionOrders = [...dateFilteredOrders]
     .filter(isCollectionPending)
@@ -3168,10 +3184,16 @@ ${trackingUrl}
     const assigned = new Map<string, { total: number; pending: number; active: number; collection: number }>();
     let unassigned = 0;
     let unassignedCollection = 0;
+    let oldestUnassigned: any = null;
+    let oldestUnassignedTime = Infinity;
     for (const order of filteredOrders) {
       const technician = String(order.technician || '').trim();
       if (!technician || technician === '-') {
         unassigned += 1;
+        if (!['completed', 'cancelled', 'canceled'].includes(String(order.status || '').toLowerCase())) {
+          const createdTime = getOrderCreatedTime(order);
+          if (createdTime > 0 && createdTime < oldestUnassignedTime) { oldestUnassignedTime = createdTime; oldestUnassigned = getOrderCreatedValue(order); }
+        }
         if (isCollectionPending(order)) unassignedCollection += 1;
         continue;
       }
@@ -3183,7 +3205,7 @@ ${trackingUrl}
       assigned.set(technician, stats);
     }
     return {
-      unassigned: { total: unassigned, collection: unassignedCollection },
+      unassigned: { total: unassigned, collection: unassignedCollection, oldest: oldestUnassigned },
       technicians: technicians
         .filter(tech => tech.is_active !== false)
         .map(tech => ({ tech, stats: assigned.get(String(tech.name).trim()) || { total: 0, pending: 0, active: 0, collection: 0 } }))
@@ -3313,6 +3335,15 @@ ${trackingUrl}
     active: filteredOrders.filter(order => order.status === 'in-progress' || order.status === 'in_progress').length,
     completed: dateFilteredOrders.filter(order => order.status === 'completed').length,
   }), [filteredOrders, dateFilteredOrders]);
+  const navOpenOrders = useMemo(() => orders.filter(o => !['completed', 'cancelled', 'canceled'].includes(String(o.status || '').toLowerCase())).length, [orders]);
+  const quickChipCounts = useMemo(() => {
+    const today = getEgyptTodayString();
+    return {
+      late: orders.filter(isDelayed).length,
+      due: orders.filter(o => { if (['completed', 'cancelled', 'canceled'].includes(String(o.status || '').toLowerCase())) return false; const d = getFollowUpData(o.admin_notes).followUpDate; return Boolean(d && d <= today); }).length,
+      transfer: orders.filter(o => isCollectionPending(o) && parseCompanyTransfer(o.technician_note)?.status === 'pending').length,
+    };
+  }, [orders]);
   const needsAttentionSummary = useMemo(() => {
     const attention = dateFilteredOrders.filter(order => {
       if (['completed', 'cancelled', 'canceled'].includes(order.status)) return false;
@@ -3367,6 +3398,9 @@ ${trackingUrl}
   ].filter((task) => task.count > 0), [commandCenterStats]);
   useEffect(() => {
     const signature = dailyTaskQueue.map((task) => `${task.key}:${task.count}`).join('|');
+    // عدّادات مهام القيادة تتغير عند تطبيق أي فلتر أو بحث؛ هذا ليس مهمة جديدة، فلا نُطلق إنذاراً ولا إشعاراً ولا نحدّث المرجع.
+    const countsFilteredByUser = Boolean(deferredSearchTerm || filterTechnician || filterDeviceType || filterDateFrom || filterDateTo || filterDelay !== 'all' || quickFilter || filterWarranty !== 'all' || filterOperationStage || filterStatus !== 'live');
+    if (countsFilteredByUser) return;
     const previousSignature = previousUrgentTaskSignatureRef.current;
     previousUrgentTaskSignatureRef.current = signature;
     if (!initialLoadComplete || previousSignature === null || !signature || signature === previousSignature) return;
@@ -3399,7 +3433,7 @@ ${trackingUrl}
     setFilterDateTo('');
     setFilterDelay('all');
     setFilterWarranty('all');
-    setFilterOperationStage(stage);
+    setQuickFilter(''); setFilterOperationStage(stage);
     setFilterStatus('all');
     setShowCompletedOrders(false);
   };
@@ -3407,6 +3441,7 @@ ${trackingUrl}
   const clearOperationStage = () => setFilterOperationStage('');
 
   const openCommandCenter = (type: 'unassigned' | 'collection' | 'delayed' | 'active') => {
+    setQuickFilter('');
     setFilterOperationStage('');
     setSearchTerm('');
     setFilterTechnician('');
@@ -3972,11 +4007,12 @@ ${trackingUrl}
         .staff-night-theme .order-followup-summary [data-due=true] dd { color: #fda4af; }
 `}</style>
       <div className="manager-sticky-workspace">
+      <style>{".manager-sticky-workspace .mg-nav-tab[role=tab]{width:4.1rem;height:4.4rem;padding:2px 0}.mg-nav-label{font-size:10px;line-height:1.1;font-weight:800;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px}.mg-nav-badge{position:absolute;top:3px;right:5px;min-width:18px;height:18px;padding:0 4px;border-radius:9999px;background:#e11d48;color:#fff;font-size:10px;font-weight:900;line-height:18px;text-align:center;box-shadow:0 0 0 2px #fff}@media (max-width:639px){.manager-sticky-workspace [role=tablist].mg-nav{position:fixed;left:0;right:0;bottom:0;z-index:60;border-top:1px solid #D8DEE6;border-bottom:0;box-shadow:0 -8px 24px rgba(2,8,23,.35);padding:6px 8px calc(6px + env(safe-area-inset-bottom))}.manager-sticky-workspace .mg-nav-tab[role=tab]{width:3.9rem;height:4.1rem}#manager-dashboard{padding-bottom:6rem}.fixed.bottom-4.z-\\[70\\]{bottom:6.2rem!important}}"}</style>
       {/* Compact icon navigation: one section at a time to keep the dashboard short on mobile. */}
-      <div role="tablist" aria-label="أقسام لوحة المدير" className="border-b border-[#D8DEE6] bg-white/95 px-2.5 py-2.5 shadow-[0_12px_35px_rgba(2,8,23,0.45)] backdrop-blur-xl overflow-x-auto no-scrollbar flex gap-2">
+      <div role="tablist" aria-label="أقسام لوحة المدير" className="mg-nav border-b border-[#D8DEE6] bg-white/95 px-2.5 py-2.5 shadow-[0_12px_35px_rgba(2,8,23,0.45)] backdrop-blur-xl overflow-x-auto no-scrollbar flex gap-2">
         {[
           { id: 'orders', label: 'الأوردرات', icon: <ClipboardList size={16} />, color: 'orange' },
-	          { id: 'archived', label: `الأرشيف (${archivedOrders.length})`, icon: <LayoutDashboard size={16} />, color: 'indigo' },
+	          { id: 'archived', label: `الأرشيف (${archivedOrders.length})`, icon: <Archive size={16} />, color: 'indigo' },
           { id: 'technicians', label: 'الفنيين', icon: <Users size={16} />, color: 'orange', hide: userRole === 'viewer' },
           { id: 'reports', label: 'التقارير', icon: <FileCheck size={16} />, color: 'orange', hide: userRole === 'viewer' },
           { id: 'repeatCustomers', label: `المتكررون (${repeatCustomers.length})`, icon: <Star size={16} />, color: 'emerald', hide: userRole === 'viewer' },
@@ -3987,7 +4023,7 @@ ${trackingUrl}
           { id: 'systemHealth', label: 'صحة النظام', icon: <ShieldCheck size={16} />, color: 'emerald', hide: userRole !== 'admin' },
           { id: 'feedback', label: 'التقييمات', icon: <Star size={16} />, color: 'yellow', hide: !canEditDelete() },
           { id: 'permissions', label: 'الصلاحيات', icon: <ShieldCheck size={16} />, color: 'orange', hide: userRole !== 'admin' },
-          { id: 'analytics', label: 'الإحصائيات', icon: <LayoutDashboard size={16} />, color: 'orange' },
+          { id: 'analytics', label: 'الإحصائيات', icon: <BarChart3 size={16} />, color: 'orange' },
           { id: 'performance', label: 'أداء الفنيين', icon: <SlidersHorizontal size={16} />, color: 'orange', hide: userRole === 'viewer' }
         ].filter(tab => !tab.hide).map(tab => (
           <button
@@ -3998,16 +4034,16 @@ ${trackingUrl}
             aria-label={tab.label}
             aria-selected={activeTab === tab.id}
             role="tab"
-            className={`group relative shrink-0 flex items-center justify-center gap-2 w-[3.7rem] h-[3.7rem] rounded-[1.35rem] border text-xs font-black transition-all duration-300 active:scale-90 active:rotate-2 ${
+            className={`mg-nav-tab group relative shrink-0 flex flex-col items-center justify-center gap-0.5 w-[4.1rem] h-[4.4rem] rounded-[1.2rem] border text-xs font-black transition-all duration-300 active:scale-90 active:rotate-2 ${
               activeTab === tab.id 
                 ? `border-orange-300/70 bg-gradient-to-br from-orange-500 to-orange-700 text-white shadow-[0_0_24px_rgba(249,115,22,0.38)]` 
                 : 'border-slate-700/80 bg-gradient-to-br from-[#18243a] to-[#111b2e] text-slate-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:-translate-y-0.5 hover:border-slate-500 hover:text-white hover:shadow-[0_0_18px_rgba(59,130,246,0.15)]'
             }`}
           >
-            <span className={`relative flex h-10 w-10 items-center justify-center rounded-xl transition ${activeTab === tab.id ? 'bg-white/15 text-white' : 'bg-slate-950/20 text-slate-400 group-hover:text-slate-200'}`}>
-              {React.cloneElement(tab.icon as React.ReactElement<any>, { size: 23, strokeWidth: activeTab === tab.id ? 2.5 : 2 })}
+            <span className={`relative flex h-8 w-8 items-center justify-center rounded-xl transition ${activeTab === tab.id ? 'bg-white/15 text-white' : 'bg-slate-950/20 text-slate-400 group-hover:text-slate-200'}`}>
+              {React.cloneElement(tab.icon as React.ReactElement<any>, { size: 20, strokeWidth: activeTab === tab.id ? 2.5 : 2 })}
             </span>
-            <span className="pointer-events-none absolute -bottom-1 left-1/2 z-40 hidden -translate-x-1/2 translate-y-full whitespace-nowrap rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-[9px] font-black text-white shadow-xl group-hover:block">{tab.label}</span>
+            <span className="mg-nav-label">{MG_NAV_SHORT[tab.id] || tab.label}</span>{(tab.id === 'orders' ? navOpenOrders : tab.id === 'notifications' ? notifViewCounts.actionUnread : 0) > 0 && <span className="mg-nav-badge">{Math.min(tab.id === 'orders' ? navOpenOrders : notifViewCounts.actionUnread, 99)}</span>}<span className="pointer-events-none absolute -bottom-1 left-1/2 z-40 hidden -translate-x-1/2 translate-y-full whitespace-nowrap rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-[9px] font-black text-white shadow-xl group-hover:block">{tab.label}</span>
           </button>
         ))}
       </div>
@@ -4405,11 +4441,11 @@ ${trackingUrl}
 	                    } else {
 	                      count = dateFilteredOrders.filter(o => o.status === tab.id).length;
 	                    }
-	                    const isActive = filterStatus === tab.id;
+	                    const isActive = filterStatus === tab.id && !quickFilter && filterDelay === 'all';
                     return (
                       <button
                         key={tab.id}
-                        onClick={() => setFilterStatus(tab.id)}
+                        onClick={() => { setQuickFilter(''); setFilterDelay('all'); setFilterStatus(tab.id); }}
                         className={`flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-2xl whitespace-nowrap transition-all border-2 ${
                           isActive
                           ? `bg-${tab.color}-600 border-${tab.color}-500 text-white shadow-lg shadow-${tab.color}-900/20 scale-105`
@@ -4423,6 +4459,17 @@ ${trackingUrl}
                       </button>
                     );
                   })}
+                
+                  {[
+                    { key: 'late', label: 'متأخر ⏰', count: quickChipCounts.late, active: filterDelay === 'delayed', onClick: () => { setQuickFilter(''); setFilterStatus('live'); setFilterDelay(filterDelay === 'delayed' ? 'all' : 'delayed'); } },
+                    { key: 'due', label: 'متابعة اليوم', count: quickChipCounts.due, active: quickFilter === 'due', onClick: () => { setFilterDelay('all'); setFilterStatus('live'); setQuickFilter(quickFilter === 'due' ? '' : 'due'); } },
+                    { key: 'transfer', label: 'مقفول وفي انتظار تحويل الفني', count: quickChipCounts.transfer, active: quickFilter === 'transfer', onClick: () => { setFilterDelay('all'); setFilterStatus('live'); setQuickFilter(quickFilter === 'transfer' ? '' : 'transfer'); } },
+                  ].filter(chip => chip.count > 0 || chip.active).map(chip => (
+                    <button key={chip.key} type="button" onClick={chip.onClick} style={{ order: -1 }} className={'flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-2xl whitespace-nowrap transition-all border-2 ' + (chip.active ? 'bg-rose-600 border-rose-500 text-white shadow-lg' : 'bg-slate-900 border-rose-500/40 text-rose-300 hover:border-rose-400')}>
+                      <span className="text-xs font-black">{chip.label}</span>
+                      <span className={'text-[10px] px-2 py-0.5 rounded-full font-bold ' + (chip.active ? 'bg-white/20' : 'bg-slate-800')}>{chip.count}</span>
+                    </button>
+                  ))}
                 </div>
                 {!showDeleted && !searchTerm && !filterTechnician && (
                   <>
@@ -4542,7 +4589,7 @@ ${trackingUrl}
 						                  <div className="flex min-w-0 flex-wrap items-center gap-1.5">
 		                            <h3 className="text-sm sm:text-base font-black text-white group-hover:text-cyan-300 transition-colors leading-tight">{order.customer_name}</h3>
 		                            <div className="flex gap-1">
-		                              {previousCustomerPhones.has(normalizeCustomerPhone(order.phone)) && <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-1.5 py-0.5 text-[8px] font-black text-emerald-300">✨ عميل سابق</span>}
+		                              {previousCustomerPhones.has(normalizeCustomerPhone(order.phone)) && <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-1.5 py-0.5 text-[8px] font-black text-emerald-300">✨ عميل سابق{customerOrderCounts.get(normalizeCustomerPhone(order.phone)) ? ' · ' + customerOrderCounts.get(normalizeCustomerPhone(order.phone)) : ''}</span>}
 		                              {isNewOrder(order) && <span className="inline-flex items-center gap-1 rounded-full border border-blue-400/30 bg-blue-500/20 px-1.5 py-0.5 text-[8px] font-black text-blue-300 animate-pulse">🆕 جديد الآن</span>}
 		                            </div>
 			                          </div>
@@ -4978,7 +5025,7 @@ ${trackingUrl}
                   />
                 </div>
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-400 whitespace-nowrap">
-                  <span className="rounded-full bg-indigo-500/15 px-3 py-2 text-indigo-300">نتائج البحث: {filteredArchivedOrders.length}</span>
+                  {archiveSearchTerm && <span className="rounded-full bg-indigo-500/15 px-3 py-2 text-indigo-300">نتائج البحث: {filteredArchivedOrders.length}</span>}
                   {archiveSearchTerm && <button type="button" onClick={() => setArchiveSearchTerm('')} className="rounded-xl bg-slate-800 px-3 py-2 text-slate-300 transition hover:bg-slate-700">مسح البحث</button>}
                 </div>
               </div>
@@ -5404,7 +5451,7 @@ ${trackingUrl}
                 <button type="button" onClick={() => { setNotifView('log'); setVisibleNotificationsCount(20); }} className={`rounded-xl px-3 py-2.5 text-xs font-black transition ${notifView === 'log' ? 'bg-orange-600 text-white shadow-lg' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>🗂️ سجل النشاط ({notifViewCounts.log})</button>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+            <div className="hidden">
               <div className="rounded-2xl border border-orange-400/30 bg-orange-500/10 p-3"><div className="text-2xl font-black text-orange-300">{notifications.filter(n => !readNotificationIds.has(Number(n.id))).length}</div><div className="text-[10px] font-bold text-orange-200/70">غير مقروء</div></div>
               <div className="rounded-2xl border border-rose-400/30 bg-rose-500/10 p-3"><div className="text-2xl font-black text-rose-300">{notifications.filter(n => `${n.action || ''} ${n.details || ''}`.includes('تحصيل') || `${n.action || ''} ${n.details || ''}`.includes('متأخر')).length}</div><div className="text-[10px] font-bold text-rose-200/70">عاجل</div></div>
               <div className="rounded-2xl border border-blue-400/30 bg-blue-500/10 p-3"><div className="text-2xl font-black text-blue-300">{notifications.filter(n => `${n.action || ''} ${n.details || ''}`.includes('أوردر') || `${n.action || ''} ${n.details || ''}`.includes('طلب')).length}</div><div className="text-[10px] font-bold text-blue-200/70">أوردرات</div></div>
@@ -6117,9 +6164,11 @@ ${trackingUrl}
   );
 }
 
+const MG_NAV_SHORT: Record<string, string> = { orders: 'الأوردرات', archived: 'الأرشيف', technicians: 'الفنيين', reports: 'التقارير', repeatCustomers: 'المتكررون', invoicesReview: 'الفواتير', cash: 'الخزنة', partners: 'الشركاء', notifications: 'الإشعارات', systemHealth: 'الصحة', feedback: 'التقييمات', permissions: 'الصلاحيات', analytics: 'إحصائيات', performance: 'الأداء' };
+
 type Stats = { total: number; pending: number; active: number; collection: number };
 type Props = {
-  cards: { unassigned: { total: number; collection: number }; technicians: { tech: { id: string | number; name: string }; stats: Stats }[] };
+  cards: { unassigned: { total: number; collection: number; oldest?: any }; technicians: { tech: { id: string | number; name: string }; stats: Stats }[] };
   selected: string;
   onSelect: (name: string) => void;
   expanded: boolean;
@@ -6180,7 +6229,7 @@ function TechnicianDistributionBar({ cards, selected, onSelect, expanded, onTogg
         </div>
       </div>
       <div className="tech-distribution-track" role="group" aria-label="تصفية الأوردرات حسب الفني">
-        <button type="button" className="tech-distribution-chip" data-unassigned="true" data-selected={selected === '__NONE__'} aria-pressed={selected === '__NONE__'} onClick={() => onSelect(selected === '__NONE__' ? '' : '__NONE__')}><AlertCircle size={14} /><span>بدون فني</span><b>{cards.unassigned.total}</b></button>
+        <button type="button" className="tech-distribution-chip" data-unassigned="true" data-selected={selected === '__NONE__'} aria-pressed={selected === '__NONE__'} onClick={() => onSelect(selected === '__NONE__' ? '' : '__NONE__')}><AlertCircle size={14} /><span>بدون فني</span>{cards.unassigned.oldest && <em style={{ fontStyle: 'normal', fontSize: 10, fontWeight: 700, opacity: 0.85 }}>منذ {String(formatElapsed(cards.unassigned.oldest, Date.now())).split(' و')[0]}</em>}<b>{cards.unassigned.total}</b></button>
         {visible.map(({ tech, stats }) => <button type="button" className="tech-distribution-chip" key={tech.id} data-selected={selected === tech.name} aria-pressed={selected === tech.name} title={tech.name} onClick={() => onSelect(selected === tech.name ? '' : tech.name)}><span>{tech.name}</span><b>{stats.total}</b></button>)}
         {visible.length === 0 && cards.unassigned.total === 0 && <p className="tech-distribution-empty">لا توجد أوردرات حسب الفلاتر الحالية</p>}
       </div>
