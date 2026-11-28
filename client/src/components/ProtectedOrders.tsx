@@ -445,6 +445,14 @@ export default function ProtectedOrders() {
     });
     return new Set(Array.from(counts.entries()).filter(([, count]) => count > 1).map(([phone]) => phone));
   }, [archivedOrders, orders]);
+  const customerOrderCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    [...orders, ...archivedOrders].forEach((order) => {
+      const phone = normalizeCustomerPhone(order.phone);
+      if (phone.length >= 10) counts.set(phone, (counts.get(phone) || 0) + 1);
+    });
+    return counts;
+  }, [archivedOrders, orders]);
   const repeatCustomers = useMemo(() => {
     const groups = new Map<string, { phone: string; name: string; orders: any[] }>();
     [...orders, ...archivedOrders].forEach((order) => {
@@ -558,6 +566,7 @@ export default function ProtectedOrders() {
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
   const [filterDelay, setFilterDelay] = useState<'all' | 'delayed'>('all');
+  const [quickFilter, setQuickFilter] = useState<'' | 'due' | 'transfer'>('');
   const [filterWarranty, setFilterWarranty] = useState<'all' | 'active' | 'expired' | 'expiring'>('all');
   const [showCompletedOrders, setShowCompletedOrders] = useState(false);
   const [visibleOrdersCount, setVisibleOrdersCount] = useState(15);
@@ -2960,7 +2969,7 @@ ${trackingUrl}
       }
     }
   };
-  const clearFilters = () => { setFocusedPriorityOrderId(null); setPendingPriorityOrderId(null); setSearchTerm(''); setFilterStatus('live'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); setFilterWarranty('all'); };
+  const clearFilters = () => { setQuickFilter(''); setFocusedPriorityOrderId(null); setPendingPriorityOrderId(null); setSearchTerm(''); setFilterStatus('live'); setFilterTechnician(''); setFilterDeviceType(''); setFilterDateFrom(''); setFilterDateTo(''); setFilterDelay('all'); setFilterWarranty('all'); };
 
   // علامة صريحة للأوردرات التي تم إنهاء تحصيلها يدوياً خارج البرنامج.
   const MANUAL_COLLECTION_CLOSED_MARKER = '[COLLECTION_MANUAL_CLOSED]';
@@ -2995,6 +3004,12 @@ ${trackingUrl}
     }
 
     if (filterDelay === 'delayed' && !isDelayed(o)) return false;
+    if (quickFilter === 'due') {
+      if (['completed', 'cancelled', 'canceled'].includes(String(o.status || '').toLowerCase())) return false;
+      const dueDate = getFollowUpData(o.admin_notes).followUpDate;
+      if (!(dueDate && dueDate <= getEgyptTodayString())) return false;
+    }
+    if (quickFilter === 'transfer' && !(isCollectionPending(o) && parseCompanyTransfer(o.technician_note)?.status === 'pending')) return false;
 
     if (filterWarranty !== 'all') {
       const warrantyInfo = getWarrantyStatus(o);
@@ -3030,7 +3045,7 @@ ${trackingUrl}
       const isLive = (o.status === 'in-progress' || o.status === 'in_progress' || o.status === 'pending' || o.status === 'returned' || !o.technician || o.technician === '-' || o.technician === '');
 
       // أي فلتر إضافي يستدعي فقط النتائج المطابقة بعد تطبيق البحث والفترة والفني والجهاز.
-      if (deferredSearchTerm || filterTechnician || filterDateFrom || filterDateTo || filterDeviceType || filterDelay !== 'all' || filterWarranty !== 'all') return true;
+      if (deferredSearchTerm || filterTechnician || filterDateFrom || filterDateTo || filterDeviceType || filterDelay !== 'all' || quickFilter !== '' || filterWarranty !== 'all') return true;
       
       return isLive;
     }
@@ -3045,7 +3060,7 @@ ${trackingUrl}
     // عند «جميع الحالات» أو وضع التركيز نعرض التحصيل المعلق حتى لو كان المكتمل مخفياً افتراضياً.
     if (isCollectionPending(o) && (filterStatus === 'all' || filterStatus === 'live')) return true;
     if (o.status === 'completed' && filterStatus !== 'completed') return showCompletedOrders;
-    if (filterStatus !== 'all' || filterTechnician || filterDeviceType || filterDateFrom || filterDateTo || filterDelay !== 'all' || filterWarranty !== 'all' || deferredSearchTerm) return true;
+    if (filterStatus !== 'all' || filterTechnician || filterDeviceType || filterDateFrom || filterDateTo || filterDelay !== 'all' || quickFilter !== '' || filterWarranty !== 'all' || deferredSearchTerm) return true;
     return (o.status === 'in-progress' || o.status === 'pending' || o.status === 'returned' || !o.technician || o.technician === '-' || o.technician === '');
   });
 
@@ -3102,7 +3117,8 @@ ${trackingUrl}
       return String(b.order_number || '').localeCompare(String(a.order_number || ''), 'ar');
     };
 
-    const sorted = [...allFilteredOrders].sort(sortByPriority);
+    const oldestFirst = (a: any, b: any) => getOrderCreatedTime(a) - getOrderCreatedTime(b) || sortByPriority(a, b);
+    const sorted = [...allFilteredOrders].sort(filterTechnician === '__NONE__' || quickFilter ? oldestFirst : sortByPriority);
 
     if (!deferredSearchTerm) {
       if (filterStatus === 'completed') {
@@ -3111,7 +3127,7 @@ ${trackingUrl}
       return sorted.slice(0, visibleOrdersCount);
     }
     return sorted;
-  }, [allFilteredOrders, filterStatus, deferredSearchTerm, visibleCompletedCount, visibleOrdersCount, pinnedOrderIds]);
+  }, [allFilteredOrders, filterStatus, deferredSearchTerm, visibleCompletedCount, visibleOrdersCount, pinnedOrderIds, filterTechnician, quickFilter]);
 
   const pendingCollectionOrders = [...dateFilteredOrders]
     .filter(isCollectionPending)
@@ -3168,10 +3184,16 @@ ${trackingUrl}
     const assigned = new Map<string, { total: number; pending: number; active: number; collection: number }>();
     let unassigned = 0;
     let unassignedCollection = 0;
+    let oldestUnassigned: any = null;
+    let oldestUnassignedTime = Infinity;
     for (const order of filteredOrders) {
       const technician = String(order.technician || '').trim();
       if (!technician || technician === '-') {
         unassigned += 1;
+        if (!['completed', 'cancelled', 'canceled'].includes(String(order.status || '').toLowerCase())) {
+          const createdTime = getOrderCreatedTime(order);
+          if (createdTime > 0 && createdTime < oldestUnassignedTime) { oldestUnassignedTime = createdTime; oldestUnassigned = getOrderCreatedValue(order); }
+        }
         if (isCollectionPending(order)) unassignedCollection += 1;
         continue;
       }
@@ -3183,7 +3205,7 @@ ${trackingUrl}
       assigned.set(technician, stats);
     }
     return {
-      unassigned: { total: unassigned, collection: unassignedCollection },
+      unassigned: { total: unassigned, collection: unassignedCollection, oldest: oldestUnassigned },
       technicians: technicians
         .filter(tech => tech.is_active !== false)
         .map(tech => ({ tech, stats: assigned.get(String(tech.name).trim()) || { total: 0, pending: 0, active: 0, collection: 0 } }))
@@ -3313,6 +3335,14 @@ ${trackingUrl}
     active: filteredOrders.filter(order => order.status === 'in-progress' || order.status === 'in_progress').length,
     completed: dateFilteredOrders.filter(order => order.status === 'completed').length,
   }), [filteredOrders, dateFilteredOrders]);
+  const quickChipCounts = useMemo(() => {
+    const today = getEgyptTodayString();
+    return {
+      late: orders.filter(isDelayed).length,
+      due: orders.filter(o => { if (['completed', 'cancelled', 'canceled'].includes(String(o.status || '').toLowerCase())) return false; const d = getFollowUpData(o.admin_notes).followUpDate; return Boolean(d && d <= today); }).length,
+      transfer: orders.filter(o => isCollectionPending(o) && parseCompanyTransfer(o.technician_note)?.status === 'pending').length,
+    };
+  }, [orders]);
   const needsAttentionSummary = useMemo(() => {
     const attention = dateFilteredOrders.filter(order => {
       if (['completed', 'cancelled', 'canceled'].includes(order.status)) return false;
@@ -3399,7 +3429,7 @@ ${trackingUrl}
     setFilterDateTo('');
     setFilterDelay('all');
     setFilterWarranty('all');
-    setFilterOperationStage(stage);
+    setQuickFilter(''); setFilterOperationStage(stage);
     setFilterStatus('all');
     setShowCompletedOrders(false);
   };
@@ -3407,6 +3437,7 @@ ${trackingUrl}
   const clearOperationStage = () => setFilterOperationStage('');
 
   const openCommandCenter = (type: 'unassigned' | 'collection' | 'delayed' | 'active') => {
+    setQuickFilter('');
     setFilterOperationStage('');
     setSearchTerm('');
     setFilterTechnician('');
@@ -4405,11 +4436,11 @@ ${trackingUrl}
 	                    } else {
 	                      count = dateFilteredOrders.filter(o => o.status === tab.id).length;
 	                    }
-	                    const isActive = filterStatus === tab.id;
+	                    const isActive = filterStatus === tab.id && !quickFilter && filterDelay === 'all';
                     return (
                       <button
                         key={tab.id}
-                        onClick={() => setFilterStatus(tab.id)}
+                        onClick={() => { setQuickFilter(''); setFilterDelay('all'); setFilterStatus(tab.id); }}
                         className={`flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-2xl whitespace-nowrap transition-all border-2 ${
                           isActive
                           ? `bg-${tab.color}-600 border-${tab.color}-500 text-white shadow-lg shadow-${tab.color}-900/20 scale-105`
@@ -4423,6 +4454,17 @@ ${trackingUrl}
                       </button>
                     );
                   })}
+                
+                  {[
+                    { key: 'late', label: 'متأخر ⏰', count: quickChipCounts.late, active: filterDelay === 'delayed', onClick: () => { setQuickFilter(''); setFilterStatus('live'); setFilterDelay(filterDelay === 'delayed' ? 'all' : 'delayed'); } },
+                    { key: 'due', label: 'متابعة اليوم', count: quickChipCounts.due, active: quickFilter === 'due', onClick: () => { setFilterDelay('all'); setFilterStatus('live'); setQuickFilter(quickFilter === 'due' ? '' : 'due'); } },
+                    { key: 'transfer', label: 'مقفول وفي انتظار تحويل الفني', count: quickChipCounts.transfer, active: quickFilter === 'transfer', onClick: () => { setFilterDelay('all'); setFilterStatus('live'); setQuickFilter(quickFilter === 'transfer' ? '' : 'transfer'); } },
+                  ].filter(chip => chip.count > 0 || chip.active).map(chip => (
+                    <button key={chip.key} type="button" onClick={chip.onClick} className={'flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-2xl whitespace-nowrap transition-all border-2 ' + (chip.active ? 'bg-rose-600 border-rose-500 text-white shadow-lg' : 'bg-slate-900 border-rose-500/40 text-rose-300 hover:border-rose-400')}>
+                      <span className="text-xs font-black">{chip.label}</span>
+                      <span className={'text-[10px] px-2 py-0.5 rounded-full font-bold ' + (chip.active ? 'bg-white/20' : 'bg-slate-800')}>{chip.count}</span>
+                    </button>
+                  ))}
                 </div>
                 {!showDeleted && !searchTerm && !filterTechnician && (
                   <>
@@ -4542,7 +4584,7 @@ ${trackingUrl}
 						                  <div className="flex min-w-0 flex-wrap items-center gap-1.5">
 		                            <h3 className="text-sm sm:text-base font-black text-white group-hover:text-cyan-300 transition-colors leading-tight">{order.customer_name}</h3>
 		                            <div className="flex gap-1">
-		                              {previousCustomerPhones.has(normalizeCustomerPhone(order.phone)) && <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-1.5 py-0.5 text-[8px] font-black text-emerald-300">✨ عميل سابق</span>}
+		                              {previousCustomerPhones.has(normalizeCustomerPhone(order.phone)) && <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-1.5 py-0.5 text-[8px] font-black text-emerald-300">✨ عميل سابق{customerOrderCounts.get(normalizeCustomerPhone(order.phone)) ? ' · ' + customerOrderCounts.get(normalizeCustomerPhone(order.phone)) : ''}</span>}
 		                              {isNewOrder(order) && <span className="inline-flex items-center gap-1 rounded-full border border-blue-400/30 bg-blue-500/20 px-1.5 py-0.5 text-[8px] font-black text-blue-300 animate-pulse">🆕 جديد الآن</span>}
 		                            </div>
 			                          </div>
@@ -6119,7 +6161,7 @@ ${trackingUrl}
 
 type Stats = { total: number; pending: number; active: number; collection: number };
 type Props = {
-  cards: { unassigned: { total: number; collection: number }; technicians: { tech: { id: string | number; name: string }; stats: Stats }[] };
+  cards: { unassigned: { total: number; collection: number; oldest?: any }; technicians: { tech: { id: string | number; name: string }; stats: Stats }[] };
   selected: string;
   onSelect: (name: string) => void;
   expanded: boolean;
@@ -6180,7 +6222,7 @@ function TechnicianDistributionBar({ cards, selected, onSelect, expanded, onTogg
         </div>
       </div>
       <div className="tech-distribution-track" role="group" aria-label="تصفية الأوردرات حسب الفني">
-        <button type="button" className="tech-distribution-chip" data-unassigned="true" data-selected={selected === '__NONE__'} aria-pressed={selected === '__NONE__'} onClick={() => onSelect(selected === '__NONE__' ? '' : '__NONE__')}><AlertCircle size={14} /><span>بدون فني</span><b>{cards.unassigned.total}</b></button>
+        <button type="button" className="tech-distribution-chip" data-unassigned="true" data-selected={selected === '__NONE__'} aria-pressed={selected === '__NONE__'} onClick={() => onSelect(selected === '__NONE__' ? '' : '__NONE__')}><AlertCircle size={14} /><span>بدون فني</span>{cards.unassigned.oldest && <em style={{ fontStyle: 'normal', fontSize: 10, fontWeight: 700, opacity: 0.85 }}>منذ {formatElapsed(cards.unassigned.oldest, Date.now())}</em>}<b>{cards.unassigned.total}</b></button>
         {visible.map(({ tech, stats }) => <button type="button" className="tech-distribution-chip" key={tech.id} data-selected={selected === tech.name} aria-pressed={selected === tech.name} title={tech.name} onClick={() => onSelect(selected === tech.name ? '' : tech.name)}><span>{tech.name}</span><b>{stats.total}</b></button>)}
         {visible.length === 0 && cards.unassigned.total === 0 && <p className="tech-distribution-empty">لا توجد أوردرات حسب الفلاتر الحالية</p>}
       </div>
